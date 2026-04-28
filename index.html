@@ -505,6 +505,74 @@ h3.subhead {
 }
 .tip-block .tip-content p { font-size: 14.5px; line-height: 1.55; }
 
+/* ========== DOWNLOADS ========== */
+.downloads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+.download-card {
+  background: var(--white);
+  border: 1px solid var(--grey-line);
+  border-radius: 6px;
+  padding: 26px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: inherit;
+}
+.download-card:hover {
+  border-color: var(--orange);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 26, 56, 0.08);
+}
+.download-card-head {
+  display: flex; align-items: center; gap: 14px;
+}
+.download-card-icon {
+  width: 52px; height: 52px;
+  background: var(--teal-light);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.download-card-icon svg {
+  width: 28px; height: 28px;
+  stroke: var(--teal-deep); fill: none; stroke-width: 1.6;
+}
+.download-card-text { flex: 1; }
+.download-card-eyebrow {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--teal); margin-bottom: 4px;
+}
+.download-card-title {
+  font-family: var(--serif); font-size: 19px; font-weight: 600;
+  color: var(--navy); line-height: 1.3;
+}
+.download-card-body {
+  font-size: 14px; line-height: 1.55; color: var(--grey-txt);
+}
+.download-card-meta {
+  display: flex; gap: 14px;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--grey-txt); letter-spacing: 0.04em;
+}
+.download-card-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.download-card-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--orange); color: var(--white);
+  font-family: var(--sans); font-weight: 600; font-size: 13px;
+  letter-spacing: 0.05em; padding: 10px 18px; border-radius: 4px;
+  text-decoration: none; align-self: flex-start;
+  transition: all 0.2s;
+}
+.download-card-btn:hover { background: var(--orange-deep); transform: translateY(-1px); }
+.download-card-btn svg { width: 14px; height: 14px; stroke: white; fill: none; stroke-width: 2.2; }
+
 /* ========== RESOURCES (ext links) ========== */
 .resources-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
 .resource-card {
@@ -696,6 +764,7 @@ h3.subhead {
   </div>
   <div class="sidebar-section">
     <span class="sidebar-label">Ressources</span>
+    <a href="#telechargements">Téléchargements</a>
     <a href="#lexique">Lexique</a>
     <a href="#sources">Sources nationales</a>
     <a href="#liens">Pour aller plus loin</a>
@@ -1844,10 +1913,58 @@ h3.subhead {
 
 </section>
 
+<!-- ============ TÉLÉCHARGEMENTS ============ -->
+<section id="telechargements">
+  <div class="section-header">
+    <span class="section-num">11</span>
+    <span class="section-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </span>
+    <h2 class="section-title">Le diaporama de la formation</h2>
+  </div>
+  <p class="section-intro">
+    À garder après la séance pour relire à tête reposée — ou pour transposer la démarche sur votre propre territoire.
+  </p>
+
+  <div class="downloads-grid">
+    <a href="Formation_resilience_littoral_7h.pptx" download class="download-card">
+      <div class="download-card-head">
+        <div class="download-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="1.5"/><line x1="3" y1="17" x2="21" y2="17"/><line x1="9" y1="21" x2="15" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <div class="download-card-text">
+          <div class="download-card-eyebrow">Diaporama  ·  62 slides</div>
+          <div class="download-card-title">Renforcer la résilience des territoires littoraux</div>
+        </div>
+      </div>
+      <p class="download-card-body">
+        Le diaporama intégral projeté pendant la journée de formation —
+        conférence d'ouverture, concepts, cadre national, apports du rapport Alpes,
+        études de cas et synthèse.
+      </p>
+      <div class="download-card-meta">
+        <span>PowerPoint  ·  .pptx</span>
+        <span>•</span>
+        <span>≈ 180 Ko</span>
+      </div>
+      <span class="download-card-btn">
+        Télécharger le diaporama
+        <svg viewBox="0 0 24 24"><path d="M12 5v14"/><polyline points="6 13 12 19 18 13"/></svg>
+      </span>
+    </a>
+  </div>
+
+  <div class="info-box" style="margin-top:28px;">
+    <strong>Pour ouvrir ce fichier</strong> — n'importe quelle version récente de PowerPoint, Keynote, ou
+    LibreOffice Impress (gratuit, libreoffice.org). Le fichier est également visible dans Google Slides
+    après import.
+  </div>
+</section>
+
 <!-- ============ POUR ALLER PLUS LOIN ============ -->
 <section id="liens">
   <div class="section-header">
-    <span class="section-num">11</span>
+    <span class="section-num">12</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="9 12 12 15 15 12"/><line x1="12" y1="6" x2="12" y2="15"/></svg>
     </span>
