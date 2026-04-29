@@ -1368,6 +1368,263 @@ h3.subhead {
   text-align: center; padding: 20px; color: rgba(255,255,255,0.5); font-size: 13px; font-style: italic;
 }
 
+/* === Onglets cas dans la plénière === */
+.plenary-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid rgba(255,255,255,0.1);
+  padding-bottom: 0;
+  flex-wrap: wrap;
+}
+.plenary-tab {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  padding: 12px 20px;
+  font-family: var(--sans); font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.15s;
+  margin-bottom: -2px;
+}
+.plenary-tab:hover {
+  color: rgba(255,255,255,0.85);
+}
+.plenary-tab.active {
+  color: var(--orange);
+  border-bottom-color: var(--orange);
+}
+.plenary-tab .tab-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  display: block;
+  color: inherit;
+  opacity: 0.7;
+  margin-bottom: 1px;
+}
+
+/* === Toggle Vue moyenne / Vue par groupe === */
+.plenary-view-toggle {
+  display: inline-flex;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  padding: 3px;
+  margin-bottom: 18px;
+}
+.plenary-view-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  padding: 7px 14px;
+  font-family: var(--sans); font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+.plenary-view-btn.active {
+  background: var(--orange);
+  color: var(--white);
+}
+
+/* === Visualisations cas === */
+.case-tab-content { display: none; }
+.case-tab-content.active { display: block; }
+
+.case-meta {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 18px;
+}
+.case-meta strong { color: var(--orange); font-weight: 700; }
+
+/* Grille par groupe */
+.case-groups-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+@media (max-width: 900px) {
+  .case-groups-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.case-group-col {
+  background: rgba(255,255,255,0.04);
+  border-radius: 5px;
+  padding: 10px 12px;
+  border-top: 3px solid;
+}
+.case-group-col.g1 { border-top-color: #1E2D5C; }
+.case-group-col.g2 { border-top-color: #328088; }
+.case-group-col.g3 { border-top-color: #5C8A4F; }
+.case-group-col.g4 { border-top-color: #E86E55; }
+.case-group-col.g5 { border-top-color: #8E5BA8; }
+.case-group-name {
+  font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: rgba(255,255,255,0.7); font-weight: 700;
+  margin-bottom: 6px;
+}
+.case-group-stat {
+  font-family: var(--serif); font-size: 22px; font-weight: 600;
+  color: var(--white);
+}
+.case-group-sub {
+  font-size: 11px; color: rgba(255,255,255,0.55);
+  margin-top: 2px;
+}
+
+/* Matrice agrégée plénière (heatmap) */
+.case-matrix-heatmap {
+  display: grid;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 12px;
+  background: rgba(255,255,255,0.05);
+}
+.case-matrix-heatmap-header,
+.case-matrix-heatmap-row {
+  display: grid;
+  grid-template-columns: 200px repeat(5, 1fr);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.case-matrix-heatmap-header {
+  background: rgba(255,255,255,0.07);
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.65);
+  font-weight: 700;
+}
+.case-matrix-heatmap-cell {
+  padding: 8px 10px;
+  text-align: center;
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  color: var(--white);
+  border-left: 1px solid rgba(255,255,255,0.04);
+}
+.case-matrix-heatmap-cell.label {
+  text-align: left;
+  font-family: var(--sans); font-size: 12.5px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
+  border-left: none;
+}
+.case-matrix-heatmap-cell.lvl-1 { background: rgba(255, 200, 80, 0.25); }
+.case-matrix-heatmap-cell.lvl-2 { background: rgba(255, 160, 60, 0.40); }
+.case-matrix-heatmap-cell.lvl-3 { background: rgba(232, 110, 85, 0.55); }
+.case-matrix-heatmap-cell.lvl-4 { background: rgba(212, 80, 76, 0.85); }
+.case-matrix-heatmap-cell.empty { color: rgba(255,255,255,0.2); }
+
+/* Liste classement (acteurs/leviers) */
+.case-rank-list {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.case-rank-item {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.05);
+  padding: 10px 14px;
+  border-radius: 4px;
+}
+.case-rank-num {
+  font-family: var(--serif); font-weight: 700; font-size: 16px;
+  color: var(--orange);
+  width: 24px; text-align: center;
+}
+.case-rank-text {
+  flex: 1;
+  font-size: 13px; color: rgba(255,255,255,0.9);
+}
+.case-rank-bar {
+  width: 80px; height: 5px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px; overflow: hidden;
+}
+.case-rank-bar-fill {
+  height: 100%; background: var(--orange);
+}
+.case-rank-count {
+  font-family: var(--mono); font-size: 11px;
+  color: rgba(255,255,255,0.6); width: 30px; text-align: right;
+}
+
+/* CDRNM agrégation */
+.case-cdrnm-q {
+  background: rgba(255,255,255,0.04);
+  border-radius: 5px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+}
+.case-cdrnm-qhead {
+  display: flex; gap: 10px; align-items: baseline;
+  margin-bottom: 8px;
+}
+.case-cdrnm-qid {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--orange); font-weight: 700;
+}
+.case-cdrnm-qtext {
+  font-family: var(--serif); font-size: 13px;
+  color: var(--white); font-weight: 500;
+  flex: 1;
+}
+.case-cdrnm-bar {
+  display: flex; height: 22px;
+  border-radius: 3px; overflow: hidden;
+  background: rgba(255,255,255,0.06);
+}
+.case-cdrnm-bar-seg {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  color: var(--white);
+  min-width: 0;
+}
+.case-cdrnm-bar-seg.pour    { background: rgba(125, 169, 114, 0.85); }
+.case-cdrnm-bar-seg.contre  { background: rgba(212, 80, 76, 0.85); }
+.case-cdrnm-bar-seg.reserve { background: rgba(232, 155, 74, 0.85); }
+.case-cdrnm-bar-seg.empty   { background: rgba(255,255,255,0.05); flex: 1; color: rgba(255,255,255,0.3); }
+.case-cdrnm-meta {
+  font-family: var(--mono); font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  margin-top: 4px; text-align: right;
+}
+
+/* PCS phases jouées */
+.case-pcs-phases {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.case-pcs-phase-card {
+  background: rgba(255,255,255,0.05);
+  border-radius: 5px;
+  padding: 12px;
+  text-align: center;
+}
+.case-pcs-phase-num {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--orange); font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.case-pcs-phase-title {
+  font-family: var(--serif); font-size: 12px;
+  color: var(--white); font-weight: 600;
+  margin: 5px 0 8px; line-height: 1.25;
+  min-height: 30px;
+}
+.case-pcs-phase-stat {
+  font-family: var(--mono); font-size: 18px;
+  color: var(--orange); font-weight: 700;
+}
+.case-pcs-phase-stat-label {
+  font-size: 10px; color: rgba(255,255,255,0.55);
+  margin-top: 2px;
+}
+
+/* === Onglets cas dans la plénière === END */
+
 @media (max-width: 1200px) {
   .plenary-grid { grid-template-columns: repeat(3, 1fr); }
 }
@@ -1961,6 +2218,52 @@ h3.subhead {
   font-family: var(--mono); font-size: 11px; font-weight: 700;
   color: var(--orange); letter-spacing: 0.04em;
 }
+
+/* ========== CALLOUTS (info / orange / navy) ========== */
+.callout {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 18px 22px;
+  border-radius: 6px;
+  margin: 20px 0;
+  border-left: 4px solid var(--teal);
+  background: rgba(50,128,136,0.06);
+}
+.callout-orange {
+  background: rgba(232,110,85,0.08);
+  border-left-color: var(--orange);
+}
+.callout-navy {
+  background: rgba(30,45,92,0.06);
+  border-left-color: var(--navy);
+}
+.callout-icon {
+  flex: 0 0 32px;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--orange);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--white);
+  margin-top: 2px;
+}
+.callout-navy .callout-icon { background: var(--navy); }
+.callout .callout-icon { /* default = teal */
+  background: var(--teal);
+}
+.callout-orange .callout-icon { background: var(--orange); }
+.callout-icon svg {
+  width: 16px; height: 16px;
+  stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.callout-body {
+  flex: 1;
+  font-size: 14px; line-height: 1.6;
+  color: var(--navy);
+}
+.callout-body strong { color: var(--navy); font-weight: 700; }
+.callout-orange .callout-body strong { color: var(--orange); }
+.callout-navy .callout-body strong { color: var(--navy); }
+
 .cdrnm-block {
   background: var(--white);
   border: 1px solid var(--grey-line);
@@ -4528,13 +4831,11 @@ h3.subhead {
         <thead>
           <tr>
             <th>Enjeu</th>
-            <th>Submersion<br>(référence)</th>
-            <th>Submersion<br>+ 100 ans</th>
-            <th>Érosion<br>cordon</th>
-            <th>Recul<br>falaise</th>
-            <th>Crue<br>Goulven</th>
-            <th>Canicule /<br>vague chaleur</th>
-            <th>Composite<br>(combiné)</th>
+            <th>Submersion<br>(réf. + centennale)</th>
+            <th>Érosion<br>(cordon + falaise)</th>
+            <th>Crue<br>du Goulven</th>
+            <th>Canicule /<br>vague de chaleur</th>
+            <th>Composite<br>(multi-aléa)</th>
           </tr>
         </thead>
         <tbody id="matrix-body">
@@ -7975,13 +8276,16 @@ ${plain}
 
 // ============ DIAGNOSTIC MATRIX (Cas 1) — Firebase per device ============
 const MATRIX_ENJEUX = [
-  "Quartier de la Digue", "Bourg + commerces", "EHPAD + maison de santé",
-  "Camping 1 — Les Dunes", "Camping 2 — La Goëlette", "Camping 3 — Le Goulven",
-  "PME agro-alimentaire", "Conchyliculture", "Pêche / port",
-  "Marais (N2000)", "Cordon dunaire", "Falaise calcaire",
-  "STEP / forage / réseaux"
+  "Quartier de la Digue",
+  "Bourg + commerces",
+  "EHPAD + maison de santé",
+  "Les 3 campings",
+  "Activités économiques",
+  "Espaces naturels (N2000)",
+  "Réseaux et infrastructures",
+  "Population permanente"
 ];
-const MATRIX_ALEAS = ["submersionRef", "submersion100", "erosion", "falaise", "crue", "canicule", "composite"];
+const MATRIX_ALEAS = ["submersion", "erosion", "crue", "canicule", "composite"];
 const MATRIX_KEY_LOCAL = "ansedegoulven_matrix_local";
 
 let _matrixCache = {};
@@ -8076,13 +8380,11 @@ function exportMatrix() {
   const author = loadAuthor() || 'anonyme';
   const date = new Date().toLocaleString('fr-FR');
   const aleaLabels = {
-    submersionRef: "Submersion (référence)",
-    submersion100: "Submersion 100 ans",
-    erosion: "Érosion cordon",
-    falaise: "Recul falaise",
+    submersion: "Submersion (réf. + centennale)",
+    erosion: "Érosion (cordon + falaise)",
     crue: "Crue Goulven",
     canicule: "Canicule",
-    composite: "Composite"
+    composite: "Composite (multi-aléa)"
   };
   let txt = `MATRICE DIAGNOSTIC — Anse-de-Goulven\nAuteur : ${author}\nExporté : ${date}\n\n`;
   txt += `Légende : 1 (faible) · 2 (modéré) · 3 (fort) · 4 (critique) · vide = non concerné\n\n`;
@@ -9603,7 +9905,7 @@ function buildReportHTML(grp, data) {
         </div>`;
       }
     });
-    html += `<div style="margin-top:14px;font-size:11px;letter-spacing:0.05em;color:rgba(255,255,255,0.55);">Colonnes : submersion réf · submersion 100 ans · érosion · falaise · crue · canicule · composite</div>`;
+    html += `<div style="margin-top:14px;font-size:11px;letter-spacing:0.05em;color:rgba(255,255,255,0.55);">Colonnes : submersion · érosion · crue · canicule · composite</div>`;
     html += `</div>`;
 
     // Mots-clés du diagnostic via les notes
@@ -9899,149 +10201,474 @@ function closePlenary() {
   document.body.style.overflow = '';
 }
 
-function buildPlenary() {
+let _plenaryActiveTab = 'cas1';
+let _plenaryViewMode = 'avg';  // 'avg' or 'groups'
+let _plenaryAllData = null;     // cache des données récupérées
+
+async function buildPlenary() {
   const body = document.getElementById('plenary-body');
-  // Stats par groupe
-  const labels = {g1: "Préfectorale", g2: "Mairie + EPCI", g3: "Syndicat + Conserv.", g4: "Économique", g5: "Société civile"};
-  let groupCards = '';
-  ['g1','g2','g3','g4','g5'].forEach((g, idx) => {
-    let notesCount = 0;
-    NOTES_QUESTIONS.forEach(s => s.items.forEach(it => {
-      const v = loadNote(g, it.id);
-      if (v && v.trim().length > 5) notesCount++;
-    }));
-    const posts = loadWall().filter(p => p.grp === g);
-    const council = loadCouncil();
-    let votesCount = 0;
-    DELIBERATIONS.forEach(d => { if (council[d.id] && council[d.id][g]) votesCount++; });
-    groupCards += `<div class="plenary-card ${g}">
-      <div class="plenary-card-head">
-        <div class="plenary-card-badge">G${idx+1}</div>
-        <div class="plenary-card-title">${labels[g]}</div>
-      </div>
-      <div class="plenary-card-stats">
-        <div><div class="plenary-card-stat-num">${notesCount}</div><div class="plenary-card-stat-label">Notes</div></div>
-        <div><div class="plenary-card-stat-num">${posts.length}</div><div class="plenary-card-stat-label">Mur</div></div>
-        <div><div class="plenary-card-stat-num">${votesCount}/3</div><div class="plenary-card-stat-label">Votes</div></div>
-      </div>
+  body.innerHTML = `<div style="text-align:center;padding:60px 0;color:rgba(255,255,255,0.6);">
+    <div style="font-family:var(--mono);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;">Agrégation des contributions des 5 collèges...</div>
+  </div>`;
+
+  // Charger toutes les données (en parallèle)
+  const [g1, g2, g3, g4, g5] = await Promise.all(
+    ['g1','g2','g3','g4','g5'].map(g => fetchGroupAggregates(g))
+  );
+  _plenaryAllData = { g1, g2, g3, g4, g5 };
+
+  renderPlenary();
+}
+
+function setPlenaryTab(tab) {
+  _plenaryActiveTab = tab;
+  renderPlenary();
+}
+function setPlenaryView(mode) {
+  _plenaryViewMode = mode;
+  renderPlenary();
+}
+
+function renderPlenary() {
+  const body = document.getElementById('plenary-body');
+  const data = _plenaryAllData;
+  if (!data) return;
+
+  // Onglets
+  let tabsHtml = `<div class="plenary-tabs">`;
+  const tabs = [
+    {id:'cas1', num:'CAS 01', label:'Diagnostic'},
+    {id:'cas2', num:'CAS 02', label:'Stratégie 10 ans'},
+    {id:'cas3', num:'CAS 03', label:'PCS Tempête'},
+    {id:'cas4', num:'CAS 04', label:'CDRNM'}
+  ];
+  tabs.forEach(t => {
+    tabsHtml += `<button class="plenary-tab ${_plenaryActiveTab === t.id ? 'active' : ''}"
+      onclick="setPlenaryTab('${t.id}')">
+      <span class="tab-num">${t.num}</span>${t.label}
+    </button>`;
+  });
+  tabsHtml += `</div>`;
+
+  // Toggle vue
+  const toggleHtml = `<div class="plenary-view-toggle">
+    <button class="plenary-view-btn ${_plenaryViewMode === 'avg' ? 'active' : ''}"
+      onclick="setPlenaryView('avg')">Vue moyenne</button>
+    <button class="plenary-view-btn ${_plenaryViewMode === 'groups' ? 'active' : ''}"
+      onclick="setPlenaryView('groups')">Vue par groupe</button>
+  </div>`;
+
+  // Contenu de l'onglet actif
+  let content = '';
+  if (_plenaryActiveTab === 'cas1') content = renderPlenaryCas1(data);
+  else if (_plenaryActiveTab === 'cas2') content = renderPlenaryCas2(data);
+  else if (_plenaryActiveTab === 'cas3') content = renderPlenaryCas3(data);
+  else if (_plenaryActiveTab === 'cas4') content = renderPlenaryCas4(data);
+
+  body.innerHTML = tabsHtml + toggleHtml + `<div class="case-tab-content active">${content}</div>`;
+}
+
+// === CAS 1 — Diagnostic (matrice + acteurs) ===
+function renderPlenaryCas1(data) {
+  const labels = {g1:'G1 État', g2:'G2 Élus', g3:'G3 Marais', g4:'G4 Éco', g5:'G5 Société'};
+  // Couverture par groupe
+  let coverage = '<div class="case-groups-grid">';
+  ['g1','g2','g3','g4','g5'].forEach(g => {
+    const filled = Object.keys(data[g].matrix).length;
+    coverage += `<div class="case-group-col ${g}">
+      <div class="case-group-name">${labels[g]}</div>
+      <div class="case-group-stat">${filled}/40</div>
+      <div class="case-group-sub">cases qualifiées</div>
     </div>`;
   });
+  coverage += '</div>';
 
-  // Mur
-  const posts = loadWall();
-  let wallHtml = '';
-  if (posts.length === 0) {
-    wallHtml = '<div class="plenary-poll-empty">Aucun message sur le mur.</div>';
+  // Heatmap
+  let heatmap = '<div class="case-matrix-heatmap">';
+  // Header
+  const aleaShort = {submersion:'Submersion', erosion:'Érosion', crue:'Crue', canicule:'Canicule', composite:'Composite'};
+  heatmap += '<div class="case-matrix-heatmap-header">';
+  heatmap += '<div class="case-matrix-heatmap-cell label">Enjeu</div>';
+  MATRIX_ALEAS.forEach(al => {
+    heatmap += `<div class="case-matrix-heatmap-cell">${aleaShort[al]}</div>`;
+  });
+  heatmap += '</div>';
+
+  MATRIX_ENJEUX.forEach((enj, i) => {
+    heatmap += '<div class="case-matrix-heatmap-row">';
+    heatmap += `<div class="case-matrix-heatmap-cell label">${enj}</div>`;
+    MATRIX_ALEAS.forEach(al => {
+      const key = i + '_' + al;
+      if (_plenaryViewMode === 'avg') {
+        // Moyenne sur les groupes ayant rempli cette case
+        const vals = ['g1','g2','g3','g4','g5'].map(g => data[g].matrix[key]).filter(v => v > 0);
+        if (vals.length === 0) {
+          heatmap += `<div class="case-matrix-heatmap-cell empty">—</div>`;
+        } else {
+          const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+          const lvl = Math.round(avg);
+          heatmap += `<div class="case-matrix-heatmap-cell lvl-${lvl}" title="Moyenne ${avg.toFixed(1)} sur ${vals.length} groupe${vals.length>1?'s':''}">${avg.toFixed(1)}</div>`;
+        }
+      } else {
+        // Affichage par groupe : on montre les niveaux côte à côte
+        const vals = ['g1','g2','g3','g4','g5'].map(g => data[g].matrix[key] || 0);
+        const filled = vals.filter(v => v > 0).length;
+        if (filled === 0) {
+          heatmap += `<div class="case-matrix-heatmap-cell empty">—</div>`;
+        } else {
+          // Mini représentation : 5 micro-cellules
+          let mini = '<div style="display:flex;gap:1px;height:20px;align-items:center;">';
+          vals.forEach((v, gi) => {
+            const cls = v > 0 ? 'lvl-' + v : 'empty';
+            mini += `<div class="case-matrix-heatmap-cell ${cls}" style="flex:1;padding:0;font-size:10px;line-height:20px;border:none;">${v > 0 ? v : '·'}</div>`;
+          });
+          mini += '</div>';
+          heatmap += `<div class="case-matrix-heatmap-cell" style="padding:2px 4px;background:transparent;">${mini}</div>`;
+        }
+      }
+    });
+    heatmap += '</div>';
+  });
+  heatmap += '</div>';
+
+  // Acteurs prioritaires (compte des top-3 cumulés)
+  const PRIO_LABELS = {};
+  if (typeof PRIO_DEFAULT !== 'undefined') {
+    PRIO_DEFAULT.forEach(c => { PRIO_LABELS[c.id] = c.title; });
+  }
+  const actorScores = {};
+  ['g1','g2','g3','g4','g5'].forEach(g => {
+    if (Array.isArray(data[g].prio)) {
+      data[g].prio.slice(0, 5).forEach((id, rank) => {
+        if (!actorScores[id]) actorScores[id] = { count: 0, points: 0, byGroup: {} };
+        actorScores[id].count++;
+        actorScores[id].points += (5 - rank); // top1=5pts, top5=1pt
+        actorScores[id].byGroup[g] = rank + 1;
+      });
+    }
+  });
+  const sortedActors = Object.entries(actorScores).sort((a,b) => b[1].points - a[1].points).slice(0, 8);
+
+  let actorsHtml = '<div class="case-rank-list">';
+  if (sortedActors.length === 0) {
+    actorsHtml += '<div class="plenary-poll-empty">Aucun groupe n\'a hiérarchisé les acteurs.</div>';
   } else {
-    posts.slice(0, 8).forEach(p => {
-      const g = p.grp.toUpperCase();
-      wallHtml += `<div class="plenary-post ${p.grp}">
-        <div class="plenary-post-meta">${escapeHTML(p.author)} · ${g} · ${formatRelativeTime(p.ts)}</div>
-        <div>${escapeHTML(p.text)}</div>
+    const maxPts = sortedActors[0][1].points;
+    sortedActors.forEach(([id, s], i) => {
+      const lbl = PRIO_LABELS[id] || id;
+      const pct = (s.points / maxPts) * 100;
+      actorsHtml += `<div class="case-rank-item">
+        <div class="case-rank-num">${i+1}</div>
+        <div class="case-rank-text">${escapeHTML(lbl)}</div>
+        <div class="case-rank-bar"><div class="case-rank-bar-fill" style="width:${pct}%"></div></div>
+        <div class="case-rank-count">${s.count}/5</div>
       </div>`;
     });
   }
+  actorsHtml += '</div>';
 
-  // Sondages
-  let pollsHtml = '';
-  Object.keys(POLLS).forEach(pid => {
-    const p = POLLS[pid];
-    const votes = getVotes(pid);
-    if (votes.length === 0) return;
-    const counts = new Array(p.options.length).fill(0);
-    votes.forEach(v => { if (v >= 0 && v < counts.length) counts[v]++; });
-    const total = votes.length;
-    let rows = '';
-    p.options.forEach((opt, i) => {
-      const pct = total > 0 ? Math.round(counts[i] / total * 100) : 0;
-      rows += `<div class="plenary-poll-row">
-        <div style="flex:0 0 50%;font-size:12px;">${escapeHTML(opt.slice(0, 50))}${opt.length > 50 ? '…' : ''}</div>
-        <div class="plenary-poll-bar-wrap"><div class="plenary-poll-bar" style="width:${pct}%"></div></div>
-        <div class="plenary-poll-pct">${pct}%</div>
-      </div>`;
-    });
-    pollsHtml += `<div class="plenary-poll-card">
-      <h4>${escapeHTML(p.question)}</h4>
-      ${rows}
-      <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:6px;text-align:right;">${total} vote${total>1?'s':''}</div>
+  return `
+    <div class="case-meta">
+      <strong>Étude de cas n°1 — Diagnostic croisé.</strong> Lecture du territoire en risques par chaque collège.
+      ${_plenaryViewMode === 'avg'
+        ? 'Vue agrégée : moyenne du niveau attribué à chaque case (uniquement quand au moins un groupe a renseigné).'
+        : 'Vue par groupe : 5 mini-cellules par case, une par collège (G1 à G5 de gauche à droite).'}
+    </div>
+    <h3 style="font-family:var(--serif);font-size:18px;color:var(--white);margin-bottom:8px;">Couverture par groupe</h3>
+    ${coverage}
+    <h3 style="font-family:var(--serif);font-size:18px;color:var(--white);margin-top:24px;margin-bottom:8px;">Matrice aléa × enjeu agrégée</h3>
+    ${heatmap}
+    <h3 style="font-family:var(--serif);font-size:18px;color:var(--white);margin-top:24px;margin-bottom:8px;">Acteurs prioritaires (top-5 cumulés)</h3>
+    ${actorsHtml}
+  `;
+}
+
+// === CAS 2 — Stratégie (leviers + conseil) ===
+function renderPlenaryCas2(data) {
+  const labels = {g1:'G1 État', g2:'G2 Élus', g3:'G3 Marais', g4:'G4 Éco', g5:'G5 Société'};
+
+  // Coverage : leviers activés par groupe
+  let coverage = '<div class="case-groups-grid">';
+  ['g1','g2','g3','g4','g5'].forEach(g => {
+    const leversCount = Object.keys(data[g].leversConsolidated || {}).length;
+    coverage += `<div class="case-group-col ${g}">
+      <div class="case-group-name">${labels[g]}</div>
+      <div class="case-group-stat">${leversCount}</div>
+      <div class="case-group-sub">leviers activés</div>
     </div>`;
   });
-  if (!pollsHtml) pollsHtml = '<div class="plenary-poll-empty">Aucun sondage en cours.</div>';
+  coverage += '</div>';
 
-  // Conseil
-  const council = loadCouncil();
-  let councilHtml = '';
-  DELIBERATIONS.forEach(d => {
-    const votes = council[d.id] || {};
-    const counts = {pour: 0, contre: 0, abstention: 0};
-    ['g1','g2','g3','g4','g5'].forEach(g => { if (votes[g]) counts[votes[g]]++; });
-    const total = counts.pour + counts.contre + counts.abstention;
-    if (total === 0) {
-      councilHtml += `<div class="plenary-poll-card">
-        <h4>${escapeHTML(d.title)}</h4>
-        <div class="plenary-poll-empty">Aucun vote pour l'instant</div>
-      </div>`;
-    } else {
-      const pourPct = total > 0 ? Math.round(counts.pour / total * 100) : 0;
-      const contrePct = total > 0 ? Math.round(counts.contre / total * 100) : 0;
-      const absPct = 100 - pourPct - contrePct;
-      councilHtml += `<div class="plenary-poll-card">
-        <h4>${escapeHTML(d.title)}</h4>
-        <div style="display:flex;height:24px;border-radius:12px;overflow:hidden;background:rgba(255,255,255,0.1);margin:8px 0;">
-          ${pourPct > 0 ? `<div style="background:#5C8A4F;color:white;font-family:monospace;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;width:${pourPct}%">${counts.pour}</div>` : ''}
-          ${contrePct > 0 ? `<div style="background:var(--orange);color:white;font-family:monospace;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;width:${contrePct}%">${counts.contre}</div>` : ''}
-          ${absPct > 0 ? `<div style="background:#C5A050;color:white;font-family:monospace;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;width:${absPct}%">${counts.abstention}</div>` : ''}
-        </div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.55);text-align:right;">${total}/5 groupes</div>
-      </div>`;
-    }
-  });
-
-  // Calculer les frictions: positions opposées sur la même délib
-  let frictions = [];
-  DELIBERATIONS.forEach(d => {
-    const votes = council[d.id] || {};
-    const pour = [], contre = [];
-    Object.entries(votes).forEach(([g, v]) => {
-      if (v === 'pour') pour.push(g);
-      else if (v === 'contre') contre.push(g);
+  // Conseil municipal — délibérations
+  const council = (typeof loadCouncil === 'function') ? loadCouncil() : {};
+  let councilHtml = '<div class="case-rank-list">';
+  if (typeof DELIBERATIONS !== 'undefined') {
+    DELIBERATIONS.forEach(d => {
+      const votes = council[d.id] || {};
+      const counts = {pour:0, contre:0, abstention:0};
+      ['g1','g2','g3','g4','g5'].forEach(g => { if (votes[g]) counts[votes[g]]++; });
+      const total = counts.pour + counts.contre + counts.abstention;
+      if (_plenaryViewMode === 'avg') {
+        const pourPct = total > 0 ? (counts.pour/total)*100 : 0;
+        const contrePct = total > 0 ? (counts.contre/total)*100 : 0;
+        const absPct = total > 0 ? (counts.abstention/total)*100 : 0;
+        councilHtml += `<div class="case-cdrnm-q">
+          <div class="case-cdrnm-qtext" style="margin-bottom:8px;">${escapeHTML(d.title)}</div>
+          ${total > 0 ? `<div class="case-cdrnm-bar">
+            ${pourPct > 0 ? `<div class="case-cdrnm-bar-seg pour" style="width:${pourPct}%">${counts.pour}</div>` : ''}
+            ${contrePct > 0 ? `<div class="case-cdrnm-bar-seg contre" style="width:${contrePct}%">${counts.contre}</div>` : ''}
+            ${absPct > 0 ? `<div class="case-cdrnm-bar-seg reserve" style="width:${absPct}%">${counts.abstention}</div>` : ''}
+          </div>` : '<div class="plenary-poll-empty">Pas encore voté.</div>'}
+          <div class="case-cdrnm-meta">${total}/5 groupes  ·  ${counts.pour} pour · ${counts.contre} contre · ${counts.abstention} abstention</div>
+        </div>`;
+      } else {
+        // Vue par groupe : afficher chaque vote
+        let pgVotes = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px;">';
+        ['g1','g2','g3','g4','g5'].forEach(g => {
+          const v = votes[g];
+          const cls = v === 'pour' ? 'pour' : v === 'contre' ? 'contre' : v === 'abstention' ? 'reserve' : 'empty';
+          const lbl = v ? v.toUpperCase().slice(0,3) : '—';
+          pgVotes += `<div class="case-cdrnm-bar-seg ${cls}" style="padding:6px;border-radius:3px;font-size:10px;">${labels[g].split(' ')[0]} : ${lbl}</div>`;
+        });
+        pgVotes += '</div>';
+        councilHtml += `<div class="case-cdrnm-q">
+          <div class="case-cdrnm-qtext">${escapeHTML(d.title)}</div>
+          ${pgVotes}
+        </div>`;
+      }
     });
-    if (pour.length > 0 && contre.length > 0) {
-      frictions.push({delib: d.title, pour, contre});
-    }
+  }
+  councilHtml += '</div>';
+
+  // Top leviers cumulés
+  const leverScores = {};
+  ['g1','g2','g3','g4','g5'].forEach(g => {
+    Object.entries(data[g].leversConsolidated || {}).forEach(([levId, val]) => {
+      if (!leverScores[levId]) leverScores[levId] = { count: 0, total: 0 };
+      leverScores[levId].count++;
+      leverScores[levId].total += (val || 1);
+    });
   });
-  let frictionsHtml = '';
-  if (frictions.length > 0) {
-    frictions.forEach(f => {
-      frictionsHtml += `<div class="plenary-post">
-        <div class="plenary-post-meta">FRICTION DÉTECTÉE</div>
-        <div><strong>${escapeHTML(f.delib)}</strong><br>
-          <span style="color:#8AC180">Pour : ${f.pour.map(g => g.toUpperCase()).join(', ')}</span> · 
-          <span style="color:#FF9A85">Contre : ${f.contre.map(g => g.toUpperCase()).join(', ')}</span>
-        </div>
+  const LEVER_LABELS = {};
+  if (typeof LEVERS !== 'undefined') {
+    LEVERS.forEach(l => { LEVER_LABELS[l.id] = l.title; });
+  }
+  const sortedLevers = Object.entries(leverScores).sort((a,b) => b[1].total - a[1].total).slice(0, 8);
+  let leversHtml = '<div class="case-rank-list">';
+  if (sortedLevers.length === 0) {
+    leversHtml += '<div class="plenary-poll-empty">Aucun groupe n\'a activé de leviers.</div>';
+  } else {
+    const maxT = sortedLevers[0][1].total || 1;
+    sortedLevers.forEach(([id, s], i) => {
+      const lbl = LEVER_LABELS[id] || id;
+      leversHtml += `<div class="case-rank-item">
+        <div class="case-rank-num">${i+1}</div>
+        <div class="case-rank-text">${escapeHTML(lbl)}</div>
+        <div class="case-rank-bar"><div class="case-rank-bar-fill" style="width:${(s.total/maxT)*100}%"></div></div>
+        <div class="case-rank-count">${s.count}/5</div>
       </div>`;
+    });
+  }
+  leversHtml += '</div>';
+
+  return `
+    <div class="case-meta">
+      <strong>Étude de cas n°2 — Stratégie 10 ans.</strong> Leviers activés par les collèges et résultats des 3 délibérations du conseil municipal.
+    </div>
+    <h3 style="font-family:var(--serif);font-size:18px;color:var(--white);margin-bottom:8px;">Couverture par groupe</h3>
+    ${coverage}
+    <h3 style="font-family:var(--serif);font-size:18px;color:var(--white);margin-top:24px;margin-bottom:8px;">Top leviers activés (cumul des 5 groupes)</h3>
+    ${leversHtml}
+    <h3 style="font-family:var(--serif);font-size:18px;color:var(--white);margin-top:24px;margin-bottom:8px;">Conseil municipal — résultats des votes</h3>
+    ${councilHtml}
+  `;
+}
+
+// === CAS 3 — PCS Tempête ===
+function renderPlenaryCas3(data) {
+  const labels = {g1:'G1 État', g2:'G2 Élus', g3:'G3 Marais', g4:'G4 Éco', g5:'G5 Société'};
+
+  // Couverture par groupe : nombre de phases jouées
+  let coverage = '<div class="case-groups-grid">';
+  ['g1','g2','g3','g4','g5'].forEach(g => {
+    const phasesPlayed = Object.keys(data[g].pcs || {}).length;
+    coverage += `<div class="case-group-col ${g}">
+      <div class="case-group-name">${labels[g]}</div>
+      <div class="case-group-stat">${phasesPlayed}/5</div>
+      <div class="case-group-sub">phases jouées</div>
+    </div>`;
+  });
+  coverage += '</div>';
+
+  // Détail par phase
+  let phasesHtml = '<div class="case-pcs-phases">';
+  if (typeof PCS_PHASES !== 'undefined') {
+    PCS_PHASES.forEach((phase, idx) => {
+      const groupsPlayed = ['g1','g2','g3','g4','g5'].filter(g => data[g].pcs && data[g].pcs[phase.id]).length;
+      const phaseShort = phase.title.split('—')[0].trim();
+      phasesHtml += `<div class="case-pcs-phase-card">
+        <div class="case-pcs-phase-num">PHASE ${idx+1}/5</div>
+        <div class="case-pcs-phase-title">${escapeHTML(phaseShort)}</div>
+        <div class="case-pcs-phase-stat">${groupsPlayed}/5</div>
+        <div class="case-pcs-phase-stat-label">groupes</div>
+      </div>`;
+    });
+  }
+  phasesHtml += '</div>';
+
+  // Actions populaires : pour chaque phase, top 3 actions (toutes confondues, mais par rôle on n'agrège pas)
+  let topActionsHtml = '';
+  if (_plenaryViewMode === 'avg' && typeof PCS_PHASES !== 'undefined') {
+    // En vue 'moyenne', on liste pour chaque phase les actions choisies, par groupe
+    PCS_PHASES.forEach((phase, idx) => {
+      const phaseShort = phase.title.split('—')[0].trim();
+      // collecter les actions par groupe pour cette phase
+      const allActions = [];
+      ['g1','g2','g3','g4','g5'].forEach(g => {
+        const votes = data[g].pcs && data[g].pcs[phase.id];
+        if (votes && votes.length > 0) {
+          const phaseActions = phase.actions[g] || [];
+          const map = Object.fromEntries(phaseActions.map(a => [a.id, a.text]));
+          votes.forEach(aid => {
+            if (map[aid]) allActions.push({ grp: g.toUpperCase(), text: map[aid] });
+          });
+        }
+      });
+      if (allActions.length === 0) return;
+      topActionsHtml += `<div style="margin-top:18px;">
+        <div style="font-family:var(--mono);font-size:11px;letter-spacing:0.06em;color:var(--orange);font-weight:700;margin-bottom:8px;">PHASE ${idx+1}  ·  ${escapeHTML(phaseShort)}  ·  ${allActions.length} actions choisies</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">`;
+      allActions.slice(0, 8).forEach(a => {
+        topActionsHtml += `<div style="background:rgba(255,255,255,0.05);padding:6px 10px;border-radius:3px;font-size:11.5px;color:rgba(255,255,255,0.85);">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--orange);font-weight:700;margin-right:6px;">${a.grp}</span>${escapeHTML(a.text.slice(0, 80))}${a.text.length > 80 ? '…' : ''}
+        </div>`;
+      });
+      if (allActions.length > 8) {
+        topActionsHtml += `<div style="font-size:11px;color:rgba(255,255,255,0.5);font-style:italic;align-self:center;">+ ${allActions.length - 8} autres</div>`;
+      }
+      topActionsHtml += `</div></div>`;
     });
   } else {
-    frictionsHtml = '<div class="plenary-poll-empty">Pas de friction majeure détectée pour l\'instant — soit consensus, soit pas encore voté.</div>';
+    // Vue par groupe : pour chaque groupe, lister les actions phase par phase
+    ['g1','g2','g3','g4','g5'].forEach(g => {
+      if (!data[g].pcs || Object.keys(data[g].pcs).length === 0) return;
+      topActionsHtml += `<div style="margin-top:18px;background:rgba(255,255,255,0.04);border-left:3px solid var(--g${g.slice(1)},var(--orange));padding:10px 14px;border-radius:4px;">
+        <div style="font-family:var(--mono);font-size:11px;letter-spacing:0.06em;color:var(--orange);font-weight:700;margin-bottom:6px;">${labels[g]}</div>`;
+      if (typeof PCS_PHASES !== 'undefined') {
+        PCS_PHASES.forEach((phase, idx) => {
+          const votes = data[g].pcs[phase.id];
+          if (!votes || votes.length === 0) return;
+          const phaseActions = phase.actions[g] || [];
+          const map = Object.fromEntries(phaseActions.map(a => [a.id, a.text]));
+          topActionsHtml += `<div style="margin-top:6px;font-size:12px;color:rgba(255,255,255,0.85);">
+            <span style="font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.5);">P${idx+1} :</span> `;
+          topActionsHtml += votes.map(aid => map[aid] ? escapeHTML(map[aid].slice(0, 60)) + (map[aid].length>60?'…':'') : '').filter(s=>s).join(' • ');
+          topActionsHtml += `</div>`;
+        });
+      }
+      topActionsHtml += `</div>`;
+    });
   }
 
-  body.innerHTML = `
-    <div class="plenary-grid">${groupCards}</div>
+  if (!topActionsHtml) topActionsHtml = '<div class="plenary-poll-empty">Aucune phase n\'a été jouée pour l\'instant.</div>';
 
-    <div class="plenary-section">
-      <h3>Sondages live  ·  <em>en temps réel</em></h3>
-      <div class="plenary-poll-section">${pollsHtml}</div>
+  return `
+    <div class="case-meta">
+      <strong>Étude de cas n°3 — PCS Tempête Argonne.</strong> Gestion de crise en 5 phases temporelles. Chaque collège a voté ses 3 actions prioritaires par phase.
     </div>
+    <h3 style="font-family:var(--serif);font-size:18px;color:var(--white);margin-bottom:8px;">Couverture par groupe</h3>
+    ${coverage}
+    <h3 style="font-family:var(--serif);font-size:18px;color:var(--white);margin-top:24px;margin-bottom:8px;">Phases jouées (5 groupes × 5 phases)</h3>
+    ${phasesHtml}
+    <h3 style="font-family:var(--serif);font-size:18px;color:var(--white);margin-top:24px;margin-bottom:8px;">Actions choisies — détail</h3>
+    ${topActionsHtml}
+  `;
+}
 
-    <div class="plenary-section">
-      <h3>Conseil municipal  ·  <em>3 délibérations</em></h3>
-      <div class="plenary-poll-section">${councilHtml}</div>
-    </div>
+// === CAS 4 — CDRNM ===
+function renderPlenaryCas4(data) {
+  const labels = {g1:'G1 État', g2:'G2 Élus', g3:'G3 Marais', g4:'G4 Éco', g5:'G5 Société'};
 
-    <div class="plenary-section">
-      <h3>Frictions et convergences  ·  <em>matière de débriefing</em></h3>
-      <div class="plenary-wall-feed">${frictionsHtml}</div>
+  // Couverture
+  let coverage = '<div class="case-groups-grid">';
+  ['g1','g2','g3','g4','g5'].forEach(g => {
+    const cdrnm = data[g].cdrnm || {};
+    const voted = Object.keys(cdrnm).filter(k => cdrnm[k] && cdrnm[k].vote).length;
+    coverage += `<div class="case-group-col ${g}">
+      <div class="case-group-name">${labels[g]}</div>
+      <div class="case-group-stat">${voted}/10</div>
+      <div class="case-group-sub">positions rendues</div>
+    </div>`;
+  });
+  coverage += '</div>';
+
+  // Pour chaque question, agrégation
+  let questionsHtml = '';
+  if (typeof CDRNM_QUESTIONS !== 'undefined') {
+    ['A','B','C'].forEach(secId => {
+      const sec = CDRNM_QUESTIONS[secId];
+      questionsHtml += `<div style="font-family:var(--mono);font-size:11px;letter-spacing:0.08em;color:var(--orange);font-weight:700;margin-top:18px;margin-bottom:8px;text-transform:uppercase;">${escapeHTML(sec.label)}</div>`;
+      sec.questions.forEach(q => {
+        const counts = {pour:0, contre:0, reserve:0};
+        const byGrp = {};
+        ['g1','g2','g3','g4','g5'].forEach(g => {
+          const v = data[g].cdrnm && data[g].cdrnm[q.id] && data[g].cdrnm[q.id].vote;
+          if (v && counts[v] !== undefined) {
+            counts[v]++;
+            byGrp[g] = v;
+          }
+        });
+        const total = counts.pour + counts.contre + counts.reserve;
+        if (_plenaryViewMode === 'avg') {
+          const pourPct = total > 0 ? (counts.pour/total)*100 : 0;
+          const contrePct = total > 0 ? (counts.contre/total)*100 : 0;
+          const reservePct = total > 0 ? (counts.reserve/total)*100 : 0;
+          questionsHtml += `<div class="case-cdrnm-q">
+            <div class="case-cdrnm-qhead">
+              <span class="case-cdrnm-qid">${q.id}</span>
+              <span class="case-cdrnm-qtext">${escapeHTML(q.text)}</span>
+            </div>
+            ${total > 0 ? `<div class="case-cdrnm-bar">
+              ${pourPct > 0 ? `<div class="case-cdrnm-bar-seg pour" style="width:${pourPct}%">${counts.pour}</div>` : ''}
+              ${reservePct > 0 ? `<div class="case-cdrnm-bar-seg reserve" style="width:${reservePct}%">${counts.reserve}</div>` : ''}
+              ${contrePct > 0 ? `<div class="case-cdrnm-bar-seg contre" style="width:${contrePct}%">${counts.contre}</div>` : ''}
+            </div>` : '<div class="plenary-poll-empty">Pas encore voté.</div>'}
+            <div class="case-cdrnm-meta">${total}/5  ·  ${counts.pour} pour · ${counts.reserve} réserve · ${counts.contre} contre</div>
+          </div>`;
+        } else {
+          // Vue par groupe : 5 mini-cellules
+          let pgVotes = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:8px;">';
+          ['g1','g2','g3','g4','g5'].forEach(g => {
+            const v = byGrp[g];
+            const cls = v || 'empty';
+            const lbl = v ? v.toUpperCase().slice(0,4) : '—';
+            pgVotes += `<div class="case-cdrnm-bar-seg ${cls}" style="padding:6px 4px;border-radius:3px;font-size:10px;text-align:center;display:block;">${labels[g].split(' ')[0]}<br><strong>${lbl}</strong></div>`;
+          });
+          pgVotes += '</div>';
+          questionsHtml += `<div class="case-cdrnm-q">
+            <div class="case-cdrnm-qhead">
+              <span class="case-cdrnm-qid">${q.id}</span>
+              <span class="case-cdrnm-qtext">${escapeHTML(q.text)}</span>
+            </div>
+            ${pgVotes}
+          </div>`;
+        }
+      });
+    });
+  }
+  if (!questionsHtml) questionsHtml = '<div class="plenary-poll-empty">CDRNM non chargée.</div>';
+
+  return `
+    <div class="case-meta">
+      <strong>Étude de cas n°4 — CDRNM.</strong> Avis collégial sur les 10 propositions d'arbitrage. Chaque collège (G1-G5) vote séparément.
+      ${_plenaryViewMode === 'avg'
+        ? 'Vue agrégée : barre proportionnelle par question.'
+        : 'Vue par groupe : position individuelle de chaque collège, alignée G1→G5.'}
     </div>
+    <h3 style="font-family:var(--serif);font-size:18px;color:var(--white);margin-bottom:8px;">Couverture par groupe</h3>
+    ${coverage}
+    <h3 style="font-family:var(--serif);font-size:18px;color:var(--white);margin-top:24px;margin-bottom:8px;">Vote par proposition</h3>
+    ${questionsHtml}
   `;
 }
 
