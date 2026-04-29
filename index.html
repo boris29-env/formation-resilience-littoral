@@ -1707,6 +1707,458 @@ h3.subhead {
   .fr-alert-flash-title { font-size: 36px; }
 }
 
+/* ========== PCS TIMELINE ========== */
+.pcs-timeline-block {
+  background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 100%);
+  color: var(--white);
+  padding: 32px 36px;
+  border-radius: 8px;
+  margin: 24px 0;
+}
+.pcs-timeline-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+}
+.pcs-timeline-eyebrow {
+  font-family: var(--mono); font-size: 12px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--orange); font-weight: 700;
+}
+.pcs-timeline-now {
+  font-family: var(--sans); font-size: 13px;
+  color: rgba(255,255,255,0.85);
+}
+.pcs-timeline-now strong {
+  color: var(--orange); font-weight: 700; padding-left: 6px;
+}
+.pcs-timeline-rail {
+  position: relative;
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  padding: 32px 0 16px;
+}
+.pcs-timeline-rail::before {
+  content: '';
+  position: absolute; top: 56px; left: 8%; right: 8%;
+  height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px;
+  z-index: 0;
+}
+.pcs-timeline-progress {
+  position: absolute; top: 56px; left: 8%;
+  height: 4px; background: var(--orange); border-radius: 2px;
+  z-index: 1; transition: width 0.6s ease;
+}
+.pcs-timeline-step {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: center;
+  cursor: pointer; padding: 6px;
+  transition: transform 0.2s;
+}
+.pcs-timeline-step:hover { transform: translateY(-2px); }
+.pcs-step-dot {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-weight: 700; font-size: 16px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 14px;
+  transition: all 0.3s;
+}
+.pcs-timeline-step.active .pcs-step-dot {
+  background: var(--orange); border-color: var(--orange); color: var(--white);
+  box-shadow: 0 0 0 4px rgba(232,110,85,0.3), 0 4px 16px rgba(232,110,85,0.4);
+  animation: pcsPulse 1.6s ease-in-out infinite;
+}
+.pcs-timeline-step.done .pcs-step-dot {
+  background: rgba(232,110,85,0.4); border-color: var(--orange); color: var(--white);
+}
+@keyframes pcsPulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(232,110,85,0.3), 0 4px 16px rgba(232,110,85,0.4); }
+  50%      { box-shadow: 0 0 0 8px rgba(232,110,85,0.15), 0 4px 16px rgba(232,110,85,0.4); }
+}
+.pcs-step-time {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.06em; color: var(--orange);
+  font-weight: 700; margin-bottom: 4px;
+}
+.pcs-step-label {
+  font-family: var(--sans); font-size: 12px;
+  color: rgba(255,255,255,0.85); text-align: center;
+  line-height: 1.3;
+}
+.pcs-timeline-hint {
+  font-size: 12.5px; color: rgba(255,255,255,0.55);
+  font-style: italic; margin-top: 18px;
+  text-align: center;
+}
+
+/* ========== PCS PHASE OVERLAY ========== */
+.pcs-phase-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 220;
+  background: rgba(15, 26, 56, 0.85);
+  backdrop-filter: blur(4px);
+  align-items: flex-start; justify-content: center;
+  overflow-y: auto;
+}
+.pcs-phase-overlay.open { display: flex; }
+.pcs-phase-modal {
+  background: var(--white);
+  border-radius: 8px; max-width: 760px; width: 100%;
+  margin: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  display: flex; flex-direction: column;
+  max-height: calc(100vh - 48px);
+}
+.pcs-phase-head {
+  background: var(--navy);
+  color: var(--white);
+  padding: 24px 32px;
+  border-radius: 8px 8px 0 0;
+  flex-shrink: 0;
+}
+.pcs-phase-eyebrow {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--orange); font-weight: 700; margin-bottom: 6px;
+}
+.pcs-phase-title {
+  font-family: var(--serif); font-size: 26px; font-weight: 600;
+  line-height: 1.2; margin-bottom: 6px;
+}
+.pcs-phase-time {
+  font-family: var(--mono); font-size: 13px;
+  color: rgba(255,255,255,0.7);
+}
+.pcs-phase-body {
+  padding: 24px 32px;
+  overflow-y: auto; flex: 1;
+}
+.pcs-phase-briefing {
+  background: var(--grey-bg);
+  padding: 18px 22px;
+  border-radius: 6px;
+  border-left: 3px solid var(--orange);
+  font-size: 14px; line-height: 1.6;
+  color: var(--navy);
+  margin-bottom: 24px;
+}
+.pcs-phase-briefing strong { color: var(--orange); }
+.pcs-phase-question {
+  font-family: var(--serif); font-size: 18px;
+  font-weight: 600; color: var(--navy);
+  margin-bottom: 4px;
+}
+.pcs-phase-instr {
+  font-size: 13px; color: var(--grey-txt);
+  margin-bottom: 18px; font-style: italic;
+}
+.pcs-phase-actions-list {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.pcs-action-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 18px;
+  background: var(--white);
+  border: 2px solid var(--grey-line);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pcs-action-card:hover {
+  border-color: var(--teal);
+  background: rgba(50,128,136,0.04);
+}
+.pcs-action-card.selected {
+  border-color: var(--orange);
+  background: rgba(232,110,85,0.08);
+}
+.pcs-action-card.selected .pcs-action-check {
+  background: var(--orange); border-color: var(--orange); color: var(--white);
+}
+.pcs-action-card.disabled {
+  opacity: 0.5; cursor: not-allowed;
+  background: var(--grey-bg);
+}
+.pcs-action-check {
+  width: 22px; height: 22px; flex-shrink: 0;
+  border-radius: 4px; border: 2px solid var(--grey-line);
+  background: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+  transition: all 0.15s;
+}
+.pcs-action-check svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 3; }
+.pcs-action-text {
+  flex: 1;
+  font-size: 14px; line-height: 1.5; color: var(--navy);
+}
+.pcs-action-text strong { color: var(--navy); }
+.pcs-action-tag {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--teal); font-weight: 700;
+  margin-top: 4px; display: inline-block;
+}
+.pcs-phase-foot {
+  padding: 18px 32px;
+  border-top: 1px solid var(--grey-line);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-shrink: 0;
+  background: var(--grey-bg);
+  border-radius: 0 0 8px 8px;
+}
+.pcs-counter {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--grey-txt);
+}
+.pcs-counter strong { color: var(--orange); font-weight: 700; }
+.pcs-phase-foot-actions {
+  display: flex; gap: 10px;
+}
+
+/* AGRÉGATION VISIBLE PAR LE FORMATEUR (ou en mode plénière) */
+.pcs-aggregate-block {
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px; padding: 20px 24px;
+  margin-top: 24px;
+}
+.pcs-aggregate-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.pcs-aggregate-row:last-child { border-bottom: none; }
+.pcs-aggregate-action {
+  flex: 1;
+  font-size: 13px; color: rgba(255,255,255,0.85);
+}
+.pcs-aggregate-bar {
+  width: 100px; height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px; overflow: hidden;
+  flex-shrink: 0;
+}
+.pcs-aggregate-bar-fill {
+  height: 100%; background: var(--orange);
+  border-radius: 3px;
+  transition: width 0.4s;
+}
+.pcs-aggregate-count {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--orange); font-weight: 700;
+  width: 32px; text-align: right;
+  flex-shrink: 0;
+}
+
+/* ========== CDRNM ========== */
+.callout-tag {
+  display: inline-block;
+  padding: 2px 9px; margin: 0 4px;
+  background: var(--white);
+  border: 1px solid var(--orange);
+  border-radius: 3px;
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  color: var(--orange); letter-spacing: 0.04em;
+}
+.cdrnm-block {
+  background: var(--white);
+  border: 1px solid var(--grey-line);
+  border-radius: 8px;
+  padding: 32px 36px;
+  margin: 24px 0;
+  box-shadow: 0 2px 12px rgba(30,45,92,0.04);
+}
+.cdrnm-head { margin-bottom: 24px; }
+.cdrnm-eyebrow {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--orange); font-weight: 700; margin-bottom: 8px;
+}
+.cdrnm-head h3 {
+  font-family: var(--serif); font-size: 24px; color: var(--navy);
+  margin: 0 0 14px;
+}
+.cdrnm-context {
+  font-size: 14px; line-height: 1.65; color: var(--grey-txt);
+  margin-bottom: 10px;
+}
+.cdrnm-context strong { color: var(--navy); }
+.cdrnm-launch-btn {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 14px 24px;
+  background: var(--orange); color: var(--white);
+  border: none; border-radius: 6px;
+  font-family: var(--sans); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.cdrnm-launch-btn:hover {
+  background: #C95A45; transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(232,110,85,0.3);
+}
+.cdrnm-launch-btn svg { width: 18px; height: 18px; }
+
+/* CDRNM modal */
+.cdrnm-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 220;
+  background: rgba(15, 26, 56, 0.85);
+  backdrop-filter: blur(4px);
+  align-items: flex-start; justify-content: center;
+  overflow-y: auto;
+}
+.cdrnm-overlay.open { display: flex; }
+.cdrnm-modal {
+  background: var(--white); border-radius: 8px;
+  max-width: 900px; width: 100%;
+  margin: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  display: flex; flex-direction: column;
+  max-height: calc(100vh - 48px);
+}
+.cdrnm-modal-head {
+  background: var(--navy); color: var(--white);
+  padding: 22px 30px; border-radius: 8px 8px 0 0;
+  flex-shrink: 0;
+}
+.cdrnm-modal-eyebrow {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--orange); font-weight: 700; margin-bottom: 4px;
+}
+.cdrnm-modal-title {
+  font-family: var(--serif); font-size: 22px; font-weight: 600;
+  margin-bottom: 6px;
+}
+.cdrnm-modal-sub {
+  font-size: 13px; color: rgba(255,255,255,0.75);
+}
+.cdrnm-modal-body {
+  padding: 24px 30px; overflow-y: auto; flex: 1;
+}
+.cdrnm-section-head {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--teal); font-weight: 700;
+  margin-top: 24px; margin-bottom: 14px;
+  padding-bottom: 8px; border-bottom: 2px solid var(--teal);
+}
+.cdrnm-section-head:first-child { margin-top: 0; }
+.cdrnm-question {
+  background: var(--grey-bg);
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin-bottom: 14px;
+}
+.cdrnm-question-num {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--orange); font-weight: 700;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.cdrnm-question-text {
+  font-family: var(--sans); font-size: 14px; line-height: 1.55;
+  color: var(--navy); font-weight: 600;
+  margin-bottom: 12px;
+}
+.cdrnm-question-detail {
+  font-size: 12.5px; line-height: 1.5;
+  color: var(--grey-txt); font-style: italic;
+  margin-bottom: 12px;
+}
+.cdrnm-vote-row {
+  display: flex; gap: 8px; margin-bottom: 10px;
+}
+.cdrnm-vote-btn {
+  flex: 1;
+  padding: 9px 12px;
+  background: var(--white);
+  border: 2px solid var(--grey-line);
+  border-radius: 4px;
+  font-family: var(--sans); font-size: 13px; font-weight: 600;
+  color: var(--grey-txt);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cdrnm-vote-btn:hover {
+  border-color: var(--teal);
+  color: var(--navy);
+}
+.cdrnm-vote-btn.selected.pour {
+  background: rgba(125, 169, 114, 0.15);
+  border-color: #5C8050;
+  color: #3A5C2E;
+}
+.cdrnm-vote-btn.selected.contre {
+  background: rgba(212, 80, 76, 0.15);
+  border-color: #A83A36;
+  color: #7A2A26;
+}
+.cdrnm-vote-btn.selected.reserve {
+  background: rgba(232, 155, 74, 0.15);
+  border-color: #C5722E;
+  color: #8B4810;
+}
+.cdrnm-arg-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--white);
+  border: 1px solid var(--grey-line);
+  border-radius: 4px;
+  font-family: var(--sans); font-size: 13px;
+  color: var(--navy);
+  resize: vertical; min-height: 32px; max-height: 80px;
+}
+.cdrnm-arg-input:focus {
+  outline: none; border-color: var(--teal);
+}
+.cdrnm-arg-input::placeholder {
+  color: var(--grey-txt); font-style: italic;
+}
+.cdrnm-modal-foot {
+  padding: 16px 30px;
+  border-top: 1px solid var(--grey-line);
+  background: var(--grey-bg);
+  border-radius: 0 0 8px 8px;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-shrink: 0;
+}
+.cdrnm-progress-text {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--grey-txt);
+}
+.cdrnm-progress-text strong { color: var(--orange); font-weight: 700; }
+.cdrnm-foot-actions { display: flex; gap: 10px; }
+
+/* CDRNM aggregate panel (rapport) */
+.cdrnm-summary-card {
+  background: rgba(255,255,255,0.04);
+  border-left: 3px solid var(--orange);
+  padding: 14px 18px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+.cdrnm-summary-q {
+  font-family: var(--serif); font-size: 14px; font-weight: 600;
+  color: var(--white); margin-bottom: 6px;
+}
+.cdrnm-summary-vote {
+  display: inline-block;
+  padding: 2px 9px; border-radius: 3px;
+  font-family: var(--mono); font-size: 11px;
+  font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-right: 8px;
+}
+.cdrnm-summary-vote.pour { background: rgba(125, 169, 114, 0.3); color: #B8E5A8; }
+.cdrnm-summary-vote.contre { background: rgba(212, 80, 76, 0.3); color: #FFB8B5; }
+.cdrnm-summary-vote.reserve { background: rgba(232, 155, 74, 0.3); color: #FFD4A0; }
+.cdrnm-summary-arg {
+  font-style: italic; font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  margin-top: 4px; line-height: 1.5;
+}
+
 /* ========== POLL (sondages live) ========== */
 .poll-overlay {
   display: none; position: fixed; inset: 0;
@@ -2186,6 +2638,49 @@ h3.subhead {
   </div>
 </header>
 
+<!-- ============ CDRNM MODAL ============ -->
+<div class="cdrnm-overlay" id="cdrnmOverlay" onclick="if(event.target===this)closeCdrnm()">
+  <div class="cdrnm-modal">
+    <div class="cdrnm-modal-head">
+      <div class="cdrnm-modal-eyebrow">Commission départementale des risques naturels majeurs</div>
+      <div class="cdrnm-modal-title">Arbitrage des priorités d'outils — Anse-de-Goulven</div>
+      <div class="cdrnm-modal-sub">Saisine du préfet · 10 propositions · vote par collège</div>
+    </div>
+    <div class="cdrnm-modal-body" id="cdrnmModalBody"></div>
+    <div class="cdrnm-modal-foot">
+      <div class="cdrnm-progress-text">Voté : <strong id="cdrnmProgress">0</strong> / 10</div>
+      <div class="cdrnm-foot-actions">
+        <button class="btn btn-secondary" onclick="closeCdrnm()">Fermer</button>
+        <button class="btn btn-primary" id="cdrnmValidateBtn" onclick="validateCdrnm()" disabled>Valider l'avis du collège</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PCS PHASE MODAL ============ -->
+<div class="pcs-phase-overlay" id="pcsPhaseOverlay" onclick="if(event.target===this)closePcsPhase()">
+  <div class="pcs-phase-modal">
+    <div class="pcs-phase-head">
+      <div class="pcs-phase-eyebrow" id="pcsPhaseEyebrow">Tempête Argonne — Phase</div>
+      <div class="pcs-phase-title" id="pcsPhaseTitle">—</div>
+      <div class="pcs-phase-time" id="pcsPhaseTime">—</div>
+    </div>
+    <div class="pcs-phase-body">
+      <div class="pcs-phase-briefing" id="pcsPhaseBriefing"></div>
+      <div class="pcs-phase-question" id="pcsPhaseQuestion"></div>
+      <div class="pcs-phase-instr" id="pcsPhaseInstr">Cochez les <strong>3 actions prioritaires</strong> de votre groupe.</div>
+      <div class="pcs-phase-actions-list" id="pcsPhaseActions"></div>
+    </div>
+    <div class="pcs-phase-foot">
+      <div class="pcs-counter">Sélectionné : <strong id="pcsCounter">0</strong> / 3</div>
+      <div class="pcs-phase-foot-actions">
+        <button class="btn btn-secondary" onclick="closePcsPhase()">Fermer</button>
+        <button class="btn btn-primary" id="pcsValidateBtn" onclick="validatePcsVote()" disabled>Valider notre vote</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ FR-ALERT FLASH ============ -->
 <div class="fr-alert-flash" id="frAlertFlash" aria-hidden="true">
   <div class="fr-alert-flash-content">
@@ -2231,6 +2726,28 @@ h3.subhead {
       <button class="trainer-event-btn" onclick="resetThisBrowser()">
         <span class="target-badge tball" style="background:#7E6B4A;">⎚</span>
         <span>Réinitialiser ce navigateur<small>Quitte le mode formateur, déverrouille tous les groupes pour ce poste — sans toucher à Firebase</small></span>
+      </button>
+    </div>
+    <div class="trainer-panel-section">
+      <div class="trainer-panel-label">Étude de cas n°4 — CDRNM</div>
+      <button class="trainer-event-btn" onclick="openCdrnmAggregate()" style="background:rgba(50,128,136,0.3);border-color:var(--teal);">
+        <span class="target-badge tball" style="background:var(--teal);">⚖</span>
+        <span>Voir l'agrégation des votes CDRNM<small>Vue plénière par question avec couleurs des 5 collèges</small></span>
+      </button>
+      <button class="trainer-event-btn" onclick="resetCdrnm()">
+        <span class="target-badge tball" style="background:#7E6B4A;">⟲</span>
+        <span>Réinitialiser les votes CDRNM<small>Pour recommencer l'exercice</small></span>
+      </button>
+    </div>
+    <div class="trainer-panel-section">
+      <div class="trainer-panel-label">Étude de cas n°3 — PCS Tempête Argonne</div>
+      <button class="trainer-event-btn" onclick="pcsAdvancePhase()" style="background:rgba(232,110,85,0.3);border-color:var(--orange);">
+        <span class="target-badge tball">▶</span>
+        <span>Avancer la timeline d'une phase<small>Phase actuelle visible dans la section « Étude de cas n°3 »</small></span>
+      </button>
+      <button class="trainer-event-btn" onclick="pcsResetTimeline()">
+        <span class="target-badge tball" style="background:#7E6B4A;">⟲</span>
+        <span>Réinitialiser la timeline PCS<small>Remet à zéro phase + votes</small></span>
       </button>
     </div>
     <div class="trainer-panel-section">
@@ -2380,6 +2897,8 @@ h3.subhead {
     <a href="#restitution">Restitution</a>
     <a href="#cas1">Étude de cas n°1</a>
     <a href="#cas2">Étude de cas n°2</a>
+    <a href="#cas3">Étude de cas n°3</a>
+    <a href="#cas4">Étude de cas n°4</a>
     <a href="#axes">Les 6 axes</a>
   </div>
   <div class="sidebar-section">
@@ -2432,6 +2951,10 @@ h3.subhead {
     <div class="pwd-panel-content">
       <h3>Vous arrivez ? Débloquez votre groupe</h3>
       <p>Chaque groupe a reçu un code distinct du formateur. Saisissez le vôtre pour accéder à votre boîte mail, à votre fiche de rôle et à la mécanique des votes. <strong>Les autres groupes restent visibles</strong> mais leurs contenus sensibles — boîtes mail, mémos confidentiels — ne sont déverrouillés qu'après le partage en plénière.</p>
+      <p style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.55);">
+        Quelqu'un est passé avant vous sur ce poste ?
+        <a href="#" onclick="event.preventDefault(); resetThisBrowser();" style="color:rgba(255,255,255,0.85);text-decoration:underline;">Réinitialiser ce navigateur</a>.
+      </p>
     </div>
     <button class="pwd-panel-btn" onclick="openUnlockModal()">Saisir mon code</button>
   </div>
@@ -2910,55 +3433,120 @@ h3.subhead {
     <h3>Zonage PPRSM (2014) — aléa de référence et aléa à 100 ans</h3>
     <div class="map-svg-container">
       <svg viewBox="0 0 700 420" xmlns="http://www.w3.org/2000/svg" aria-label="Carte du zonage PPRSM">
-        <!-- Mer -->
-        <path d="M 0,0 L 700,0 L 700,80 Q 650,90 600,85 Q 550,95 500,88 Q 450,98 400,90 Q 350,100 300,92 Q 250,102 200,95 Q 150,103 100,98 Q 50,105 0,100 Z" fill="#A6C9DA"/>
+        <defs>
+          <linearGradient id="pprSea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#5994B5"/>
+            <stop offset="100%" stop-color="#A6C9DA"/>
+          </linearGradient>
+          <linearGradient id="pprSand" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#F2DDB0"/>
+            <stop offset="100%" stop-color="#D4BC85"/>
+          </linearGradient>
+          <linearGradient id="pprCliff" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#C9B894"/>
+            <stop offset="100%" stop-color="#9C8C66"/>
+          </linearGradient>
+          <linearGradient id="pprLand" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#EFEAD5"/>
+            <stop offset="100%" stop-color="#D8CFB0"/>
+          </linearGradient>
+          <pattern id="pprWaves" patternUnits="userSpaceOnUse" width="60" height="14">
+            <rect width="60" height="14" fill="url(#pprSea)"/>
+            <path d="M 0,7 q 8,-3 16,0 t 16,0 t 16,0 t 16,0" fill="none" stroke="#FFFFFF" stroke-width="0.5" opacity="0.35"/>
+            <path d="M 0,11 q 6,-2 12,0 t 12,0 t 12,0 t 12,0 t 12,0" fill="none" stroke="#FFFFFF" stroke-width="0.4" opacity="0.25"/>
+          </pattern>
+          <pattern id="pprCliffHatch" patternUnits="userSpaceOnUse" width="8" height="8">
+            <rect width="8" height="8" fill="url(#pprCliff)"/>
+            <path d="M -1,1 l 2,-2 M 0,8 l 8,-8 M 7,9 l 2,-2" stroke="#8C7A52" stroke-width="0.4" opacity="0.7"/>
+          </pattern>
+          <!-- Hachures aléa fort (rouges, diagonales) -->
+          <pattern id="aleaForte" patternUnits="userSpaceOnUse" width="6" height="6">
+            <rect width="6" height="6" fill="rgba(212,80,76,0.55)"/>
+            <path d="M -1,1 l 2,-2 M 0,6 l 6,-6 M 5,7 l 2,-2" stroke="#A83A36" stroke-width="0.7"/>
+          </pattern>
+          <filter id="pprShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="0.8"/>
+            <feOffset dx="1" dy="1.2"/>
+            <feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer>
+            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- MER avec vagues -->
+        <rect x="0" y="0" width="700" height="100" fill="url(#pprWaves)"/>
+        <!-- Mouettes -->
+        <g fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" opacity="0.7">
+          <path d="M 80,18 q 5,-4 9,0 q 4,-4 9,0"/>
+          <path d="M 560,15 q 5,-4 9,0 q 4,-4 9,0"/>
+        </g>
+
         <!-- Cordon dunaire -->
-        <path d="M 0,100 Q 50,105 100,98 Q 150,103 200,95 Q 250,102 300,92 Q 350,100 400,90 Q 420,90 430,95 L 430,115 Q 420,108 400,108 Q 350,118 300,110 Q 250,118 200,113 Q 150,120 100,114 Q 50,122 0,118 Z" fill="#E8D89A" stroke="#B8A050" stroke-width="0.5"/>
+        <path d="M 0,100 Q 50,105 100,98 Q 150,103 200,95 Q 250,102 300,92 Q 350,100 400,90 Q 420,90 430,95 L 430,118 Q 420,108 400,108 Q 350,118 300,110 Q 250,118 200,113 Q 150,120 100,114 Q 50,122 0,120 Z" fill="url(#pprSand)" stroke="#A89060" stroke-width="0.6"/>
+
         <!-- Falaise -->
-        <path d="M 430,95 Q 480,90 530,98 Q 580,90 630,98 Q 670,98 700,100 L 700,200 L 670,200 Q 630,200 580,198 Q 530,200 480,198 Q 450,198 430,195 Z" fill="#B8A77E" stroke="#7E6E40" stroke-width="0.5"/>
+        <path d="M 430,95 Q 480,90 530,98 Q 580,90 630,98 Q 670,98 700,100 L 700,205 Q 670,202 630,200 Q 580,202 530,200 Q 480,200 430,196 Z" fill="url(#pprCliffHatch)" stroke="#7E6E40" stroke-width="0.6"/>
+        <path d="M 430,95 Q 480,90 530,98 Q 580,90 630,98 Q 670,98 700,100" fill="none" stroke="#5E4D30" stroke-width="1.4"/>
 
-        <!-- Enveloppe ALÉA À 100 ANS (la plus large, en pointillés rouge foncé) -->
-        <path d="M 0,118 L 0,330 Q 80,335 160,330 Q 240,335 320,328 Q 400,335 480,330 Q 560,332 620,328 Q 660,330 700,325 L 700,200 Q 670,200 630,200 Q 580,198 530,200 Q 480,198 430,195 L 430,115 Q 380,118 320,110 Q 240,118 160,114 Q 80,122 0,118 Z"
-              fill="#FFE5E2" fill-opacity="0.5" stroke="none"/>
+        <!-- Terre / arrière-pays -->
+        <rect x="0" y="118" width="430" height="302" fill="url(#pprLand)"/>
+        <rect x="430" y="205" width="270" height="215" fill="url(#pprLand)"/>
 
-        <!-- Enveloppe ALÉA FAIBLE (référence 2014, jaune) -->
-        <path d="M 0,128 L 0,310 Q 70,315 140,308 Q 220,315 300,305 Q 380,310 460,305 Q 540,308 600,302 Q 650,304 700,300 L 700,205 Q 660,205 620,205 Q 580,205 540,205 Q 480,205 430,200 L 430,125 Q 350,128 280,118 Q 200,128 130,120 Q 60,130 0,128 Z"
-              fill="#F0D060" fill-opacity="0.4" stroke="none"/>
+        <!-- ENVELOPPE ALÉA À 100 ANS (la plus large, en jaune pâle) -->
+        <path d="M 0,118 L 0,330 Q 80,335 160,330 Q 240,335 320,328 Q 400,335 480,330 Q 560,332 620,328 Q 660,330 700,325 L 700,205 Q 670,205 630,205 Q 580,205 530,205 Q 480,205 430,200 L 430,118 Q 380,118 320,110 Q 240,118 160,114 Q 80,122 0,118 Z"
+              fill="#FFE4A8" fill-opacity="0.55" stroke="none"/>
 
-        <!-- Enveloppe ALÉA MOYEN -->
+        <!-- Aléa moyen -->
         <path d="M 0,140 L 0,290 Q 65,295 130,285 Q 200,290 270,278 Q 340,283 410,275 Q 470,278 530,275 Q 580,275 630,275 L 630,210 Q 580,212 530,210 Q 480,210 430,205 L 430,140 Q 360,142 290,132 Q 200,142 120,135 Q 60,145 0,140 Z"
-              fill="#E89B4A" fill-opacity="0.45" stroke="none"/>
+              fill="#F2A65A" fill-opacity="0.55" stroke="#C5722E" stroke-width="0.4"/>
 
-        <!-- ALÉA FORT - Quartier de la Digue (sur cordon dunaire) -->
-        <polygon points="100,150 250,150 250,205 100,205" fill="#D4504C" fill-opacity="0.65" stroke="#A83A36" stroke-width="0.6"/>
-        <!-- ALÉA FORT - Zone industrielle (en aval, derrière le bourg) -->
-        <polygon points="430,225 530,225 540,275 430,275" fill="#D4504C" fill-opacity="0.65" stroke="#A83A36" stroke-width="0.6"/>
+        <!-- ALÉA FORT — Quartier de la Digue (hachuré rouge) -->
+        <rect x="100" y="150" width="150" height="55" fill="url(#aleaForte)" stroke="#A83A36" stroke-width="1.2" filter="url(#pprShadow)"/>
+        <!-- ALÉA FORT — ZI -->
+        <polygon points="430,225 530,225 540,275 430,275" fill="url(#aleaForte)" stroke="#A83A36" stroke-width="1.2" filter="url(#pprShadow)"/>
 
         <!-- Limite 100 ans en pointillé bien visible -->
         <path d="M 0,330 Q 80,335 160,330 Q 240,335 320,328 Q 400,335 480,330 Q 560,332 620,328 Q 660,330 700,325"
-              fill="none" stroke="#A83A36" stroke-width="2.2" stroke-dasharray="7,3"/>
+              fill="none" stroke="#A83A36" stroke-width="2.5" stroke-dasharray="7,3"/>
 
-        <!-- Labels zones -->
-        <text x="175" y="183" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" stroke="#A83A36" stroke-width="0.4">FORT</text>
-        <text x="485" y="255" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" stroke="#A83A36" stroke-width="0.4">FORT</text>
-        <text x="350" y="265" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#A05A1A">Aléa moyen</text>
-        <text x="350" y="320" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#7E5F1A">Aléa faible</text>
-
-        <!-- Légende limite 100 ans -->
-        <g transform="translate(540, 350)">
-          <line x1="0" y1="0" x2="22" y2="0" stroke="#A83A36" stroke-width="2.2" stroke-dasharray="7,3"/>
-          <text x="28" y="3" font-family="serif" font-size="10" font-style="italic" font-weight="bold" fill="#A83A36">Limite aléa à 100 ans</text>
-          <text x="28" y="14" font-family="serif" font-size="9" font-style="italic" fill="#A83A36">(+ 60 cm minimum)</text>
-        </g>
-
-        <!-- Bourg (silhouette discrète) -->
-        <g fill="#D4B996" stroke="#7E5F30" stroke-width="0.4" fill-opacity="0.6">
-          <rect x="320" y="240" width="16" height="13"/><rect x="340" y="238" width="16" height="13"/><rect x="360" y="240" width="16" height="13"/><rect x="380" y="238" width="16" height="13"/><rect x="320" y="256" width="16" height="13"/><rect x="360" y="256" width="16" height="13"/>
+        <!-- Bourg (silhouette discrète, avec ombres) -->
+        <g fill="#D4B996" stroke="#7E5F30" stroke-width="0.5" filter="url(#pprShadow)">
+          <rect x="320" y="240" width="16" height="13" rx="0.5"/>
+          <rect x="340" y="238" width="16" height="13" rx="0.5"/>
+          <rect x="360" y="240" width="16" height="13" rx="0.5"/>
+          <rect x="380" y="238" width="16" height="13" rx="0.5"/>
+          <rect x="320" y="256" width="16" height="13" rx="0.5"/>
+          <rect x="360" y="256" width="16" height="13" rx="0.5"/>
         </g>
         <text x="358" y="285" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#5C5852" font-style="italic">Bourg</text>
 
-        <text x="350" y="22" text-anchor="middle" font-family="serif" font-size="13" font-style="italic" font-weight="bold" fill="#2D5266">BAIE D'ANSE-DE-GOULVEN</text>
-        <g transform="translate(40, 380)"><line x1="0" y1="20" x2="0" y2="0" stroke="#1E2D5C" stroke-width="1.5"/><polygon points="-5,5 0,-2 5,5" fill="#1E2D5C"/><text x="0" y="-8" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#1E2D5C">N</text></g>
+        <!-- Labels zones -->
+        <text x="175" y="173" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" stroke="#A83A36" stroke-width="0.4">ALÉA FORT</text>
+        <text x="175" y="190" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">Quartier Digue</text>
+        <text x="485" y="248" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" stroke="#A83A36" stroke-width="0.4">ALÉA FORT</text>
+        <text x="485" y="262" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="600" fill="#FFFFFF">ZI / PME</text>
+        <text x="350" y="265" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#8B4810">Aléa moyen</text>
+        <text x="350" y="320" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#7E5F1A">Aléa faible (référence 2014)</text>
+
+        <!-- Légende -->
+        <g transform="translate(440, 350)">
+          <rect width="240" height="58" fill="#FFFFFF" stroke="#1E2D5C" stroke-width="0.6" opacity="0.95" rx="2"/>
+          <line x1="10" y1="14" x2="32" y2="14" stroke="#A83A36" stroke-width="2.5" stroke-dasharray="7,3"/>
+          <text x="38" y="17" font-family="serif" font-size="10" font-style="italic" font-weight="bold" fill="#A83A36">Limite aléa à 100 ans</text>
+          <text x="38" y="29" font-family="serif" font-size="9" font-style="italic" fill="#5C5852">(arrêté 5 juillet 2019, + 60 cm min.)</text>
+          <rect x="10" y="38" width="22" height="10" fill="url(#aleaForte)" stroke="#A83A36" stroke-width="0.7"/>
+          <text x="38" y="46" font-family="sans-serif" font-size="10" font-weight="600" fill="#A83A36">Aléa fort — interdiction de construire</text>
+        </g>
+
+        <!-- TITRE -->
+        <text x="350" y="22" text-anchor="middle" font-family="serif" font-size="13" font-style="italic" font-weight="bold" fill="#FFFFFF">BAIE D'ANSE-DE-GOULVEN</text>
+
+        <!-- ROSE DES VENTS -->
+        <g transform="translate(40, 380)">
+          <circle r="14" fill="#FFFFFF" stroke="#1E2D5C" stroke-width="1" opacity="0.9"/>
+          <line x1="0" y1="10" x2="0" y2="-10" stroke="#1E2D5C" stroke-width="1.5"/>
+          <polygon points="-5,-3 0,-12 5,-3" fill="#E86E55"/>
+          <text x="0" y="-15" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#1E2D5C">N</text>
+        </g>
       </svg>
     </div>
     <p class="map-caption">
@@ -2974,28 +3562,205 @@ h3.subhead {
     <h3>Réseaux critiques et établissements stratégiques</h3>
     <div class="map-svg-container">
       <svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg" aria-label="Carte des réseaux et établissements">
-        <path d="M 0,0 L 700,0 L 700,80 Q 650,90 600,85 Q 550,95 500,88 Q 450,98 400,90 Q 350,100 300,92 Q 250,102 200,95 Q 150,103 100,98 Q 50,105 0,100 Z" fill="#A6C9DA" fill-opacity="0.6"/>
-        <path d="M 0,100 Q 50,105 100,98 Q 200,95 300,92 Q 400,90 430,95 L 430,115 Q 350,118 200,113 Q 100,114 0,118 Z" fill="#E8D89A" fill-opacity="0.5"/>
-        <path d="M 430,95 Q 530,98 630,98 Q 700,100 700,200 L 430,195 Z" fill="#B8A77E" fill-opacity="0.6"/>
-        <path d="M 0,118 Q 200,113 430,115 L 430,200 Q 200,210 0,210 Z" fill="#A4C99A" fill-opacity="0.5"/>
-        <path d="M 0,318 L 200,318 Q 320,290 400,260 Q 500,230 580,180 L 670,130" fill="none" stroke="#E86E55" stroke-width="2.5" stroke-dasharray="6,3" stroke-linecap="round"/>
-        <text x="540" y="225" font-family="serif" font-size="11" font-style="italic" font-weight="bold" fill="#E86E55">Itinéraire de mobilité de crise</text>
-        <g font-family="sans-serif" font-weight="bold">
-          <circle cx="350" cy="250" r="12" fill="#1E2D5C" stroke="white" stroke-width="2"/><text x="350" y="254" text-anchor="middle" fill="white" font-size="11">M</text><text x="368" y="254" font-size="10" fill="#1E2D5C">Mairie / PCC</text>
-          <circle cx="320" cy="280" r="11" fill="#1E2D5C" stroke="white" stroke-width="2"/><text x="320" y="284" text-anchor="middle" fill="white" font-size="10">É</text><text x="337" y="284" font-size="10" fill="#1E2D5C">École (PPMS)</text>
-          <circle cx="395" cy="265" r="11" fill="#A83A36" stroke="white" stroke-width="2"/><text x="395" y="269" text-anchor="middle" fill="white" font-size="10">E</text><text x="410" y="269" font-size="10" fill="#1E2D5C">EHPAD (60 lits)</text>
-          <circle cx="385" cy="310" r="11" fill="#D4504C" stroke="white" stroke-width="2"/><text x="385" y="314" text-anchor="middle" fill="white" font-size="10">S</text><text x="400" y="314" font-size="10" fill="#1E2D5C">SDIS</text>
-          <circle cx="380" cy="290" r="10" fill="#D4504C" stroke="white" stroke-width="2"/><text x="380" y="294" text-anchor="middle" fill="white" font-size="11">+</text><text x="395" y="294" font-size="10" fill="#1E2D5C">Maison de santé</text>
-          <circle cx="80" cy="240" r="11" fill="#5B95C4" stroke="white" stroke-width="2"/><text x="80" y="244" text-anchor="middle" fill="white" font-size="11">F</text><text x="95" y="237" font-size="10" fill="#1E2D5C">Forage communal</text><text x="95" y="248" font-size="9" fill="#5C5852" font-style="italic">eau potable</text>
-          <rect x="550" y="195" width="9" height="22" fill="#1E2D5C" stroke="white" stroke-width="1"/><circle cx="554" cy="194" r="9" fill="#5B95C4" stroke="white" stroke-width="1.5"/><text x="568" y="200" font-size="10" fill="#1E2D5C">Château d'eau</text><text x="568" y="211" font-size="9" fill="#5C5852" font-style="italic">800 m³</text>
-          <circle cx="80" cy="370" r="11" fill="#7DA972" stroke="white" stroke-width="2"/><text x="80" y="374" text-anchor="middle" fill="white" font-size="11">T</text><text x="95" y="375" font-size="10" fill="#1E2D5C">STEP (4 500 EH)</text>
-          <circle cx="450" cy="390" r="9" fill="#A8902C" stroke="white" stroke-width="1.5"/><text x="450" y="393" text-anchor="middle" fill="white" font-size="9">P</text><text x="463" y="393" font-size="9" fill="#1E2D5C">Poste HT/BT</text>
-          <circle cx="610" cy="195" r="9" fill="#A8902C" stroke="white" stroke-width="1.5"/><text x="610" y="198" text-anchor="middle" fill="white" font-size="9">P</text>
-          <line x1="450" y1="390" x2="554" y2="194" stroke="#A8902C" stroke-width="0.8" stroke-dasharray="2,2"/><line x1="450" y1="390" x2="610" y2="195" stroke="#A8902C" stroke-width="0.8" stroke-dasharray="2,2"/>
-          <circle cx="335" cy="345" r="9" fill="#5C5C5C" stroke="white" stroke-width="1.5"/><text x="335" y="348" text-anchor="middle" fill="white" font-size="9">H</text><text x="350" y="348" font-size="9" fill="#1E2D5C" font-style="italic">Hélistation (stade)</text>
-          <text x="490" y="100" text-anchor="middle" font-family="serif" font-size="9" font-style="italic" fill="#1E2D5C">Quai d'évacuation maritime</text>
+        <defs>
+          <linearGradient id="rxSea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#5994B5"/>
+            <stop offset="100%" stop-color="#A6C9DA"/>
+          </linearGradient>
+          <linearGradient id="rxSand" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#F2DDB0"/>
+            <stop offset="100%" stop-color="#D4BC85"/>
+          </linearGradient>
+          <linearGradient id="rxMarsh" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#B8D6AB"/>
+            <stop offset="100%" stop-color="#86B07A"/>
+          </linearGradient>
+          <linearGradient id="rxLand" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#EFEAD5"/>
+            <stop offset="100%" stop-color="#D8CFB0"/>
+          </linearGradient>
+          <linearGradient id="rxCliff" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#C9B894"/>
+            <stop offset="100%" stop-color="#9C8C66"/>
+          </linearGradient>
+          <pattern id="rxWaves" patternUnits="userSpaceOnUse" width="60" height="14">
+            <rect width="60" height="14" fill="url(#rxSea)"/>
+            <path d="M 0,7 q 8,-3 16,0 t 16,0 t 16,0 t 16,0" fill="none" stroke="#FFFFFF" stroke-width="0.5" opacity="0.35"/>
+            <path d="M 0,11 q 6,-2 12,0 t 12,0 t 12,0 t 12,0 t 12,0" fill="none" stroke="#FFFFFF" stroke-width="0.4" opacity="0.25"/>
+          </pattern>
+          <filter id="rxShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="0.8"/>
+            <feOffset dx="1" dy="1.2"/>
+            <feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer>
+            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="rxIconShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
+            <feOffset dx="0" dy="2"/>
+            <feComponentTransfer><feFuncA type="linear" slope="0.5"/></feComponentTransfer>
+            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <!-- Animation pour pulsation EHPAD/SDIS (établissements critiques) -->
+          <radialGradient id="rxAlertPulse" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#A83A36" stop-opacity="0.4"/>
+            <stop offset="100%" stop-color="#A83A36" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <!-- MER avec vagues -->
+        <rect x="0" y="0" width="700" height="100" fill="url(#rxWaves)"/>
+        <g fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" opacity="0.7">
+          <path d="M 80,18 q 5,-4 9,0 q 4,-4 9,0"/>
+          <path d="M 560,15 q 5,-4 9,0 q 4,-4 9,0"/>
         </g>
-        <text x="350" y="22" text-anchor="middle" font-family="serif" font-size="13" font-style="italic" font-weight="bold" fill="#2D5266">BAIE D'ANSE-DE-GOULVEN</text>
+
+        <!-- Cordon dunaire -->
+        <path d="M 0,100 Q 50,105 100,98 Q 150,103 200,95 Q 250,102 300,92 Q 350,100 400,90 Q 420,90 430,95 L 430,118 Q 420,108 400,108 Q 350,118 300,110 Q 250,118 200,113 Q 150,120 100,114 Q 50,122 0,120 Z" fill="url(#rxSand)" stroke="#A89060" stroke-width="0.5" opacity="0.85"/>
+
+        <!-- Falaise -->
+        <path d="M 430,95 Q 480,90 530,98 Q 580,90 630,98 Q 670,98 700,100 L 700,205 Q 670,202 630,200 Q 580,202 530,200 Q 480,200 430,196 Z" fill="url(#rxCliff)" stroke="#7E6E40" stroke-width="0.5" opacity="0.85"/>
+
+        <!-- Marais -->
+        <path d="M 0,118 Q 50,122 100,114 Q 150,120 200,113 Q 250,118 300,110 Q 350,118 400,108 Q 420,108 430,115 L 430,205 Q 380,215 320,210 Q 260,217 180,213 Q 100,218 50,213 Q 20,215 0,213 Z" fill="url(#rxMarsh)" stroke="#5E8C50" stroke-width="0.5" opacity="0.7"/>
+
+        <!-- Terre / arrière-pays -->
+        <rect x="0" y="205" width="700" height="200" fill="url(#rxLand)"/>
+
+        <!-- ROUTE PRINCIPALE RD 765 (référence) -->
+        <line x1="0" y1="320" x2="700" y2="318" stroke="#3D2E20" stroke-width="2.5" opacity="0.4"/>
+        <line x1="0" y1="320" x2="700" y2="318" stroke="#FFFFFF" stroke-width="0.6" stroke-dasharray="6,3" opacity="0.5"/>
+
+        <!-- ITINÉRAIRE D'ÉVACUATION (chemin pointillé orange épais) -->
+        <path d="M 30,318 Q 100,310 200,320 Q 290,310 350,290 Q 410,260 470,225 Q 540,195 620,150 L 670,130"
+              fill="none" stroke="#E86E55" stroke-width="3.5" stroke-dasharray="8,4" stroke-linecap="round"/>
+        <!-- Flèche directionnelle -->
+        <polygon points="660,128 678,122 670,140" fill="#E86E55"/>
+        <text x="540" y="220" font-family="serif" font-size="11" font-style="italic" font-weight="bold" fill="#A83A36">Itinéraire de mobilité de crise</text>
+        <text x="540" y="232" font-family="sans-serif" font-size="9" fill="#A83A36">(non formalisé dans le PCS actuel)</text>
+
+        <!-- ÉTABLISSEMENTS / RÉSEAUX -->
+        <g font-family="sans-serif" font-weight="bold">
+
+          <!-- Mairie / PCC -->
+          <g filter="url(#rxIconShadow)">
+            <rect x="338" y="240" width="24" height="22" fill="#1E2D5C" stroke="#FFFFFF" stroke-width="2" rx="3"/>
+            <text x="350" y="256" text-anchor="middle" fill="white" font-size="12" font-weight="700">M</text>
+          </g>
+          <text x="368" y="254" font-size="10" fill="#1E2D5C" font-weight="600">Mairie / PCC</text>
+
+          <!-- École (PPMS) -->
+          <g filter="url(#rxIconShadow)">
+            <rect x="308" y="270" width="22" height="20" fill="#1E2D5C" stroke="#FFFFFF" stroke-width="2" rx="3"/>
+            <text x="319" y="284" text-anchor="middle" fill="white" font-size="11" font-weight="700">É</text>
+          </g>
+          <text x="335" y="284" font-size="10" fill="#1E2D5C" font-weight="600">École (PPMS)</text>
+
+          <!-- EHPAD (établissement critique - pulsation rouge) -->
+          <circle cx="400" cy="265" r="20" fill="url(#rxAlertPulse)"/>
+          <g filter="url(#rxIconShadow)">
+            <circle cx="400" cy="265" r="12" fill="#A83A36" stroke="#FFFFFF" stroke-width="2.5"/>
+            <text x="400" y="269" text-anchor="middle" fill="white" font-size="11" font-weight="700">E</text>
+          </g>
+          <text x="418" y="263" font-size="10" fill="#1E2D5C" font-weight="600">EHPAD</text>
+          <text x="418" y="274" font-size="9" fill="#A83A36" font-style="italic">60 lits — vulnérable</text>
+
+          <!-- Maison de santé -->
+          <g filter="url(#rxIconShadow)">
+            <circle cx="375" cy="295" r="11" fill="#D4504C" stroke="#FFFFFF" stroke-width="2"/>
+            <text x="375" y="300" text-anchor="middle" fill="white" font-size="14" font-weight="700">+</text>
+          </g>
+          <text x="392" y="299" font-size="10" fill="#1E2D5C" font-weight="600">Maison de santé</text>
+
+          <!-- SDIS -->
+          <g filter="url(#rxIconShadow)">
+            <rect x="378" y="318" width="22" height="20" fill="#D4504C" stroke="#FFFFFF" stroke-width="2" rx="3"/>
+            <text x="389" y="333" text-anchor="middle" fill="white" font-size="10" font-weight="700">SDIS</text>
+          </g>
+          <text x="406" y="332" font-size="10" fill="#1E2D5C" font-weight="600">Centre SDIS</text>
+
+          <!-- Forage communal (eau potable) -->
+          <g filter="url(#rxIconShadow)">
+            <circle cx="80" cy="240" r="13" fill="#5B95C4" stroke="#FFFFFF" stroke-width="2"/>
+            <path d="M 80,233 Q 86,240 80,247 Q 74,240 80,233 Z" fill="white"/>
+          </g>
+          <text x="98" y="237" font-size="10" fill="#1E2D5C" font-weight="600">Forage</text>
+          <text x="98" y="248" font-size="9" fill="#5C5852" font-style="italic">eau potable</text>
+
+          <!-- Château d'eau -->
+          <g filter="url(#rxIconShadow)">
+            <circle cx="554" cy="194" r="11" fill="#5B95C4" stroke="#FFFFFF" stroke-width="2"/>
+            <rect x="550" y="195" width="9" height="22" fill="#5B95C4" stroke="#FFFFFF" stroke-width="1"/>
+          </g>
+          <text x="572" y="200" font-size="10" fill="#1E2D5C" font-weight="600">Château d'eau</text>
+          <text x="572" y="211" font-size="9" fill="#5C5852" font-style="italic">800 m³</text>
+
+          <!-- STEP -->
+          <g filter="url(#rxIconShadow)">
+            <circle cx="80" cy="370" r="13" fill="#7DA972" stroke="#FFFFFF" stroke-width="2"/>
+            <text x="80" y="375" text-anchor="middle" fill="white" font-size="11" font-weight="700">T</text>
+          </g>
+          <text x="98" y="368" font-size="10" fill="#1E2D5C" font-weight="600">STEP</text>
+          <text x="98" y="379" font-size="9" fill="#5C5852" font-style="italic">4 500 EH</text>
+
+          <!-- Poste HT/BT principal -->
+          <g filter="url(#rxIconShadow)">
+            <circle cx="450" cy="385" r="11" fill="#A8902C" stroke="#FFFFFF" stroke-width="2"/>
+            <path d="M 446,381 L 452,387 L 446,393 M 452,381 L 458,387 L 452,393" stroke="white" stroke-width="1.5" fill="none"/>
+          </g>
+          <text x="467" y="389" font-size="10" fill="#1E2D5C" font-weight="600">Poste HT/BT</text>
+
+          <!-- Poste électrique secondaire -->
+          <g filter="url(#rxIconShadow)">
+            <circle cx="610" cy="195" r="9" fill="#A8902C" stroke="#FFFFFF" stroke-width="1.5"/>
+            <path d="M 607,192 L 611,196 L 607,200 M 611,192 L 615,196 L 611,200" stroke="white" stroke-width="1.2" fill="none"/>
+          </g>
+          <!-- Lignes électriques (pointillés jaunes) -->
+          <line x1="450" y1="385" x2="554" y2="194" stroke="#A8902C" stroke-width="1" stroke-dasharray="3,2" opacity="0.65"/>
+          <line x1="450" y1="385" x2="610" y2="195" stroke="#A8902C" stroke-width="1" stroke-dasharray="3,2" opacity="0.65"/>
+
+          <!-- Hélistation (stade) -->
+          <g filter="url(#rxIconShadow)">
+            <circle cx="335" cy="350" r="13" fill="#5C5C5C" stroke="#FFFFFF" stroke-width="2"/>
+            <text x="335" y="355" text-anchor="middle" fill="white" font-size="13" font-weight="700">H</text>
+          </g>
+          <text x="354" y="354" font-size="10" fill="#1E2D5C" font-weight="600">Hélistation</text>
+          <text x="354" y="365" font-size="9" fill="#5C5852" font-style="italic">(stade municipal)</text>
+
+          <!-- Quai d'évacuation maritime (port) -->
+          <g filter="url(#rxIconShadow)">
+            <rect x="475" y="105" width="24" height="14" fill="#5994B5" stroke="#FFFFFF" stroke-width="2" rx="2"/>
+            <line x1="481" y1="105" x2="481" y2="95" stroke="#1E2D5C" stroke-width="1.2"/>
+            <line x1="493" y1="105" x2="493" y2="93" stroke="#1E2D5C" stroke-width="1.2"/>
+          </g>
+          <text x="487" y="135" text-anchor="middle" font-family="serif" font-size="10" font-style="italic" font-weight="bold" fill="#1E2D5C">Quai d'évacuation</text>
+          <text x="487" y="146" text-anchor="middle" font-family="serif" font-size="9" font-style="italic" fill="#5C5852">maritime (port)</text>
+        </g>
+
+        <!-- TITRE -->
+        <text x="350" y="22" text-anchor="middle" font-family="serif" font-size="13" font-style="italic" font-weight="bold" fill="#FFFFFF">BAIE D'ANSE-DE-GOULVEN</text>
+
+        <!-- LÉGENDE compacte -->
+        <g transform="translate(15, 20)">
+          <rect width="160" height="80" fill="#FFFFFF" stroke="#1E2D5C" stroke-width="0.6" opacity="0.95" rx="2"/>
+          <text x="8" y="14" font-family="sans-serif" font-size="9" font-weight="700" letter-spacing="0.05em" fill="#1E2D5C">LÉGENDE</text>
+          <line x1="8" y1="24" x2="28" y2="24" stroke="#E86E55" stroke-width="2.5" stroke-dasharray="5,3"/>
+          <text x="34" y="27" font-family="sans-serif" font-size="9" fill="#1E2D5C">Itinéraire de crise</text>
+          <line x1="8" y1="38" x2="28" y2="38" stroke="#A8902C" stroke-width="1" stroke-dasharray="3,2"/>
+          <text x="34" y="41" font-family="sans-serif" font-size="9" fill="#1E2D5C">Lignes électriques</text>
+          <circle cx="18" cy="55" r="6" fill="#A83A36" stroke="#FFFFFF" stroke-width="1.5"/>
+          <text x="34" y="58" font-family="sans-serif" font-size="9" fill="#1E2D5C">ERP critique</text>
+          <circle cx="18" cy="70" r="6" fill="#1E2D5C" stroke="#FFFFFF" stroke-width="1.5"/>
+          <text x="34" y="73" font-family="sans-serif" font-size="9" fill="#1E2D5C">Service public</text>
+        </g>
+
+        <!-- ÉCHELLE -->
+        <g transform="translate(620, 380)">
+          <line x1="0" y1="0" x2="60" y2="0" stroke="#1E2D5C" stroke-width="2"/>
+          <line x1="0" y1="-3" x2="0" y2="3" stroke="#1E2D5C" stroke-width="1.5"/>
+          <line x1="30" y1="-2" x2="30" y2="2" stroke="#1E2D5C" stroke-width="1"/>
+          <line x1="60" y1="-3" x2="60" y2="3" stroke="#1E2D5C" stroke-width="1.5"/>
+          <text x="30" y="-6" text-anchor="middle" font-size="9" fill="#1E2D5C" font-weight="bold">2 km</text>
+        </g>
       </svg>
     </div>
     <p class="map-caption">
@@ -4086,10 +4851,123 @@ h3.subhead {
   </div>
 </section>
 
+<!-- ============ CAS 3 — GESTION DE CRISE PCS (timeline) ============ -->
+<section id="cas3">
+  <div class="section-header">
+    <span class="section-num">13</span>
+    <span class="section-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+    </span>
+    <h2 class="section-title">Étude de cas n°3 — La tempête arrive</h2>
+  </div>
+  <p class="section-intro">
+    Six mois après votre stratégie à dix ans, la <strong>tempête Argonne</strong> est annoncée. Vigilance rouge déclenchée.
+    Le scénario que vous avez écrit en cas n°1 et 2 va être <strong>mis à l'épreuve dans l'urgence</strong>. Voici la timeline,
+    avec cinq fenêtres de décision où chaque groupe vote ses trois actions prioritaires.
+  </p>
+
+  <div class="callout callout-orange">
+    <div class="callout-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 21h20z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.5" r=".7" fill="currentColor"/></svg>
+    </div>
+    <div class="callout-body">
+      <strong>Comment ça se passe.</strong> Le formateur fait défiler la timeline depuis son poste. À chaque fenêtre de décision,
+      vous avez quelques minutes pour vous accorder dans votre groupe et <strong>cocher trois actions prioritaires</strong> parmi
+      les options proposées. La synchronisation est temps réel — quand le formateur passe à la phase suivante, votre vote est figé.
+      L'agrégation des cinq groupes apparaît en plénière.
+    </div>
+  </div>
+
+  <!-- TIMELINE VISUELLE -->
+  <div class="pcs-timeline-block">
+    <div class="pcs-timeline-header">
+      <div class="pcs-timeline-eyebrow">Tempête Argonne — chronologie</div>
+      <div class="pcs-timeline-now">Phase actuelle : <strong id="pcs-current-phase">— en attente du formateur —</strong></div>
+    </div>
+    <div class="pcs-timeline-rail">
+      <div class="pcs-timeline-progress" id="pcs-timeline-progress" style="width:0%"></div>
+      <div class="pcs-timeline-step" data-phase="0" onclick="openPcsPhase(0)">
+        <div class="pcs-step-dot">1</div>
+        <div class="pcs-step-time">J−18h</div>
+        <div class="pcs-step-label">Vigilance rouge</div>
+      </div>
+      <div class="pcs-timeline-step" data-phase="1" onclick="openPcsPhase(1)">
+        <div class="pcs-step-dot">2</div>
+        <div class="pcs-step-time">J−6h</div>
+        <div class="pcs-step-label">Décisions préventives</div>
+      </div>
+      <div class="pcs-timeline-step" data-phase="2" onclick="openPcsPhase(2)">
+        <div class="pcs-step-dot">3</div>
+        <div class="pcs-step-time">J0</div>
+        <div class="pcs-step-label">Pic de l'événement</div>
+      </div>
+      <div class="pcs-timeline-step" data-phase="3" onclick="openPcsPhase(3)">
+        <div class="pcs-step-dot">4</div>
+        <div class="pcs-step-time">J+8h</div>
+        <div class="pcs-step-label">Premières heures</div>
+      </div>
+      <div class="pcs-timeline-step" data-phase="4" onclick="openPcsPhase(4)">
+        <div class="pcs-step-dot">5</div>
+        <div class="pcs-step-time">J+72h</div>
+        <div class="pcs-step-label">Retour d'expérience</div>
+      </div>
+    </div>
+    <p class="pcs-timeline-hint">Cliquez sur une étape pour voir le briefing et voter — uniquement quand le formateur a ouvert la phase.</p>
+  </div>
+</section>
+
+<!-- ============ CAS 4 — CDRNM (arbitrage par collège) ============ -->
+<section id="cas4">
+  <div class="section-header">
+    <span class="section-num">14</span>
+    <span class="section-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+    </span>
+    <h2 class="section-title">Étude de cas n°4 — La CDRNM siège</h2>
+  </div>
+  <p class="section-intro">
+    Six mois après la tempête Argonne, le préfet réunit la <strong>Commission départementale des risques naturels majeurs</strong>.
+    Elle est saisie pour <strong>arbitrer les priorités d'outils</strong> à déployer pour Anse-de-Goulven.
+    L'enveloppe budgétaire est contrainte. Les délais sont courts. Tout ne peut pas être fait en même temps.
+  </p>
+
+  <div class="callout callout-navy">
+    <div class="callout-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3v4zM3 19a2 2 0 0 0 2 2h1v-6H3v4z"/></svg>
+    </div>
+    <div class="callout-body">
+      <strong>Comment ça se passe.</strong> La CDRNM réelle compte 3 collèges : État, élus, qualifiés/socio-pro.
+      <strong>Vos cinq groupes G1-G5 jouent ces collèges</strong> selon le mapping suivant :
+      <span class="callout-tag">État → G1</span>
+      <span class="callout-tag">Élus → G2</span>
+      <span class="callout-tag">Qualifiés → G3 + G4 + G5</span>
+      Vous votez par groupe sur 10 propositions. La restitution agrège par collège pour révéler les majorités, les minorités et les coalitions.
+    </div>
+  </div>
+
+  <div class="cdrnm-block">
+    <div class="cdrnm-head">
+      <div class="cdrnm-eyebrow">Dossier soumis à la commission</div>
+      <h3>Quelles priorités d'outils déployer pour Anse-de-Goulven&nbsp;?</h3>
+      <p class="cdrnm-context">
+        Compte tenu du diagnostic croisé, de la stratégie 10 ans débattue, et du retour d'expérience de la tempête Argonne
+        (47 maisons inondées, 80 m de digue effondrée, marais Natura 2000 affecté sur 200 ha, pertes 8,2 M€), la commission
+        est saisie pour donner son avis sur 10 propositions structurées en trois grandes priorités.
+      </p>
+      <p class="cdrnm-context"><strong>Pour chaque proposition, vous votez : POUR / CONTRE / RÉSERVE.</strong> Vous pouvez ajouter un argument court (50 mots) — facultatif. Vous pouvez modifier votre vote tant que vous n'avez pas validé.</p>
+    </div>
+
+    <button class="cdrnm-launch-btn" onclick="openCdrnm()">
+      <span>Ouvrir le QCM de la commission</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </div>
+</section>
+
 <!-- ============ AXES ============ -->
 <section id="axes">
   <div class="section-header">
-    <span class="section-num">13</span>
+    <span class="section-num">15</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg>
     </span>
@@ -4155,7 +5033,7 @@ h3.subhead {
 <!-- ============ LEXIQUE ============ -->
 <section id="lexique">
   <div class="section-header">
-    <span class="section-num">14</span>
+    <span class="section-num">16</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
     </span>
@@ -4190,7 +5068,7 @@ h3.subhead {
 <!-- ============ SOURCES NATIONALES ============ -->
 <section id="sources">
   <div class="section-header">
-    <span class="section-num">15</span>
+    <span class="section-num">17</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 4 9 14 14 0 0 1-4 9 14 14 0 0 1-4-9 14 14 0 0 1 4-9z"/></svg>
     </span>
@@ -4315,7 +5193,7 @@ h3.subhead {
 <!-- ============ TÉLÉCHARGEMENTS ============ -->
 <section id="telechargements">
   <div class="section-header">
-    <span class="section-num">16</span>
+    <span class="section-num">18</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     </span>
@@ -4363,7 +5241,7 @@ h3.subhead {
 <!-- ============ POUR ALLER PLUS LOIN ============ -->
 <section id="liens">
   <div class="section-header">
-    <span class="section-num">17</span>
+    <span class="section-num">19</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="9 12 12 15 15 12"/><line x1="12" y1="6" x2="12" y2="15"/></svg>
     </span>
@@ -4534,6 +5412,11 @@ h3.subhead {
   <p><strong>Formation Résilience des territoires littoraux</strong>  ·  Anse-de-Goulven (commune fictive à usage pédagogique)</p>
   <p style="margin-top:6px;">Dispositif pédagogique conçu et animé par Boris Leclerc, membre de l'Inspection générale de l'environnement et du développement durable (IGEDD - MTECT)</p>
   <p style="margin-top:14px;font-style:italic;">« La résilience commence par les questions qu'on ose se poser — et qu'on ose poser aux autres. »</p>
+  <p style="margin-top:18px;font-size:11px;color:rgba(255,255,255,0.45);">
+    <a href="#" onclick="event.preventDefault(); resetThisBrowser();" style="color:rgba(255,255,255,0.55);text-decoration:underline;">Réinitialiser ce navigateur</a>
+    <span style="margin:0 8px;">·</span>
+    Identifiant local de session : <code id="footerSessionId" style="font-family:var(--mono);">—</code>
+  </p>
 </footer>
 
 <script type="module">
@@ -7766,6 +8649,736 @@ function castCouncilVote(vote) {
 
 if (false /* old broadcast channel disabled */) {}
 
+// ============ CDRNM — Avis sur arbitrage des priorités d'outils ============
+const CDRNM_QUESTIONS = {
+  A: {
+    label: "A — Outils réglementaires",
+    questions: [
+      {
+        id: 'A1',
+        text: "Réviser le PPRSM en intégrant la projection d'érosion 2050",
+        detail: "Le PPRSM en vigueur date de 2014. La nouvelle projection Cerema/BRGM ajoute +75 m de recul du trait de côte d'ici 2050. La révision élargirait significativement la zone d'aléa fort, dont 18 maisons aujourd'hui en aléa moyen passeraient en aléa fort.",
+      },
+      {
+        id: 'A2',
+        text: "Étendre la zone d'aléa fort au Quartier de la Digue (interdiction de reconstruction)",
+        detail: "Aujourd'hui en aléa moyen. Les 47 maisons sinistrées par Argonne y sont. Passer en aléa fort interdit la reconstruction à l'identique et conditionne toute réparation à un dispositif de protection (batardeaux, surélévation).",
+      },
+      {
+        id: 'A3',
+        text: "Modifier le PLU pour interdire toute nouvelle construction en zone d'aléa moyen",
+        detail: "Décision du conseil municipal nécessaire. Conséquence économique : -8 % de potentiel constructible communal, -12 % à 5 ans sur la fiscalité foncière. Avantage : conformité avec la doctrine PNACC-3.",
+      },
+      {
+        id: 'A4',
+        text: "Inscrire les 12 maisons de la falaise sur la liste préfectorale L. 121-22-1 (recul du trait de côte)",
+        detail: "Loi Climat & Résilience. Permet l'application d'un régime spécifique d'urbanisme, et ouvre la voie à la procédure d'expropriation pour cause d'utilité publique liée au risque grave. 4 maisons sont à moins de 25 m du bord. Recul observé : 0,4 m/an, accéléré à 0,7 m/an récemment.",
+      },
+    ]
+  },
+  B: {
+    label: "B — Outils financiers",
+    questions: [
+      {
+        id: 'B1',
+        text: "Mobiliser le FPRNM pour acquisition amiable des 47 maisons inondées",
+        detail: "Quartier de la Digue. Évaluation moyenne 195 K€/maison soit 9,2 M€. Le FPRNM 2025 (300 M€ AE national) peut prendre en charge jusqu'à 100 % en zone d'aléa fort suite à un événement majeur. Le préfet a autorité pour engager cette mobilisation.",
+      },
+      {
+        id: 'B2',
+        text: "Demander le classement en CatNat de la tempête Argonne (en cours)",
+        detail: "Procédure d'urgence. Permet d'enclencher l'indemnisation des particuliers (déductible 380 €). Délai d'instruction : 2 mois. La déclaration commune par tous les sinistrés est en cours.",
+      },
+      {
+        id: 'B3',
+        text: "Solliciter un fonds État exceptionnel pour relocaliser la PME et le Camping 1",
+        detail: "Hors FPRNM (qui ne couvre pas les entreprises au-delà de seuils). Demande de subvention spécifique au MTECT et à la Région. Estimation : 4 M€ (PME Bretzel-Marine) + 2,5 M€ (Camping 1 Les Dunes). Camping 2 La Goëlette en faillite, hors-jeu.",
+      },
+    ]
+  },
+  C: {
+    label: "C — Outils de planification et de doctrine",
+    questions: [
+      {
+        id: 'C1',
+        text: "Adopter une SLGTC à l'échelle de la cellule sédimentaire (18 km, 5 communes)",
+        detail: "Stratégie Locale de Gestion du Trait de Côte. Inter-communale. Échelle pertinente géo-morphologiquement. Coût d'élaboration : 250 K€/2 ans. Co-financement Région et État jusqu'à 70 %. Suppose que les 5 communes signent la convention.",
+      },
+      {
+        id: 'C2',
+        text: "Reconstruire la digue 1962 (option) OU déconstruire (option) — recomposition spatiale",
+        detail: "Trois options chiffrées : reconstruction à l'identique (8 M€, espérance 50 ans), surélévation +1,2 m (12 M€, espérance 60 ans), déconstruction partielle + restauration marais (5,2 M€, suppose déplacement du Quartier de la Digue). La réponse POUR signifie 'reconstruction', CONTRE signifie 'déconstruction', RÉSERVE permet de demander un complément d'études.",
+      },
+      {
+        id: 'C3',
+        text: "Engager le projet ADAPTO avec le Conservatoire du littoral (renaturation marais)",
+        detail: "Co-financement Conservatoire 1,8 M€ déjà obtenu, en attente d'engagement communal. Comprend : reconnexion hydraulique du marais (60 ha supplémentaires), suivi écologique 10 ans, sentier pédagogique. Tempête Argonne a démontré que le marais a joué un rôle de tampon (-25 % énergie de houle mesurée).",
+      },
+    ]
+  }
+};
+
+let _cdrnmVotes = {};  // { qid: { vote: 'pour'|'contre'|'reserve', arg: '...' } }
+
+function openCdrnm() {
+  const myGrp = getMyGroup();
+  if (!myGrp && !isTrainer()) {
+    alert("Débloquez d'abord votre groupe (en haut à droite) pour voter.");
+    return;
+  }
+
+  // Si la modal a été utilisée en mode agrégé par le formateur, restaurer la structure normale
+  const modal = document.querySelector('#cdrnmOverlay .cdrnm-modal');
+  if (modal.dataset.aggregateMode === 'true') {
+    modal.innerHTML = `
+      <div class="cdrnm-modal-head">
+        <div class="cdrnm-modal-eyebrow">Commission départementale des risques naturels majeurs</div>
+        <div class="cdrnm-modal-title">Arbitrage des priorités d'outils — Anse-de-Goulven</div>
+        <div class="cdrnm-modal-sub">Saisine du préfet · 10 propositions · vote par collège</div>
+      </div>
+      <div class="cdrnm-modal-body" id="cdrnmModalBody"></div>
+      <div class="cdrnm-modal-foot">
+        <div class="cdrnm-progress-text">Voté : <strong id="cdrnmProgress">0</strong> / 10</div>
+        <div class="cdrnm-foot-actions">
+          <button class="btn btn-secondary" onclick="closeCdrnm()">Fermer</button>
+          <button class="btn btn-primary" id="cdrnmValidateBtn" onclick="validateCdrnm()" disabled>Valider l'avis du collège</button>
+        </div>
+      </div>`;
+    delete modal.dataset.aggregateMode;
+  }
+
+  // Charger les votes existants depuis Firebase si présents
+  loadCdrnmVotes().then(() => {
+    renderCdrnm();
+    document.getElementById('cdrnmOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  });
+}
+
+async function loadCdrnmVotes() {
+  _cdrnmVotes = {};
+  const myGrp = getMyGroup();
+  if (!myGrp || !window.FB) return;
+  try {
+    const data = await _fbGetWithTimeout(`cdrnm/${myGrp}`, 4000);
+    if (data && typeof data === 'object') {
+      _cdrnmVotes = data;
+    }
+  } catch(e) { console.warn('cdrnm load failed:', e); }
+}
+
+function renderCdrnm() {
+  const body = document.getElementById('cdrnmModalBody');
+  let html = '';
+  ['A', 'B', 'C'].forEach(secId => {
+    const sec = CDRNM_QUESTIONS[secId];
+    html += `<div class="cdrnm-section-head">${escapeHTML(sec.label)}</div>`;
+    sec.questions.forEach(q => {
+      const cur = _cdrnmVotes[q.id] || { vote: null, arg: '' };
+      const voteOpts = [
+        { val: 'pour',    label: '✓ POUR',     cls: 'pour' },
+        { val: 'contre',  label: '✕ CONTRE',   cls: 'contre' },
+        { val: 'reserve', label: '~ RÉSERVE',  cls: 'reserve' },
+      ];
+      html += `<div class="cdrnm-question">
+        <div class="cdrnm-question-num">${q.id}</div>
+        <div class="cdrnm-question-text">${escapeHTML(q.text)}</div>
+        <div class="cdrnm-question-detail">${escapeHTML(q.detail)}</div>
+        <div class="cdrnm-vote-row">
+          ${voteOpts.map(o => `
+            <button class="cdrnm-vote-btn ${o.cls} ${cur.vote === o.val ? 'selected' : ''}"
+                    onclick="setCdrnmVote('${q.id}', '${o.val}')">${o.label}</button>
+          `).join('')}
+        </div>
+        <textarea class="cdrnm-arg-input" id="cdrnm-arg-${q.id}" rows="1"
+                  placeholder="Argument court (50 mots maximum) — facultatif"
+                  onchange="setCdrnmArg('${q.id}', this.value)"
+                  oninput="autosizeArg(this)">${escapeHTML(cur.arg || '')}</textarea>
+      </div>`;
+    });
+  });
+  body.innerHTML = html;
+  refreshCdrnmProgress();
+}
+
+function autosizeArg(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(80, el.scrollHeight) + 'px';
+}
+
+function setCdrnmVote(qid, val) {
+  if (!_cdrnmVotes[qid]) _cdrnmVotes[qid] = { vote: null, arg: '' };
+  _cdrnmVotes[qid].vote = val;
+  renderCdrnm();
+}
+
+function setCdrnmArg(qid, val) {
+  if (!_cdrnmVotes[qid]) _cdrnmVotes[qid] = { vote: null, arg: '' };
+  // Limit to 50 words
+  const words = val.trim().split(/\s+/);
+  if (words.length > 50) {
+    _cdrnmVotes[qid].arg = words.slice(0, 50).join(' ');
+  } else {
+    _cdrnmVotes[qid].arg = val.trim();
+  }
+}
+
+function refreshCdrnmProgress() {
+  const total = ['A','B','C'].reduce((acc, s) => acc + CDRNM_QUESTIONS[s].questions.length, 0);
+  const done = Object.keys(_cdrnmVotes).filter(k => _cdrnmVotes[k].vote).length;
+  document.getElementById('cdrnmProgress').textContent = done;
+  document.getElementById('cdrnmValidateBtn').disabled = done === 0;
+  document.getElementById('cdrnmValidateBtn').textContent =
+    done === total ? 'Valider l\'avis du collège (complet)' : `Valider (${done}/${total})`;
+}
+
+function closeCdrnm() {
+  document.getElementById('cdrnmOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function validateCdrnm() {
+  const myGrp = getMyGroup();
+  if (!myGrp) {
+    alert("Vous devez avoir un groupe débloqué pour voter.");
+    return;
+  }
+  if (window.FB) {
+    try {
+      await window.FB.setVal(`cdrnm/${myGrp}`, _cdrnmVotes);
+    } catch(e) {
+      console.warn('cdrnm save failed:', e);
+      alert("Le vote a été pris en compte localement, mais pas synchronisé. Vérifiez la connexion.");
+    }
+  }
+  closeCdrnm();
+  const done = Object.keys(_cdrnmVotes).filter(k => _cdrnmVotes[k].vote).length;
+  alert(`✓ Avis enregistré : ${done} position${done > 1 ? 's' : ''} sur 10. Vous pouvez modifier votre vote en rouvrant le QCM.`);
+}
+
+// Vue formateur : agrégation des votes des 5 collèges
+async function openCdrnmAggregate() {
+  if (!isTrainer()) {
+    alert("Cette fonction est réservée au formateur.");
+    return;
+  }
+  // Charger les votes des 5 groupes
+  const allGroups = ['g1','g2','g3','g4','g5'];
+  const groupLabels = {g1:'État (G1)', g2:'Élus (G2)', g3:'Qualifiés - Marais (G3)', g4:'Qualifiés - Éco (G4)', g5:'Qualifiés - Société (G5)'};
+  const groupColors = {g1:'#1E2D5C', g2:'#328088', g3:'#5C8A4F', g4:'#E86E55', g5:'#8E5BA8'};
+  let allVotes = {};
+  if (window.FB) {
+    const promises = allGroups.map(g => _fbGetWithTimeout(`cdrnm/${g}`, 4000));
+    const results = await Promise.all(promises);
+    allGroups.forEach((g, i) => { allVotes[g] = results[i] || {}; });
+  }
+  // Construire le HTML d'agrégation
+  let html = `<div class="cdrnm-modal-head" style="border-radius:8px 8px 0 0;">
+    <div class="cdrnm-modal-eyebrow">Vue formateur · Agrégation par collège</div>
+    <div class="cdrnm-modal-title">Avis de la CDRNM — vote par groupe</div>
+    <div class="cdrnm-modal-sub">10 propositions · 5 groupes · positions colorées</div>
+  </div>
+  <div class="cdrnm-modal-body" style="background:#fff;">`;
+  ['A','B','C'].forEach(secId => {
+    const sec = CDRNM_QUESTIONS[secId];
+    html += `<div class="cdrnm-section-head">${escapeHTML(sec.label)}</div>`;
+    sec.questions.forEach(q => {
+      html += `<div class="cdrnm-question">
+        <div class="cdrnm-question-num">${q.id}</div>
+        <div class="cdrnm-question-text">${escapeHTML(q.text)}</div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px;">`;
+      allGroups.forEach(g => {
+        const v = allVotes[g] && allVotes[g][q.id];
+        const voteClass = v && v.vote ? `selected ${v.vote}` : '';
+        const voteLabel = v && v.vote ? v.vote.toUpperCase() : '—';
+        const arg = v && v.arg ? v.arg : '';
+        html += `<div style="border:1px solid var(--grey-line); border-radius:4px; padding:8px; background: var(--grey-bg);">
+          <div style="font-family:var(--mono);font-size:10px;color:${groupColors[g]};font-weight:700;letter-spacing:0.04em;margin-bottom:4px;">${groupLabels[g]}</div>
+          <div class="cdrnm-vote-btn ${voteClass}" style="font-size:11px;padding:4px 6px;cursor:default;pointer-events:none;">${voteLabel}</div>
+          ${arg ? `<div style="font-size:11px;color:var(--grey-txt);margin-top:6px;font-style:italic;line-height:1.4;">« ${escapeHTML(arg.slice(0,100))}${arg.length>100?'…':''} »</div>` : ''}
+        </div>`;
+      });
+      html += `</div></div>`;
+    });
+  });
+  html += `</div>
+  <div class="cdrnm-modal-foot">
+    <div class="cdrnm-progress-text">Vue formateur · ne peut pas être éditée</div>
+    <div class="cdrnm-foot-actions">
+      <button class="btn btn-primary" onclick="closeCdrnm()">Fermer</button>
+    </div>
+  </div>`;
+  // Réutilise la modal CDRNM en remplaçant tout le contenu
+  const modal = document.querySelector('#cdrnmOverlay .cdrnm-modal');
+  modal.innerHTML = html;
+  document.getElementById('cdrnmOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // Restore behavior on close
+  modal.dataset.aggregateMode = 'true';
+}
+
+async function resetCdrnm() {
+  if (!isTrainer()) return;
+  if (!confirm("Réinitialiser tous les votes CDRNM ? Cette action est irréversible.")) return;
+  if (window.FB) {
+    await window.FB.removeVal('cdrnm');
+  }
+  alert("✓ Votes CDRNM réinitialisés.");
+}
+
+// ============ PCS — TEMPÊTE ARGONNE (5 phases) ============
+const PCS_PHASES = [
+  {
+    id: 'phase0',
+    eyebrow: 'Tempête Argonne — Phase 1 / 5',
+    title: 'Vigilance rouge déclenchée',
+    time: 'Lundi 14 novembre, 18h00 — J−18h',
+    briefing: `<strong>Météo-France</strong> vient de placer le département en <strong>vigilance rouge vagues-submersion</strong>. Surcote prévue 1,4 m, houle 6,5 m période 14 s, marée à coefficient 102. Le pic est attendu mardi 15 novembre vers 12h. Les premières effets sont attendus dès la matinée. Le préfet active le COD à 18h30. Vous avez environ 90 minutes pour engager les premières mesures, avant la nuit.`,
+    question: "Quelles sont les 3 actions prioritaires de votre rôle dans les 90 minutes ?",
+    actions: {
+      g1: [
+        {id:'g1_1', text:"Activer immédiatement le COD départemental", tag:"COORDINATION"},
+        {id:'g1_2', text:"Appeler le maire pour activer le PCS", tag:"PARTENARIAT"},
+        {id:'g1_3', text:"Diffuser FR-Alert sur la zone d'aléa", tag:"ALERTE"},
+        {id:'g1_4', text:"Convoquer le SDIS et le COZ pour point d'engagement", tag:"COORDINATION"},
+        {id:'g1_5', text:"Préparer l'arrêté préfectoral d'évacuation", tag:"DROIT"},
+        {id:'g1_6', text:"Mobiliser la cellule communication / presse de la préfecture", tag:"COMMUNICATION"},
+        {id:'g1_7', text:"Identifier les 3 communes les plus exposées et y dépêcher un sous-préfet", tag:"TERRAIN"},
+        {id:'g1_8', text:"Activer la convention de mise à disposition de moyens du Conseil départemental", tag:"MOYENS"},
+      ],
+      g2: [
+        {id:'g2_1', text:"Activer le PCS et désigner le DGS comme RAC", tag:"PCS"},
+        {id:'g2_2', text:"Appeler nominativement les 22 personnes âgées isolées identifiées par G5", tag:"VULNÉRABLES"},
+        {id:'g2_3', text:"Réquisitionner le gymnase municipal comme centre d'accueil", tag:"HÉBERGEMENT"},
+        {id:'g2_4', text:"Diffuser un message communal (panneau, mail mairie, réseaux)", tag:"COMMUNICATION"},
+        {id:'g2_5', text:"Déclencher la fermeture immédiate des écoles pour mardi", tag:"DÉCISION"},
+        {id:'g2_6', text:"Prévenir la presse locale pour message rassurant", tag:"COMMUNICATION"},
+        {id:'g2_7', text:"Convoquer le conseil municipal en cellule de crise", tag:"GOUVERNANCE"},
+        {id:'g2_8', text:"Activer la réserve communale de sécurité civile (12 bénévoles)", tag:"MOBILISATION"},
+      ],
+      g3: [
+        {id:'g3_1', text:"Inspecter visuellement la digue 1962 et le cordon dunaire", tag:"DIAGNOSTIC"},
+        {id:'g3_2', text:"Mobiliser le syndicat mixte pour appui technique au PCS", tag:"APPUI"},
+        {id:'g3_3', text:"Vérifier les vannes du marais (capacité tampon)", tag:"OUVRAGES"},
+        {id:'g3_4', text:"Alerter le Conservatoire du littoral (sites classés)", tag:"PARTENARIAT"},
+        {id:'g3_5', text:"Mettre en sécurité les équipements du marais (caméras, capteurs)", tag:"MATÉRIEL"},
+        {id:'g3_6', text:"Préparer le RETEX environnemental qui suivra", tag:"ANTICIPATION"},
+        {id:'g3_7', text:"Coordonner avec le PNM, ONF, Cerema voisins", tag:"PARTENARIAT"},
+        {id:'g3_8', text:"Consigner par photo l'état initial des sites Natura 2000", tag:"PREUVE"},
+      ],
+      g4: [
+        {id:'g4_1', text:"Évacuer les 3 campings (clause de solidarité 2024)", tag:"ÉVACUATION"},
+        {id:'g4_2', text:"Mettre les bateaux du port en sécurité (mouillage renforcé, à terre si possible)", tag:"MATÉRIEL"},
+        {id:'g4_3', text:"Vider les bassins conchylicoles et sécuriser les concessions", tag:"PROFESSIONNELS"},
+        {id:'g4_4', text:"Fermer la PME et mettre les stocks en hauteur", tag:"ÉCONOMIE"},
+        {id:'g4_5', text:"Annuler les livraisons et signaler aux clients", tag:"ÉCONOMIE"},
+        {id:'g4_6', text:"Diffuser un message UCAP aux commerçants pour fermeture coordonnée", tag:"COMMUNICATION"},
+        {id:'g4_7', text:"Préparer les déclarations cat-nat et constat photographique", tag:"ANTICIPATION"},
+        {id:'g4_8', text:"Mettre à l'abri les engins de chantier en zone PPRSM", tag:"MATÉRIEL"},
+      ],
+      g5: [
+        {id:'g5_1', text:"Activer la chaîne d'appels solidaires vers les voisins âgés", tag:"SOLIDARITÉ"},
+        {id:'g5_2', text:"Diffuser un message d'alerte sur les groupes WhatsApp / Facebook", tag:"COMMUNICATION"},
+        {id:'g5_3', text:"Proposer des hébergements chez des habitants en zone sûre", tag:"HÉBERGEMENT"},
+        {id:'g5_4', text:"Aider physiquement les voisins à mettre les meubles en hauteur", tag:"TERRAIN"},
+        {id:'g5_5', text:"Recenser les besoins urgents (médicaments, oxygène, animaux)", tag:"DIAGNOSTIC"},
+        {id:'g5_6', text:"Demander à la mairie un point information citoyen", tag:"REVENDICATION"},
+        {id:'g5_7', text:"Mobiliser l'asso de défense du littoral pour relais info", tag:"MOBILISATION"},
+        {id:'g5_8', text:"Préparer une réunion publique post-événement", tag:"ANTICIPATION"},
+      ],
+    }
+  },
+  {
+    id: 'phase1',
+    eyebrow: 'Tempête Argonne — Phase 2 / 5',
+    title: 'Décisions préventives — la nuit avant',
+    time: 'Mardi 15 novembre, 06h00 — J−6h',
+    briefing: `Il fait nuit, la tempête est entrée dans la Manche. Les premières rafales atteignent 110 km/h. Les Conditions de la mer se dégradent. Le pic est attendu dans 6 heures. Les écoles sont fermées. <strong>Mais 280 saisonniers logés sur les campings sont encore sur place.</strong> Le maire hésite à évacuer le Quartier de la Digue (250 maisons, 22 personnes âgées isolées). Les radios locales relaient les recommandations de confinement.`,
+    question: "Que faites-vous dans les 6 heures qui restent avant le pic ?",
+    actions: {
+      g1: [
+        {id:'g1p1_1', text:"Prendre l'arrêté préfectoral d'évacuation du Quartier de la Digue", tag:"DÉCISION"},
+        {id:'g1p1_2', text:"Mobiliser des moyens militaires (préfet de zone)", tag:"RENFORTS"},
+        {id:'g1p1_3', text:"Activer le plan ORSEC départemental", tag:"PLAN"},
+        {id:'g1p1_4', text:"Demander des hélicoptères en standby", tag:"MOYENS"},
+        {id:'g1p1_5', text:"Diffuser FR-Alert renforcée sur toute la zone PPRSM", tag:"ALERTE"},
+        {id:'g1p1_6', text:"Préparer un point presse à 9h", tag:"COMMUNICATION"},
+        {id:'g1p1_7', text:"Demander aux opérateurs de couper le gaz dans les zones évacuées", tag:"RÉSEAUX"},
+        {id:'g1p1_8', text:"Coordonner avec les départements voisins pour l'hébergement de débord", tag:"COORDINATION"},
+      ],
+      g2: [
+        {id:'g2p1_1', text:"Évacuer le Quartier de la Digue (250 maisons)", tag:"ÉVACUATION"},
+        {id:'g2p1_2', text:"Faire du porte-à-porte chez les 22 personnes isolées avec la RCSC", tag:"VULNÉRABLES"},
+        {id:'g2p1_3', text:"Garder le Quartier de la Digue en alerte renforcée mais sans évacuer", tag:"DÉCISION"},
+        {id:'g2p1_4', text:"Évacuer aussi les 280 saisonniers (campings)", tag:"ÉVACUATION"},
+        {id:'g2p1_5', text:"Ouvrir un deuxième centre d'accueil (salle des fêtes)", tag:"HÉBERGEMENT"},
+        {id:'g2p1_6', text:"Organiser le ramassage des évacués (bus communal + 2 cars)", tag:"LOGISTIQUE"},
+        {id:'g2p1_7', text:"Dépêcher le DGS au COD préfectoral comme officier de liaison", tag:"COORDINATION"},
+        {id:'g2p1_8', text:"Couper l'électricité préventivement au Quartier de la Digue", tag:"RÉSEAUX"},
+      ],
+      g3: [
+        {id:'g3p1_1', text:"Ouvrir les vannes du marais en mode débordement contrôlé", tag:"OUVRAGES"},
+        {id:'g3p1_2', text:"Inspecter une dernière fois la digue 1962 (point de plus grande vulnérabilité)", tag:"DIAGNOSTIC"},
+        {id:'g3p1_3', text:"Mobiliser un drone pour suivi en direct (si conditions le permettent)", tag:"OBSERVATION"},
+        {id:'g3p1_4', text:"Évacuer les équipes du syndicat (sécurité d'abord)", tag:"SÉCURITÉ"},
+        {id:'g3p1_5', text:"Alerter le Conservatoire du littoral des risques pour les 200 ha", tag:"PARTENARIAT"},
+        {id:'g3p1_6', text:"Préparer le retour d'expérience environnemental immédiat", tag:"ANTICIPATION"},
+        {id:'g3p1_7', text:"Mobiliser le BRGM pour suivi de la falaise", tag:"PARTENARIAT"},
+        {id:'g3p1_8', text:"Mettre les capteurs en mode haute fréquence", tag:"INSTRUMENTATION"},
+      ],
+      g4: [
+        {id:'g4p1_1', text:"Évacuer définitivement les 280 saisonniers des campings", tag:"ÉVACUATION"},
+        {id:'g4p1_2', text:"Sortir de l'eau les 12 bateaux de pêche", tag:"MATÉRIEL"},
+        {id:'g4p1_3', text:"Sécuriser la PME (stocks en hauteur, machines bâchées)", tag:"PROTECTION"},
+        {id:'g4p1_4', text:"Vider et déplacer les engins du chantier portuaire", tag:"MATÉRIEL"},
+        {id:'g4p1_5', text:"Fermer définitivement les commerces", tag:"ÉCONOMIE"},
+        {id:'g4p1_6', text:"Préparer la relocation temporaire des saisonniers chez l'habitant (UCAP)", tag:"SOLIDARITÉ"},
+        {id:'g4p1_7', text:"Photographier l'état des établissements pour preuve assurance", tag:"PREUVE"},
+        {id:'g4p1_8', text:"Mettre à l'abri les bétaillères et matériel agricole", tag:"MATÉRIEL"},
+      ],
+      g5: [
+        {id:'g5p1_1', text:"Faire le tour des 22 personnes isolées avec deux bénévoles par appartement", tag:"TERRAIN"},
+        {id:'g5p1_2', text:"Aider les saisonniers évacués à transporter leurs affaires", tag:"SOLIDARITÉ"},
+        {id:'g5p1_3', text:"Diffuser une carte des hébergements solidaires sur les réseaux", tag:"COMMUNICATION"},
+        {id:'g5p1_4', text:"Préparer 50 trousses de premiers secours / réconfort au gymnase", tag:"LOGISTIQUE"},
+        {id:'g5p1_5', text:"Prendre contact avec l'EHPAD pour les besoins spécifiques", tag:"VULNÉRABLES"},
+        {id:'g5p1_6', text:"Demander un compte-rendu officiel à la mairie sur les évacuations", tag:"REVENDICATION"},
+        {id:'g5p1_7', text:"Mobiliser le réseau d'amis-bénévoles inter-associations", tag:"COORDINATION"},
+        {id:'g5p1_8', text:"Recenser les animaux de compagnie laissés sur place", tag:"DIAGNOSTIC"},
+      ],
+    }
+  },
+  {
+    id: 'phase2',
+    eyebrow: 'Tempête Argonne — Phase 3 / 5',
+    title: 'Pic de l\'événement',
+    time: 'Mardi 15 novembre, 12h00 — J0',
+    briefing: `<strong>La tempête est à son maximum.</strong> Vagues de 6,8 m mesurées au sémaphore. La digue 1962 a cédé partiellement à 11h47 — première brèche de 12 mètres. L'eau pénètre dans le Quartier de la Digue. Le Camping 2 (La Goëlette) est totalement inondé. Le forage communal a été submergé. Le poste électrique principal est hors service depuis 10h30. Le COD est saturé d'appels. Une personne âgée est signalée sur le toit de sa maison rue de la Tour.`,
+    question: "Pic de crise — quelles sont les 3 priorités absolues ?",
+    actions: {
+      g1: [
+        {id:'g1p2_1', text:"Demander hélicoptère MEDEVAC pour la personne sur le toit", tag:"URGENCE VITALE"},
+        {id:'g1p2_2', text:"Couper toute l'électricité du secteur sinistré", tag:"RÉSEAUX"},
+        {id:'g1p2_3', text:"Déclencher le plan rouge (afflux de victimes)", tag:"SECOURS"},
+        {id:'g1p2_4', text:"Coordonner avec le COZ pour renforts hélicoptères", tag:"RENFORTS"},
+        {id:'g1p2_5', text:"Tenir le point de situation toutes les 30 minutes", tag:"COORDINATION"},
+        {id:'g1p2_6', text:"Diffuser un message FR-Alert de confinement strict", tag:"ALERTE"},
+        {id:'g1p2_7', text:"Mobiliser les équipes plongeurs SDIS sur la zone inondée", tag:"SECOURS"},
+        {id:'g1p2_8', text:"Faire un point presse en plein cœur de l'événement", tag:"COMMUNICATION"},
+      ],
+      g2: [
+        {id:'g2p2_1', text:"Coordonner les secours sur la rue de la Tour (personne sur le toit)", tag:"URGENCE VITALE"},
+        {id:'g2p2_2', text:"Vérifier la liste des évacués au gymnase (qui manque ?)", tag:"VULNÉRABLES"},
+        {id:'g2p2_3', text:"Organiser un point info à 14h pour les familles inquiètes", tag:"COMMUNICATION"},
+        {id:'g2p2_4', text:"Faire ouvrir d'urgence un troisième centre d'accueil", tag:"HÉBERGEMENT"},
+        {id:'g2p2_5', text:"Demander à la presse de relayer le confinement", tag:"COMMUNICATION"},
+        {id:'g2p2_6', text:"Coordonner avec le SDIS sur les priorités de secours", tag:"COORDINATION"},
+        {id:'g2p2_7', text:"Préparer la communication de gestion post-événement", tag:"ANTICIPATION"},
+        {id:'g2p2_8', text:"Tenir un journal de bord horodaté de toutes les décisions", tag:"TRAÇABILITÉ"},
+      ],
+      g3: [
+        {id:'g3p2_1', text:"Documenter par drone la zone de brèche (preuve scientifique)", tag:"OBSERVATION"},
+        {id:'g3p2_2', text:"Évaluer si le marais joue son rôle de tampon", tag:"DIAGNOSTIC"},
+        {id:'g3p2_3', text:"Suivre la propagation de l'eau salée dans le marais Natura 2000", tag:"ENVIRONNEMENT"},
+        {id:'g3p2_4', text:"Coordonner avec le BRGM (falaise) et l'OFB (zones protégées)", tag:"PARTENARIAT"},
+        {id:'g3p2_5', text:"Sécuriser les équipes du syndicat à distance", tag:"SÉCURITÉ"},
+        {id:'g3p2_6', text:"Préparer la cellule expertise post-crise", tag:"ANTICIPATION"},
+        {id:'g3p2_7', text:"Alerter le ministère sur les enjeux Natura 2000 menacés", tag:"PARTENARIAT"},
+        {id:'g3p2_8', text:"Capturer les données piézométriques en temps réel", tag:"INSTRUMENTATION"},
+      ],
+      g4: [
+        {id:'g4p2_1', text:"Faire le point sur l'état des concessions conchylicoles", tag:"PROFESSIONNELS"},
+        {id:'g4p2_2', text:"Sécuriser la PME — stocks et machines", tag:"PROTECTION"},
+        {id:'g4p2_3', text:"Photographier toutes les destructions pour preuve cat-nat", tag:"PREUVE"},
+        {id:'g4p2_4', text:"Coordonner avec UCAP pour solidarité commerçants", tag:"SOLIDARITÉ"},
+        {id:'g4p2_5', text:"Identifier les acteurs économiques en péril immédiat", tag:"DIAGNOSTIC"},
+        {id:'g4p2_6', text:"Préparer la déclaration cat-nat collective", tag:"ASSURANCE"},
+        {id:'g4p2_7', text:"Mettre en alerte les fournisseurs (chaîne d'approvisionnement)", tag:"ÉCONOMIE"},
+        {id:'g4p2_8', text:"Tenir une cellule économique en parallèle du PCS", tag:"GOUVERNANCE"},
+      ],
+      g5: [
+        {id:'g5p2_1', text:"Confirmer l'état de chaque personne âgée évacuée", tag:"VULNÉRABLES"},
+        {id:'g5p2_2', text:"Documenter les défaillances perçues (pour RETEX citoyen)", tag:"PREUVE"},
+        {id:'g5p2_3', text:"Aider la mairie à tenir le centre d'accueil", tag:"SOLIDARITÉ"},
+        {id:'g5p2_4', text:"Diffuser la consigne de confinement strict", tag:"COMMUNICATION"},
+        {id:'g5p2_5', text:"Identifier les besoins immédiats (médicaments, alimentation)", tag:"DIAGNOSTIC"},
+        {id:'g5p2_6', text:"Témoigner aux médias locaux", tag:"COMMUNICATION"},
+        {id:'g5p2_7', text:"Préparer une réunion citoyenne post-événement", tag:"ANTICIPATION"},
+        {id:'g5p2_8', text:"Demander une présence permanente d'un élu au centre d'accueil", tag:"REVENDICATION"},
+      ],
+    }
+  },
+  {
+    id: 'phase3',
+    eyebrow: 'Tempête Argonne — Phase 4 / 5',
+    title: 'Premières heures post-crise',
+    time: 'Mardi 15 novembre, 20h00 — J+8h',
+    briefing: `Le pic est passé. Le vent retombe. <strong>Bilan provisoire : 47 maisons inondées, 12 caravanes emportées, la digue est en partie effondrée sur 80 m, 2 personnes hospitalisées (dont la dame du toit, sauvée à 14h22).</strong> 380 personnes au gymnase et à la salle des fêtes. La presse nationale est arrivée. Pas de victime à déplorer pour l'instant. Les premiers assureurs commencent à appeler. La sous-préfète vient sur place.`,
+    question: "Premières heures post-crise — comment organisez-vous la suite ?",
+    actions: {
+      g1: [
+        {id:'g1p3_1', text:"Maintenir le COD en activité jusqu'à demain matin", tag:"COORDINATION"},
+        {id:'g1p3_2', text:"Lancer la procédure cat-nat sans attendre", tag:"DROIT"},
+        {id:'g1p3_3', text:"Visite préfectorale sur le terrain demain matin", tag:"PRÉSENCE"},
+        {id:'g1p3_4', text:"Mobiliser les services techniques pour évaluation immédiate", tag:"DIAGNOSTIC"},
+        {id:'g1p3_5', text:"Coordonner avec le ministère pour fonds d'urgence", tag:"FINANCE"},
+        {id:'g1p3_6', text:"Mettre en place une cellule psychologique d'urgence", tag:"VICTIMES"},
+        {id:'g1p3_7', text:"Préparer un communiqué officiel pour le matin", tag:"COMMUNICATION"},
+        {id:'g1p3_8', text:"Activer les conventions inter-départementales pour hébergement", tag:"PARTENARIAT"},
+      ],
+      g2: [
+        {id:'g2p3_1', text:"Tenir un conseil municipal en cellule de crise", tag:"GOUVERNANCE"},
+        {id:'g2p3_2', text:"Organiser un point public d'information le lendemain", tag:"COMMUNICATION"},
+        {id:'g2p3_3', text:"Mobiliser le service social pour les hébergements de longue durée", tag:"VICTIMES"},
+        {id:'g2p3_4', text:"Lancer la collecte des déclarations cat-nat", tag:"ASSURANCE"},
+        {id:'g2p3_5', text:"Demander aux services techniques un état des lieux par rue", tag:"DIAGNOSTIC"},
+        {id:'g2p3_6', text:"Anticiper le retour des saisonniers (sortie de saison perturbée)", tag:"ÉCONOMIE"},
+        {id:'g2p3_7', text:"Coordonner avec l'EPCI sur la solidarité intercommunale", tag:"PARTENARIAT"},
+        {id:'g2p3_8', text:"Tenir un registre des dégâts par habitant", tag:"TRAÇABILITÉ"},
+      ],
+      g3: [
+        {id:'g3p3_1', text:"Évaluer l'état du marais Natura 2000 (pollution salée)", tag:"ENVIRONNEMENT"},
+        {id:'g3p3_2', text:"Photographier la brèche de la digue (état exact)", tag:"PREUVE"},
+        {id:'g3p3_3', text:"Coordonner avec BRGM pour falaise (mouvements ?)", tag:"PARTENARIAT"},
+        {id:'g3p3_4', text:"Prélever des échantillons d'eau pour analyse pollution", tag:"INSTRUMENTATION"},
+        {id:'g3p3_5', text:"Monter un dossier d'urgence pour le Conservatoire du littoral", tag:"ANTICIPATION"},
+        {id:'g3p3_6', text:"Engager les premiers travaux de protection temporaire de la digue", tag:"OUVRAGES"},
+        {id:'g3p3_7', text:"Préparer le retour d'expérience hydraulique pour le PAPI", tag:"DOCUMENTATION"},
+        {id:'g3p3_8', text:"Coordonner avec les communes voisines (cellule sédimentaire)", tag:"PARTENARIAT"},
+      ],
+      g4: [
+        {id:'g4p3_1', text:"Évaluer l'état des entreprises (campings, PME, conchyliculture)", tag:"DIAGNOSTIC"},
+        {id:'g4p3_2', text:"Lancer la déclaration cat-nat collective (UCAP)", tag:"ASSURANCE"},
+        {id:'g4p3_3', text:"Demander un fonds de solidarité économique à l'État", tag:"FINANCE"},
+        {id:'g4p3_4', text:"Annoncer une réunion économique d'urgence le lendemain", tag:"GOUVERNANCE"},
+        {id:'g4p3_5', text:"Mettre à l'abri les stocks restants de la PME", tag:"PROTECTION"},
+        {id:'g4p3_6', text:"Coordonner avec la Région et la Chambre de commerce", tag:"PARTENARIAT"},
+        {id:'g4p3_7', text:"Anticiper les défaillances en cascade (camping 2 surtout)", tag:"ANTICIPATION"},
+        {id:'g4p3_8', text:"Communiquer aux clients pour préserver l'image touristique 2027", tag:"COMMUNICATION"},
+      ],
+      g5: [
+        {id:'g5p3_1', text:"Mobiliser des bénévoles pour aide aux sinistrés", tag:"SOLIDARITÉ"},
+        {id:'g5p3_2', text:"Faire le tour du gymnase (besoins concrets)", tag:"DIAGNOSTIC"},
+        {id:'g5p3_3', text:"Témoigner publiquement des défaillances perçues", tag:"COMMUNICATION"},
+        {id:'g5p3_4', text:"Demander une réunion publique avec le maire et le préfet", tag:"REVENDICATION"},
+        {id:'g5p3_5', text:"Recenser les besoins de soutien psychologique", tag:"VICTIMES"},
+        {id:'g5p3_6', text:"Préparer un communiqué de l'asso de défense du littoral", tag:"COMMUNICATION"},
+        {id:'g5p3_7', text:"Coordonner avec la Croix-Rouge / Secours Populaire", tag:"PARTENARIAT"},
+        {id:'g5p3_8', text:"Documenter les témoignages des sinistrés (mémoire collective)", tag:"DOCUMENTATION"},
+      ],
+    }
+  },
+  {
+    id: 'phase4',
+    eyebrow: 'Tempête Argonne — Phase 5 / 5',
+    title: 'Retour d\'expérience — 72h après',
+    time: 'Vendredi 18 novembre, 12h00 — J+72h',
+    briefing: `Trois jours après la tempête. <strong>Bilan définitif :</strong> 47 maisons inondées (Quartier de la Digue), 12 caravanes emportées (Camping 2 La Goëlette en faillite), 80 m de digue effondrée, marais Natura 2000 affecté sur 200 ha (salinisation), pertes économiques estimées 8,2 M€. Pas de mort. La presse nationale est partie. Les premières plaintes arrivent. La sous-préfète demande à voir votre RETEX. Vous savez maintenant ce qui a fonctionné — et ce qui n'a pas. Demain, vous irez voter à la CDRNM sur la révision du PPRSM.`,
+    question: "RETEX : quelles sont les 3 leçons à retenir absolument ?",
+    actions: {
+      g1: [
+        {id:'g1p4_1', text:"Réviser le PCS communal — rôles flous identifiés", tag:"PROCÉDURE"},
+        {id:'g1p4_2', text:"Renforcer la chaîne d'alerte aux personnes isolées", tag:"VULNÉRABLES"},
+        {id:'g1p4_3', text:"Améliorer la coordination COD / mairie", tag:"COORDINATION"},
+        {id:'g1p4_4', text:"Demander une révision du PPRSM en urgence à la CDRNM", tag:"DOCTRINE"},
+        {id:'g1p4_5', text:"Lancer une étude pour rehausser la digue ou la déconstruire", tag:"OUVRAGES"},
+        {id:'g1p4_6', text:"Renforcer FR-Alert (mauvaise réception locale signalée)", tag:"ALERTE"},
+        {id:'g1p4_7', text:"Tenir une réunion publique transparente sur le RETEX", tag:"COMMUNICATION"},
+        {id:'g1p4_8', text:"Mobiliser le FPRNM pour confortement / recomposition", tag:"FINANCE"},
+      ],
+      g2: [
+        {id:'g2p4_1', text:"Le PCS doit être exercé annuellement — pas en 7 ans", tag:"PROCÉDURE"},
+        {id:'g2p4_2', text:"La RCSC doit avoir une vraie liste de personnes vulnérables", tag:"VULNÉRABLES"},
+        {id:'g2p4_3', text:"Préempter les terrains pour reconstruire en zone sûre", tag:"URBANISME"},
+        {id:'g2p4_4', text:"Engager une consultation citoyenne sur l'avenir du Quartier de la Digue", tag:"PARTICIPATION"},
+        {id:'g2p4_5', text:"Travailler avec l'EPCI sur un PCS intercommunal", tag:"PARTENARIAT"},
+        {id:'g2p4_6', text:"Demander à la CDRNM une révision PPRSM en urgence", tag:"DOCTRINE"},
+        {id:'g2p4_7', text:"Communiquer transparent — admettre les défaillances", tag:"COMMUNICATION"},
+        {id:'g2p4_8', text:"Anticiper la perte fiscale (taxe foncière + taxe de séjour)", tag:"FINANCE"},
+      ],
+      g3: [
+        {id:'g3p4_1', text:"Le marais a joué son rôle — c'est un argument scientifique fort", tag:"DOCTRINE"},
+        {id:'g3p4_2', text:"Engager d'urgence le projet ADAPTO Conservatoire", tag:"OUVRAGES"},
+        {id:'g3p4_3', text:"Lancer un suivi long terme du marais (salinisation)", tag:"INSTRUMENTATION"},
+        {id:'g3p4_4', text:"Réviser le PAPI pour intégrer le RETEX", tag:"DOCTRINE"},
+        {id:'g3p4_5', text:"Documenter scientifiquement la rupture de la digue (publication)", tag:"DOCUMENTATION"},
+        {id:'g3p4_6', text:"Mobiliser l'Agence de l'eau pour co-financement renaturation", tag:"FINANCE"},
+        {id:'g3p4_7', text:"Coordonner avec les communes voisines (cellule sédimentaire)", tag:"PARTENARIAT"},
+        {id:'g3p4_8', text:"Pousser une recomposition progressive du trait de côte", tag:"DOCTRINE"},
+      ],
+      g4: [
+        {id:'g4p4_1', text:"Le Camping 2 ne se relèvera pas — accompagner la fin", tag:"ÉCONOMIE"},
+        {id:'g4p4_2', text:"Demander un fonds État pour relocaliser la PME", tag:"FINANCE"},
+        {id:'g4p4_3', text:"Travailler une stratégie touristique 2027 plus résiliente", tag:"ÉCONOMIE"},
+        {id:'g4p4_4', text:"Mobiliser la chambre d'agriculture pour conchyliculture", tag:"PARTENARIAT"},
+        {id:'g4p4_5', text:"Anticiper la hausse des primes d'assurance (clause SwissRe)", tag:"ASSURANCE"},
+        {id:'g4p4_6', text:"Réviser collectivement la clause de solidarité 2024 entre campings", tag:"GOUVERNANCE"},
+        {id:'g4p4_7', text:"Demander une exonération fiscale d'urgence", tag:"FINANCE"},
+        {id:'g4p4_8', text:"Communiquer sur la résilience de l'offre touristique", tag:"COMMUNICATION"},
+      ],
+      g5: [
+        {id:'g5p4_1', text:"Demander un audit indépendant de la gestion de crise", tag:"REVENDICATION"},
+        {id:'g5p4_2', text:"Pousser pour un budget participatif sur la résilience", tag:"PARTICIPATION"},
+        {id:'g5p4_3', text:"Recueillir les témoignages des habitants pour la mémoire", tag:"DOCUMENTATION"},
+        {id:'g5p4_4', text:"Monter un collectif post-Argonne pour porter les attentes", tag:"MOBILISATION"},
+        {id:'g5p4_5', text:"Demander la priorité aux personnes isolées dans les futures alertes", tag:"VULNÉRABLES"},
+        {id:'g5p4_6', text:"S'opposer à la simple reconstruction du Quartier de la Digue", tag:"DOCTRINE"},
+        {id:'g5p4_7', text:"Demander à siéger à la CDRNM sur le PPRSM révisé", tag:"PARTICIPATION"},
+        {id:'g5p4_8', text:"Pousser à la création d'un comité local d'alerte citoyen", tag:"GOUVERNANCE"},
+      ],
+    }
+  },
+];
+
+let _pcsCurrentPhaseIdx = -1;       // phase active déclenchée par formateur
+let _pcsViewingPhaseIdx = null;      // phase actuellement affichée dans le modal
+let _pcsSelected = new Set();        // actions sélectionnées dans le modal
+let _pcsLockedPhases = {};           // {phaseId: {grp: [actions]}} — votes finalisés
+
+function subscribePcs() {
+  if (!window.FB) return;
+  // Phase active du formateur
+  window.FB.onVal('pcs/currentPhase', val => {
+    _pcsCurrentPhaseIdx = (typeof val === 'number') ? val : -1;
+    refreshPcsTimeline();
+  });
+  // Votes finalisés (pour la restitution)
+  window.FB.onVal('pcs/votes', val => {
+    _pcsLockedPhases = val || {};
+  });
+}
+
+function refreshPcsTimeline() {
+  const steps = document.querySelectorAll('.pcs-timeline-step');
+  steps.forEach((step, i) => {
+    step.classList.remove('active', 'done');
+    if (i < _pcsCurrentPhaseIdx) step.classList.add('done');
+    else if (i === _pcsCurrentPhaseIdx) step.classList.add('active');
+  });
+  const progress = document.getElementById('pcs-timeline-progress');
+  if (progress) {
+    if (_pcsCurrentPhaseIdx < 0) progress.style.width = '0%';
+    else progress.style.width = (_pcsCurrentPhaseIdx / 4 * 100) + '%';
+  }
+  const phaseLabel = document.getElementById('pcs-current-phase');
+  if (phaseLabel) {
+    if (_pcsCurrentPhaseIdx < 0) phaseLabel.textContent = '— en attente du formateur —';
+    else phaseLabel.textContent = `${_pcsCurrentPhaseIdx + 1} / 5 — ${PCS_PHASES[_pcsCurrentPhaseIdx].title}`;
+  }
+}
+
+function openPcsPhase(phaseIdx) {
+  if (phaseIdx > _pcsCurrentPhaseIdx && !isTrainer()) {
+    alert("Cette phase n'a pas encore été ouverte par le formateur. Patience.");
+    return;
+  }
+  const myGrp = getMyGroup();
+  if (!myGrp && !isTrainer()) {
+    alert("Débloquez d'abord votre groupe (en haut à droite) pour participer aux votes.");
+    return;
+  }
+  const phase = PCS_PHASES[phaseIdx];
+  if (!phase) return;
+  _pcsViewingPhaseIdx = phaseIdx;
+  _pcsSelected = new Set();
+
+  // Charger les votes existants pour ce groupe sur cette phase
+  if (myGrp && _pcsLockedPhases[phase.id] && _pcsLockedPhases[phase.id][myGrp]) {
+    _pcsLockedPhases[phase.id][myGrp].forEach(a => _pcsSelected.add(a));
+  }
+
+  document.getElementById('pcsPhaseEyebrow').textContent = phase.eyebrow;
+  document.getElementById('pcsPhaseTitle').textContent = phase.title;
+  document.getElementById('pcsPhaseTime').textContent = phase.time;
+  document.getElementById('pcsPhaseBriefing').innerHTML = phase.briefing;
+  document.getElementById('pcsPhaseQuestion').textContent = phase.question;
+
+  renderPcsActions();
+  document.getElementById('pcsPhaseOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePcsPhase() {
+  document.getElementById('pcsPhaseOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  _pcsViewingPhaseIdx = null;
+}
+
+function renderPcsActions() {
+  const myGrp = getMyGroup() || 'g1'; // si formateur, on montre G1 par défaut
+  const phase = PCS_PHASES[_pcsViewingPhaseIdx];
+  const actions = phase.actions[myGrp] || [];
+  const isClosed = isTrainer() ? false : (_pcsViewingPhaseIdx < _pcsCurrentPhaseIdx); // phase passée → lecture seule
+  const list = document.getElementById('pcsPhaseActions');
+  let html = '';
+  actions.forEach(a => {
+    const sel = _pcsSelected.has(a.id);
+    const disabled = !sel && _pcsSelected.size >= 3;
+    html += `<div class="pcs-action-card ${sel ? 'selected' : ''} ${(disabled || isClosed) ? 'disabled' : ''}"
+      onclick="${isClosed ? '' : `togglePcsAction('${a.id}')`}">
+      <div class="pcs-action-check">${sel ? '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}</div>
+      <div class="pcs-action-text">
+        ${a.text}
+        <div class="pcs-action-tag">${a.tag}</div>
+      </div>
+    </div>`;
+  });
+  list.innerHTML = html;
+  document.getElementById('pcsCounter').textContent = _pcsSelected.size;
+  const validateBtn = document.getElementById('pcsValidateBtn');
+  validateBtn.disabled = isClosed || _pcsSelected.size === 0;
+  validateBtn.textContent = isClosed ? 'Phase clôturée' : 'Valider notre vote';
+}
+
+function togglePcsAction(actionId) {
+  if (_pcsSelected.has(actionId)) {
+    _pcsSelected.delete(actionId);
+  } else if (_pcsSelected.size < 3) {
+    _pcsSelected.add(actionId);
+  }
+  renderPcsActions();
+}
+
+function validatePcsVote() {
+  if (_pcsViewingPhaseIdx == null) return;
+  const myGrp = getMyGroup();
+  if (!myGrp) {
+    alert("Vous devez avoir un groupe débloqué pour voter.");
+    return;
+  }
+  const phase = PCS_PHASES[_pcsViewingPhaseIdx];
+  const selected = Array.from(_pcsSelected);
+  if (window.FB) {
+    window.FB.setVal(`pcs/votes/${phase.id}/${myGrp}`, selected).catch(e => {
+      console.warn('FB pcs vote failed:', e);
+    });
+  }
+  closePcsPhase();
+  alert(`✓ Vote enregistré (${selected.length} action${selected.length > 1 ? 's' : ''}). Le formateur peut désormais le voir.`);
+}
+
+// Trainer functions
+async function pcsAdvancePhase() {
+  if (!isTrainer()) return;
+  const next = _pcsCurrentPhaseIdx + 1;
+  if (next > 4) {
+    if (!confirm("Toutes les phases sont passées. Voulez-vous remettre la timeline à zéro ?")) return;
+    if (window.FB) await window.FB.setVal('pcs/currentPhase', null);
+    return;
+  }
+  if (window.FB) await window.FB.setVal('pcs/currentPhase', next);
+}
+async function pcsResetTimeline() {
+  if (!isTrainer()) return;
+  if (!confirm("Remettre toute la timeline PCS à zéro (votes inclus) ?")) return;
+  if (window.FB) {
+    await Promise.all([
+      window.FB.removeVal('pcs/currentPhase'),
+      window.FB.removeVal('pcs/votes'),
+    ]);
+  }
+}
+
 // ============ REPORT VIEWER (présentation par groupe) ============
 const GROUP_LABELS_LONG = {
   g1: "Mission préfectorale",
@@ -7782,37 +9395,76 @@ const GROUP_ROLES = {
   g5: "Faire entendre les voix qui ne portent pas — anciens, saisonniers, locataires, secondaires."
 };
 
+// Helper : escape HTML pour empêcher l'injection
+function escapeHTML(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Helper : promise avec timeout (évite les blocages réseau infinis)
+function _fbGetWithTimeout(path, timeoutMs = 8000) {
+  return Promise.race([
+    window.FB.getVal(path).catch(e => { console.warn(`FB getVal('${path}') failed:`, e); return null; }),
+    new Promise((resolve) => setTimeout(() => {
+      console.warn(`FB getVal('${path}') timed out after ${timeoutMs}ms`);
+      resolve(null);
+    }, timeoutMs))
+  ]);
+}
+
 async function fetchGroupAggregates(grp) {
-  // Agrège les contributions du groupe à partir de Firebase :
-  //   - Notes : tous les deviceId dont meta.grp === grp
-  //   - Matrice : idem (on prend la PLUS REMPLIE)
-  //   - Hiérarchisation : idem
-  //   - Leviers : idem
-  //   - Votes : conseil[delibId][grp]
-  //   - Sondages : votes[*] que ce groupe a posés (impossible à filtrer côté Firebase car anonymes)
   const result = {
-    notes: {},        // {qid: text} — notes consolidées (concat unique)
-    matrix: {},       // données de la personne la plus active
+    notes: {},
+    matrix: {},
     matrixContributors: 0,
     prio: null,
-    leversByDevice: [], // liste de stratégies (chaque participant peut avoir la sienne)
+    leversByDevice: [],
     leversConsolidated: {},
     council: {},
+    pcs: {},        // {phaseId: [actionIds]}
+    cdrnm: {},      // {qid: {vote, arg}}
     authors: new Set(),
+    _partial: false,  // true si certaines requêtes ont échoué
   };
 
-  if (!window.FB) return result;
+  if (!window.FB) {
+    result._partial = true;
+    return result;
+  }
 
+  // PARALLÉLISER les requêtes plutôt que de les faire en série
+  // Et chacune a son propre timeout — si une plante, les autres aboutissent
+  let notesRoot, matrixRoot, prioRoot, leversRoot, councilRoot, pcsRoot, cdrnmRoot;
   try {
-    // 1. Notes
-    const notesRoot = await window.FB.getVal('notes');
-    if (notesRoot) {
+    [notesRoot, matrixRoot, prioRoot, leversRoot, councilRoot, pcsRoot, cdrnmRoot] = await Promise.all([
+      _fbGetWithTimeout('notes'),
+      _fbGetWithTimeout('matrix'),
+      _fbGetWithTimeout('prio'),
+      _fbGetWithTimeout('levers'),
+      _fbGetWithTimeout('council'),
+      _fbGetWithTimeout('pcs/votes'),
+      _fbGetWithTimeout(`cdrnm/${grp}`),
+    ]);
+  } catch(e) {
+    console.warn('fetchGroupAggregates global error:', e);
+    result._partial = true;
+    return result;
+  }
+
+  // 1. Notes
+  if (notesRoot) {
+    try {
       Object.entries(notesRoot).forEach(([deviceId, deviceData]) => {
         if (deviceData?.meta?.grp === grp) {
           if (deviceData.meta.author) result.authors.add(deviceData.meta.author);
           if (deviceData.data) {
             Object.entries(deviceData.data).forEach(([qid, text]) => {
-              if (text && text.trim()) {
+              if (text && typeof text === 'string' && text.trim()) {
                 if (!result.notes[qid]) result.notes[qid] = [];
                 result.notes[qid].push({author: deviceData.meta.author || 'anonyme', text: text.trim()});
               }
@@ -7820,11 +9472,15 @@ async function fetchGroupAggregates(grp) {
           }
         }
       });
-    }
+    } catch(e) { console.warn('notes parse error:', e); result._partial = true; }
+  } else if (notesRoot === null && window.FB) {
+    // null peut signifier soit "pas de données" soit "timeout" — on ne peut pas distinguer ici
+    // mais ce n'est pas bloquant
+  }
 
-    // 2. Matrice — on prend la matrice la plus remplie, mais on aussi compte les contributeurs
-    const matrixRoot = await window.FB.getVal('matrix');
-    if (matrixRoot) {
+  // 2. Matrice
+  if (matrixRoot) {
+    try {
       let bestData = null;
       let bestCount = 0;
       Object.entries(matrixRoot).forEach(([deviceId, deviceData]) => {
@@ -7838,11 +9494,12 @@ async function fetchGroupAggregates(grp) {
         }
       });
       result.matrix = bestData || {};
-    }
+    } catch(e) { console.warn('matrix parse error:', e); result._partial = true; }
+  }
 
-    // 3. Hiérarchisation — prend la plus récente du groupe
-    const prioRoot = await window.FB.getVal('prio');
-    if (prioRoot) {
+  // 3. Hiérarchisation
+  if (prioRoot) {
+    try {
       let mostRecent = null, mostRecentTs = 0;
       Object.entries(prioRoot).forEach(([deviceId, deviceData]) => {
         if (deviceData?.meta?.grp === grp) {
@@ -7854,11 +9511,12 @@ async function fetchGroupAggregates(grp) {
         }
       });
       result.prio = mostRecent;
-    }
+    } catch(e) { console.warn('prio parse error:', e); result._partial = true; }
+  }
 
-    // 4. Leviers
-    const leversRoot = await window.FB.getVal('levers');
-    if (leversRoot) {
+  // 4. Leviers
+  if (leversRoot) {
+    try {
       Object.entries(leversRoot).forEach(([deviceId, deviceData]) => {
         if (deviceData?.meta?.grp === grp) {
           if (deviceData.meta.author) result.authors.add(deviceData.meta.author);
@@ -7867,7 +9525,6 @@ async function fetchGroupAggregates(grp) {
               author: deviceData.meta.author || 'anonyme',
               levers: deviceData.data
             });
-            // Consolidation : on note un levier comme "choisi par le groupe" s'il a au moins 1 vote
             Object.keys(deviceData.data).forEach(lid => {
               if (!result.leversConsolidated[lid]) result.leversConsolidated[lid] = 0;
               result.leversConsolidated[lid]++;
@@ -7875,19 +9532,36 @@ async function fetchGroupAggregates(grp) {
           }
         }
       });
-    }
+    } catch(e) { console.warn('levers parse error:', e); result._partial = true; }
+  }
 
-    // 5. Votes du conseil municipal
-    const councilRoot = await window.FB.getVal('council');
-    if (councilRoot) {
+  // 5. Votes du conseil municipal
+  if (councilRoot) {
+    try {
       Object.entries(councilRoot).forEach(([delibId, votes]) => {
         if (votes && votes[grp]) {
           result.council[delibId] = votes[grp];
         }
       });
-    }
-  } catch(e) {
-    console.warn('fetchGroupAggregates error:', e);
+    } catch(e) { console.warn('council parse error:', e); result._partial = true; }
+  }
+
+  // 6. Votes PCS (5 phases)
+  if (pcsRoot) {
+    try {
+      Object.entries(pcsRoot).forEach(([phaseId, votes]) => {
+        if (votes && votes[grp]) {
+          result.pcs[phaseId] = votes[grp];  // tableau d'IDs d'actions
+        }
+      });
+    } catch(e) { console.warn('pcs parse error:', e); result._partial = true; }
+  }
+
+  // 7. Votes CDRNM (10 questions, par groupe)
+  if (cdrnmRoot && typeof cdrnmRoot === 'object') {
+    try {
+      result.cdrnm = cdrnmRoot;  // structure {qid: {vote, arg}}
+    } catch(e) { console.warn('cdrnm parse error:', e); result._partial = true; }
   }
 
   return result;
@@ -7908,12 +9582,61 @@ async function openReport(grp) {
   title.textContent = GROUP_LABELS_LONG[grp];
   sub.textContent = '— Anse-de-Goulven, journée du ' + new Date().toLocaleDateString('fr-FR');
 
-  body.innerHTML = '<div class="report-slide"><p style="text-align:center;font-style:italic;opacity:0.6;">Chargement des contributions du groupe…</p></div>';
+  // Animation de chargement avec spinner et message rassurant
+  body.innerHTML = `
+    <div class="report-slide" style="text-align:center;padding-top:120px;">
+      <div style="width:48px;height:48px;border:4px solid rgba(232,110,85,0.2);border-top-color:var(--orange);border-radius:50%;margin:0 auto 24px;animation:reportSpin 0.8s linear infinite;"></div>
+      <p style="color:rgba(255,255,255,0.85);font-size:16px;margin-bottom:8px;">Agrégation des contributions du groupe <strong>${grp.toUpperCase()}</strong>…</p>
+      <p style="color:rgba(255,255,255,0.55);font-size:13px;font-style:italic;">Récupération depuis Firebase (peut prendre quelques secondes)</p>
+    </div>
+    <style>@keyframes reportSpin { to { transform: rotate(360deg); } }</style>
+  `;
   viewer.classList.add('open');
   document.body.style.overflow = 'hidden';
 
-  const data = await fetchGroupAggregates(grp);
-  body.innerHTML = buildReportHTML(grp, data);
+  // GARANTIE : on essaie de charger les données, mais quel que soit le résultat,
+  // on affiche le rapport (même partiel ou vide) après au plus 9 secondes
+  let displayed = false;
+  const safetyTimeout = setTimeout(() => {
+    if (!displayed) {
+      console.warn('openReport: safety timeout reached, displaying with partial data');
+      const fallbackData = {
+        notes: {}, matrix: {}, matrixContributors: 0, prio: null,
+        leversByDevice: [], leversConsolidated: {}, council: {},
+        authors: new Set(), _partial: true, _timeout: true
+      };
+      body.innerHTML = buildReportHTML(grp, fallbackData);
+      displayed = true;
+    }
+  }, 9000);
+
+  try {
+    const data = await fetchGroupAggregates(grp);
+    if (!displayed) {
+      clearTimeout(safetyTimeout);
+      body.innerHTML = buildReportHTML(grp, data);
+      displayed = true;
+    }
+  } catch(e) {
+    console.error('openReport fatal error:', e);
+    if (!displayed) {
+      clearTimeout(safetyTimeout);
+      body.innerHTML = `
+        <div class="report-slide" style="text-align:center;padding-top:80px;">
+          <h3 style="color:var(--orange);">Erreur de chargement</h3>
+          <p style="color:rgba(255,255,255,0.85);max-width:600px;margin:0 auto;">
+            Le rapport n'a pas pu être généré. Vérifiez votre connexion internet, puis cliquez sur « Réessayer ».
+            Si le problème persiste, le formateur peut utiliser le bouton <em>Réinitialiser la session</em> dans son panneau.
+          </p>
+          <button class="report-header-btn primary" style="margin-top:24px;" onclick="openReport('${grp}')">Réessayer</button>
+          <p style="color:rgba(255,255,255,0.45);font-size:11px;margin-top:32px;font-family:var(--mono);">
+            Erreur : ${(e && e.message ? e.message : 'inconnue').slice(0, 200)}
+          </p>
+        </div>
+      `;
+      displayed = true;
+    }
+  }
 }
 
 function closeReport() {
@@ -7930,8 +9653,21 @@ function buildReportHTML(grp, data) {
     ? authorsList.join(', ')
     : 'contributeurs anonymes';
 
+  // Bandeau d'avertissement si données partielles ou timeout
+  let warningBanner = '';
+  if (data._timeout) {
+    warningBanner = `<div style="background:rgba(232,110,85,0.15);border-left:3px solid var(--orange);padding:12px 18px;margin:0 0 24px;color:var(--white);font-size:13px;border-radius:4px;">
+      <strong style="color:var(--orange);">Connexion lente détectée</strong> — Le rapport a été généré avec les données disponibles localement.
+      Cliquez sur <em>Fermer puis relancer</em> pour réessayer si la connexion est revenue.
+    </div>`;
+  } else if (data._partial) {
+    warningBanner = `<div style="background:rgba(255,200,100,0.12);border-left:3px solid #C5A050;padding:12px 18px;margin:0 0 24px;color:var(--white);font-size:13px;border-radius:4px;">
+      <strong style="color:#E8C57A;">Données partielles</strong> — Certaines contributions du groupe n'ont pas pu être récupérées.
+    </div>`;
+  }
+
   // Slide 1 — Couverture
-  let html = `<section class="report-slide">
+  let html = warningBanner + `<section class="report-slide">
     <div class="report-slide-eyebrow">Présentation — Cas Anse-de-Goulven</div>
     <h3>${labels[grp]}<br><em>${grp.toUpperCase()}</em></h3>
     <p style="font-size:18px;line-height:1.6;color:rgba(255,255,255,0.9);max-width:780px;">${role}</p>
@@ -7952,6 +9688,14 @@ function buildReportHTML(grp, data) {
       <div class="report-stat-tile">
         <div class="report-stat-num">${Object.keys(data.council).length}/3</div>
         <div class="report-stat-label">Délibérations votées</div>
+      </div>
+      <div class="report-stat-tile">
+        <div class="report-stat-num">${Object.keys(data.pcs || {}).length}/5</div>
+        <div class="report-stat-label">Phases PCS jouées</div>
+      </div>
+      <div class="report-stat-tile">
+        <div class="report-stat-num">${Object.keys(data.cdrnm || {}).filter(k => data.cdrnm[k] && data.cdrnm[k].vote).length}/10</div>
+        <div class="report-stat-label">Avis CDRNM rendus</div>
       </div>
     </div>
   </section>`;
@@ -8107,6 +9851,60 @@ function buildReportHTML(grp, data) {
     html += `<h4 style="font-family:var(--serif);font-size:18px;margin-top:24px;color:var(--white);">Frictions anticipées</h4>`;
     data.notes['frictions'].slice(0, 2).forEach(n => {
       html += `<div class="report-quote">${escapeHTML(n.text.slice(0, 280))}${n.text.length > 280 ? '…' : ''}</div>`;
+    });
+  }
+  html += `</section>`;
+
+  // Slide 5 bis — PCS Tempête Argonne
+  html += `<section class="report-slide">
+    <div class="report-slide-eyebrow">Cas n°3  ·  Tempête Argonne</div>
+    <h3>Notre <em>gestion de crise</em> en 5 phases</h3>`;
+  const pcsPhasesWithVotes = Object.keys(data.pcs).filter(pid => data.pcs[pid] && data.pcs[pid].length > 0);
+  if (pcsPhasesWithVotes.length === 0) {
+    html += `<div class="report-empty-card">Le groupe n'a pas voté sur la timeline PCS.</div>`;
+  } else {
+    html += `<p>Notre groupe a participé à <strong>${pcsPhasesWithVotes.length} phase${pcsPhasesWithVotes.length > 1 ? 's' : ''}</strong> sur 5 de la gestion de la tempête.</p>`;
+    PCS_PHASES.forEach((phase, idx) => {
+      const myVotes = data.pcs[phase.id];
+      if (!myVotes || myVotes.length === 0) return;
+      const groupActions = phase.actions[grp] || [];
+      const actionMap = Object.fromEntries(groupActions.map(a => [a.id, a]));
+      html += `<div style="margin-top:18px;background:rgba(255,255,255,0.04);border-left:3px solid var(--orange);padding:14px 18px;border-radius:4px;">`;
+      html += `<div style="font-family:var(--mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--orange);margin-bottom:6px;">Phase ${idx + 1}/5  ·  ${phase.time.split('—')[1] || phase.time}</div>`;
+      html += `<div style="font-family:var(--serif);font-size:15px;font-weight:600;color:var(--white);margin-bottom:10px;">${escapeHTML(phase.title)}</div>`;
+      html += `<ul style="margin:0;padding-left:18px;font-size:13.5px;color:rgba(255,255,255,0.85);line-height:1.6;">`;
+      myVotes.forEach(aid => {
+        const action = actionMap[aid];
+        if (action) html += `<li style="margin-bottom:4px;">${escapeHTML(action.text)}<span style="color:var(--orange);font-family:var(--mono);font-size:10px;letter-spacing:0.04em;margin-left:8px;">${action.tag}</span></li>`;
+      });
+      html += `</ul></div>`;
+    });
+  }
+  html += `</section>`;
+
+  // Slide 5 ter — CDRNM Avis du collège
+  html += `<section class="report-slide">
+    <div class="report-slide-eyebrow">Cas n°4  ·  CDRNM</div>
+    <h3>Notre <em>avis de collège</em> sur les priorités d'outils</h3>`;
+  const cdrnmVotes = data.cdrnm || {};
+  const cdrnmDone = Object.keys(cdrnmVotes).filter(k => cdrnmVotes[k] && cdrnmVotes[k].vote).length;
+  if (cdrnmDone === 0) {
+    html += `<div class="report-empty-card">Le groupe n'a pas voté à la CDRNM.</div>`;
+  } else {
+    html += `<p>Notre groupe a pris position sur <strong>${cdrnmDone} proposition${cdrnmDone > 1 ? 's' : ''}</strong> sur 10.</p>`;
+    ['A', 'B', 'C'].forEach(secId => {
+      const sec = CDRNM_QUESTIONS[secId];
+      const votedQuestions = sec.questions.filter(q => cdrnmVotes[q.id] && cdrnmVotes[q.id].vote);
+      if (votedQuestions.length === 0) return;
+      html += `<div style="margin-top:18px;font-family:var(--mono);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--orange);font-weight:700;">${escapeHTML(sec.label)}</div>`;
+      votedQuestions.forEach(q => {
+        const v = cdrnmVotes[q.id];
+        html += `<div class="cdrnm-summary-card">
+          <div class="cdrnm-summary-q">${escapeHTML(q.id)}.&nbsp;${escapeHTML(q.text)}</div>
+          <div><span class="cdrnm-summary-vote ${v.vote}">${v.vote}</span></div>
+          ${v.arg ? `<div class="cdrnm-summary-arg">« ${escapeHTML(v.arg)} »</div>` : ''}
+        </div>`;
+      });
     });
   }
   html += `</section>`;
@@ -8418,6 +10216,7 @@ function subscribeAll() {
   subscribePrio();
   subscribeLevers();
   subscribeNotes();
+  subscribePcs();
 }
 
 // ============ INIT ============
@@ -8436,9 +10235,11 @@ renderPrio();
 renderLevers();
 renderCouncil();
 
-// Session label in topbar
+// Session label in topbar + footer
 const sessionLabel = document.getElementById('fb-session-label');
 if (sessionLabel && window.FB) sessionLabel.textContent = window.FB.getSessionId();
+const footerSessionId = document.getElementById('footerSessionId');
+if (footerSessionId && window.FB) footerSessionId.textContent = window.FB.getSessionId();
 
 // Click on session badge to change
 const fbStatus = document.getElementById('fb-status');
