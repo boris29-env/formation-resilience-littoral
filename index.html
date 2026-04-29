@@ -2629,9 +2629,9 @@ h3.subhead {
     <span class="topbar-title">Anse-de-Goulven  ·  <em>espace participant</em></span>
   </div>
   <div class="topbar-right">
-    <span class="fb-status" id="fb-status" title="Statut de la connexion temps réel">
+    <span class="fb-status" id="fb-status" title="Cliquez pour changer de session" style="cursor:pointer;">
       <span class="fb-status-dot" id="fb-status-dot"></span>
-      <span class="fb-status-label" id="fb-status-label">Session: <strong id="fb-session-label">default</strong></span>
+      <span class="fb-status-label" id="fb-status-label">Session : <strong id="fb-session-label">default</strong> ✎</span>
     </span>
     <button class="topbar-btn primary" id="unlockBtn" onclick="openUnlockModal()">Débloquer mon groupe</button>
     <button class="topbar-btn menu-toggle-btn" id="menuToggle">Menu</button>
@@ -2719,9 +2719,13 @@ h3.subhead {
   <div class="trainer-panel-body">
     <div class="trainer-panel-section">
       <div class="trainer-panel-label">Préparation de session</div>
+      <button class="trainer-event-btn" onclick="copySessionLink()" style="background:rgba(50,128,136,0.3);border-color:var(--teal);">
+        <span class="target-badge tball" style="background:var(--teal);">⎘</span>
+        <span>Copier le lien de session<small>À partager aux participants — force la même session sur tous les appareils</small></span>
+      </button>
       <button class="trainer-event-btn" onclick="resetFullSession()" style="background:rgba(200,85,60,0.25);border-color:rgba(200,85,60,0.6);">
         <span class="target-badge tball" style="background:#A83A36;">⟲</span>
-        <span>Réinitialiser la session<small>Efface alerte/sondage en cours, votes, matrices, notes — sur Firebase</small></span>
+        <span>Réinitialiser la session<small>Efface alerte/sondage en cours, votes, matrices — sur Firebase</small></span>
       </button>
       <button class="trainer-event-btn" onclick="resetThisBrowser()">
         <span class="target-badge tball" style="background:#7E6B4A;">⎚</span>
@@ -2891,18 +2895,15 @@ h3.subhead {
   <div class="sidebar-section">
     <span class="sidebar-label">Travailler</span>
     <a href="#mailbox">Votre boîte mail</a>
-    <a href="#notes">Vos notes</a>
-    <a href="#dashboard">Tableau de bord</a>
-    <a href="#carnet">Carnet de bord</a>
     <a href="#restitution">Restitution</a>
     <a href="#cas1">Étude de cas n°1</a>
     <a href="#cas2">Étude de cas n°2</a>
     <a href="#cas3">Étude de cas n°3</a>
     <a href="#cas4">Étude de cas n°4</a>
-    <a href="#axes">Les 6 axes</a>
   </div>
   <div class="sidebar-section">
     <span class="sidebar-label">Ressources</span>
+    <a href="#axes">Les 6 axes du rapport Alpes</a>
     <a href="#telechargements">Téléchargements</a>
     <a href="#lexique">Lexique</a>
     <a href="#sources">Sources nationales</a>
@@ -4407,162 +4408,10 @@ h3.subhead {
   </div>
 </section>
 
-<!-- ============ NOTES (espace de réponse) ============ -->
-<section id="notes">
-  <div class="section-header">
-    <span class="section-num">07</span>
-    <span class="section-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/><line x1="9" y1="9" x2="11" y2="9"/></svg>
-    </span>
-    <h2 class="section-title">Vos notes — espace de travail</h2>
-  </div>
-  <p class="section-intro">
-    Un espace pour structurer votre réflexion pendant les études de cas. Les notes sont sauvegardées
-    automatiquement sur votre appareil (rien n'est envoyé sur le web). En fin de journée, vous pouvez les exporter.
-  </p>
-
-  <div class="notes-intro">
-    <div class="notes-intro-icon">
-      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r=".5" fill="currentColor"/></svg>
-    </div>
-    <div class="notes-intro-text">
-      <h3>Comment ça marche</h3>
-      <p>
-        Choisissez l'onglet de votre groupe (les autres sont accessibles aussi, mais leur contenu n'est utile qu'aux concernés).
-        <strong>Pour chaque question, tapez votre réponse</strong> — ça se sauvegarde tout seul après 1 seconde.
-        Les questions du Cas 1 (diagnostic) et du Cas 2 (stratégie) sont distinctes.
-        En fin de journée, le bouton <strong>« Exporter mes notes »</strong> télécharge un fichier texte avec toutes vos réponses.
-      </p>
-    </div>
-  </div>
-
-  <div class="notes-name-bar">
-    <label for="notes-author">Vos initiales (facultatif)</label>
-    <input type="text" id="notes-author" placeholder="ex. M.D." maxlength="8" oninput="saveAuthor()">
-    <span style="opacity:0.7;font-size:13px;">— pour vous y retrouver dans l'export</span>
-  </div>
-
-  <div class="notes-tabs">
-    <button class="notes-tab active" id="nt-tab-g1" onclick="showNotesTab('g1')">
-      <svg viewBox="0 0 24 24" fill="currentColor"><rect width="24" height="24" rx="4" fill="#1E2D5C"/><text x="12" y="16" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="white">1</text></svg>
-      G1 — Préfectorale
-    </button>
-    <button class="notes-tab" id="nt-tab-g2" onclick="showNotesTab('g2')">
-      <svg viewBox="0 0 24 24" fill="currentColor"><rect width="24" height="24" rx="4" fill="#328088"/><text x="12" y="16" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="white">2</text></svg>
-      G2 — Mairie
-    </button>
-    <button class="notes-tab" id="nt-tab-g3" onclick="showNotesTab('g3')">
-      <svg viewBox="0 0 24 24" fill="currentColor"><rect width="24" height="24" rx="4" fill="#5C8A4F"/><text x="12" y="16" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="white">3</text></svg>
-      G3 — Syndicat
-    </button>
-    <button class="notes-tab" id="nt-tab-g4" onclick="showNotesTab('g4')">
-      <svg viewBox="0 0 24 24" fill="currentColor"><rect width="24" height="24" rx="4" fill="#E86E55"/><text x="12" y="16" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="white">4</text></svg>
-      G4 — Économique
-    </button>
-    <button class="notes-tab" id="nt-tab-g5" onclick="showNotesTab('g5')">
-      <svg viewBox="0 0 24 24" fill="currentColor"><rect width="24" height="24" rx="4" fill="#8E5BA8"/><text x="12" y="16" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="white">5</text></svg>
-      G5 — Société civile
-    </button>
-  </div>
-
-  <div class="notes-panel active" id="nt-panel-g1"></div>
-  <div class="notes-panel" id="nt-panel-g2"></div>
-  <div class="notes-panel" id="nt-panel-g3"></div>
-  <div class="notes-panel" id="nt-panel-g4"></div>
-  <div class="notes-panel" id="nt-panel-g5"></div>
-
-  <div class="notes-toolbar">
-    <button class="notes-toolbar-btn primary" onclick="exportNotes()">
-      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Exporter mes notes
-    </button>
-    <button class="notes-toolbar-btn danger" onclick="clearAllNotes()">
-      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-      Effacer mes notes
-    </button>
-  </div>
-</section>
-
-<!-- ============ DASHBOARD STRATÉGIE ============ -->
-<section id="dashboard">
-  <div class="section-header">
-    <span class="section-num">08</span>
-    <span class="section-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
-    </span>
-    <h2 class="section-title">Tableau de bord stratégie</h2>
-  </div>
-  <p class="section-intro">
-    Pendant que vous travaillez, ce tableau de bord vous indique <strong>où vous en êtes</strong> —
-    en termes de budget engagé (selon les actions notées), de couverture des 6 axes, d'actions concrètes.
-    Le but n'est pas de viser 100 %, mais de voir vos angles morts.
-  </p>
-
-  <div class="dashboard-block">
-    <div class="dashboard-tile">
-      <div class="dashboard-label">Budget engagé (estimé)</div>
-      <div class="dashboard-num" id="db-budget"><em>0</em> M€</div>
-      <div class="dashboard-sub" id="db-budget-sub">Aucun ordre de grandeur saisi</div>
-      <div class="dashboard-bar-wrap"><div class="dashboard-bar" id="db-budget-bar" style="width:0%"></div></div>
-    </div>
-    <div class="dashboard-tile">
-      <div class="dashboard-label">Axes du rapport Alpes traités</div>
-      <div class="dashboard-num"><span id="db-axes">0</span> / 6</div>
-      <div class="dashboard-sub" id="db-axes-sub">Tous vos groupes confondus</div>
-      <div class="dashboard-bar-wrap"><div class="dashboard-bar" id="db-axes-bar" style="width:0%"></div></div>
-    </div>
-    <div class="dashboard-tile">
-      <div class="dashboard-label">Actions concrètes citées</div>
-      <div class="dashboard-num" id="db-actions">0</div>
-      <div class="dashboard-sub">Mots-clés détectés dans vos notes</div>
-      <div class="dashboard-bar-wrap"><div class="dashboard-bar" id="db-actions-bar" style="width:0%"></div></div>
-    </div>
-  </div>
-
-  <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:16px;">
-    <button class="notes-toolbar-btn" onclick="recomputeDashboard()">
-      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-7"/><polyline points="3 4 3 9 8 9"/></svg>
-      Recalculer
-    </button>
-    <span style="font-size:13px;color:var(--grey-txt);font-style:italic;">Le tableau se met à jour quand vous remplissez vos notes ou postez sur le mur.</span>
-  </div>
-</section>
-
-<!-- ============ CARNET DE BORD ============ -->
-<section id="carnet">
-  <div class="section-header">
-    <span class="section-num">09</span>
-    <span class="section-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-    </span>
-    <h2 class="section-title">Votre carnet de bord</h2>
-  </div>
-  <p class="section-intro">
-    En fin de journée, ce texte se met à jour automatiquement à partir de tout ce que vous avez fait :
-    notes prises, mails lus, alertes reçues, posts sur le mur. <strong>C'est ce que vous emporterez
-    avec vous</strong> — votre journée, racontée en 200 mots.
-  </p>
-
-  <div class="debrief-block" id="debrief">
-    <div class="debrief-empty">Votre carnet de bord se construira au fil de la journée. Revenez ici à la pause de l'après-midi, puis en fin de séance.</div>
-  </div>
-
-  <div style="display:flex;gap:14px;margin-top:18px;flex-wrap:wrap;">
-    <button class="notes-toolbar-btn primary" onclick="generateDebrief()">
-      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><polyline points="14 2 14 8 20 8"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
-      Générer mon carnet
-    </button>
-    <button class="notes-toolbar-btn" onclick="exportDebrief()">
-      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Télécharger
-    </button>
-  </div>
-</section>
-
 <!-- ============ RESTITUTION (rapport-présentation par groupe) ============ -->
 <section id="restitution">
   <div class="section-header">
-    <span class="section-num">10</span>
+    <span class="section-num">07</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="8" y1="22" x2="16" y2="22"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
     </span>
@@ -4624,7 +4473,7 @@ h3.subhead {
 <!-- ============ CAS 1 ============ -->
 <section id="cas1">
   <div class="section-header">
-    <span class="section-num">11</span>
+    <span class="section-num">08</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
     </span>
@@ -4747,7 +4596,7 @@ h3.subhead {
 <!-- ============ CAS 2 ============ -->
 <section id="cas2">
   <div class="section-header">
-    <span class="section-num">12</span>
+    <span class="section-num">09</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 12 9 18 21 6"/></svg>
     </span>
@@ -4854,7 +4703,7 @@ h3.subhead {
 <!-- ============ CAS 3 — GESTION DE CRISE PCS (timeline) ============ -->
 <section id="cas3">
   <div class="section-header">
-    <span class="section-num">13</span>
+    <span class="section-num">10</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
     </span>
@@ -4919,7 +4768,7 @@ h3.subhead {
 <!-- ============ CAS 4 — CDRNM (arbitrage par collège) ============ -->
 <section id="cas4">
   <div class="section-header">
-    <span class="section-num">14</span>
+    <span class="section-num">11</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
     </span>
@@ -4967,7 +4816,7 @@ h3.subhead {
 <!-- ============ AXES ============ -->
 <section id="axes">
   <div class="section-header">
-    <span class="section-num">15</span>
+    <span class="section-num">12</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg>
     </span>
@@ -5033,7 +4882,7 @@ h3.subhead {
 <!-- ============ LEXIQUE ============ -->
 <section id="lexique">
   <div class="section-header">
-    <span class="section-num">16</span>
+    <span class="section-num">13</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
     </span>
@@ -5068,7 +4917,7 @@ h3.subhead {
 <!-- ============ SOURCES NATIONALES ============ -->
 <section id="sources">
   <div class="section-header">
-    <span class="section-num">17</span>
+    <span class="section-num">14</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 4 9 14 14 0 0 1-4 9 14 14 0 0 1-4-9 14 14 0 0 1 4-9z"/></svg>
     </span>
@@ -5193,7 +5042,7 @@ h3.subhead {
 <!-- ============ TÉLÉCHARGEMENTS ============ -->
 <section id="telechargements">
   <div class="section-header">
-    <span class="section-num">18</span>
+    <span class="section-num">15</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     </span>
@@ -5241,7 +5090,7 @@ h3.subhead {
 <!-- ============ POUR ALLER PLUS LOIN ============ -->
 <section id="liens">
   <div class="section-header">
-    <span class="section-num">19</span>
+    <span class="section-num">16</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="9 12 12 15 15 12"/><line x1="12" y1="6" x2="12" y2="15"/></svg>
     </span>
@@ -5419,6 +5268,31 @@ h3.subhead {
   </p>
 </footer>
 
+<script>
+// ============ SESSION — lecture précoce (avant module Firebase) ============
+// Cela garantit que window._earlySessionId est disponible immédiatement,
+// même si Firebase ne se charge pas (ex : réseau lent, mode hors-ligne).
+(function() {
+  const SESSION_KEY = "ansedegoulven_session";
+  function readURL() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const s = params.get('s') || params.get('session');
+      if (s && /^[a-z0-9_-]{2,40}$/i.test(s)) return s.toLowerCase();
+    } catch(e) {}
+    return null;
+  }
+  const fromUrl = readURL();
+  let stored = null;
+  try { stored = localStorage.getItem(SESSION_KEY); } catch(e) {}
+  const sid = fromUrl || stored || "default";
+  if (fromUrl) {
+    try { localStorage.setItem(SESSION_KEY, sid); } catch(e) {}
+  }
+  window._earlySessionId = sid;
+})();
+</script>
+
 <script type="module">
 // ============ FIREBASE — synchronisation temps réel ============
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
@@ -5441,7 +5315,25 @@ const fbDB = getDatabase(fbApp);
 
 // ============ SESSION (par défaut "default", peut être changée par formateur) ============
 const SESSION_KEY = "ansedegoulven_session";
-let SESSION_ID = localStorage.getItem(SESSION_KEY) || "default";
+
+// PRIORITÉ : (1) param URL ?s= (2) localStorage (3) "default"
+// Le param URL est PRIORITAIRE — permet au formateur de partager un lien qui force la session
+function _readSessionFromURL() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get('s') || params.get('session');
+    if (s && /^[a-z0-9_-]{2,40}$/i.test(s)) return s.toLowerCase();
+  } catch(e) {}
+  return null;
+}
+
+let SESSION_ID = _readSessionFromURL() || localStorage.getItem(SESSION_KEY) || "default";
+
+// Si la session vient de l'URL, on la mémorise pour les recharges suivantes
+if (_readSessionFromURL()) {
+  try { localStorage.setItem(SESSION_KEY, SESSION_ID); } catch(e) {}
+}
+
 function setSessionId(id) {
   SESSION_ID = id || "default";
   localStorage.setItem(SESSION_KEY, SESSION_ID);
@@ -7180,78 +7072,31 @@ function saveAuthor() {
     window.FB.setVal(`notes/${deviceId}/meta`, {author: v, grp: myGrp, ts: Date.now()}).catch(e => {});
   }
 }
+// === NOTES — fonctions désactivées (sections 07/08/09 retirées) ===
+// Les fonctions restent en place pour ne pas casser les appels existants,
+// mais elles ne lisent ni n'écrivent plus rien.
 function loadNote(grp, qid) {
   return _notesCache[grp + "_" + qid] || "";
 }
 function saveNote(grp, qid, val) {
+  // No-op : les notes ne sont plus sauvegardées
   _notesCache[grp + "_" + qid] = val;
-  const deviceId = getDeviceId();
-  if (window.FB) {
-    window.FB.setVal(`notes/${deviceId}/data/${grp}_${qid}`, val).catch(e => {
-      try { localStorage.setItem(NOTES_KEY_PREFIX + grp + "_" + qid, val); } catch(e) {}
-    });
-    const author = loadAuthor() || 'anonyme';
-    const myGrp = getMyGroup() || '?';
-    window.FB.setVal(`notes/${deviceId}/meta`, {author, grp: myGrp, ts: Date.now()}).catch(e => {});
-  } else {
-    try { localStorage.setItem(NOTES_KEY_PREFIX + grp + "_" + qid, val); } catch(e) {}
-  }
 }
 
 function subscribeNotes() {
-  const deviceId = getDeviceId();
-  if (!window.FB) {
-    // Fallback localStorage
-    try {
-      Object.keys(localStorage).forEach(k => {
-        if (k.startsWith(NOTES_KEY_PREFIX)) {
-          const inner = k.replace(NOTES_KEY_PREFIX, '');
-          _notesCache[inner] = localStorage.getItem(k) || '';
-        }
-      });
-    } catch(e) {}
-    ['g1','g2','g3','g4','g5'].forEach(g => renderNotesPanel(g));
-    return;
-  }
-  window.FB.onVal(`notes/${deviceId}/data`, val => {
-    _notesCache = val || {};
-    ['g1','g2','g3','g4','g5'].forEach(g => renderNotesPanel(g));
-    recomputeDashboard();
-  });
+  // No-op : plus de souscription Firebase aux notes
+  return;
 }
 
 let _saveDebounce = {};
 function onNoteInput(ev, grp, qid) {
-  const val = ev.target.value;
-  const key = grp + "_" + qid;
-  clearTimeout(_saveDebounce[key]);
-  const meta = ev.target.parentElement.querySelector('.notes-meta .saved');
-  if (meta) meta.textContent = "Enregistrement…";
-  _saveDebounce[key] = setTimeout(() => {
-    saveNote(grp, qid, val);
-    if (meta) meta.textContent = "✓ Enregistré";
-    recomputeDashboard();
-  }, 700);
+  // No-op : section retirée
+  return;
 }
 
 function renderNotesPanel(grp) {
-  const panel = document.getElementById('nt-panel-' + grp);
-  if (!panel) return;
-  let html = '';
-  NOTES_QUESTIONS.forEach(section => {
-    html += `<h3 class="subhead" style="color:${section.color};margin-top:24px;">${section.section}</h3>`;
-    section.items.forEach(it => {
-      const saved = loadNote(grp, it.id);
-      html += `<div class="notes-question">
-        <div class="notes-question-label">${section.section.split('—')[0].trim()}</div>
-        <div class="notes-question-text">${it.q}</div>
-        <div class="notes-question-hint">${it.hint}</div>
-        <textarea class="notes-textarea" oninput="onNoteInput(event,'${grp}','${it.id}')" placeholder="Tapez votre réponse…">${saved.replace(/</g,'&lt;')}</textarea>
-        <div class="notes-meta"><span class="saved">${saved ? '✓ Enregistré' : 'Vide'}</span><span>Sauvegarde locale automatique</span></div>
-      </div>`;
-    });
-  });
-  panel.innerHTML = html;
+  // No-op : la section "Vos notes" a été retirée
+  return;
 }
 
 function showNotesTab(grp) {
@@ -7568,6 +7413,37 @@ function clearAlert() {
   }
   closeAlertModal();
   _lastShownAlert = null;
+}
+
+function copySessionLink() {
+  const sessionId = window.FB ? window.FB.getSessionId() : 'default';
+  const baseUrl = window.location.origin + window.location.pathname;
+  const link = `${baseUrl}?s=${encodeURIComponent(sessionId)}`;
+
+  // Essai 1 : navigator.clipboard moderne
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(
+      () => {
+        alert(
+          `✓ Lien copié dans le presse-papiers :\n\n${link}\n\n` +
+          `Distribuez-le aux participants (Slack, mail, QR code).\n` +
+          `Quand ils l'ouvrent, ils sont automatiquement sur la session « ${sessionId} ».`
+        );
+      },
+      () => _fallbackCopySessionLink(link, sessionId)
+    );
+  } else {
+    _fallbackCopySessionLink(link, sessionId);
+  }
+}
+
+function _fallbackCopySessionLink(link, sessionId) {
+  // Fallback : afficher le lien dans une prompt pour copier manuellement
+  prompt(
+    `Sélectionnez et copiez ce lien (Ctrl+C) à distribuer aux participants.\n` +
+    `Ils seront automatiquement sur la session « ${sessionId} » :`,
+    link
+  );
 }
 
 function resetThisBrowser() {
@@ -10223,23 +10099,31 @@ function subscribeAll() {
 refreshLockUI();
 ['g1','g2','g3','g4','g5'].forEach(g => {
   renderMailboxList(g);
-  renderNotesPanel(g);
+  // renderNotesPanel devenu no-op après suppression sections 07/08/09
 });
 showMailbox('g1');
-showNotesTab('g1');
-const savedAuthor = loadAuthor();
-if (savedAuthor) document.getElementById('notes-author').value = savedAuthor;
+// showNotesTab et notes-author supprimés (sections 07/08/09 retirées)
 recomputeDashboard();
 renderMatrix();
 renderPrio();
 renderLevers();
 renderCouncil();
 
-// Session label in topbar + footer
-const sessionLabel = document.getElementById('fb-session-label');
-if (sessionLabel && window.FB) sessionLabel.textContent = window.FB.getSessionId();
-const footerSessionId = document.getElementById('footerSessionId');
-if (footerSessionId && window.FB) footerSessionId.textContent = window.FB.getSessionId();
+// Session label in topbar + footer — peut être appelé plusieurs fois
+function updateSessionLabel() {
+  // Priorité : (1) Firebase prêt (2) lecture précoce avant Firebase
+  const sid = (window.FB && window.FB.getSessionId())
+            || window._earlySessionId
+            || 'default';
+  const sessionLabel = document.getElementById('fb-session-label');
+  if (sessionLabel) sessionLabel.textContent = sid;
+  const footerSessionId = document.getElementById('footerSessionId');
+  if (footerSessionId) footerSessionId.textContent = sid;
+}
+updateSessionLabel();
+window.addEventListener('fb-ready', updateSessionLabel);
+setTimeout(updateSessionLabel, 500);
+setTimeout(updateSessionLabel, 1500);
 
 // Click on session badge to change
 const fbStatus = document.getElementById('fb-status');
