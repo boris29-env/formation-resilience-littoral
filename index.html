@@ -1440,6 +1440,273 @@ h3.subhead {
   font-size: 12.5px; color: var(--grey-txt); line-height: 1.55;
 }
 
+/* ========== RAPPORT PRÉSENTATION PAR GROUPE ========== */
+.report-launcher-block {
+  background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 100%);
+  color: var(--white); padding: 32px 36px; border-radius: 8px;
+  margin: 24px 0;
+}
+.report-launcher-block h3 {
+  font-family: var(--serif); font-size: 26px; font-weight: 600;
+  color: var(--white); margin-bottom: 8px;
+}
+.report-launcher-block h3 em { color: var(--orange); font-style: italic; }
+.report-launcher-block p { font-size: 14.5px; line-height: 1.6; color: rgba(255,255,255,0.85); margin-bottom: 18px; }
+.report-launcher-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px; margin-top: 20px;
+}
+.report-launcher-btn {
+  background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.18);
+  color: var(--white); padding: 14px 18px; border-radius: 6px;
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--sans); font-size: 14px; font-weight: 600;
+  text-align: left;
+}
+.report-launcher-btn:hover {
+  background: rgba(255,255,255,0.12); border-color: var(--orange);
+  transform: translateY(-2px);
+}
+.report-launcher-btn-badge {
+  width: 36px; height: 36px; flex-shrink: 0;
+  border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  color: var(--white); font-weight: 700; font-size: 13px;
+}
+.report-launcher-btn-badge.b1 { background: var(--g1); }
+.report-launcher-btn-badge.b2 { background: var(--g2); }
+.report-launcher-btn-badge.b3 { background: var(--g3); }
+.report-launcher-btn-badge.b4 { background: var(--g4); }
+.report-launcher-btn-badge.b5 { background: var(--g5); }
+.report-launcher-btn-content { flex: 1; min-width: 0; }
+.report-launcher-btn-title { color: var(--white); }
+.report-launcher-btn-sub { font-size: 11px; opacity: 0.7; font-weight: 400; margin-top: 2px; }
+
+/* RAPPORT VIEWER (plein écran style "slides") */
+.report-viewer {
+  display: none; position: fixed; inset: 0; z-index: 260;
+  background: var(--navy-deep);
+  overflow-y: auto;
+}
+.report-viewer.open { display: block; }
+.report-header {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--navy-deep);
+  padding: 18px 32px; border-bottom: 1px solid rgba(255,255,255,0.1);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 18px; flex-wrap: wrap;
+}
+.report-header-left {
+  display: flex; align-items: center; gap: 18px;
+}
+.report-header-badge {
+  width: 48px; height: 48px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--white); font-weight: 700; font-size: 18px;
+  flex-shrink: 0;
+}
+.report-header-badge.b1 { background: var(--g1); }
+.report-header-badge.b2 { background: var(--g2); }
+.report-header-badge.b3 { background: var(--g3); }
+.report-header-badge.b4 { background: var(--g4); }
+.report-header-badge.b5 { background: var(--g5); }
+.report-header h2 {
+  font-family: var(--serif); font-size: 22px; font-weight: 600; color: var(--white); line-height: 1.2;
+}
+.report-header h2 em { color: var(--orange); font-style: italic; font-weight: 400; font-size: 16px; display: block; margin-top: 2px; }
+.report-header-actions {
+  display: flex; gap: 10px;
+}
+.report-header-btn {
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25);
+  color: var(--white); padding: 8px 14px; border-radius: 4px;
+  font-family: var(--sans); font-size: 13px; cursor: pointer;
+  transition: all 0.15s;
+}
+.report-header-btn:hover { background: rgba(255,255,255,0.18); }
+.report-header-btn.primary { background: var(--orange); border-color: var(--orange); }
+.report-header-btn.primary:hover { background: var(--orange-deep); }
+
+.report-slide {
+  max-width: 1100px; margin: 0 auto;
+  padding: 50px 60px;
+  color: var(--white);
+}
+.report-slide-eyebrow {
+  font-family: var(--mono); font-size: 12px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--orange); margin-bottom: 14px;
+}
+.report-slide h3 {
+  font-family: var(--serif); font-size: 36px; font-weight: 600;
+  color: var(--white); line-height: 1.15; margin-bottom: 22px;
+}
+.report-slide h3 em { color: var(--orange); font-style: italic; }
+.report-slide p {
+  font-size: 16px; line-height: 1.65; color: rgba(255,255,255,0.85);
+  margin-bottom: 14px;
+}
+.report-slide ul, .report-slide ol {
+  font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.85);
+  padding-left: 24px; margin-bottom: 14px;
+}
+.report-slide ul li, .report-slide ol li { margin-bottom: 8px; }
+.report-slide strong { color: var(--white); }
+.report-slide em { color: var(--orange); font-style: italic; }
+
+.report-empty-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px dashed rgba(255,255,255,0.2);
+  border-radius: 8px; padding: 28px;
+  text-align: center; color: rgba(255,255,255,0.65);
+  font-style: italic;
+}
+
+.report-stat-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 18px; margin: 20px 0 10px;
+}
+.report-stat-tile {
+  background: rgba(255,255,255,0.06); border-radius: 8px; padding: 18px 22px;
+  border-left: 3px solid var(--orange);
+}
+.report-stat-num {
+  font-family: var(--serif); font-size: 36px; font-weight: 600; color: var(--orange); line-height: 1;
+}
+.report-stat-label {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: rgba(255,255,255,0.6); margin-top: 8px;
+}
+.report-stat-sub { font-size: 12.5px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+
+.report-quote {
+  background: rgba(232,110,85,0.08);
+  border-left: 4px solid var(--orange);
+  padding: 18px 24px; border-radius: 4px;
+  margin: 20px 0; font-style: italic;
+  font-family: var(--serif); font-size: 17px; line-height: 1.65;
+  color: rgba(255,255,255,0.92);
+}
+
+.report-matrix-mini {
+  display: inline-grid; grid-template-columns: repeat(7, 30px);
+  gap: 2px; margin-top: 8px;
+}
+.report-matrix-mini-cell {
+  width: 30px; height: 24px; border-radius: 2px;
+  background: rgba(255,255,255,0.08);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+}
+.report-matrix-mini-cell.lvl-1 { background: rgba(255, 215, 100, 0.3); color: #FFD764; }
+.report-matrix-mini-cell.lvl-2 { background: rgba(255, 165, 90, 0.4); color: #FFAA60; }
+.report-matrix-mini-cell.lvl-3 { background: rgba(232, 110, 85, 0.55); color: #FFB096; }
+.report-matrix-mini-cell.lvl-4 { background: rgba(200, 60, 50, 0.85); color: #FFFFFF; }
+.report-matrix-mini-row { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+.report-matrix-mini-label { font-size: 12px; min-width: 200px; color: rgba(255,255,255,0.85); }
+
+.report-prio-list {
+  background: rgba(255,255,255,0.04); border-radius: 8px; padding: 20px;
+  display: flex; flex-direction: column; gap: 10px; margin-top: 12px;
+}
+.report-prio-item {
+  display: flex; align-items: center; gap: 14px; padding: 8px 12px;
+  background: rgba(255,255,255,0.04); border-radius: 4px;
+  font-size: 14.5px; color: rgba(255,255,255,0.85);
+}
+.report-prio-item-rank {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.1); color: var(--white);
+  font-family: var(--serif); font-weight: 700; font-size: 14px;
+  flex-shrink: 0;
+}
+.report-prio-item.r1 .report-prio-item-rank { background: var(--orange); }
+.report-prio-item.r2 .report-prio-item-rank { background: #C58B5A; }
+.report-prio-item.r3 .report-prio-item-rank { background: var(--teal); }
+
+.report-lever-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.report-lever-item {
+  display: flex; align-items: center; gap: 14px;
+  background: rgba(255,255,255,0.05); padding: 12px 16px; border-radius: 6px;
+  border-left: 3px solid var(--orange);
+}
+.report-lever-name { flex: 1; font-size: 14.5px; color: rgba(255,255,255,0.92); }
+.report-lever-cost {
+  font-family: var(--mono); font-weight: 700; color: var(--orange); font-size: 14px;
+}
+
+.report-vote-list { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
+.report-vote-item {
+  background: rgba(255,255,255,0.05); padding: 16px 20px; border-radius: 6px;
+}
+.report-vote-title { font-family: var(--serif); font-size: 15px; font-weight: 600; color: var(--white); margin-bottom: 4px; }
+.report-vote-result {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+  margin-top: 6px;
+}
+.report-vote-result.pour { color: #8AC180; }
+.report-vote-result.contre { color: #FF9A85; }
+.report-vote-result.abstention { color: #C5A050; }
+
+@media (max-width: 800px) {
+  .report-slide { padding: 30px 24px; }
+  .report-slide h3 { font-size: 26px; }
+  .report-matrix-mini { grid-template-columns: repeat(7, 22px); }
+  .report-matrix-mini-cell { width: 22px; height: 20px; font-size: 10px; }
+  .report-matrix-mini-label { min-width: auto; max-width: 140px; font-size: 11px; }
+}
+
+/* ========== FR-ALERT FLASH ========== */
+.fr-alert-flash {
+  position: fixed; inset: 0; z-index: 300;
+  pointer-events: none; opacity: 0;
+  background: radial-gradient(circle at center,
+    rgba(232, 110, 85, 0.4) 0%,
+    rgba(200, 85, 60, 0.55) 50%,
+    rgba(165, 60, 40, 0.7) 100%);
+  display: flex; align-items: center; justify-content: center;
+}
+.fr-alert-flash.active {
+  animation: frFlash 2.6s ease-out;
+}
+@keyframes frFlash {
+  0%   { opacity: 0; transform: scale(1.2); }
+  10%  { opacity: 1; transform: scale(1); }
+  20%  { opacity: 0.6; }
+  30%  { opacity: 1; }
+  40%  { opacity: 0.6; }
+  50%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(1); }
+}
+.fr-alert-flash-content {
+  text-align: center; color: var(--white);
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+.fr-alert-flash-eyebrow {
+  font-family: var(--mono); font-size: 14px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  font-weight: 700; opacity: 0.95; margin-bottom: 12px;
+}
+.fr-alert-flash-title {
+  font-family: var(--serif); font-size: 56px; font-weight: 600;
+  line-height: 1.1; margin-bottom: 16px;
+}
+.fr-alert-flash-icon {
+  width: 96px; height: 96px; margin: 0 auto 18px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: rgba(255,255,255,0.18);
+  animation: alertIconPulse 0.5s ease-in-out infinite alternate;
+}
+@keyframes alertIconPulse {
+  from { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0.5); }
+  to   { transform: scale(1.08); box-shadow: 0 0 0 14px rgba(255,255,255,0); }
+}
+.fr-alert-flash-icon svg { width: 56px; height: 56px; stroke: var(--white); fill: none; stroke-width: 2.5; }
+@media (max-width: 600px) {
+  .fr-alert-flash-title { font-size: 36px; }
+}
+
 /* ========== POLL (sondages live) ========== */
 .poll-overlay {
   display: none; position: fixed; inset: 0;
@@ -1919,6 +2186,17 @@ h3.subhead {
   </div>
 </header>
 
+<!-- ============ FR-ALERT FLASH ============ -->
+<div class="fr-alert-flash" id="frAlertFlash" aria-hidden="true">
+  <div class="fr-alert-flash-content">
+    <div class="fr-alert-flash-icon">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 21h20z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.5" r=".7" fill="currentColor"/></svg>
+    </div>
+    <div class="fr-alert-flash-eyebrow" id="frFlashEyebrow">FR-ALERT</div>
+    <div class="fr-alert-flash-title" id="frFlashTitle">Alerte en cours</div>
+  </div>
+</div>
+
 <!-- ============ ALERT BANNER (déclenchée par formateur) ============ -->
 <div class="alert-banner" id="alertBanner">
   <div class="alert-banner-inner">
@@ -1949,6 +2227,29 @@ h3.subhead {
       <button class="trainer-event-btn" onclick="openPlenary()" style="background:rgba(232,110,85,0.4);border-color:var(--orange);">
         <span class="target-badge tball">⌬</span>
         <span>Ouvrir le mode plénière<small>Vue projetable agrégeant tous les groupes</small></span>
+      </button>
+    </div>
+    <div class="trainer-panel-section">
+      <div class="trainer-panel-label">Présentations par groupe</div>
+      <button class="trainer-event-btn" onclick="openReport('g1')">
+        <span class="target-badge tb1">G1</span>
+        <span>Restitution G1<small>Mission préfectorale</small></span>
+      </button>
+      <button class="trainer-event-btn" onclick="openReport('g2')">
+        <span class="target-badge tb2">G2</span>
+        <span>Restitution G2<small>Mairie + EPCI</small></span>
+      </button>
+      <button class="trainer-event-btn" onclick="openReport('g3')">
+        <span class="target-badge tb3">G3</span>
+        <span>Restitution G3<small>Syndicat + Conservatoire</small></span>
+      </button>
+      <button class="trainer-event-btn" onclick="openReport('g4')">
+        <span class="target-badge tb4">G4</span>
+        <span>Restitution G4<small>Acteurs économiques</small></span>
+      </button>
+      <button class="trainer-event-btn" onclick="openReport('g5')">
+        <span class="target-badge tb5">G5</span>
+        <span>Restitution G5<small>Société civile</small></span>
       </button>
     </div>
     <div class="trainer-panel-section">
@@ -2063,9 +2364,9 @@ h3.subhead {
     <span class="sidebar-label">Travailler</span>
     <a href="#mailbox">Votre boîte mail</a>
     <a href="#notes">Vos notes</a>
-    <a href="#mur">Mur d'expression</a>
     <a href="#dashboard">Tableau de bord</a>
     <a href="#carnet">Carnet de bord</a>
+    <a href="#restitution">Restitution</a>
     <a href="#cas1">Étude de cas n°1</a>
     <a href="#cas2">Étude de cas n°2</a>
     <a href="#axes">Les 6 axes</a>
@@ -2084,7 +2385,7 @@ h3.subhead {
 
 <!-- ============ HERO ============ -->
 <div class="hero">
-  <span class="hero-tag">Formation Résilience  ·  IGEDD - MTECT</span>
+  <span class="hero-tag">Formation animée par Boris Leclerc  ·  IGEDD - MTECT</span>
   <h1>Anse-de-Goulven<br><em>un territoire à inventer</em></h1>
   <p class="hero-lede">
     Bienvenue. Vous allez consacrer la journée à un territoire littoral fictif, mais nourri de données, de chiffres
@@ -2119,7 +2420,7 @@ h3.subhead {
     </div>
     <div class="pwd-panel-content">
       <h3>Vous arrivez ? Débloquez votre groupe</h3>
-      <p>Chaque groupe a reçu un code distinct du formateur. Saisissez le vôtre pour accéder aux données spécifiques de votre rôle. Les autres groupes restent partiellement masqués — c'est le principe du jeu.</p>
+      <p>Chaque groupe a reçu un code distinct du formateur. Saisissez le vôtre pour accéder à votre boîte mail, à votre fiche de rôle et à la mécanique des votes. <strong>Les autres groupes restent visibles</strong> mais leurs contenus sensibles — boîtes mail, mémos confidentiels — ne sont déverrouillés qu'après le partage en plénière.</p>
     </div>
     <button class="pwd-panel-btn" onclick="openUnlockModal()">Saisir mon code</button>
   </div>
@@ -2354,88 +2655,233 @@ h3.subhead {
     <h3>Territoire et occupation du sol</h3>
     <div class="map-svg-container">
       <svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg" aria-label="Carte territoriale d'Anse-de-Goulven">
-        <path d="M 0,0 L 700,0 L 700,80 Q 650,90 600,85 Q 550,95 500,88 Q 450,98 400,90 Q 350,100 300,92 Q 250,102 200,95 Q 150,103 100,98 Q 50,105 0,100 Z" fill="#A6C9DA"/>
-        <g fill="none" stroke="#7AAEC4" stroke-width="1">
-          <path d="M 60,30 q 8,-5 16,0 t 16,0"/>
-          <path d="M 200,40 q 8,-5 16,0 t 16,0"/>
-          <path d="M 380,30 q 8,-5 16,0 t 16,0"/>
-          <path d="M 560,40 q 8,-5 16,0 t 16,0"/>
+        <defs>
+          <!-- Dégradé de la mer : profond au large, clair près du rivage -->
+          <linearGradient id="seaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#5994B5"/>
+            <stop offset="60%" stop-color="#7FB1CB"/>
+            <stop offset="100%" stop-color="#A6C9DA"/>
+          </linearGradient>
+          <!-- Dégradé du sable -->
+          <linearGradient id="sandGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#F2DDB0"/>
+            <stop offset="100%" stop-color="#D4BC85"/>
+          </linearGradient>
+          <!-- Dégradé du marais -->
+          <linearGradient id="marshGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#B8D6AB"/>
+            <stop offset="100%" stop-color="#86B07A"/>
+          </linearGradient>
+          <!-- Dégradé de la terre / bourg -->
+          <linearGradient id="landGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#EFEAD5"/>
+            <stop offset="100%" stop-color="#D8CFB0"/>
+          </linearGradient>
+          <!-- Dégradé de la falaise -->
+          <linearGradient id="cliffGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#C9B894"/>
+            <stop offset="100%" stop-color="#9C8C66"/>
+          </linearGradient>
+          <!-- Texture sableuse pointillée -->
+          <pattern id="sandTex" patternUnits="userSpaceOnUse" width="6" height="6">
+            <rect width="6" height="6" fill="url(#sandGrad)"/>
+            <circle cx="2" cy="2" r="0.4" fill="#B8A065" opacity="0.5"/>
+            <circle cx="5" cy="4" r="0.3" fill="#B8A065" opacity="0.4"/>
+          </pattern>
+          <!-- Hachures de la falaise -->
+          <pattern id="cliffHatch" patternUnits="userSpaceOnUse" width="8" height="8">
+            <rect width="8" height="8" fill="url(#cliffGrad)"/>
+            <path d="M -1,1 l 2,-2 M 0,8 l 8,-8 M 7,9 l 2,-2" stroke="#8C7A52" stroke-width="0.4" opacity="0.7"/>
+          </pattern>
+          <!-- Texture du marais (petits points verts) -->
+          <pattern id="marshTex" patternUnits="userSpaceOnUse" width="10" height="10">
+            <rect width="10" height="10" fill="url(#marshGrad)"/>
+            <circle cx="3" cy="4" r="0.6" fill="#5C8A4F" opacity="0.4"/>
+            <circle cx="7" cy="8" r="0.5" fill="#5C8A4F" opacity="0.4"/>
+          </pattern>
+          <!-- Ombre portée pour bâtiments -->
+          <filter id="bldgShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="0.8"/>
+            <feOffset dx="1" dy="1.2"/>
+            <feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer>
+            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <!-- Animation de vague subtile -->
+          <pattern id="seaWaves" patternUnits="userSpaceOnUse" width="60" height="14" patternTransform="translate(0,0)">
+            <rect width="60" height="14" fill="url(#seaGrad)"/>
+            <path d="M 0,7 q 8,-3 16,0 t 16,0 t 16,0 t 16,0" fill="none" stroke="#FFFFFF" stroke-width="0.5" opacity="0.35"/>
+            <path d="M 0,11 q 6,-2 12,0 t 12,0 t 12,0 t 12,0 t 12,0" fill="none" stroke="#FFFFFF" stroke-width="0.4" opacity="0.25"/>
+          </pattern>
+        </defs>
+
+        <!-- MER -->
+        <rect x="0" y="0" width="700" height="100" fill="url(#seaWaves)"/>
+        <!-- Mouettes stylisées -->
+        <g fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" opacity="0.7">
+          <path d="M 80,18 q 5,-4 9,0 q 4,-4 9,0"/>
+          <path d="M 320,30 q 4,-3 7,0 q 3,-3 7,0"/>
+          <path d="M 560,15 q 5,-4 9,0 q 4,-4 9,0"/>
         </g>
-        <!-- Cordon dunaire — CLIQUABLE -->
+
+        <!-- CORDON DUNAIRE — CLIQUABLE -->
         <g class="enjeu-marker" onclick="openEnjeu('cordon')">
-          <path d="M 0,100 Q 50,105 100,98 Q 150,103 200,95 Q 250,102 300,92 Q 350,100 400,90 Q 420,90 430,95 L 430,115 Q 420,108 400,108 Q 350,118 300,110 Q 250,118 200,113 Q 150,120 100,114 Q 50,122 0,118 Z" fill="#E8D89A" stroke="#B8A050" stroke-width="0.5"/>
+          <path d="M 0,100 Q 50,105 100,98 Q 150,103 200,95 Q 250,102 300,92 Q 350,100 400,90 Q 420,90 430,95 L 430,118 Q 420,108 400,108 Q 350,118 300,110 Q 250,118 200,113 Q 150,120 100,114 Q 50,122 0,120 Z" fill="url(#sandTex)" stroke="#A89060" stroke-width="0.6"/>
+          <!-- Touffes d'oyat stylisées -->
+          <g stroke="#7A8845" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.7">
+            <path d="M 30,108 l 0,-4 M 32,109 l 1,-5 M 28,109 l -1,-5"/>
+            <path d="M 90,105 l 0,-4 M 92,106 l 1,-5 M 88,106 l -1,-5"/>
+            <path d="M 160,103 l 0,-4 M 162,104 l 1,-5 M 158,104 l -1,-5"/>
+            <path d="M 230,107 l 0,-4 M 232,108 l 1,-5 M 228,108 l -1,-5"/>
+            <path d="M 300,103 l 0,-4 M 302,104 l 1,-5 M 298,104 l -1,-5"/>
+            <path d="M 370,103 l 0,-4 M 372,104 l 1,-5 M 368,104 l -1,-5"/>
+          </g>
         </g>
-        <!-- Falaise -->
-        <path d="M 430,95 Q 480,90 530,98 Q 580,90 630,98 Q 670,98 700,100 L 700,200 L 670,200 Q 630,200 580,198 Q 530,200 480,198 Q 450,198 430,195 Z" fill="#B8A77E" stroke="#7E6E40" stroke-width="0.5"/>
-        <pattern id="hatch1" patternUnits="userSpaceOnUse" width="6" height="6">
-          <path d="M -1,1 l 2,-2 M 0,6 l 6,-6 M 5,7 l 2,-2" stroke="#7E6E40" stroke-width="0.5"/>
-        </pattern>
+
+        <!-- FALAISE — CLIQUABLE -->
         <g class="enjeu-marker" onclick="openEnjeu('falaise')">
-          <path d="M 430,95 Q 480,90 530,98 Q 580,90 630,98 Q 670,98 700,100 L 700,200 L 670,200 Q 630,200 580,198 Q 530,200 480,198 Q 450,198 430,195 Z" fill="url(#hatch1)" stroke="#7E6E40" stroke-width="0.5"/>
+          <path d="M 430,95 Q 480,90 530,98 Q 580,90 630,98 Q 670,98 700,100 L 700,205 Q 670,202 630,200 Q 580,202 530,200 Q 480,200 430,196 Z" fill="url(#cliffHatch)" stroke="#7E6E40" stroke-width="0.6"/>
+          <!-- Bord de falaise (ligne plus marquée) -->
+          <path d="M 430,95 Q 480,90 530,98 Q 580,90 630,98 Q 670,98 700,100" fill="none" stroke="#5E4D30" stroke-width="1.4"/>
         </g>
-        <!-- Marais — CLIQUABLE -->
+
+        <!-- MARAIS — CLIQUABLE -->
         <g class="enjeu-marker" onclick="openEnjeu('marais')">
-          <path d="M 0,118 Q 50,122 100,114 Q 150,120 200,113 Q 250,118 300,110 Q 350,118 400,108 Q 420,108 430,115 L 430,200 Q 380,210 320,205 Q 260,212 180,208 Q 100,215 50,210 Q 20,212 0,210 Z" fill="#A4C99A" stroke="#7DA972" stroke-width="0.6"/>
-          <ellipse cx="120" cy="170" rx="22" ry="6" fill="#A6C9DA" stroke="#7AAEC4" stroke-width="0.4"/>
-          <ellipse cx="240" cy="160" rx="20" ry="6" fill="#A6C9DA" stroke="#7AAEC4" stroke-width="0.4"/>
-          <ellipse cx="360" cy="170" rx="22" ry="6" fill="#A6C9DA" stroke="#7AAEC4" stroke-width="0.4"/>
-        </g>
-        <path d="M 670,330 Q 600,290 540,260 Q 480,225 410,205 Q 340,185 270,165 Q 200,145 140,135" fill="none" stroke="#5B95C4" stroke-width="4" stroke-linecap="round"/>
-        <!-- Digue 1962 — CLIQUABLE -->
-        <g class="enjeu-marker" onclick="openEnjeu('digue')">
-          <line x1="120" y1="125" x2="220" y2="123" stroke="#444" stroke-width="3" stroke-linecap="round"/>
-          <text x="170" y="118" text-anchor="middle" font-family="serif" font-size="9" font-style="italic" fill="#444" font-weight="bold">Digue 1962</text>
-        </g>
-        <!-- Quartier de la Digue — CLIQUABLE -->
-        <g class="enjeu-marker" onclick="openEnjeu('quartier')">
-          <g fill="#C9A878" stroke="#7E5F30" stroke-width="0.4">
-            <rect x="125" y="150" width="14" height="11"/><rect x="143" y="150" width="14" height="11"/><rect x="161" y="150" width="14" height="11"/><rect x="179" y="150" width="14" height="11"/><rect x="125" y="166" width="14" height="11"/><rect x="143" y="166" width="14" height="11"/><rect x="161" y="166" width="14" height="11"/><rect x="179" y="166" width="14" height="11"/><rect x="125" y="182" width="14" height="11"/><rect x="143" y="182" width="14" height="11"/><rect x="161" y="182" width="14" height="11"/>
+          <path d="M 0,120 Q 50,122 100,114 Q 150,120 200,113 Q 250,118 300,110 Q 350,118 400,108 Q 420,108 430,115 L 430,205 Q 380,215 320,210 Q 260,217 180,213 Q 100,218 50,213 Q 20,215 0,213 Z" fill="url(#marshTex)" stroke="#5E8C50" stroke-width="0.7"/>
+          <!-- Mares -->
+          <g filter="url(#bldgShadow)">
+            <ellipse cx="120" cy="170" rx="22" ry="6" fill="#A6C9DA" stroke="#7AAEC4" stroke-width="0.5"/>
+            <ellipse cx="240" cy="160" rx="20" ry="6" fill="#A6C9DA" stroke="#7AAEC4" stroke-width="0.5"/>
+            <ellipse cx="360" cy="170" rx="22" ry="6" fill="#A6C9DA" stroke="#7AAEC4" stroke-width="0.5"/>
           </g>
-          <text x="160" y="208" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#1E2D5C" font-weight="bold">Quartier de la Digue</text>
-        </g>
-        <g fill="#D4B996" stroke="#7E5F30" stroke-width="0.4">
-          <rect x="320" y="240" width="16" height="13"/><rect x="340" y="238" width="16" height="13"/><rect x="360" y="240" width="16" height="13"/><rect x="380" y="238" width="16" height="13"/><rect x="320" y="256" width="16" height="13"/><rect x="340" y="254" width="16" height="13"/><rect x="360" y="256" width="16" height="13"/><rect x="380" y="254" width="16" height="13"/><rect x="340" y="270" width="14" height="11"/><rect x="360" y="272" width="14" height="11"/>
-        </g>
-        <rect x="358" y="245" width="9" height="14" fill="#9C7E50" stroke="#5C3F1A" stroke-width="0.5"/>
-        <line x1="362.5" y1="237" x2="362.5" y2="245" stroke="#5C3F1A" stroke-width="1"/>
-        <text x="358" y="298" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#1E2D5C">Bourg</text>
-        <!-- Port — CLIQUABLE -->
-        <g class="enjeu-marker" onclick="openEnjeu('port')">
-          <path d="M 460,115 Q 470,105 485,103 Q 500,103 510,108 Q 520,115 515,125 Q 500,118 485,120 Q 470,125 460,115 Z" fill="#A6C9DA" stroke="#7AAEC4" stroke-width="0.5"/>
-          <text x="488" y="142" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#1E2D5C" font-weight="bold">Port</text>
-        </g>
-        <!-- Campings — CLIQUABLES -->
-        <g>
-          <g class="enjeu-marker" onclick="openEnjeu('camping1')">
-            <polygon points="65,118 75,118 70,108" fill="#5C8A4F" stroke="white" stroke-width="0.8"/><text x="70" y="116" text-anchor="middle" font-size="6" fill="white" font-weight="bold">C</text><text x="70" y="132" text-anchor="middle" font-size="8" fill="#5C8A4F" font-weight="bold">Camping 1</text>
-          </g>
-          <g class="enjeu-marker" onclick="openEnjeu('camping2')">
-            <polygon points="245,118 255,118 250,108" fill="#5C8A4F" stroke="white" stroke-width="0.8"/><text x="250" y="116" text-anchor="middle" font-size="6" fill="white" font-weight="bold">C</text><text x="250" y="132" text-anchor="middle" font-size="8" fill="#5C8A4F" font-weight="bold">Camping 2</text>
-          </g>
-          <g class="enjeu-marker" onclick="openEnjeu('camping3')">
-            <polygon points="395,118 405,118 400,108" fill="#5C8A4F" stroke="white" stroke-width="0.8"/><text x="400" y="116" text-anchor="middle" font-size="6" fill="white" font-weight="bold">C</text><text x="400" y="132" text-anchor="middle" font-size="8" fill="#5C8A4F" font-weight="bold">Camping 3</text>
+          <!-- Roseaux dispersés -->
+          <g stroke="#3F6A33" stroke-width="0.7" stroke-linecap="round" opacity="0.6">
+            <path d="M 60,140 l 0,-4 M 62,141 l 1,-5 M 58,141 l -1,-5"/>
+            <path d="M 180,150 l 0,-4 M 182,151 l 1,-5 M 178,151 l -1,-5"/>
+            <path d="M 300,180 l 0,-4 M 302,181 l 1,-5 M 298,181 l -1,-5"/>
+            <path d="M 400,180 l 0,-4 M 402,181 l 1,-5 M 398,181 l -1,-5"/>
           </g>
         </g>
-        <line x1="0" y1="320" x2="700" y2="318" stroke="#444" stroke-width="2"/>
-        <line x1="358" y1="285" x2="358" y2="319" stroke="#444" stroke-width="1.5"/>
-        <line x1="358" y1="285" x2="490" y2="115" stroke="#444" stroke-width="1.2"/>
-        <line x1="358" y1="285" x2="160" y2="190" stroke="#444" stroke-width="1.2"/>
-        <text x="680" y="313" text-anchor="end" font-family="sans-serif" font-size="9" font-style="italic" fill="#444">RD 765</text>
-        <!-- Zone industrielle — CLIQUABLE -->
-        <g class="enjeu-marker" onclick="openEnjeu('zi')">
-          <g fill="#9C9C9C" stroke="#666" stroke-width="0.4"><rect x="450" y="335" width="40" height="22"/><rect x="495" y="338" width="22" height="18"/><rect x="450" y="362" width="28" height="18"/></g>
-          <text x="490" y="392" text-anchor="middle" font-family="sans-serif" font-size="9" font-style="italic" fill="#5C5C5C" font-weight="bold">ZI (PME agro)</text>
-        </g>
-        <!-- Le Goulven — CLIQUABLE -->
+
+        <!-- LAND (terre habitée — sous le marais) -->
+        <rect x="0" y="205" width="700" height="120" fill="url(#landGrad)"/>
+
+        <!-- LE GOULVEN (rivière) -->
+        <path d="M 670,330 Q 600,290 540,260 Q 480,225 410,205 Q 340,185 270,165 Q 200,145 140,135" fill="none" stroke="#5B95C4" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+        <path d="M 670,330 Q 600,290 540,260 Q 480,225 410,205 Q 340,185 270,165 Q 200,145 140,135" fill="none" stroke="#A8CFE2" stroke-width="1.5" stroke-linecap="round"/>
         <g class="enjeu-marker" onclick="openEnjeu('goulven')">
           <text x="560" y="270" font-family="serif" font-size="11" font-style="italic" font-weight="bold" fill="#3E7BAF" transform="rotate(-25 560 270)">Le Goulven</text>
         </g>
-        <text x="220" y="160" text-anchor="middle" font-family="serif" font-size="10" font-style="italic" font-weight="bold" fill="#3E5F2A">Marais (Natura 2000, 850 ha)</text>
-        <text x="200" y="60" text-anchor="middle" font-family="serif" font-size="10" font-style="italic" fill="#7E6E40">Cordon dunaire (4 km, recul 1 m/an)</text>
-        <text x="580" y="160" text-anchor="middle" font-family="serif" font-size="10" font-style="italic" font-weight="bold" fill="#5E5230">Falaise calcaire</text>
-        <text x="350" y="22" text-anchor="middle" font-family="serif" font-size="13" font-style="italic" font-weight="bold" fill="#2D5266">BAIE D'ANSE-DE-GOULVEN</text>
-        <g transform="translate(40, 360)"><line x1="0" y1="20" x2="0" y2="0" stroke="#1E2D5C" stroke-width="1.5"/><polygon points="-5,5 0,-2 5,5" fill="#1E2D5C"/><text x="0" y="-8" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#1E2D5C">N</text></g>
-        <g transform="translate(620, 380)"><line x1="0" y1="0" x2="60" y2="0" stroke="#1E2D5C" stroke-width="2"/><line x1="0" y1="-3" x2="0" y2="3" stroke="#1E2D5C" stroke-width="1.5"/><line x1="60" y1="-3" x2="60" y2="3" stroke="#1E2D5C" stroke-width="1.5"/><text x="30" y="-6" text-anchor="middle" font-size="9" fill="#1E2D5C" font-weight="bold">2 km</text></g>
+
+        <!-- DIGUE 1962 — CLIQUABLE -->
+        <g class="enjeu-marker" onclick="openEnjeu('digue')">
+          <line x1="120" y1="125" x2="220" y2="123" stroke="#3D2E20" stroke-width="4" stroke-linecap="round"/>
+          <line x1="120" y1="125" x2="220" y2="123" stroke="#7A6A4D" stroke-width="2" stroke-linecap="round"/>
+          <text x="170" y="118" text-anchor="middle" font-family="serif" font-size="9" font-style="italic" fill="#1F2D1F" font-weight="bold">Digue 1962</text>
+        </g>
+
+        <!-- QUARTIER DE LA DIGUE — CLIQUABLE -->
+        <g class="enjeu-marker" onclick="openEnjeu('quartier')">
+          <g fill="#C9A878" stroke="#7E5F30" stroke-width="0.5" filter="url(#bldgShadow)">
+            <rect x="125" y="150" width="14" height="11" rx="0.5"/><rect x="143" y="150" width="14" height="11" rx="0.5"/><rect x="161" y="150" width="14" height="11" rx="0.5"/><rect x="179" y="150" width="14" height="11" rx="0.5"/>
+            <rect x="125" y="166" width="14" height="11" rx="0.5"/><rect x="143" y="166" width="14" height="11" rx="0.5"/><rect x="161" y="166" width="14" height="11" rx="0.5"/><rect x="179" y="166" width="14" height="11" rx="0.5"/>
+            <rect x="125" y="182" width="14" height="11" rx="0.5"/><rect x="143" y="182" width="14" height="11" rx="0.5"/><rect x="161" y="182" width="14" height="11" rx="0.5"/>
+          </g>
+          <!-- Toits (triangles) -->
+          <g fill="#8E5A28" opacity="0.6">
+            <polygon points="125,150 132,146 139,150"/><polygon points="143,150 150,146 157,150"/><polygon points="161,150 168,146 175,150"/><polygon points="179,150 186,146 193,150"/>
+          </g>
+          <text x="160" y="208" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#1E2D5C" font-weight="bold">Quartier de la Digue</text>
+        </g>
+
+        <!-- BOURG -->
+        <g fill="#D4B996" stroke="#7E5F30" stroke-width="0.5" filter="url(#bldgShadow)">
+          <rect x="320" y="240" width="16" height="13" rx="0.5"/><rect x="340" y="238" width="16" height="13" rx="0.5"/><rect x="360" y="240" width="16" height="13" rx="0.5"/><rect x="380" y="238" width="16" height="13" rx="0.5"/>
+          <rect x="320" y="256" width="16" height="13" rx="0.5"/><rect x="340" y="254" width="16" height="13" rx="0.5"/><rect x="360" y="256" width="16" height="13" rx="0.5"/><rect x="380" y="254" width="16" height="13" rx="0.5"/>
+          <rect x="340" y="270" width="14" height="11" rx="0.5"/><rect x="360" y="272" width="14" height="11" rx="0.5"/>
+        </g>
+        <!-- Église -->
+        <rect x="358" y="245" width="9" height="14" fill="#9C7E50" stroke="#5C3F1A" stroke-width="0.5" filter="url(#bldgShadow)"/>
+        <line x1="362.5" y1="237" x2="362.5" y2="245" stroke="#5C3F1A" stroke-width="1.2"/>
+        <polygon points="361,238 364,238 362.5,234" fill="#FFD700" stroke="#A88500" stroke-width="0.3"/>
+        <text x="358" y="298" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#1E2D5C">Bourg</text>
+
+        <!-- PORT — CLIQUABLE -->
+        <g class="enjeu-marker" onclick="openEnjeu('port')">
+          <path d="M 460,115 Q 470,105 485,103 Q 500,103 510,108 Q 520,115 515,125 Q 500,118 485,120 Q 470,125 460,115 Z" fill="#A6C9DA" stroke="#5994B5" stroke-width="0.7"/>
+          <!-- Mâts de bateaux -->
+          <g stroke="#3D2E20" stroke-width="0.7" opacity="0.85">
+            <line x1="478" y1="118" x2="478" y2="108"/>
+            <line x1="492" y1="116" x2="492" y2="105"/>
+            <line x1="503" y1="118" x2="503" y2="110"/>
+          </g>
+          <text x="488" y="142" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#1E2D5C" font-weight="bold">Port</text>
+        </g>
+
+        <!-- CAMPINGS — CLIQUABLES -->
+        <g>
+          <g class="enjeu-marker" onclick="openEnjeu('camping1')">
+            <polygon points="65,118 75,118 70,108" fill="#5C8A4F" stroke="white" stroke-width="0.8" filter="url(#bldgShadow)"/>
+            <polygon points="58,120 66,120 62,113" fill="#7AA365" stroke="white" stroke-width="0.5"/>
+            <polygon points="76,120 84,120 80,113" fill="#7AA365" stroke="white" stroke-width="0.5"/>
+            <text x="70" y="116" text-anchor="middle" font-size="6" fill="white" font-weight="bold">C</text>
+            <text x="70" y="134" text-anchor="middle" font-size="8" fill="#3E5F2A" font-weight="bold">Camping 1</text>
+          </g>
+          <g class="enjeu-marker" onclick="openEnjeu('camping2')">
+            <polygon points="245,118 255,118 250,108" fill="#5C8A4F" stroke="white" stroke-width="0.8" filter="url(#bldgShadow)"/>
+            <polygon points="238,120 246,120 242,113" fill="#7AA365" stroke="white" stroke-width="0.5"/>
+            <polygon points="256,120 264,120 260,113" fill="#7AA365" stroke="white" stroke-width="0.5"/>
+            <text x="250" y="116" text-anchor="middle" font-size="6" fill="white" font-weight="bold">C</text>
+            <text x="250" y="134" text-anchor="middle" font-size="8" fill="#3E5F2A" font-weight="bold">Camping 2</text>
+          </g>
+          <g class="enjeu-marker" onclick="openEnjeu('camping3')">
+            <polygon points="395,118 405,118 400,108" fill="#5C8A4F" stroke="white" stroke-width="0.8" filter="url(#bldgShadow)"/>
+            <polygon points="388,120 396,120 392,113" fill="#7AA365" stroke="white" stroke-width="0.5"/>
+            <polygon points="406,120 414,120 410,113" fill="#7AA365" stroke="white" stroke-width="0.5"/>
+            <text x="400" y="116" text-anchor="middle" font-size="6" fill="white" font-weight="bold">C</text>
+            <text x="400" y="134" text-anchor="middle" font-size="8" fill="#3E5F2A" font-weight="bold">Camping 3</text>
+          </g>
+        </g>
+
+        <!-- ROUTE RD 765 -->
+        <line x1="0" y1="320" x2="700" y2="318" stroke="#3D2E20" stroke-width="2.5"/>
+        <line x1="0" y1="320" x2="700" y2="318" stroke="#FFFFFF" stroke-width="0.6" stroke-dasharray="6,3"/>
+        <line x1="358" y1="285" x2="358" y2="319" stroke="#666" stroke-width="1.5"/>
+        <line x1="358" y1="285" x2="490" y2="115" stroke="#666" stroke-width="1.2"/>
+        <line x1="358" y1="285" x2="160" y2="190" stroke="#666" stroke-width="1.2"/>
+        <text x="680" y="313" text-anchor="end" font-family="sans-serif" font-size="9" font-style="italic" fill="#3D2E20" font-weight="bold">RD 765</text>
+
+        <!-- ZONE INDUSTRIELLE — CLIQUABLE -->
+        <g class="enjeu-marker" onclick="openEnjeu('zi')">
+          <g fill="#A0A0A0" stroke="#5E5E5E" stroke-width="0.5" filter="url(#bldgShadow)">
+            <rect x="450" y="335" width="40" height="22" rx="0.5"/>
+            <rect x="495" y="338" width="22" height="18" rx="0.5"/>
+            <rect x="450" y="362" width="28" height="18" rx="0.5"/>
+          </g>
+          <text x="490" y="392" text-anchor="middle" font-family="sans-serif" font-size="9" font-style="italic" fill="#3D2E20" font-weight="bold">ZI (PME agro)</text>
+        </g>
+
+        <!-- LABELS GLOBAUX -->
+        <text x="220" y="160" text-anchor="middle" font-family="serif" font-size="10" font-style="italic" font-weight="bold" fill="#2A4F1E" pointer-events="none">Marais (Natura 2000, 850 ha)</text>
+        <text x="200" y="60" text-anchor="middle" font-family="serif" font-size="10" font-style="italic" fill="#FFFFFF" font-weight="bold" pointer-events="none">Cordon dunaire (4 km, recul 1 m/an)</text>
+        <text x="580" y="160" text-anchor="middle" font-family="serif" font-size="10" font-style="italic" font-weight="bold" fill="#3E2D14" pointer-events="none">Falaise calcaire</text>
+        <text x="350" y="22" text-anchor="middle" font-family="serif" font-size="13" font-style="italic" font-weight="bold" fill="#FFFFFF" pointer-events="none">BAIE D'ANSE-DE-GOULVEN</text>
+
+        <!-- ROSE DES VENTS -->
+        <g transform="translate(40, 360)">
+          <circle r="14" fill="#FFFFFF" stroke="#1E2D5C" stroke-width="1" opacity="0.9"/>
+          <line x1="0" y1="10" x2="0" y2="-10" stroke="#1E2D5C" stroke-width="1.5"/>
+          <polygon points="-5,-3 0,-12 5,-3" fill="#E86E55"/>
+          <text x="0" y="-15" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#1E2D5C">N</text>
+        </g>
+
+        <!-- ÉCHELLE -->
+        <g transform="translate(620, 380)">
+          <line x1="0" y1="0" x2="60" y2="0" stroke="#1E2D5C" stroke-width="2"/>
+          <line x1="0" y1="-3" x2="0" y2="3" stroke="#1E2D5C" stroke-width="1.5"/>
+          <line x1="30" y1="-2" x2="30" y2="2" stroke="#1E2D5C" stroke-width="1"/>
+          <line x1="60" y1="-3" x2="60" y2="3" stroke="#1E2D5C" stroke-width="1.5"/>
+          <text x="30" y="-6" text-anchor="middle" font-size="9" fill="#1E2D5C" font-weight="bold">2 km</text>
+        </g>
       </svg>
     </div>
     <div class="map-legend-clickable">
@@ -3261,54 +3707,10 @@ h3.subhead {
   </div>
 </section>
 
-<!-- ============ MUR D'EXPRESSION ============ -->
-<section id="mur">
-  <div class="section-header">
-    <span class="section-num">08</span>
-    <span class="section-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    </span>
-    <h2 class="section-title">Le mur d'expression</h2>
-  </div>
-  <p class="section-intro">
-    Un fil partagé entre tous les groupes. <strong>Postez ce qui vous semble important</strong> :
-    une intuition, une question, une provocation. Tous les autres groupes voient ce que vous écrivez.
-    C'est l'effet de groupe qui rend la pensée collective possible.
-  </p>
-
-  <div class="wall-block">
-    <div class="wall-form">
-      <div class="wall-form-meta">
-        <input type="text" id="wall-author" placeholder="Vos initiales (ex. M.D.)" maxlength="12">
-        <select id="wall-group">
-          <option value="">— Votre groupe —</option>
-          <option value="g1">G1 — Préfectorale</option>
-          <option value="g2">G2 — Mairie + EPCI</option>
-          <option value="g3">G3 — Syndicat + Conserv.</option>
-          <option value="g4">G4 — Économique</option>
-          <option value="g5">G5 — Société civile</option>
-        </select>
-      </div>
-      <textarea id="wall-text" placeholder="Ce que vous voulez partager — 1-3 phrases, pas plus." maxlength="400"></textarea>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-        <button class="notes-toolbar-btn primary" onclick="postOnWall()">
-          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          Publier sur le mur
-        </button>
-        <span style="font-size:12.5px;color:var(--grey-txt);">Sauvegardé localement · max 400 caractères</span>
-      </div>
-    </div>
-
-    <div class="wall-feed" id="wall-feed">
-      <div class="wall-empty">Le mur est vide pour l'instant. Soyez la première personne à publier.</div>
-    </div>
-  </div>
-</section>
-
 <!-- ============ DASHBOARD STRATÉGIE ============ -->
 <section id="dashboard">
   <div class="section-header">
-    <span class="section-num">09</span>
+    <span class="section-num">08</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
     </span>
@@ -3353,7 +3755,7 @@ h3.subhead {
 <!-- ============ CARNET DE BORD ============ -->
 <section id="carnet">
   <div class="section-header">
-    <span class="section-num">10</span>
+    <span class="section-num">09</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
     </span>
@@ -3378,6 +3780,68 @@ h3.subhead {
       <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Télécharger
     </button>
+  </div>
+</section>
+
+<!-- ============ RESTITUTION (rapport-présentation par groupe) ============ -->
+<section id="restitution">
+  <div class="section-header">
+    <span class="section-num">10</span>
+    <span class="section-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="8" y1="22" x2="16" y2="22"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
+    </span>
+    <h2 class="section-title">Restitution — votre support de présentation</h2>
+  </div>
+  <p class="section-intro">
+    Tout ce que votre groupe a produit pendant la journée — matrice diagnostic, hiérarchisation des acteurs,
+    arbitrages budgétaires, votes au conseil — est <strong>centralisé et compilé en un support projetable</strong>.
+    Cliquez sur le bouton de votre groupe pour ouvrir votre rapport en mode plein écran et le présenter en plénière.
+  </p>
+
+  <div class="report-launcher-block">
+    <h3>Présentez le travail de <em>votre groupe</em></h3>
+    <p>
+      Le support s'adapte automatiquement à ce que votre groupe a saisi.
+      Au passage devant les autres, défilez les écrans et commentez. Le rapport est aussi téléchargeable en .txt
+      pour vos archives, et en PDF par impression du navigateur.
+    </p>
+    <div class="report-launcher-grid">
+      <button class="report-launcher-btn" onclick="openReport('g1')">
+        <span class="report-launcher-btn-badge b1">G1</span>
+        <span class="report-launcher-btn-content">
+          <span class="report-launcher-btn-title">Mission préfectorale</span>
+          <span class="report-launcher-btn-sub">État, DDTM, DREAL</span>
+        </span>
+      </button>
+      <button class="report-launcher-btn" onclick="openReport('g2')">
+        <span class="report-launcher-btn-badge b2">G2</span>
+        <span class="report-launcher-btn-content">
+          <span class="report-launcher-btn-title">Mairie + EPCI</span>
+          <span class="report-launcher-btn-sub">Élus, DGS, opposition</span>
+        </span>
+      </button>
+      <button class="report-launcher-btn" onclick="openReport('g3')">
+        <span class="report-launcher-btn-badge b3">G3</span>
+        <span class="report-launcher-btn-content">
+          <span class="report-launcher-btn-title">Syndicat + Conserv.</span>
+          <span class="report-launcher-btn-sub">Bassin versant, ADAPTO</span>
+        </span>
+      </button>
+      <button class="report-launcher-btn" onclick="openReport('g4')">
+        <span class="report-launcher-btn-badge b4">G4</span>
+        <span class="report-launcher-btn-content">
+          <span class="report-launcher-btn-title">Acteurs économiques</span>
+          <span class="report-launcher-btn-sub">Campings, PME, conchyliculture</span>
+        </span>
+      </button>
+      <button class="report-launcher-btn" onclick="openReport('g5')">
+        <span class="report-launcher-btn-badge b5">G5</span>
+        <span class="report-launcher-btn-content">
+          <span class="report-launcher-btn-title">Société civile</span>
+          <span class="report-launcher-btn-sub">Associations, habitants</span>
+        </span>
+      </button>
+    </div>
   </div>
 </section>
 
@@ -3722,8 +4186,9 @@ h3.subhead {
     <h2 class="section-title">Sources nationales — données vérifiables</h2>
   </div>
   <p class="section-intro">
-    Anse-de-Goulven est fictive, mais la doctrine, les outils, les chiffres et les portails dont vous vous servirez
-    sur votre vrai territoire le sont. Voici les ressources de référence.
+    Anse-de-Goulven est une commune fictive. <strong>Mais la doctrine, les outils, les chiffres et les portails
+    que vous mobiliserez sur votre vrai territoire, eux, sont bien réels</strong> — ce sont les mêmes que ceux qui
+    structurent l'action publique au quotidien. Voici les ressources de référence à connaître.
   </p>
 
   <h3 class="subhead">Portails de données et de cartographie</h3>
@@ -4034,10 +4499,29 @@ h3.subhead {
   </div>
 </div>
 
+<!-- ============ REPORT VIEWER (présentation par groupe) ============ -->
+<div class="report-viewer" id="reportViewer">
+  <div class="report-header">
+    <div class="report-header-left">
+      <div class="report-header-badge" id="reportHeaderBadge">G?</div>
+      <div>
+        <h2 id="reportHeaderTitle">Rapport de présentation</h2>
+        <em id="reportHeaderSub">— Anse-de-Goulven</em>
+      </div>
+    </div>
+    <div class="report-header-actions">
+      <button class="report-header-btn" onclick="downloadReportTxt()">Télécharger .txt</button>
+      <button class="report-header-btn" onclick="window.print()">Imprimer / PDF</button>
+      <button class="report-header-btn primary" onclick="closeReport()">Fermer (Échap)</button>
+    </div>
+  </div>
+  <div id="reportBody"></div>
+</div>
+
 <!-- ============ FOOTER ============ -->
 <footer class="foot">
   <p><strong>Formation Résilience des territoires littoraux</strong>  ·  Anse-de-Goulven (commune fictive à usage pédagogique)</p>
-  <p style="margin-top:6px;">Document préparé par l'Inspection générale de l'environnement et du développement durable  ·  IGEDD - MTECT</p>
+  <p style="margin-top:6px;">Dispositif pédagogique conçu et animé par Boris Leclerc, membre de l'Inspection générale de l'environnement et du développement durable (IGEDD - MTECT)</p>
   <p style="margin-top:14px;font-style:italic;">« La résilience commence par les questions qu'on ose se poser — et qu'on ose poser aux autres. »</p>
 </footer>
 
@@ -4162,6 +4646,8 @@ function unlockGroup(group) {
     saveUnlockedGroups(list);
   }
   refreshLockUI();
+  // Rafraîchir les éléments qui dépendent du groupe pour reactiver les votes/contributions
+  if (typeof renderCouncil === 'function') renderCouncil();
 }
 
 function refreshLockUI() {
@@ -4618,13 +5104,38 @@ const ENJEU_ICONS = {
   "river": '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.8"><path d="M4 4q4 0 6 4t4 6 6 4"/><path d="M4 9q4 0 6 4t4 4 6 0"/></svg>'
 };
 
+// Photos illustratives par enjeu (Unsplash, libres de droits)
+const ENJEU_PHOTOS = {
+  digue: "https://images.unsplash.com/photo-1518709594023-6eab9bab7b23?w=900&q=70",  // digue maritime
+  quartier: "https://images.unsplash.com/photo-1571055107559-3e67626fa8be?w=900&q=70",  // village côtier
+  camping1: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=900&q=70",  // camping
+  camping2: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=900&q=70",
+  camping3: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=900&q=70",
+  marais: "https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?w=900&q=70",  // zone humide
+  cordon: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900&q=70",  // cordon dunaire
+  falaise: "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=900&q=70",  // falaise calcaire
+  port: "https://images.unsplash.com/photo-1502489597346-dad15683d4c2?w=900&q=70",  // petit port
+  zi: "https://images.unsplash.com/photo-1581090700227-1e37b190418e?w=900&q=70",  // entrepôt
+  goulven: "https://images.unsplash.com/photo-1467810563316-b5476525c0f9?w=900&q=70",  // rivière
+};
+
 function openEnjeu(id) {
   const data = ENJEUX[id];
   if (!data) return;
   document.getElementById('enjeuModalIcon').innerHTML = ENJEU_ICONS[data.icon] || ENJEU_ICONS["wall"];
   document.getElementById('enjeuModalEyebrow').textContent = data.eyebrow;
   document.getElementById('enjeuModalTitle').textContent = data.title;
-  document.getElementById('enjeuModalBody').innerHTML = data.body;
+  // Photo en haut du body
+  const photoUrl = ENJEU_PHOTOS[id];
+  let bodyHTML = '';
+  if (photoUrl) {
+    bodyHTML += `<div class="enjeu-photo-banner" style="margin: -8px -32px 18px; height: 160px; overflow: hidden; border-radius: 0; position: relative;">
+      <img src="${photoUrl}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;" loading="lazy" />
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(30,45,92,0.0) 60%, rgba(30,45,92,0.4) 100%);pointer-events:none;"></div>
+    </div>`;
+  }
+  bodyHTML += data.body;
+  document.getElementById('enjeuModalBody').innerHTML = bodyHTML;
   document.getElementById('enjeuModal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -5426,8 +5937,10 @@ const NOTES_QUESTIONS = [
   ]},
 ];
 
-const NOTES_KEY_PREFIX = "ansedegoulven_notes_";
+const NOTES_KEY_PREFIX = "ansedegoulven_notes_local_";
 const NOTES_AUTHOR_KEY = "ansedegoulven_author";
+
+let _notesCache = {};  // {grp_qid: value}
 
 function loadAuthor() {
   try { return localStorage.getItem(NOTES_AUTHOR_KEY) || ""; } catch(e) { return ""; }
@@ -5435,12 +5948,51 @@ function loadAuthor() {
 function saveAuthor() {
   const v = document.getElementById('notes-author').value;
   try { localStorage.setItem(NOTES_AUTHOR_KEY, v); } catch(e) {}
+  // Sauvegarder aussi sur Firebase pour qu'il apparaisse dans la plénière
+  const deviceId = getDeviceId();
+  if (window.FB && v) {
+    const myGrp = getMyGroup() || '?';
+    window.FB.setVal(`notes/${deviceId}/meta`, {author: v, grp: myGrp, ts: Date.now()}).catch(e => {});
+  }
 }
 function loadNote(grp, qid) {
-  try { return localStorage.getItem(NOTES_KEY_PREFIX + grp + "_" + qid) || ""; } catch(e) { return ""; }
+  return _notesCache[grp + "_" + qid] || "";
 }
 function saveNote(grp, qid, val) {
-  try { localStorage.setItem(NOTES_KEY_PREFIX + grp + "_" + qid, val); } catch(e) {}
+  _notesCache[grp + "_" + qid] = val;
+  const deviceId = getDeviceId();
+  if (window.FB) {
+    window.FB.setVal(`notes/${deviceId}/data/${grp}_${qid}`, val).catch(e => {
+      try { localStorage.setItem(NOTES_KEY_PREFIX + grp + "_" + qid, val); } catch(e) {}
+    });
+    const author = loadAuthor() || 'anonyme';
+    const myGrp = getMyGroup() || '?';
+    window.FB.setVal(`notes/${deviceId}/meta`, {author, grp: myGrp, ts: Date.now()}).catch(e => {});
+  } else {
+    try { localStorage.setItem(NOTES_KEY_PREFIX + grp + "_" + qid, val); } catch(e) {}
+  }
+}
+
+function subscribeNotes() {
+  const deviceId = getDeviceId();
+  if (!window.FB) {
+    // Fallback localStorage
+    try {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith(NOTES_KEY_PREFIX)) {
+          const inner = k.replace(NOTES_KEY_PREFIX, '');
+          _notesCache[inner] = localStorage.getItem(k) || '';
+        }
+      });
+    } catch(e) {}
+    ['g1','g2','g3','g4','g5'].forEach(g => renderNotesPanel(g));
+    return;
+  }
+  window.FB.onVal(`notes/${deviceId}/data`, val => {
+    _notesCache = val || {};
+    ['g1','g2','g3','g4','g5'].forEach(g => renderNotesPanel(g));
+    recomputeDashboard();
+  });
 }
 
 let _saveDebounce = {};
@@ -5534,16 +6086,79 @@ function exportNotes() {
 
 function clearAllNotes() {
   if (!confirm("Voulez-vous vraiment effacer toutes vos notes ? Cette action est irréversible.")) return;
+  _notesCache = {};
+  const deviceId = getDeviceId();
+  if (window.FB) {
+    window.FB.removeVal(`notes/${deviceId}`).catch(e => {});
+  }
   try {
     Object.keys(localStorage).forEach(k => {
       if (k.startsWith(NOTES_KEY_PREFIX)) localStorage.removeItem(k);
     });
   } catch(e) {}
   ['g1','g2','g3','g4','g5'].forEach(grp => renderNotesPanel(grp));
+  recomputeDashboard();
   alert("Notes effacées.");
 }
 
-// ============ TRAINER PANEL + ALERT EVENTS ============
+// ============ FR-ALERT SOUND + FLASH ============
+let _frAudioCtx = null;
+
+function playFRAlertSound() {
+  try {
+    if (!_frAudioCtx) {
+      _frAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    const ctx = _frAudioCtx;
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+
+    // Pattern FR-Alert : alternance 2 tons (853 Hz / 960 Hz) — bip strident
+    // Inspiré du signal Cell Broadcast français mais simplifié
+    const tones = [
+      {f: 853, t: 0.00, d: 0.35},
+      {f: 960, t: 0.40, d: 0.35},
+      {f: 853, t: 0.80, d: 0.35},
+      {f: 960, t: 1.20, d: 0.35},
+    ];
+    tones.forEach(tone => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = tone.f;
+      gain.gain.setValueAtTime(0, now + tone.t);
+      gain.gain.linearRampToValueAtTime(0.18, now + tone.t + 0.02);
+      gain.gain.linearRampToValueAtTime(0.18, now + tone.t + tone.d - 0.02);
+      gain.gain.linearRampToValueAtTime(0, now + tone.t + tone.d);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + tone.t);
+      osc.stop(now + tone.t + tone.d + 0.02);
+    });
+  } catch(e) {
+    console.warn('Audio failed:', e);
+  }
+}
+
+function showFRAlertFlash(eyebrow, title) {
+  const flash = document.getElementById('frAlertFlash');
+  if (!flash) return;
+  document.getElementById('frFlashEyebrow').textContent = eyebrow || 'FR-ALERT';
+  document.getElementById('frFlashTitle').textContent = title || 'Alerte';
+  flash.classList.remove('active');
+  void flash.offsetWidth;  // force reflow
+  flash.classList.add('active');
+  setTimeout(() => flash.classList.remove('active'), 2700);
+}
+
+function fireFRAlertEffect(eyebrow, title) {
+  showFRAlertFlash(eyebrow, title);
+  playFRAlertSound();
+  // Vibration sur mobile (si dispo)
+  if (navigator.vibrate) {
+    try { navigator.vibrate([200, 100, 200, 100, 400]); } catch(e) {}
+  }
+}
 const ALERTS = {
   "all": {
     eyebrow: "ALERTE — vagues-submersion ROUGE",
@@ -5607,13 +6222,13 @@ const ALERTS = {
   }
 };
 
-let _myGroupForAlerts = null;
 function getMyGroup() {
-  if (_myGroupForAlerts) return _myGroupForAlerts;
+  // Pas de cache : on recalcule à chaque fois pour gérer les changements
   const unlocked = getUnlockedGroups();
-  // si un seul groupe est débloqué (= cas standard d'un participant), c'est le sien
   const onlyOne = unlocked.filter(g => g !== 'all');
-  if (onlyOne.length === 1) { _myGroupForAlerts = onlyOne[0]; return _myGroupForAlerts; }
+  // Si un seul groupe est débloqué, c'est celui-là
+  if (onlyOne.length === 1) return onlyOne[0];
+  // Si plusieurs (formateur ou multi-rôles), retourner null pour signifier "pas un seul groupe"
   return null;
 }
 
@@ -5642,6 +6257,7 @@ function subscribeAlerts() {
     return;
   }
   window.FB.onVal('alert', val => {
+    const wasActive = _activeAlertCache;
     _activeAlertCache = val;
     if (val && ALERTS[val]) {
       const data = ALERTS[val];
@@ -5651,9 +6267,11 @@ function subscribeAlerts() {
         document.getElementById('alertBannerEyebrow').textContent = data.eyebrow;
         document.getElementById('alertBannerTitle').textContent = data.title;
         document.getElementById('alertBanner').classList.add('visible');
-        // Auto-ouvrir le modal seulement si c'est nouveau
+        // Auto-déclencher l'effet FR-Alert + modal seulement si NOUVELLE alerte
         if (!_lastShownAlert || _lastShownAlert !== val) {
-          openAlertModal();
+          fireFRAlertEffect(data.eyebrow, data.title);
+          // Léger délai avant le modal pour laisser le flash en avant-plan
+          setTimeout(() => openAlertModal(), 1200);
           _lastShownAlert = val;
         }
       } else {
@@ -5704,8 +6322,12 @@ function triggerEvent(target) {
   } else {
     _activeAlertCache = target;
     try { localStorage.setItem(ALERT_KEY, target); } catch(e) {}
-    showAlertBanner(target);
-    openAlertModal();
+    const data = ALERTS[target];
+    if (data) {
+      showAlertBanner(target);
+      fireFRAlertEffect(data.eyebrow, data.title);
+      setTimeout(() => openAlertModal(), 1200);
+    }
   }
 }
 
@@ -5911,103 +6533,11 @@ function showPollResults(pollId) {
   document.getElementById('pollResultsBtn').textContent = "Masquer";
 }
 
-// ============ MUR D'EXPRESSION (Firebase) ============
-const WALL_KEY = "ansedegoulven_wall_local"; // fallback uniquement
-
-function postOnWall() {
-  const author = (document.getElementById('wall-author').value || '').trim();
-  const grp = document.getElementById('wall-group').value;
-  const text = (document.getElementById('wall-text').value || '').trim();
-  if (!grp) { alert("Sélectionnez votre groupe."); return; }
-  if (!text) { alert("Écrivez quelque chose."); return; }
-  if (text.length < 4) { alert("Au moins quelques mots…"); return; }
-  const post = {
-    author: author || 'anonyme',
-    grp: grp,
-    text: text,
-    ts: new Date().toISOString()
-  };
-  if (window.FB) {
-    window.FB.pushVal('wall', post).catch(e => {
-      console.warn('FB push failed, fallback local:', e);
-      saveWallLocal([post, ...loadWallLocal()]);
-      renderWall();
-    });
-  } else {
-    saveWallLocal([post, ...loadWallLocal()]);
-    renderWall();
-  }
-  document.getElementById('wall-text').value = '';
-  recomputeDashboard();
-}
-
-let _wallCache = [];
-function loadWall() { return _wallCache; }
-function loadWallLocal() {
-  try { return JSON.parse(localStorage.getItem(WALL_KEY) || '[]'); }
-  catch(e) { return []; }
-}
-function saveWallLocal(posts) {
-  try { localStorage.setItem(WALL_KEY, JSON.stringify(posts)); } catch(e) {}
-}
-
-function subscribeWall() {
-  if (!window.FB) {
-    _wallCache = loadWallLocal();
-    renderWall();
-    return;
-  }
-  window.FB.onVal('wall', val => {
-    if (val) {
-      // val est un objet de posts indexé par push id
-      _wallCache = Object.entries(val).map(([id, p]) => ({...p, id}))
-        .sort((a, b) => new Date(b.ts) - new Date(a.ts));
-    } else {
-      _wallCache = [];
-    }
-    renderWall();
-    recomputeDashboard();
-  });
-}
-
-function renderWall() {
-  const feed = document.getElementById('wall-feed');
-  if (!feed) return;
-  const posts = loadWall();
-  if (posts.length === 0) {
-    feed.innerHTML = '<div class="wall-empty">Le mur est vide pour l\'instant. Soyez la première personne à publier.</div>';
-    return;
-  }
-  const labels = {g1:"Préfectorale", g2:"Mairie + EPCI", g3:"Syndicat + Conserv.", g4:"Économique", g5:"Société civile"};
-  let html = '';
-  posts.forEach(p => {
-    const time = formatRelativeTime(p.ts);
-    const grpLabel = labels[p.grp] || p.grp;
-    const safeText = escapeHTML(p.text);
-    html += `<div class="wall-post ${p.grp}">
-      <div class="wall-post-meta">
-        <span class="wall-post-author">${escapeHTML(p.author)}</span>
-        <span class="wall-post-tag ${p.grp}">${p.grp.toUpperCase()} ${grpLabel}</span>
-        <span class="wall-post-time">${time}</span>
-      </div>
-      <div class="wall-post-text">${safeText}</div>
-    </div>`;
-  });
-  feed.innerHTML = html;
-}
-
-function escapeHTML(s) {
-  return String(s).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
-}
-
-function formatRelativeTime(iso) {
-  const d = new Date(iso);
-  const diff = (Date.now() - d.getTime()) / 1000;
-  if (diff < 60) return "à l'instant";
-  if (diff < 3600) return `il y a ${Math.round(diff/60)} min`;
-  if (diff < 86400) return `il y a ${Math.round(diff/3600)} h`;
-  return d.toLocaleDateString('fr-FR');
-}
+// ============ MUR D'EXPRESSION (supprimé v8) ============
+// stubs pour compatibilité
+function loadWall() { return []; }
+function renderWall() {}
+function subscribeWall() {}
 
 // ============ DASHBOARD ============
 function extractNumbers(text) {
@@ -6270,7 +6800,7 @@ ${plain}
   URL.revokeObjectURL(a.href);
 }
 
-// ============ DIAGNOSTIC MATRIX (Cas 1) ============
+// ============ DIAGNOSTIC MATRIX (Cas 1) — Firebase per device ============
 const MATRIX_ENJEUX = [
   "Quartier de la Digue", "Bourg + commerces", "EHPAD + maison de santé",
   "Camping 1 — Les Dunes", "Camping 2 — La Goëlette", "Camping 3 — Le Goulven",
@@ -6279,19 +6809,56 @@ const MATRIX_ENJEUX = [
   "STEP / forage / réseaux"
 ];
 const MATRIX_ALEAS = ["submersionRef", "submersion100", "erosion", "falaise", "crue", "canicule", "composite"];
-const MATRIX_KEY = "ansedegoulven_matrix";
+const MATRIX_KEY_LOCAL = "ansedegoulven_matrix_local";
+
+let _matrixCache = {};
 
 function loadMatrix() {
-  try { return JSON.parse(localStorage.getItem(MATRIX_KEY) || '{}'); } catch(e) { return {}; }
+  return _matrixCache;
 }
-function saveMatrix(m) {
-  try { localStorage.setItem(MATRIX_KEY, JSON.stringify(m)); } catch(e) {}
+
+function saveMatrixCell(key, value) {
+  if (value === 0) {
+    delete _matrixCache[key];
+  } else {
+    _matrixCache[key] = value;
+  }
+  // Save to Firebase under sessions/{id}/matrix/{deviceId}
+  const deviceId = getDeviceId();
+  if (window.FB) {
+    window.FB.setVal(`matrix/${deviceId}/data`, _matrixCache).catch(e => {
+      console.warn('FB matrix save failed:', e);
+      try { localStorage.setItem(MATRIX_KEY_LOCAL, JSON.stringify(_matrixCache)); } catch(e) {}
+    });
+    // Save author + group meta
+    const author = loadAuthor() || 'anonyme';
+    const myGrp = getMyGroup() || '?';
+    window.FB.setVal(`matrix/${deviceId}/meta`, {author, grp: myGrp, ts: Date.now()}).catch(e => {});
+  } else {
+    try { localStorage.setItem(MATRIX_KEY_LOCAL, JSON.stringify(_matrixCache)); } catch(e) {}
+  }
+}
+
+function subscribeMatrix() {
+  const deviceId = getDeviceId();
+  if (!window.FB) {
+    try { _matrixCache = JSON.parse(localStorage.getItem(MATRIX_KEY_LOCAL) || '{}'); }
+    catch(e) { _matrixCache = {}; }
+    renderMatrix();
+    return;
+  }
+  // Souscrire à SA propre matrice (en cas de reload)
+  window.FB.onVal(`matrix/${deviceId}/data`, val => {
+    _matrixCache = val || {};
+    renderMatrix();
+    recomputeDashboard();
+  });
 }
 
 function renderMatrix() {
   const tb = document.getElementById('matrix-body');
   if (!tb) return;
-  const data = loadMatrix();
+  const data = _matrixCache;
   let html = '';
   MATRIX_ENJEUX.forEach((enj, i) => {
     html += `<tr><td>${enj}</td>`;
@@ -6306,13 +6873,10 @@ function renderMatrix() {
 }
 
 function cycleMatrixCell(key) {
-  const data = loadMatrix();
-  const cur = data[key] || 0;
-  const next = (cur + 1) % 5;  // 0,1,2,3,4 puis revient à 0
-  if (next === 0) delete data[key];
-  else data[key] = next;
-  saveMatrix(data);
-  // Update just this cell
+  const cur = _matrixCache[key] || 0;
+  const next = (cur + 1) % 5;
+  saveMatrixCell(key, next);
+  // Optimistic UI update
   const cell = document.querySelector(`.matrix-cell[data-key="${key}"]`);
   if (cell) {
     cell.className = 'matrix-cell' + (next > 0 ? ' lvl-' + next : '');
@@ -6322,14 +6886,20 @@ function cycleMatrixCell(key) {
 }
 
 function resetMatrix() {
-  if (!confirm("Voulez-vous remettre toute la matrice à zéro ?")) return;
-  try { localStorage.removeItem(MATRIX_KEY); } catch(e) {}
+  if (!confirm("Voulez-vous remettre toute votre matrice à zéro ?")) return;
+  _matrixCache = {};
+  const deviceId = getDeviceId();
+  if (window.FB) {
+    window.FB.removeVal(`matrix/${deviceId}`).catch(e => {});
+  } else {
+    try { localStorage.removeItem(MATRIX_KEY_LOCAL); } catch(e) {}
+  }
   renderMatrix();
   recomputeDashboard();
 }
 
 function exportMatrix() {
-  const data = loadMatrix();
+  const data = _matrixCache;
   const author = loadAuthor() || 'anonyme';
   const date = new Date().toLocaleString('fr-FR');
   const aleaLabels = {
@@ -6343,7 +6913,6 @@ function exportMatrix() {
   };
   let txt = `MATRICE DIAGNOSTIC — Anse-de-Goulven\nAuteur : ${author}\nExporté : ${date}\n\n`;
   txt += `Légende : 1 (faible) · 2 (modéré) · 3 (fort) · 4 (critique) · vide = non concerné\n\n`;
-  // Header
   txt += '— Enjeu —'.padEnd(30) + '\t' + MATRIX_ALEAS.map(a => aleaLabels[a]).join('\t') + '\n';
   txt += '─'.repeat(120) + '\n';
   MATRIX_ENJEUX.forEach((enj, i) => {
@@ -6362,7 +6931,7 @@ function exportMatrix() {
   URL.revokeObjectURL(a.href);
 }
 
-// ============ PRIORITY CARDS (drag & drop) ============
+// ============ PRIORITY CARDS — Firebase per device ============
 const PRIO_DEFAULT = [
   {id: "habitants", title: "Les habitants permanents âgés isolés", sub: "22 personnes au Quartier de la Digue identifiées par G5"},
   {id: "saisonniers", title: "Les 12 000 résidents estivaux", sub: "Pic juillet-août, dont 280 saisonniers logés sur place"},
@@ -6375,30 +6944,59 @@ const PRIO_DEFAULT = [
   {id: "agence", title: "L'agence de l'eau Loire-Bretagne", sub: "Co-financement 50 % études, 40 % SFN"},
   {id: "conserv", title: "Le Conservatoire du littoral", sub: "Projet ADAPTO 1,8 M€ en instruction"}
 ];
-const PRIO_KEY = "ansedegoulven_priocards";
+const PRIO_KEY_LOCAL = "ansedegoulven_priocards_local";
 
-function loadPrio() {
-  try {
-    const raw = localStorage.getItem(PRIO_KEY);
-    if (raw) {
-      const order = JSON.parse(raw);
-      // Recompose les cartes dans l'ordre stocké
-      const map = Object.fromEntries(PRIO_DEFAULT.map(c => [c.id, c]));
-      return order.map(id => map[id]).filter(Boolean);
-    }
-  } catch(e) {}
-  return [...PRIO_DEFAULT];
-}
+let _prioCache = [...PRIO_DEFAULT];
+
+function loadPrio() { return _prioCache; }
+
 function savePrio(cards) {
-  try { localStorage.setItem(PRIO_KEY, JSON.stringify(cards.map(c => c.id))); } catch(e) {}
+  _prioCache = cards;
+  const order = cards.map(c => c.id);
+  const deviceId = getDeviceId();
+  if (window.FB) {
+    window.FB.setVal(`prio/${deviceId}/order`, order).catch(e => {
+      try { localStorage.setItem(PRIO_KEY_LOCAL, JSON.stringify(order)); } catch(e) {}
+    });
+    const author = loadAuthor() || 'anonyme';
+    const myGrp = getMyGroup() || '?';
+    window.FB.setVal(`prio/${deviceId}/meta`, {author, grp: myGrp, ts: Date.now()}).catch(e => {});
+  } else {
+    try { localStorage.setItem(PRIO_KEY_LOCAL, JSON.stringify(order)); } catch(e) {}
+  }
+}
+
+function subscribePrio() {
+  const deviceId = getDeviceId();
+  if (!window.FB) {
+    try {
+      const raw = localStorage.getItem(PRIO_KEY_LOCAL);
+      if (raw) {
+        const order = JSON.parse(raw);
+        const map = Object.fromEntries(PRIO_DEFAULT.map(c => [c.id, c]));
+        _prioCache = order.map(id => map[id]).filter(Boolean);
+      }
+    } catch(e) {}
+    renderPrio();
+    return;
+  }
+  window.FB.onVal(`prio/${deviceId}/order`, val => {
+    if (val && Array.isArray(val)) {
+      const map = Object.fromEntries(PRIO_DEFAULT.map(c => [c.id, c]));
+      _prioCache = val.map(id => map[id]).filter(Boolean);
+      // s'assurer que toutes les cartes sont présentes (au cas où)
+      const presentIds = new Set(val);
+      PRIO_DEFAULT.forEach(c => { if (!presentIds.has(c.id)) _prioCache.push(c); });
+    }
+    renderPrio();
+  });
 }
 
 function renderPrio() {
   const list = document.getElementById('priocards-list');
   if (!list) return;
-  const cards = loadPrio();
   let html = '';
-  cards.forEach((c, i) => {
+  _prioCache.forEach((c, i) => {
     const rank = i + 1;
     const rclass = rank <= 3 ? 'r' + rank : '';
     html += `<div class="priocard" draggable="true" data-id="${c.id}" data-pos="${i}"
@@ -6421,7 +7019,6 @@ function prioDragStart(e) {
   _draggingPrio = e.currentTarget.dataset.id;
   e.currentTarget.classList.add('dragging');
   e.dataTransfer.effectAllowed = 'move';
-  // For Firefox compat
   e.dataTransfer.setData('text/plain', _draggingPrio);
 }
 function prioDragEnd(e) {
@@ -6443,7 +7040,7 @@ function prioDrop(e) {
   e.currentTarget.classList.remove('drag-over');
   const targetId = e.currentTarget.dataset.id;
   if (!_draggingPrio || _draggingPrio === targetId) return;
-  const cards = loadPrio();
+  const cards = [..._prioCache];
   const fromIdx = cards.findIndex(c => c.id === _draggingPrio);
   const toIdx = cards.findIndex(c => c.id === targetId);
   if (fromIdx < 0 || toIdx < 0) return;
@@ -6453,8 +7050,7 @@ function prioDrop(e) {
   renderPrio();
 }
 function prioBumpToTop(id) {
-  // sur tap mobile / clic, monte la carte d'un cran
-  const cards = loadPrio();
+  const cards = [..._prioCache];
   const idx = cards.findIndex(c => c.id === id);
   if (idx <= 0) return;
   const [moved] = cards.splice(idx, 1);
@@ -6478,13 +7074,41 @@ const LEVERS = [
   { id: "plu_recul", title: "Révision PLU avec OAP « risques » et préemption", desc: "Foncier stratégique à acquérir via EPF. Préempte 12 parcelles vulnérables.", cost: 0.8, axes: [3], pop: 220, jobs: 0, log: 80, cofin: 0.3, tags: ["Foncier","Aménagement"] },
 ];
 
-const LEVER_KEY = "ansedegoulven_levers";
+const LEVER_KEY_LOCAL = "ansedegoulven_levers_local";
+
+let _leversCache = {};
 
 function loadLevers() {
-  try { return JSON.parse(localStorage.getItem(LEVER_KEY) || '{}'); } catch(e) { return {}; }
+  return _leversCache;
 }
+
 function saveLevers(state) {
-  try { localStorage.setItem(LEVER_KEY, JSON.stringify(state)); } catch(e) {}
+  _leversCache = state;
+  const deviceId = getDeviceId();
+  if (window.FB) {
+    window.FB.setVal(`levers/${deviceId}/data`, state).catch(e => {
+      try { localStorage.setItem(LEVER_KEY_LOCAL, JSON.stringify(state)); } catch(e) {}
+    });
+    const author = loadAuthor() || 'anonyme';
+    const myGrp = getMyGroup() || '?';
+    window.FB.setVal(`levers/${deviceId}/meta`, {author, grp: myGrp, ts: Date.now()}).catch(e => {});
+  } else {
+    try { localStorage.setItem(LEVER_KEY_LOCAL, JSON.stringify(state)); } catch(e) {}
+  }
+}
+
+function subscribeLevers() {
+  const deviceId = getDeviceId();
+  if (!window.FB) {
+    try { _leversCache = JSON.parse(localStorage.getItem(LEVER_KEY_LOCAL) || '{}'); }
+    catch(e) { _leversCache = {}; }
+    renderLevers();
+    return;
+  }
+  window.FB.onVal(`levers/${deviceId}/data`, val => {
+    _leversCache = val || {};
+    renderLevers();
+  });
 }
 
 function renderLevers() {
@@ -6728,6 +7352,454 @@ function castCouncilVote(vote) {
 
 if (false /* old broadcast channel disabled */) {}
 
+// ============ REPORT VIEWER (présentation par groupe) ============
+const GROUP_LABELS_LONG = {
+  g1: "Mission préfectorale",
+  g2: "Mairie + EPCI",
+  g3: "Syndicat mixte + Conservatoire du littoral",
+  g4: "Acteurs économiques",
+  g5: "Société civile"
+};
+const GROUP_ROLES = {
+  g1: "Représenter l'État, arbitrer FPRNM, accompagner sans décider à la place du local.",
+  g2: "Porter politiquement le territoire, articuler PCS, PLU, finances communales et débat public.",
+  g3: "Veiller au bassin versant et au littoral, articuler PAPI, ADAPTO, recherche et opérationnel.",
+  g4: "Maintenir l'activité économique, négocier la transition pour les campings, la PME, la conchyliculture.",
+  g5: "Faire entendre les voix qui ne portent pas — anciens, saisonniers, locataires, secondaires."
+};
+
+async function fetchGroupAggregates(grp) {
+  // Agrège les contributions du groupe à partir de Firebase :
+  //   - Notes : tous les deviceId dont meta.grp === grp
+  //   - Matrice : idem (on prend la PLUS REMPLIE)
+  //   - Hiérarchisation : idem
+  //   - Leviers : idem
+  //   - Votes : conseil[delibId][grp]
+  //   - Sondages : votes[*] que ce groupe a posés (impossible à filtrer côté Firebase car anonymes)
+  const result = {
+    notes: {},        // {qid: text} — notes consolidées (concat unique)
+    matrix: {},       // données de la personne la plus active
+    matrixContributors: 0,
+    prio: null,
+    leversByDevice: [], // liste de stratégies (chaque participant peut avoir la sienne)
+    leversConsolidated: {},
+    council: {},
+    authors: new Set(),
+  };
+
+  if (!window.FB) return result;
+
+  try {
+    // 1. Notes
+    const notesRoot = await window.FB.getVal('notes');
+    if (notesRoot) {
+      Object.entries(notesRoot).forEach(([deviceId, deviceData]) => {
+        if (deviceData?.meta?.grp === grp) {
+          if (deviceData.meta.author) result.authors.add(deviceData.meta.author);
+          if (deviceData.data) {
+            Object.entries(deviceData.data).forEach(([qid, text]) => {
+              if (text && text.trim()) {
+                if (!result.notes[qid]) result.notes[qid] = [];
+                result.notes[qid].push({author: deviceData.meta.author || 'anonyme', text: text.trim()});
+              }
+            });
+          }
+        }
+      });
+    }
+
+    // 2. Matrice — on prend la matrice la plus remplie, mais on aussi compte les contributeurs
+    const matrixRoot = await window.FB.getVal('matrix');
+    if (matrixRoot) {
+      let bestData = null;
+      let bestCount = 0;
+      Object.entries(matrixRoot).forEach(([deviceId, deviceData]) => {
+        if (deviceData?.meta?.grp === grp) {
+          result.matrixContributors++;
+          if (deviceData.meta.author) result.authors.add(deviceData.meta.author);
+          if (deviceData.data) {
+            const count = Object.keys(deviceData.data).length;
+            if (count > bestCount) { bestCount = count; bestData = deviceData.data; }
+          }
+        }
+      });
+      result.matrix = bestData || {};
+    }
+
+    // 3. Hiérarchisation — prend la plus récente du groupe
+    const prioRoot = await window.FB.getVal('prio');
+    if (prioRoot) {
+      let mostRecent = null, mostRecentTs = 0;
+      Object.entries(prioRoot).forEach(([deviceId, deviceData]) => {
+        if (deviceData?.meta?.grp === grp) {
+          if (deviceData.meta.author) result.authors.add(deviceData.meta.author);
+          const ts = deviceData.meta.ts || 0;
+          if (ts > mostRecentTs && deviceData.order) {
+            mostRecentTs = ts; mostRecent = deviceData.order;
+          }
+        }
+      });
+      result.prio = mostRecent;
+    }
+
+    // 4. Leviers
+    const leversRoot = await window.FB.getVal('levers');
+    if (leversRoot) {
+      Object.entries(leversRoot).forEach(([deviceId, deviceData]) => {
+        if (deviceData?.meta?.grp === grp) {
+          if (deviceData.meta.author) result.authors.add(deviceData.meta.author);
+          if (deviceData.data) {
+            result.leversByDevice.push({
+              author: deviceData.meta.author || 'anonyme',
+              levers: deviceData.data
+            });
+            // Consolidation : on note un levier comme "choisi par le groupe" s'il a au moins 1 vote
+            Object.keys(deviceData.data).forEach(lid => {
+              if (!result.leversConsolidated[lid]) result.leversConsolidated[lid] = 0;
+              result.leversConsolidated[lid]++;
+            });
+          }
+        }
+      });
+    }
+
+    // 5. Votes du conseil municipal
+    const councilRoot = await window.FB.getVal('council');
+    if (councilRoot) {
+      Object.entries(councilRoot).forEach(([delibId, votes]) => {
+        if (votes && votes[grp]) {
+          result.council[delibId] = votes[grp];
+        }
+      });
+    }
+  } catch(e) {
+    console.warn('fetchGroupAggregates error:', e);
+  }
+
+  return result;
+}
+
+let _currentReportGrp = null;
+
+async function openReport(grp) {
+  _currentReportGrp = grp;
+  const viewer = document.getElementById('reportViewer');
+  const body = document.getElementById('reportBody');
+  const badge = document.getElementById('reportHeaderBadge');
+  const title = document.getElementById('reportHeaderTitle');
+  const sub = document.getElementById('reportHeaderSub');
+
+  badge.className = 'report-header-badge b' + grp.charAt(1);
+  badge.textContent = grp.toUpperCase();
+  title.textContent = GROUP_LABELS_LONG[grp];
+  sub.textContent = '— Anse-de-Goulven, journée du ' + new Date().toLocaleDateString('fr-FR');
+
+  body.innerHTML = '<div class="report-slide"><p style="text-align:center;font-style:italic;opacity:0.6;">Chargement des contributions du groupe…</p></div>';
+  viewer.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  const data = await fetchGroupAggregates(grp);
+  body.innerHTML = buildReportHTML(grp, data);
+}
+
+function closeReport() {
+  document.getElementById('reportViewer').classList.remove('open');
+  document.body.style.overflow = '';
+  _currentReportGrp = null;
+}
+
+function buildReportHTML(grp, data) {
+  const labels = GROUP_LABELS_LONG;
+  const role = GROUP_ROLES[grp];
+  const authorsList = Array.from(data.authors);
+  const authorsText = authorsList.length > 0
+    ? authorsList.join(', ')
+    : 'contributeurs anonymes';
+
+  // Slide 1 — Couverture
+  let html = `<section class="report-slide">
+    <div class="report-slide-eyebrow">Présentation — Cas Anse-de-Goulven</div>
+    <h3>${labels[grp]}<br><em>${grp.toUpperCase()}</em></h3>
+    <p style="font-size:18px;line-height:1.6;color:rgba(255,255,255,0.9);max-width:780px;">${role}</p>
+    <div class="report-stat-row">
+      <div class="report-stat-tile">
+        <div class="report-stat-num">${authorsList.length || '—'}</div>
+        <div class="report-stat-label">Contributeurs</div>
+        <div class="report-stat-sub">${authorsText.slice(0, 80)}</div>
+      </div>
+      <div class="report-stat-tile">
+        <div class="report-stat-num">${Object.keys(data.notes).length}</div>
+        <div class="report-stat-label">Questions traitées</div>
+      </div>
+      <div class="report-stat-tile">
+        <div class="report-stat-num">${Object.keys(data.leversConsolidated).length}</div>
+        <div class="report-stat-label">Leviers activés</div>
+      </div>
+      <div class="report-stat-tile">
+        <div class="report-stat-num">${Object.keys(data.council).length}/3</div>
+        <div class="report-stat-label">Délibérations votées</div>
+      </div>
+    </div>
+  </section>`;
+
+  // Slide 2 — Diagnostic (matrice)
+  const mxData = data.matrix || {};
+  const mxFilled = Object.keys(mxData).length;
+  html += `<section class="report-slide">
+    <div class="report-slide-eyebrow">Cas n°1  ·  Diagnostic croisé</div>
+    <h3>Notre lecture du <em>territoire en risques</em></h3>`;
+  if (mxFilled === 0) {
+    html += `<div class="report-empty-card">Le groupe n'a pas rempli de matrice diagnostic.</div>`;
+  } else {
+    html += `<p>Matrice « aléa × enjeu » remplie par ${data.matrixContributors} contributeur${data.matrixContributors > 1 ? 's' : ''} du groupe — ${mxFilled} cases sur 91 sont qualifiées.</p>`;
+    // Mini matrice : on liste les enjeux qui ont AU MOINS une case remplie
+    html += `<div style="margin-top:18px;">`;
+    MATRIX_ENJEUX.forEach((enj, i) => {
+      let hasContent = false;
+      let cellsHtml = '';
+      MATRIX_ALEAS.forEach(al => {
+        const v = mxData[i + '_' + al] || 0;
+        if (v > 0) hasContent = true;
+        cellsHtml += `<div class="report-matrix-mini-cell ${v > 0 ? 'lvl-' + v : ''}">${v > 0 ? v : ''}</div>`;
+      });
+      if (hasContent) {
+        html += `<div class="report-matrix-mini-row">
+          <div class="report-matrix-mini-label">${enj}</div>
+          <div class="report-matrix-mini">${cellsHtml}</div>
+        </div>`;
+      }
+    });
+    html += `<div style="margin-top:14px;font-size:11px;letter-spacing:0.05em;color:rgba(255,255,255,0.55);">Colonnes : submersion réf · submersion 100 ans · érosion · falaise · crue · canicule · composite</div>`;
+    html += `</div>`;
+
+    // Mots-clés du diagnostic via les notes
+    const noteAlea = data.notes['alea'];
+    if (noteAlea && noteAlea.length > 0) {
+      html += `<h4 style="font-family:var(--serif);font-size:18px;margin-top:28px;color:var(--white);">Notre analyse des aléas</h4>`;
+      noteAlea.forEach(n => {
+        html += `<div class="report-quote">${escapeHTML(n.text.slice(0, 320))}${n.text.length > 320 ? '…' : ''}</div>`;
+      });
+    }
+  }
+  html += `</section>`;
+
+  // Slide 3 — Hiérarchisation des acteurs
+  html += `<section class="report-slide">
+    <div class="report-slide-eyebrow">Cas n°1  ·  Acteurs prioritaires</div>
+    <h3>Les <em>cinq acteurs</em> que nous embarquons en premier</h3>`;
+  if (!data.prio || !Array.isArray(data.prio) || data.prio.length === 0) {
+    html += `<div class="report-empty-card">Le groupe n'a pas hiérarchisé les acteurs.</div>`;
+  } else {
+    const map = Object.fromEntries(PRIO_DEFAULT.map(c => [c.id, c]));
+    const top5 = data.prio.slice(0, 5);
+    html += `<div class="report-prio-list">`;
+    top5.forEach((id, i) => {
+      const card = map[id];
+      if (!card) return;
+      const rank = i + 1;
+      const rclass = rank <= 3 ? 'r' + rank : '';
+      html += `<div class="report-prio-item ${rclass}">
+        <div class="report-prio-item-rank">${rank}</div>
+        <div style="flex:1;">
+          <div style="font-weight:600;color:var(--white);">${escapeHTML(card.title)}</div>
+          <div style="font-size:12.5px;color:rgba(255,255,255,0.65);margin-top:2px;">${escapeHTML(card.sub)}</div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+    const noteActeurs = data.notes['acteurs'];
+    if (noteActeurs && noteActeurs.length > 0) {
+      html += `<h4 style="font-family:var(--serif);font-size:18px;margin-top:24px;color:var(--white);">Pourquoi ces choix</h4>`;
+      noteActeurs.forEach(n => {
+        html += `<div class="report-quote">${escapeHTML(n.text.slice(0, 280))}${n.text.length > 280 ? '…' : ''}</div>`;
+      });
+    }
+  }
+  html += `</section>`;
+
+  // Slide 4 — Stratégie / leviers
+  const activeLevers = Object.keys(data.leversConsolidated);
+  html += `<section class="report-slide">
+    <div class="report-slide-eyebrow">Cas n°2  ·  Stratégie</div>
+    <h3>Notre stratégie à <em>10 ans</em></h3>`;
+  if (activeLevers.length === 0) {
+    html += `<div class="report-empty-card">Le groupe n'a pas activé de levier dans le simulateur.</div>`;
+  } else {
+    let totalCost = 0;
+    const leverInfo = [];
+    activeLevers.forEach(lid => {
+      const l = LEVERS.find(x => x.id === lid);
+      if (l) { totalCost += l.cost; leverInfo.push(l); }
+    });
+    html += `<div class="report-stat-row">
+      <div class="report-stat-tile">
+        <div class="report-stat-num">${totalCost.toFixed(1).replace('.', ',')} M€</div>
+        <div class="report-stat-label">Budget engagé</div>
+        <div class="report-stat-sub">sur 15 M€ disponibles</div>
+      </div>
+      <div class="report-stat-tile">
+        <div class="report-stat-num">${activeLevers.length}</div>
+        <div class="report-stat-label">Leviers activés</div>
+      </div>
+    </div>
+    <div class="report-lever-list">`;
+    leverInfo.forEach(l => {
+      html += `<div class="report-lever-item">
+        <div class="report-lever-name">${escapeHTML(l.title)}</div>
+        <div class="report-lever-cost">${l.cost.toFixed(1).replace('.', ',')} M€</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Argumentaire stratégique des notes
+  const argumentaireKeys = ['axe1','axe2','axe3','axe4','axe5','axe6','specifique2'];
+  const argTexts = [];
+  argumentaireKeys.forEach(k => {
+    if (data.notes[k]) {
+      data.notes[k].forEach(n => argTexts.push({key: k, ...n}));
+    }
+  });
+  if (argTexts.length > 0) {
+    html += `<h4 style="font-family:var(--serif);font-size:18px;margin-top:24px;color:var(--white);">Notre argumentaire</h4>`;
+    argTexts.slice(0, 3).forEach(t => {
+      html += `<div class="report-quote">${escapeHTML(t.text.slice(0, 280))}${t.text.length > 280 ? '…' : ''}</div>`;
+    });
+  }
+  html += `</section>`;
+
+  // Slide 5 — Votes au conseil municipal
+  const voteLabels = {pour: '✓ POUR', contre: '✗ CONTRE', abstention: '○ ABSTENTION'};
+  html += `<section class="report-slide">
+    <div class="report-slide-eyebrow">Conseil municipal</div>
+    <h3>Notre <em>vote en séance</em></h3>`;
+  if (Object.keys(data.council).length === 0) {
+    html += `<div class="report-empty-card">Le groupe n'a pas voté au conseil municipal.</div>`;
+  } else {
+    html += `<div class="report-vote-list">`;
+    DELIBERATIONS.forEach(d => {
+      const v = data.council[d.id];
+      if (!v) return;
+      html += `<div class="report-vote-item">
+        <div class="report-vote-title">${escapeHTML(d.title)}</div>
+        <p style="font-size:13.5px;color:rgba(255,255,255,0.75);margin:6px 0 4px;">${escapeHTML(d.body.slice(0, 160))}${d.body.length > 160 ? '…' : ''}</p>
+        <div class="report-vote-result ${v}">${voteLabels[v] || v}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  // Frictions anticipées
+  if (data.notes['frictions']) {
+    html += `<h4 style="font-family:var(--serif);font-size:18px;margin-top:24px;color:var(--white);">Frictions anticipées</h4>`;
+    data.notes['frictions'].slice(0, 2).forEach(n => {
+      html += `<div class="report-quote">${escapeHTML(n.text.slice(0, 280))}${n.text.length > 280 ? '…' : ''}</div>`;
+    });
+  }
+  html += `</section>`;
+
+  // Slide 6 — Synthèse & message à porter
+  html += `<section class="report-slide">
+    <div class="report-slide-eyebrow">Synthèse</div>
+    <h3>Ce que <em>nous voulons retenir</em></h3>`;
+  // 3 messages-clés extraits des notes
+  const keyMsgs = [];
+  ['specifique1','specifique2','frictions'].forEach(k => {
+    if (data.notes[k]) data.notes[k].forEach(n => keyMsgs.push(n));
+  });
+  if (keyMsgs.length === 0) {
+    html += `<p style="font-size:18px;line-height:1.7;color:rgba(255,255,255,0.85);">
+      ${role}
+    </p>
+    <p style="font-size:16px;line-height:1.6;color:rgba(255,255,255,0.7);font-style:italic;margin-top:16px;">
+      Le groupe n'a pas encore formulé de message de synthèse particulier — la position décrite ci-dessus reste celle qui structure son intervention.
+    </p>`;
+  } else {
+    keyMsgs.slice(0, 3).forEach(n => {
+      html += `<div class="report-quote">${escapeHTML(n.text.slice(0, 320))}${n.text.length > 320 ? '…' : ''}</div>`;
+    });
+  }
+  html += `<div style="margin-top:32px;padding-top:18px;border-top:1px solid rgba(255,255,255,0.15);font-size:12.5px;color:rgba(255,255,255,0.5);font-family:var(--mono);letter-spacing:0.04em;">
+    Présentation générée à partir des contributions du groupe ${grp.toUpperCase()} — Anse-de-Goulven · ${new Date().toLocaleString('fr-FR')}
+  </div>`;
+  html += `</section>`;
+
+  return html;
+}
+
+async function downloadReportTxt() {
+  if (!_currentReportGrp) return;
+  const grp = _currentReportGrp;
+  const data = await fetchGroupAggregates(grp);
+  const date = new Date().toLocaleString('fr-FR');
+  let txt = '═══════════════════════════════════════════════\n';
+  txt += `  RAPPORT DE PRÉSENTATION  ·  ${grp.toUpperCase()} — ${GROUP_LABELS_LONG[grp]}\n`;
+  txt += `  Anse-de-Goulven  ·  Exporté le ${date}\n`;
+  txt += `  Contributeurs : ${Array.from(data.authors).join(', ') || 'anonymes'}\n`;
+  txt += '═══════════════════════════════════════════════\n\n';
+  txt += `RÔLE\n${GROUP_ROLES[grp]}\n\n`;
+
+  // Matrice
+  txt += '\n--- DIAGNOSTIC (matrice aléa × enjeu) ---\n';
+  if (Object.keys(data.matrix).length === 0) {
+    txt += '(non rempli)\n';
+  } else {
+    MATRIX_ENJEUX.forEach((enj, i) => {
+      const cells = MATRIX_ALEAS.map(al => data.matrix[i + '_' + al] || 0);
+      if (cells.some(c => c > 0)) {
+        txt += `  ${enj.padEnd(32)}  ${cells.map(c => c > 0 ? c : '·').join(' ')}\n`;
+      }
+    });
+  }
+
+  // Hiérarchisation
+  txt += '\n--- ACTEURS PRIORITAIRES ---\n';
+  if (data.prio && data.prio.length > 0) {
+    const map = Object.fromEntries(PRIO_DEFAULT.map(c => [c.id, c]));
+    data.prio.slice(0, 5).forEach((id, i) => {
+      const c = map[id];
+      if (c) txt += `  ${i+1}. ${c.title}\n     ${c.sub}\n`;
+    });
+  } else {
+    txt += '(non hiérarchisé)\n';
+  }
+
+  // Leviers
+  txt += '\n--- STRATÉGIE (simulateur) ---\n';
+  let total = 0;
+  Object.keys(data.leversConsolidated).forEach(lid => {
+    const l = LEVERS.find(x => x.id === lid);
+    if (l) { total += l.cost; txt += `  • ${l.title} — ${l.cost.toFixed(1).replace('.', ',')} M€\n`; }
+  });
+  if (total > 0) txt += `  Total engagé : ${total.toFixed(1).replace('.', ',')} M€ / 15 M€\n`;
+
+  // Votes
+  txt += '\n--- VOTES AU CONSEIL MUNICIPAL ---\n';
+  const voteLabels = {pour: 'POUR', contre: 'CONTRE', abstention: 'ABSTENTION'};
+  DELIBERATIONS.forEach(d => {
+    const v = data.council[d.id];
+    if (v) txt += `  • ${d.title} : ${voteLabels[v]}\n`;
+  });
+  if (Object.keys(data.council).length === 0) txt += '(aucun vote)\n';
+
+  // Notes
+  txt += '\n--- NOTES DÉTAILLÉES ---\n';
+  Object.entries(data.notes).forEach(([qid, items]) => {
+    if (items && items.length > 0) {
+      txt += `\n[${qid}]\n`;
+      items.forEach(n => {
+        txt += `  ${n.author} : ${n.text}\n`;
+      });
+    }
+  });
+
+  const blob = new Blob([txt], {type: 'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Rapport_${grp.toUpperCase()}_AnseDeGoulven.txt`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
 // ============ PLENIERE (vue formateur) ============
 function openPlenary() {
   buildPlenary();
@@ -6869,11 +7941,6 @@ function buildPlenary() {
     <div class="plenary-grid">${groupCards}</div>
 
     <div class="plenary-section">
-      <h3>Mur d'expression  ·  <em>${posts.length} message${posts.length > 1 ? 's' : ''}</em></h3>
-      <div class="plenary-wall-feed">${wallHtml}</div>
-    </div>
-
-    <div class="plenary-section">
       <h3>Sondages live  ·  <em>en temps réel</em></h3>
       <div class="plenary-poll-section">${pollsHtml}</div>
     </div>
@@ -6893,8 +7960,9 @@ function buildPlenary() {
 // ============ ESC pour fermer plénière ============
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    if (document.getElementById('plenary').classList.contains('open')) closePlenary();
-    if (document.getElementById('councilVoteModal').classList.contains('open')) closeCouncilVote();
+    if (document.getElementById('reportViewer').classList.contains('open')) closeReport();
+    else if (document.getElementById('plenary').classList.contains('open')) closePlenary();
+    else if (document.getElementById('councilVoteModal').classList.contains('open')) closeCouncilVote();
   }
 });
 
@@ -6929,10 +7997,13 @@ function changeSession() {
 
 // ============ SOUSCRIPTIONS ============
 function subscribeAll() {
-  subscribeWall();
   subscribeCouncil();
   subscribePolls();
   subscribeAlerts();
+  subscribeMatrix();
+  subscribePrio();
+  subscribeLevers();
+  subscribeNotes();
 }
 
 // ============ INIT ============
