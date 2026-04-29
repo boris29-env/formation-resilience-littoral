@@ -2223,6 +2223,17 @@ h3.subhead {
   </div>
   <div class="trainer-panel-body">
     <div class="trainer-panel-section">
+      <div class="trainer-panel-label">Préparation de session</div>
+      <button class="trainer-event-btn" onclick="resetFullSession()" style="background:rgba(200,85,60,0.25);border-color:rgba(200,85,60,0.6);">
+        <span class="target-badge tball" style="background:#A83A36;">⟲</span>
+        <span>Réinitialiser la session<small>Efface alerte/sondage en cours, votes, matrices, notes — sur Firebase</small></span>
+      </button>
+      <button class="trainer-event-btn" onclick="resetThisBrowser()">
+        <span class="target-badge tball" style="background:#7E6B4A;">⎚</span>
+        <span>Réinitialiser ce navigateur<small>Quitte le mode formateur, déverrouille tous les groupes pour ce poste — sans toucher à Firebase</small></span>
+      </button>
+    </div>
+    <div class="trainer-panel-section">
       <div class="trainer-panel-label">Mode plénière (vue agrégée)</div>
       <button class="trainer-event-btn" onclick="openPlenary()" style="background:rgba(232,110,85,0.4);border-color:var(--orange);">
         <span class="target-badge tball">⌬</span>
@@ -5104,20 +5115,351 @@ const ENJEU_ICONS = {
   "river": '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.8"><path d="M4 4q4 0 6 4t4 6 6 4"/><path d="M4 9q4 0 6 4t4 4 6 0"/></svg>'
 };
 
-// Photos illustratives par enjeu (Unsplash, libres de droits)
-const ENJEU_PHOTOS = {
-  digue: "https://images.unsplash.com/photo-1518709594023-6eab9bab7b23?w=900&q=70",  // digue maritime
-  quartier: "https://images.unsplash.com/photo-1571055107559-3e67626fa8be?w=900&q=70",  // village côtier
-  camping1: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=900&q=70",  // camping
-  camping2: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=900&q=70",
-  camping3: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=900&q=70",
-  marais: "https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?w=900&q=70",  // zone humide
-  cordon: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900&q=70",  // cordon dunaire
-  falaise: "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=900&q=70",  // falaise calcaire
-  port: "https://images.unsplash.com/photo-1502489597346-dad15683d4c2?w=900&q=70",  // petit port
-  zi: "https://images.unsplash.com/photo-1581090700227-1e37b190418e?w=900&q=70",  // entrepôt
-  goulven: "https://images.unsplash.com/photo-1467810563316-b5476525c0f9?w=900&q=70",  // rivière
+// Illustrations SVG par enjeu — riches, thématiques, ne dépendent de rien
+const ENJEU_ILLUSTRATIONS = {
+  digue: `<svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="dSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7AA8C7"/><stop offset="100%" stop-color="#B5C9D9"/></linearGradient>
+      <linearGradient id="dSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4F7F9C"/><stop offset="100%" stop-color="#7BA1B8"/></linearGradient>
+      <linearGradient id="dStone" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9C8E72"/><stop offset="100%" stop-color="#5C5141"/></linearGradient>
+    </defs>
+    <rect width="900" height="120" fill="url(#dSky)"/>
+    <rect y="120" width="900" height="100" fill="url(#dSea)"/>
+    <!-- Vagues -->
+    <g fill="none" stroke="#fff" stroke-width="0.8" opacity="0.5">
+      <path d="M0,150 q15,-5 30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0"/>
+      <path d="M0,170 q12,-3 24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0 t24,0"/>
+    </g>
+    <!-- Digue en pierre -->
+    <polygon points="0,220 900,220 900,200 800,180 700,180 600,170 500,170 400,180 300,180 200,170 100,180 0,180" fill="url(#dStone)"/>
+    <!-- Texture pierres -->
+    <g fill="#7C6F58" opacity="0.55">
+      <rect x="40" y="183" width="55" height="14" rx="2"/><rect x="100" y="186" width="50" height="13" rx="2"/><rect x="160" y="183" width="60" height="14" rx="2"/><rect x="225" y="187" width="48" height="13" rx="2"/><rect x="280" y="184" width="55" height="14" rx="2"/><rect x="340" y="186" width="52" height="13" rx="2"/><rect x="400" y="184" width="55" height="14" rx="2"/><rect x="460" y="187" width="48" height="13" rx="2"/><rect x="515" y="183" width="60" height="14" rx="2"/><rect x="580" y="186" width="50" height="13" rx="2"/><rect x="635" y="184" width="55" height="14" rx="2"/><rect x="695" y="187" width="50" height="13" rx="2"/><rect x="750" y="184" width="55" height="14" rx="2"/><rect x="810" y="186" width="55" height="13" rx="2"/>
+      <rect x="50" y="200" width="60" height="14" rx="2"/><rect x="115" y="203" width="55" height="13" rx="2"/><rect x="175" y="200" width="58" height="14" rx="2"/><rect x="238" y="203" width="50" height="13" rx="2"/><rect x="295" y="200" width="55" height="14" rx="2"/><rect x="355" y="203" width="55" height="13" rx="2"/><rect x="415" y="200" width="55" height="14" rx="2"/><rect x="475" y="203" width="50" height="13" rx="2"/><rect x="530" y="200" width="58" height="14" rx="2"/><rect x="595" y="203" width="55" height="13" rx="2"/><rect x="655" y="200" width="55" height="14" rx="2"/><rect x="715" y="203" width="55" height="13" rx="2"/><rect x="775" y="200" width="55" height="14" rx="2"/><rect x="835" y="203" width="55" height="13" rx="2"/>
+    </g>
+    <!-- Sable -->
+    <rect y="220" width="900" height="60" fill="#E8D2A0"/>
+    <!-- Oiseau qui plane -->
+    <path d="M 700,60 q 8,-5 16,0 q 8,-5 16,0" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.85"/>
+    <path d="M 220,40 q 6,-4 12,0 q 6,-4 12,0" stroke="#fff" stroke-width="1.3" fill="none" opacity="0.7"/>
+  </svg>`,
+  quartier: `<svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="qSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A8C5D8"/><stop offset="100%" stop-color="#D5E0E8"/></linearGradient>
+      <linearGradient id="qWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F2EAD6"/><stop offset="100%" stop-color="#D5C6A0"/></linearGradient>
+      <linearGradient id="qRoof" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9C5E3C"/><stop offset="100%" stop-color="#6E3F26"/></linearGradient>
+    </defs>
+    <rect width="900" height="160" fill="url(#qSky)"/>
+    <rect y="160" width="900" height="120" fill="#A8956A"/>
+    <!-- Maisons (alignées comme un quartier) -->
+    <g>
+      <!-- Maison 1 -->
+      <rect x="60" y="120" width="100" height="100" fill="url(#qWall)" stroke="#5C4A2C" stroke-width="1"/>
+      <polygon points="50,120 110,80 170,120" fill="url(#qRoof)" stroke="#3E2818" stroke-width="1"/>
+      <rect x="80" y="160" width="20" height="30" fill="#5C7AAB"/>
+      <rect x="120" y="160" width="20" height="30" fill="#5C7AAB"/>
+      <rect x="100" y="200" width="20" height="20" fill="#3E2818"/>
+      <!-- Maison 2 (un peu plus grande) -->
+      <rect x="200" y="100" width="120" height="120" fill="url(#qWall)" stroke="#5C4A2C" stroke-width="1"/>
+      <polygon points="190,100 260,55 330,100" fill="url(#qRoof)" stroke="#3E2818" stroke-width="1"/>
+      <rect x="220" y="135" width="22" height="30" fill="#5C7AAB"/>
+      <rect x="278" y="135" width="22" height="30" fill="#5C7AAB"/>
+      <rect x="220" y="180" width="22" height="30" fill="#5C7AAB"/>
+      <rect x="278" y="180" width="22" height="30" fill="#5C7AAB"/>
+      <rect x="248" y="180" width="22" height="40" fill="#3E2818"/>
+      <!-- Maison 3 -->
+      <rect x="370" y="125" width="90" height="95" fill="url(#qWall)" stroke="#5C4A2C" stroke-width="1"/>
+      <polygon points="360,125 415,85 470,125" fill="url(#qRoof)" stroke="#3E2818" stroke-width="1"/>
+      <rect x="385" y="160" width="20" height="28" fill="#5C7AAB"/>
+      <rect x="425" y="160" width="20" height="28" fill="#5C7AAB"/>
+      <rect x="400" y="195" width="20" height="25" fill="#3E2818"/>
+      <!-- Maison 4 -->
+      <rect x="510" y="115" width="105" height="105" fill="url(#qWall)" stroke="#5C4A2C" stroke-width="1"/>
+      <polygon points="500,115 562,72 625,115" fill="url(#qRoof)" stroke="#3E2818" stroke-width="1"/>
+      <rect x="530" y="150" width="22" height="30" fill="#5C7AAB"/>
+      <rect x="575" y="150" width="22" height="30" fill="#5C7AAB"/>
+      <rect x="550" y="195" width="22" height="25" fill="#3E2818"/>
+      <!-- Maison 5 -->
+      <rect x="660" y="130" width="95" height="90" fill="url(#qWall)" stroke="#5C4A2C" stroke-width="1"/>
+      <polygon points="650,130 707,90 765,130" fill="url(#qRoof)" stroke="#3E2818" stroke-width="1"/>
+      <rect x="680" y="165" width="20" height="28" fill="#5C7AAB"/>
+      <rect x="715" y="165" width="20" height="28" fill="#5C7AAB"/>
+      <rect x="697" y="200" width="20" height="20" fill="#3E2818"/>
+      <!-- Maison 6 -->
+      <rect x="800" y="125" width="90" height="95" fill="url(#qWall)" stroke="#5C4A2C" stroke-width="1"/>
+      <polygon points="790,125 845,85 900,125" fill="url(#qRoof)" stroke="#3E2818" stroke-width="1"/>
+      <rect x="822" y="160" width="20" height="28" fill="#5C7AAB"/>
+      <rect x="855" y="160" width="20" height="28" fill="#5C7AAB"/>
+    </g>
+  </svg>`,
+  camping1: `<svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="cSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9DC8DC"/><stop offset="100%" stop-color="#D0E2EA"/></linearGradient>
+      <linearGradient id="cGrass" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7DA168"/><stop offset="100%" stop-color="#5C8050"/></linearGradient>
+    </defs>
+    <rect width="900" height="160" fill="url(#cSky)"/>
+    <rect y="160" width="900" height="120" fill="url(#cGrass)"/>
+    <!-- Soleil -->
+    <circle cx="150" cy="60" r="35" fill="#F5D165" opacity="0.85"/>
+    <!-- Tentes -->
+    <g>
+      <polygon points="100,200 180,200 140,140" fill="#C8553C" stroke="#7E2B1A" stroke-width="1.5"/>
+      <line x1="140" y1="140" x2="140" y2="200" stroke="#7E2B1A" stroke-width="1"/>
+      <polygon points="240,210 320,210 280,150" fill="#5C8AA6" stroke="#2C4F66" stroke-width="1.5"/>
+      <line x1="280" y1="150" x2="280" y2="210" stroke="#2C4F66" stroke-width="1"/>
+      <polygon points="380,205 460,205 420,145" fill="#E89B4A" stroke="#9C5C1A" stroke-width="1.5"/>
+      <line x1="420" y1="145" x2="420" y2="205" stroke="#9C5C1A" stroke-width="1"/>
+      <polygon points="520,210 600,210 560,150" fill="#A8C088" stroke="#5C7C40" stroke-width="1.5"/>
+      <line x1="560" y1="150" x2="560" y2="210" stroke="#5C7C40" stroke-width="1"/>
+      <polygon points="660,205 740,205 700,145" fill="#C290D8" stroke="#6B3D80" stroke-width="1.5"/>
+      <line x1="700" y1="145" x2="700" y2="205" stroke="#6B3D80" stroke-width="1"/>
+    </g>
+    <!-- Arbres -->
+    <g>
+      <ellipse cx="60" cy="180" rx="35" ry="40" fill="#3E5F2A"/>
+      <rect x="55" y="200" width="10" height="30" fill="#5C3F20"/>
+      <ellipse cx="820" cy="170" rx="40" ry="50" fill="#3E5F2A"/>
+      <rect x="815" y="200" width="10" height="40" fill="#5C3F20"/>
+    </g>
+  </svg>`,
+  marais: `<svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="mSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#B8C8D0"/><stop offset="100%" stop-color="#D8DCD0"/></linearGradient>
+      <linearGradient id="mWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7FA89C"/><stop offset="100%" stop-color="#A5C4B0"/></linearGradient>
+      <linearGradient id="mMarsh" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#86A876"/><stop offset="100%" stop-color="#5C7C50"/></linearGradient>
+    </defs>
+    <rect width="900" height="100" fill="url(#mSky)"/>
+    <rect y="100" width="900" height="180" fill="url(#mMarsh)"/>
+    <!-- Mares -->
+    <g>
+      <ellipse cx="200" cy="180" rx="120" ry="22" fill="url(#mWater)" stroke="#5C7C7A" stroke-width="0.8"/>
+      <ellipse cx="500" cy="200" rx="140" ry="25" fill="url(#mWater)" stroke="#5C7C7A" stroke-width="0.8"/>
+      <ellipse cx="780" cy="170" rx="100" ry="18" fill="url(#mWater)" stroke="#5C7C7A" stroke-width="0.8"/>
+    </g>
+    <!-- Roseaux -->
+    <g stroke="#3E5F2A" stroke-width="1.5" stroke-linecap="round" fill="none">
+      <path d="M 80,180 L 80,140 M 88,180 L 88,135 M 76,180 L 76,145"/>
+      <path d="M 350,170 L 350,130 M 358,170 L 358,125 M 346,170 L 346,135"/>
+      <path d="M 650,160 L 650,120 M 658,160 L 658,115 M 646,160 L 646,125"/>
+      <path d="M 850,200 L 850,160 M 858,200 L 858,155 M 846,200 L 846,165"/>
+    </g>
+    <!-- Oiseaux -->
+    <g fill="#fff" opacity="0.75">
+      <ellipse cx="150" cy="60" rx="6" ry="3"/>
+      <path d="M 144,60 q -8,-4 -14,0 M 156,60 q 8,-4 14,0" stroke="#fff" stroke-width="1.2" fill="none"/>
+      <ellipse cx="600" cy="50" rx="5" ry="2.5"/>
+      <path d="M 595,50 q -7,-3 -12,0 M 605,50 q 7,-3 12,0" stroke="#fff" stroke-width="1.1" fill="none"/>
+    </g>
+    <!-- Hérons silhouette -->
+    <g fill="#1E2D2C" opacity="0.6">
+      <ellipse cx="300" cy="195" rx="6" ry="10"/>
+      <line x1="300" y1="195" x2="300" y2="220" stroke="#1E2D2C" stroke-width="1.5"/>
+      <line x1="300" y1="185" x2="298" y2="170" stroke="#1E2D2C" stroke-width="1"/>
+    </g>
+  </svg>`,
+  cordon: `<svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="duSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A6CADC"/><stop offset="100%" stop-color="#D8E8F0"/></linearGradient>
+      <linearGradient id="duSand" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F4E4B8"/><stop offset="100%" stop-color="#D4B988"/></linearGradient>
+    </defs>
+    <rect width="900" height="120" fill="url(#duSky)"/>
+    <!-- Mer au fond -->
+    <rect y="100" width="900" height="40" fill="#7FA8C0"/>
+    <g fill="none" stroke="#fff" stroke-width="0.7" opacity="0.5">
+      <path d="M0,118 q15,-3 30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0"/>
+    </g>
+    <!-- Dune -->
+    <path d="M 0,140 Q 100,80 200,100 Q 300,60 400,90 Q 500,50 600,90 Q 700,70 800,100 Q 850,90 900,100 L 900,280 L 0,280 Z" fill="url(#duSand)"/>
+    <!-- Texture sable -->
+    <g fill="#B8A065" opacity="0.4">
+      <circle cx="60" cy="180" r="0.8"/><circle cx="120" cy="220" r="0.7"/><circle cx="200" cy="195" r="0.9"/><circle cx="280" cy="240" r="0.8"/><circle cx="340" cy="200" r="0.7"/><circle cx="420" cy="225" r="0.9"/><circle cx="500" cy="205" r="0.8"/><circle cx="580" cy="245" r="0.7"/><circle cx="660" cy="210" r="0.9"/><circle cx="740" cy="235" r="0.8"/><circle cx="820" cy="200" r="0.7"/>
+    </g>
+    <!-- Touffes d'oyat -->
+    <g stroke="#7A8845" stroke-width="2" stroke-linecap="round" fill="none">
+      <g><path d="M 80,200 L 80,165 M 75,200 L 70,170 M 85,200 L 90,170 M 78,200 L 76,175 M 82,200 L 84,175"/></g>
+      <g><path d="M 230,180 L 230,145 M 225,180 L 220,150 M 235,180 L 240,150 M 228,180 L 226,155 M 232,180 L 234,155"/></g>
+      <g><path d="M 420,170 L 420,135 M 415,170 L 410,140 M 425,170 L 430,140 M 418,170 L 416,145 M 422,170 L 424,145"/></g>
+      <g><path d="M 580,165 L 580,130 M 575,165 L 570,135 M 585,165 L 590,135 M 578,165 L 576,140 M 582,165 L 584,140"/></g>
+      <g><path d="M 750,180 L 750,145 M 745,180 L 740,150 M 755,180 L 760,150 M 748,180 L 746,155 M 752,180 L 754,155"/></g>
+    </g>
+  </svg>`,
+  falaise: `<svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="fSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9DBCD8"/><stop offset="100%" stop-color="#D0DEE8"/></linearGradient>
+      <linearGradient id="fCliff" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E8DCC0"/><stop offset="60%" stop-color="#B8A985"/><stop offset="100%" stop-color="#7C6F50"/></linearGradient>
+      <linearGradient id="fSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5C8AA6"/><stop offset="100%" stop-color="#7BAAC2"/></linearGradient>
+    </defs>
+    <rect width="900" height="120" fill="url(#fSky)"/>
+    <!-- Mer en bas -->
+    <rect y="220" width="900" height="60" fill="url(#fSea)"/>
+    <g fill="none" stroke="#fff" stroke-width="0.7" opacity="0.5">
+      <path d="M0,250 q15,-3 30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0 t30,0"/>
+    </g>
+    <!-- Falaise -->
+    <path d="M 0,80 L 200,80 L 220,100 L 280,100 L 300,90 L 450,95 L 470,110 L 600,108 L 620,90 L 750,95 L 770,105 L 900,100 L 900,220 L 0,220 Z" fill="url(#fCliff)"/>
+    <!-- Strates -->
+    <g fill="none" stroke="#7C6F50" stroke-width="0.6" opacity="0.45">
+      <path d="M 0,140 L 220,140 L 280,140 L 470,142 L 620,140 L 770,140 L 900,140"/>
+      <path d="M 0,170 L 220,168 L 280,168 L 470,170 L 620,168 L 770,168 L 900,170"/>
+      <path d="M 0,195 L 220,195 L 280,195 L 470,197 L 620,195 L 770,195 L 900,195"/>
+    </g>
+    <!-- Herbe au sommet -->
+    <rect y="70" width="900" height="12" fill="#5C8050"/>
+    <!-- Mouettes -->
+    <g fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity="0.85">
+      <path d="M 250,40 q 6,-4 12,0 q 6,-4 12,0"/>
+      <path d="M 600,55 q 5,-3 10,0 q 5,-3 10,0"/>
+      <path d="M 800,30 q 6,-4 12,0 q 6,-4 12,0"/>
+    </g>
+    <!-- Effondrement (rocher détaché) -->
+    <polygon points="350,225 380,235 360,250 330,245" fill="#9C8E70" stroke="#5C5141" stroke-width="0.8"/>
+    <polygon points="650,228 685,240 670,255 635,250" fill="#9C8E70" stroke="#5C5141" stroke-width="0.8"/>
+  </svg>`,
+  port: `<svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="pSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A6C5DC"/><stop offset="100%" stop-color="#D0DEE8"/></linearGradient>
+      <linearGradient id="pWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5C8AA6"/><stop offset="100%" stop-color="#7BAAC2"/></linearGradient>
+    </defs>
+    <rect width="900" height="120" fill="url(#pSky)"/>
+    <rect y="120" width="900" height="160" fill="url(#pWater)"/>
+    <!-- Quai au fond -->
+    <rect y="100" width="900" height="30" fill="#7E6F50"/>
+    <rect y="100" width="900" height="6" fill="#5C4F30"/>
+    <!-- Maisons sur le quai -->
+    <g>
+      <rect x="40" y="60" width="60" height="45" fill="#E8D8B0" stroke="#5C4A2C" stroke-width="1"/>
+      <polygon points="35,60 70,35 105,60" fill="#9C5E3C" stroke="#3E2818" stroke-width="1"/>
+      <rect x="58" y="78" width="10" height="14" fill="#5C7AAB"/>
+      <rect x="78" y="78" width="10" height="14" fill="#5C7AAB"/>
+      <rect x="150" y="50" width="80" height="55" fill="#F2E8D0" stroke="#5C4A2C" stroke-width="1"/>
+      <polygon points="145,50 190,20 235,50" fill="#7C4828" stroke="#3E2818" stroke-width="1"/>
+      <rect x="170" y="68" width="12" height="16" fill="#5C7AAB"/>
+      <rect x="200" y="68" width="12" height="16" fill="#5C7AAB"/>
+      <rect x="184" y="88" width="14" height="17" fill="#3E2818"/>
+      <rect x="290" y="55" width="70" height="50" fill="#E8D8B0" stroke="#5C4A2C" stroke-width="1"/>
+      <polygon points="285,55 325,28 365,55" fill="#9C5E3C" stroke="#3E2818" stroke-width="1"/>
+      <rect x="310" y="73" width="10" height="14" fill="#5C7AAB"/>
+      <rect x="332" y="73" width="10" height="14" fill="#5C7AAB"/>
+    </g>
+    <!-- Bateaux au port -->
+    <g>
+      <!-- Bateau 1 -->
+      <path d="M 100,180 L 200,180 L 195,210 L 105,210 Z" fill="#E8E0D0" stroke="#3E2818" stroke-width="1.5"/>
+      <line x1="150" y1="180" x2="150" y2="120" stroke="#3E2818" stroke-width="1.5"/>
+      <polygon points="150,125 180,160 150,160" fill="#fff" stroke="#3E2818" stroke-width="1"/>
+      <!-- Bateau 2 (rouge) -->
+      <path d="M 270,200 L 380,200 L 372,228 L 278,228 Z" fill="#C8553C" stroke="#5C2A1A" stroke-width="1.5"/>
+      <line x1="325" y1="200" x2="325" y2="135" stroke="#3E2818" stroke-width="1.5"/>
+      <polygon points="325,140 360,170 325,170" fill="#fff" stroke="#3E2818" stroke-width="1"/>
+      <rect x="305" y="180" width="40" height="20" fill="#7E6F50" stroke="#3E2818" stroke-width="0.8"/>
+      <!-- Bateau 3 -->
+      <path d="M 460,185 L 560,185 L 554,212 L 466,212 Z" fill="#5C8AA6" stroke="#2C4F66" stroke-width="1.5"/>
+      <line x1="510" y1="185" x2="510" y2="125" stroke="#3E2818" stroke-width="1.5"/>
+      <polygon points="510,130 540,160 510,160" fill="#fff" stroke="#3E2818" stroke-width="1"/>
+      <!-- Bateau 4 (jaune) -->
+      <path d="M 640,195 L 740,195 L 734,222 L 646,222 Z" fill="#E89B4A" stroke="#9C5C1A" stroke-width="1.5"/>
+      <line x1="690" y1="195" x2="690" y2="130" stroke="#3E2818" stroke-width="1.5"/>
+      <polygon points="690,135 720,165 690,165" fill="#fff" stroke="#3E2818" stroke-width="1"/>
+    </g>
+    <!-- Reflets sur l'eau -->
+    <g fill="none" stroke="#fff" stroke-width="0.8" opacity="0.45">
+      <line x1="120" y1="220" x2="180" y2="220"/>
+      <line x1="290" y1="240" x2="370" y2="240"/>
+      <line x1="475" y1="225" x2="545" y2="225"/>
+      <line x1="650" y1="240" x2="730" y2="240"/>
+    </g>
+  </svg>`,
+  zi: `<svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="zSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#B8C5D0"/><stop offset="100%" stop-color="#D8DEE2"/></linearGradient>
+      <linearGradient id="zMetal" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9CACBC"/><stop offset="100%" stop-color="#5C6F80"/></linearGradient>
+      <linearGradient id="zRoof" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7E8895"/><stop offset="100%" stop-color="#4E5862"/></linearGradient>
+    </defs>
+    <rect width="900" height="180" fill="url(#zSky)"/>
+    <rect y="180" width="900" height="100" fill="#7C7568"/>
+    <!-- Bâtiment principal (long entrepôt) -->
+    <rect x="80" y="120" width="380" height="100" fill="url(#zMetal)" stroke="#3E4A56" stroke-width="1"/>
+    <polygon points="80,120 270,80 460,120" fill="url(#zRoof)" stroke="#2C353E" stroke-width="1"/>
+    <!-- Bardage horizontal -->
+    <g stroke="#3E4A56" stroke-width="0.6" opacity="0.5">
+      <line x1="80" y1="140" x2="460" y2="140"/>
+      <line x1="80" y1="160" x2="460" y2="160"/>
+      <line x1="80" y1="180" x2="460" y2="180"/>
+      <line x1="80" y1="200" x2="460" y2="200"/>
+    </g>
+    <!-- Portes industrielles -->
+    <rect x="120" y="170" width="50" height="50" fill="#3E4A56"/>
+    <rect x="220" y="170" width="50" height="50" fill="#3E4A56"/>
+    <rect x="320" y="170" width="50" height="50" fill="#3E4A56"/>
+    <!-- Bâtiment 2 -->
+    <rect x="500" y="140" width="180" height="80" fill="url(#zMetal)" stroke="#3E4A56" stroke-width="1"/>
+    <polygon points="500,140 590,105 680,140" fill="url(#zRoof)" stroke="#2C353E" stroke-width="1"/>
+    <rect x="540" y="180" width="40" height="40" fill="#3E4A56"/>
+    <rect x="600" y="180" width="40" height="40" fill="#3E4A56"/>
+    <!-- Cheminée -->
+    <rect x="720" y="100" width="20" height="120" fill="#7E6F60" stroke="#3E2818" stroke-width="0.8"/>
+    <rect x="715" y="95" width="30" height="10" fill="#5C4F40"/>
+    <!-- Fumée -->
+    <g fill="#D8DEE2" opacity="0.7">
+      <ellipse cx="745" cy="80" rx="15" ry="8"/>
+      <ellipse cx="765" cy="65" rx="20" ry="10"/>
+      <ellipse cx="790" cy="50" rx="25" ry="12"/>
+    </g>
+    <!-- Camion -->
+    <g>
+      <rect x="780" y="200" width="80" height="35" fill="#C8553C" stroke="#5C2A1A" stroke-width="1"/>
+      <rect x="800" y="180" width="40" height="20" fill="#5C7AAB" stroke="#3E2818" stroke-width="0.8"/>
+      <circle cx="800" cy="240" r="10" fill="#3E2818"/>
+      <circle cx="845" cy="240" r="10" fill="#3E2818"/>
+    </g>
+  </svg>`,
+  goulven: `<svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="rSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A8C5D8"/><stop offset="100%" stop-color="#D8E2E8"/></linearGradient>
+      <linearGradient id="rWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6F9CB8"/><stop offset="100%" stop-color="#9CC2D8"/></linearGradient>
+      <linearGradient id="rGrass" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7DA168"/><stop offset="100%" stop-color="#5C8050"/></linearGradient>
+    </defs>
+    <rect width="900" height="100" fill="url(#rSky)"/>
+    <!-- Berges -->
+    <path d="M 0,100 Q 200,150 0,200 Z" fill="url(#rGrass)"/>
+    <path d="M 900,100 Q 700,150 900,200 Z" fill="url(#rGrass)"/>
+    <!-- Eau de la rivière -->
+    <path d="M 0,100 Q 200,150 0,200 L 0,280 L 900,280 L 900,200 Q 700,150 900,100 Z" fill="url(#rWater)"/>
+    <!-- Reflets -->
+    <g fill="none" stroke="#fff" stroke-width="0.8" opacity="0.5">
+      <path d="M 50,180 q 30,-4 60,0"/>
+      <path d="M 200,200 q 35,-4 70,0"/>
+      <path d="M 380,210 q 40,-4 80,0"/>
+      <path d="M 560,200 q 35,-4 70,0"/>
+      <path d="M 720,180 q 30,-4 60,0"/>
+      <path d="M 100,230 q 25,-3 50,0"/>
+      <path d="M 350,250 q 35,-3 70,0"/>
+      <path d="M 600,240 q 30,-3 60,0"/>
+    </g>
+    <!-- Roseaux sur les berges -->
+    <g stroke="#3E5F2A" stroke-width="1.5" stroke-linecap="round" fill="none">
+      <path d="M 30,150 L 30,115 M 38,150 L 38,110 M 22,150 L 22,118"/>
+      <path d="M 60,170 L 60,135 M 68,170 L 68,130 M 52,170 L 52,138"/>
+      <path d="M 850,140 L 850,105 M 858,140 L 858,100 M 842,140 L 842,108"/>
+      <path d="M 870,170 L 870,135 M 878,170 L 878,130 M 862,170 L 862,138"/>
+    </g>
+    <!-- Arbres au loin -->
+    <g>
+      <ellipse cx="120" cy="80" rx="25" ry="30" fill="#3E5F2A" opacity="0.7"/>
+      <ellipse cx="780" cy="75" rx="30" ry="35" fill="#3E5F2A" opacity="0.7"/>
+    </g>
+    <!-- Petit pont -->
+    <g>
+      <rect x="380" y="120" width="140" height="6" fill="#7C5F30" stroke="#3E2818" stroke-width="0.8"/>
+      <line x1="395" y1="120" x2="395" y2="135" stroke="#7C5F30" stroke-width="3"/>
+      <line x1="430" y1="120" x2="430" y2="135" stroke="#7C5F30" stroke-width="3"/>
+      <line x1="465" y1="120" x2="465" y2="135" stroke="#7C5F30" stroke-width="3"/>
+      <line x1="500" y1="120" x2="500" y2="135" stroke="#7C5F30" stroke-width="3"/>
+    </g>
+  </svg>`,
 };
+ENJEU_ILLUSTRATIONS.camping2 = ENJEU_ILLUSTRATIONS.camping1;
+ENJEU_ILLUSTRATIONS.camping3 = ENJEU_ILLUSTRATIONS.camping1;
 
 function openEnjeu(id) {
   const data = ENJEUX[id];
@@ -5125,13 +5467,13 @@ function openEnjeu(id) {
   document.getElementById('enjeuModalIcon').innerHTML = ENJEU_ICONS[data.icon] || ENJEU_ICONS["wall"];
   document.getElementById('enjeuModalEyebrow').textContent = data.eyebrow;
   document.getElementById('enjeuModalTitle').textContent = data.title;
-  // Photo en haut du body
-  const photoUrl = ENJEU_PHOTOS[id];
+  // Illustration SVG en haut du body
+  const illustration = ENJEU_ILLUSTRATIONS[id];
   let bodyHTML = '';
-  if (photoUrl) {
-    bodyHTML += `<div class="enjeu-photo-banner" style="margin: -8px -32px 18px; height: 160px; overflow: hidden; border-radius: 0; position: relative;">
-      <img src="${photoUrl}" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;" loading="lazy" />
-      <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(30,45,92,0.0) 60%, rgba(30,45,92,0.4) 100%);pointer-events:none;"></div>
+  if (illustration) {
+    bodyHTML += `<div class="enjeu-photo-banner" style="margin: -8px -32px 18px; height: 180px; overflow: hidden; position: relative;">
+      ${illustration.replace('<svg ', '<svg style="width:100%;height:100%;display:block;" ')}
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(30,45,92,0.0) 70%, rgba(30,45,92,0.25) 100%);pointer-events:none;"></div>
     </div>`;
   }
   bodyHTML += data.body;
@@ -5236,11 +5578,11 @@ const MAILBOXES = {
       from: "[SMS] Préfet zone de défense",
       role: "SMS",
       date: "il y a 30 min",
-      subj: "[SMS] Réunion CMVOA demain 8h30",
-      snippet: "Je confirme la réunion exceptionnelle CMVOA demain 8h30. Merci d'apporter le DDRM commune.",
+      subj: "[SMS] Réunion COZ demain 8h30",
+      snippet: "Je confirme la réunion exceptionnelle au COZ demain 8h30. Merci d'apporter le DDRM commune.",
       body: `<p style="font-family:var(--mono);font-size:14px;background:#F0F4F8;padding:14px 18px;border-radius:8px;border-left:3px solid #5B95C4;color:#1E2D5C;">
 <strong>SMS reçu</strong><br><br>
-Je confirme la réunion exceptionnelle CMVOA demain 8h30. Merci d'apporter le DDRM commune et le projet de PPRL nouvelle génération si dispo. P. Le Hir.</p>
+Je confirme la réunion exceptionnelle au COZ demain 8h30. Merci d'apporter le DDRM commune et le projet de PPRL nouvelle génération si dispo. P. Le Hir.</p>
 <p style="font-size:13px;color:var(--grey-txt);font-style:italic;margin-top:14px;">— Note du SP : le préfet de zone n'envoie jamais de SMS sauf urgence.</p>`
     },
     {
@@ -6172,7 +6514,7 @@ const ALERTS = {
         <li>Surcote estimée 1,4 m</li>
         <li>Houle 6,5 m période 14 s</li>
       </ul>
-      <p>Le préfet vient de prendre un <strong>arrêté de fermeture des plages et du sentier littoral</strong>. La cellule de crise départementale (CMVOA) est activée.</p>
+      <p>Le préfet vient de prendre un <strong>arrêté de fermeture des plages et du sentier littoral</strong>. Le centre opérationnel départemental (COD) est activé.</p>
       <div class="alert-question">Que faites-vous, là, maintenant, dans votre rôle ? <strong>Vous avez 15 minutes pour rédiger les 5 actions immédiates.</strong></div>`
   },
   "g1": {
@@ -6245,6 +6587,7 @@ function markAsTrainer() {
 
 let _activeAlertCache = null;
 
+let _firstAlertSnapshot = true;
 function subscribeAlerts() {
   if (!window.FB) {
     try { _activeAlertCache = localStorage.getItem(ALERT_KEY); } catch(e) {}
@@ -6257,23 +6600,24 @@ function subscribeAlerts() {
     return;
   }
   window.FB.onVal('alert', val => {
-    const wasActive = _activeAlertCache;
+    const isFirst = _firstAlertSnapshot;
+    _firstAlertSnapshot = false;
     _activeAlertCache = val;
     if (val && ALERTS[val]) {
       const data = ALERTS[val];
-      // Cibler : si all, montre à tout le monde. Sinon, seulement au groupe ciblé OU au formateur.
       const myGrp = getMyGroup();
       if (val === 'all' || isTrainer() || val === myGrp) {
         document.getElementById('alertBannerEyebrow').textContent = data.eyebrow;
         document.getElementById('alertBannerTitle').textContent = data.title;
         document.getElementById('alertBanner').classList.add('visible');
-        // Auto-déclencher l'effet FR-Alert + modal seulement si NOUVELLE alerte
-        if (!_lastShownAlert || _lastShownAlert !== val) {
+        // Au PREMIER snapshot (chargement de la page), on n'effraie pas l'utilisateur :
+        // on affiche juste le bandeau, sans flash, sans son, sans modal automatique.
+        // L'effet FR-Alert ne se déclenche que sur une NOUVELLE alerte arrivée en cours de session.
+        if (!isFirst && (!_lastShownAlert || _lastShownAlert !== val)) {
           fireFRAlertEffect(data.eyebrow, data.title);
-          // Léger délai avant le modal pour laisser le flash en avant-plan
           setTimeout(() => openAlertModal(), 1200);
-          _lastShownAlert = val;
         }
+        _lastShownAlert = val;
       } else {
         document.getElementById('alertBanner').classList.remove('visible');
       }
@@ -6343,6 +6687,67 @@ function clearAlert() {
   _lastShownAlert = null;
 }
 
+function resetThisBrowser() {
+  const ok = confirm(
+    "Réinitialiser ce navigateur ?\n\n" +
+    "Cela efface localement :\n" +
+    "• Les groupes débloqués (vous devrez ressaisir votre code)\n" +
+    "• Le mode formateur\n" +
+    "• Vos notes locales et préférences\n\n" +
+    "Cela ne touche PAS aux données Firebase partagées avec les autres."
+  );
+  if (!ok) return;
+  // Liste des clés locales à effacer
+  const keysToRemove = [];
+  try {
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith('ansedegoulven_')) keysToRemove.push(k);
+    });
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+  } catch(e) {}
+  alert("✓ Navigateur réinitialisé. La page va se recharger.");
+  location.reload();
+}
+
+async function resetFullSession() {
+  const sessionId = window.FB ? window.FB.getSessionId() : 'default';
+  const ok = confirm(
+    `Réinitialiser entièrement la session « ${sessionId} » ?\n\n` +
+    `Cela efface SUR LE SERVEUR :\n` +
+    `• L'alerte en cours\n` +
+    `• Le sondage actif\n` +
+    `• Tous les votes au conseil municipal\n` +
+    `• Toutes les matrices, hiérarchisations, leviers, notes\n\n` +
+    `Les notes locales sur les autres appareils seront aussi effacées au rechargement.\n\n` +
+    `Cette action est IRRÉVERSIBLE. Tapez OK pour confirmer.`
+  );
+  if (!ok) return;
+  if (!window.FB) {
+    alert("Pas de connexion Firebase — impossible de réinitialiser la session.");
+    return;
+  }
+  try {
+    // Effacer toutes les branches sous la session
+    await Promise.all([
+      window.FB.setVal('alert', null),
+      window.FB.removeVal('polls'),
+      window.FB.removeVal('council'),
+      window.FB.removeVal('matrix'),
+      window.FB.removeVal('prio'),
+      window.FB.removeVal('levers'),
+      window.FB.removeVal('notes'),
+    ]);
+    closeAlertModal();
+    closePoll();
+    _lastShownAlert = null;
+    _lastShownPoll = null;
+    alert(`✓ Session « ${sessionId} » réinitialisée. Le formateur peut maintenant lancer la formation.`);
+  } catch (e) {
+    console.warn('Reset failed:', e);
+    alert("Erreur lors de la réinitialisation. Vérifiez la connexion.");
+  }
+}
+
 function toggleTrainerPanel() {
   document.getElementById('trainerPanel').classList.toggle('open');
 }
@@ -6399,22 +6804,31 @@ const POLL_MY_VOTE_KEY = "ansedegoulven_my_vote_";  // toujours local (mon vote 
 
 let _pollsCache = {};        // { activePoll: 'digue', votes: { 'digue': { '<id>': 2, ... } } }
 
+let _firstPollSnapshot = true;
+let _lastShownPoll = null;
 function subscribePolls() {
   if (!window.FB) return;
   window.FB.onVal('polls', val => {
+    const isFirst = _firstPollSnapshot;
+    _firstPollSnapshot = false;
     _pollsCache = val || {};
-    // Si une poll active vient d'être ouverte, ouvrir le modal
     const active = _pollsCache.activePoll;
     if (active && POLLS[active]) {
       const ov = document.getElementById('pollOverlay');
-      if (!ov.classList.contains('open')) {
+      // Au premier snapshot, on N'OUVRE PAS le modal automatiquement —
+      // on attend que ce soit une nouvelle poll arrivée en cours de session.
+      if (!isFirst && _lastShownPoll !== active && !ov.classList.contains('open')) {
         openPoll(active);
+        _lastShownPoll = active;
       } else if (ov.classList.contains('open') && document.getElementById('pollOptions').dataset.pollId === active) {
-        // Mettre à jour les résultats si visibles
         if (document.getElementById('pollResults').classList.contains('show')) {
           showPollResults(active);
         }
       }
+      // Mémoriser même au premier snapshot pour ne pas le rouvrir ensuite
+      if (isFirst) _lastShownPoll = active;
+    } else {
+      _lastShownPoll = null;
     }
   });
 }
