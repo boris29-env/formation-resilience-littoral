@@ -11358,6 +11358,10 @@ async function sendDialog1972() {
   body.appendChild(thinking);
   body.scrollTop = body.scrollHeight;
 
+  // Règle commune ajoutée au system prompt : interdire les didascalies entre astérisques
+  // que les modèles de roleplay ont tendance à insérer (*sourire*, *gestes vers la fenêtre*…).
+  const NO_STAGE_DIRECTIONS = "\n\nRÈGLE STRICTE D'ÉCRITURE : Réponds UNIQUEMENT par du dialogue parlé naturel. N'utilise JAMAIS d'astérisques (*) pour décrire des gestes, expressions, actions ou intonations. Pas de didascalies type *sourire*, *gestes vers la fenêtre*, *ton sec*, *amusé*. Tu n'es pas dans un script de théâtre — tu es dans une conversation orale réelle. Tu parles, c'est tout. Pas de mise en forme markdown non plus (pas de **gras**, pas d'_italique_).";
+
   try {
     const response = await fetch(window.DIALOG1972_API_URL, {
       method: "POST",
@@ -11365,7 +11369,7 @@ async function sendDialog1972() {
       body: JSON.stringify({
         model: "claude-haiku-4-5",
         max_tokens: 400,
-        system: ch.system,
+        system: ch.system + NO_STAGE_DIRECTIONS,
         messages: _dialog1972State.history
       })
     });
@@ -11386,6 +11390,21 @@ async function sendDialog1972() {
     if (!reply) {
       reply = "(silence — la communication ne passe pas. Réessayez.)";
     }
+
+    // Nettoyage défensif : retirer les didascalies entre astérisques que le modèle
+    // aurait glissées malgré la consigne.
+    // - les emphases d'un seul mot (*sinistres*, *admettons*) sont préservées sans astérisques
+    // - les didascalies de plusieurs mots (*sourire rassurant*, *gestes vers la fenêtre*) sont supprimées
+    reply = reply
+      .replace(/\*\*([^*\n]+)\*\*/g, '$1')   // **bold markdown** → texte simple
+      .replace(/\*([^*\s][^*]*?[^*\s]|\S)\*/g, (m, inner) => /\s/.test(inner) ? '' : inner)
+      .replace(/\*[^*]+\*/g, '')              // didascalies résiduelles
+      .replace(/,\s*,/g, ',')                  // virgule double créée par suppression
+      .replace(/—\s*—/g, '—')                  // tiret cadratin double
+      .replace(/\s+([.,])/g, '$1')             // espace avant point/virgule (typo française accepte espace devant !?;:)
+      .replace(/[ \t]+/g, ' ')                 // espaces multiples → un seul
+      .replace(/\n{3,}/g, '\n\n')              // sauts de ligne triples → doubles
+      .trim();
 
     _dialog1972State.history.push({ role: 'assistant', content: reply });
 
