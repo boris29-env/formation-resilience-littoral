@@ -3214,6 +3214,7 @@ h3.subhead {
         <div class="dialog1972-modal-name" id="dialog1972Name">—</div>
         <div class="dialog1972-modal-role" id="dialog1972Role">—</div>
       </div>
+      <button class="dialog1972-close-btn" id="dialog1972VoiceToggle" onclick="toggleDialog1972Voice()" style="margin-right:8px;">🔊 Voix</button>
       <button class="dialog1972-close-btn" onclick="closeDialog1972()">Fermer</button>
     </div>
     <div class="dialog1972-modal-body" id="dialog1972Body"></div>
@@ -9276,10 +9277,13 @@ function renderCdrnm() {
         { val: 'contre',  label: '✕ CONTRE',   cls: 'contre' },
         { val: 'reserve', label: '~ RÉSERVE',  cls: 'reserve' },
       ];
+      // Notes "effet papillon" déclenchées par les votes du cas 2
+      const butterfly = (typeof renderButterflyNotesCdrnm === 'function') ? renderButterflyNotesCdrnm(q.id) : '';
       html += `<div class="cdrnm-question">
         <div class="cdrnm-question-num">${q.id}</div>
         <div class="cdrnm-question-text">${escapeHTML(q.text)}</div>
         <div class="cdrnm-question-detail">${escapeHTML(q.detail)}</div>
+        ${butterfly}
         <div class="cdrnm-vote-row">
           ${voteOpts.map(o => `
             <button class="cdrnm-vote-btn ${o.cls} ${cur.vote === o.val ? 'selected' : ''}"
@@ -9786,7 +9790,9 @@ function openPcsPhase(phaseIdx) {
   document.getElementById('pcsPhaseEyebrow').textContent = phase.eyebrow;
   document.getElementById('pcsPhaseTitle').textContent = phase.title;
   document.getElementById('pcsPhaseTime').textContent = phase.time;
-  document.getElementById('pcsPhaseBriefing').innerHTML = phase.briefing;
+  // Préfixer le briefing avec les "notes effet papillon" liées aux votes du cas 2
+  const butterflyNotes = (typeof renderButterflyNotesPcs === 'function') ? renderButterflyNotesPcs(phase.id) : '';
+  document.getElementById('pcsPhaseBriefing').innerHTML = butterflyNotes + phase.briefing;
   document.getElementById('pcsPhaseQuestion').textContent = phase.question;
 
   renderPcsActions();
@@ -11117,6 +11123,7 @@ const DIALOG1972_CHARACTERS = {
     name: 'Henri Le Roux',
     role: 'Sous-préfet, 1972',
     eyebrow: 'État · Préfecture',
+    voice: { gender: 'male', pitch: 0.85, rate: 0.92 },  // posé, autoritaire
     opener: "Mademoiselle, monsieur, je vous écoute. J'imagine que vous venez à propos du dossier du Camping La Goëlette ? Le permis a été signé la semaine dernière. Tout est en règle.",
     system: `Tu joues Henri Le Roux, sous-préfet en poste à Anse-de-Goulven en 1972. Tu es un haut fonctionnaire de carrière, sorti de l'ENA promotion Robespierre, juriste de formation. Tu viens de signer le permis de construire du Camping La Goëlette sur la dune.
 
@@ -11152,6 +11159,7 @@ OBJECTIF PÉDAGOGIQUE : tu n'es ni un méchant ni un naïf. Tu es un fonctionnai
     name: 'Yvonne Tanguy',
     role: 'Maire d\'Anse-de-Goulven, 1965-1989',
     eyebrow: 'Élus · Mairie',
+    voice: { gender: 'female', pitch: 1.0, rate: 0.92 },  // affirmée, posée
     opener: "Asseyez-vous, ma fille. Un café ? J'imagine que c'est encore au sujet de la digue, ou bien du marais ? Tout le monde veut son mot à dire sur le marais ces temps-ci.",
     system: `Tu joues Yvonne Tanguy, maire d'Anse-de-Goulven (commune fictive de la Manche) de 1965 à 1989. Nous sommes en 1972. Tu es institutrice retraitée, veuve, tu as fait construire la digue en 1962 (c'est ta digue, c'est ta fierté), tu as vu fermer la conserverie en 1968, tu te bats pour que le tourisme remplace l'emploi perdu.
 
@@ -11183,6 +11191,7 @@ OBJECTIF PÉDAGOGIQUE : montrer que les "mauvaises décisions" de 1972 ne sont p
     name: 'Joseph Coïc',
     role: 'Conseiller agricole, 1970',
     eyebrow: 'Marais · Agriculture',
+    voice: { gender: 'male', pitch: 0.95, rate: 1.0 },  // technique, neutre
     opener: "Bonjour. Vous êtes ce stagiaire de l'INRA ? Bon, alors expliquez-moi ce qu'on va faire avec le marais. Parce que là, à laisser ça en jachère salée, on perd 60 hectares de bonnes terres pour rien.",
     system: `Tu joues Joseph Coïc, conseiller agricole départemental en 1970, chargé du dossier du marais d'Anse-de-Goulven (commune fictive de la Manche). Tu es ingénieur agronome formé à Rennes, technicien remembrement.
 
@@ -11212,6 +11221,7 @@ OBJECTIF PÉDAGOGIQUE : montrer que les destructions de zones humides en France 
     name: 'Jean-Pierre Allain',
     role: 'Gérant du Camping La Goëlette',
     eyebrow: 'Économique · Tourisme',
+    voice: { gender: 'male', pitch: 1.05, rate: 1.05 },  // jovial, énergique
     opener: "Ah, vous voilà ! Venez, je vous fais visiter. J'ai 40 emplacements ouverts depuis l'été dernier, j'attends 80 de plus pour 1973. Les Parisiens, ils en redemandent. C'est la chance du siècle, ce coin.",
     system: `Tu joues Jean-Pierre Allain, gérant et propriétaire du Camping La Goëlette à Anse-de-Goulven. Nous sommes en 1972. Tu as acheté le terrain en 1968 quand c'était une dune semi-mobile. Tu as obtenu ton permis en 1971. Tu as ouvert 40 emplacements en 1972, tu en prévois 80 de plus pour 1973.
 
@@ -11240,6 +11250,7 @@ OBJECTIF PÉDAGOGIQUE : montrer la rationalité économique d'une décision qui 
     name: 'Marie Quéré',
     role: 'Riveraine du Quartier de la Digue',
     eyebrow: 'Société civile · Mémoire',
+    voice: { gender: 'female', pitch: 1.05, rate: 0.85 },  // hésitante, lente
     opener: "Vous voulez un café ? ... Bon, asseyez-vous. J'ai pas grand-chose à dire, vous savez. Je vis ici, c'est tout. Ma mère vivait ici aussi, et sa mère avant. Elles ont vu des choses.",
     system: `Tu joues Marie Quéré, 47 ans en 1972, ouvrière de la conserverie (qui a fermé en 1968, tu fais maintenant des ménages) et riveraine du Quartier de la Digue à Anse-de-Goulven. Tu vis dans la maison de famille, transmise depuis ton arrière-grand-père.
 
@@ -11276,6 +11287,88 @@ let _dialog1972State = {
   maxMsg: 8
 };
 
+// ============================================================================
+// VOIX SYNTHÉTIQUE (Web Speech API — gratuite, intégrée au navigateur)
+// ============================================================================
+// Utilise SpeechSynthesis natif. Voix française locale (Google/macOS/Windows).
+// Aucune clé API, aucun appel réseau, aucun coût.
+// Le toggle de voix est mémorisé entre conversations dans localStorage.
+
+let _dialog1972VoiceEnabled = (function() {
+  try {
+    const v = localStorage.getItem('dialog1972_voice_enabled');
+    return v === null ? true : v === 'true';  // activée par défaut
+  } catch(e) { return true; }
+})();
+let _dialog1972VoicesCache = null;
+
+function _loadVoices() {
+  if (_dialog1972VoicesCache) return _dialog1972VoicesCache;
+  if (!('speechSynthesis' in window)) return [];
+  _dialog1972VoicesCache = window.speechSynthesis.getVoices()
+    .filter(v => v.lang && (v.lang.startsWith('fr') || v.lang === 'fr-FR'));
+  return _dialog1972VoicesCache;
+}
+
+// Le navigateur charge les voix de façon asynchrone : on rafraîchit le cache à l'event
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.onvoiceschanged = () => { _dialog1972VoicesCache = null; _loadVoices(); };
+}
+
+function _pickVoiceFor(profile) {
+  const voices = _loadVoices();
+  if (voices.length === 0) return null;
+
+  // Heuristique : repérer voix masculine vs féminine via le nom
+  const isFemale = (name) => /femme|female|amelie|amélie|virginie|julie|marie|audrey|chantal/i.test(name);
+  const isMale = (name) => /homme|male|thomas|nicolas|paul|sebastien|sébastien|antoine|guillaume/i.test(name);
+
+  if (profile.gender === 'female') {
+    const f = voices.find(v => isFemale(v.name));
+    if (f) return f;
+  } else if (profile.gender === 'male') {
+    const m = voices.find(v => isMale(v.name));
+    if (m) return m;
+  }
+  // Fallback : première voix française disponible
+  return voices[0];
+}
+
+function speakDialog1972(text, characterId) {
+  if (!_dialog1972VoiceEnabled) return;
+  if (!('speechSynthesis' in window)) return;
+  if (!text) return;
+
+  const ch = DIALOG1972_CHARACTERS[characterId];
+  const profile = ch?.voice || { gender: 'male', pitch: 1.0, rate: 1.0 };
+
+  // Couper toute synthèse en cours
+  window.speechSynthesis.cancel();
+
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'fr-FR';
+  utt.pitch = profile.pitch;
+  utt.rate = profile.rate;
+  const voice = _pickVoiceFor(profile);
+  if (voice) utt.voice = voice;
+
+  window.speechSynthesis.speak(utt);
+}
+
+function stopDialog1972Speech() {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+}
+
+function toggleDialog1972Voice() {
+  _dialog1972VoiceEnabled = !_dialog1972VoiceEnabled;
+  try { localStorage.setItem('dialog1972_voice_enabled', String(_dialog1972VoiceEnabled)); } catch(e) {}
+  if (!_dialog1972VoiceEnabled) stopDialog1972Speech();
+  const btn = document.getElementById('dialog1972VoiceToggle');
+  if (btn) btn.textContent = _dialog1972VoiceEnabled ? '🔊 Voix' : '🔇 Voix';
+}
+
 function openDialog1972(characterId) {
   const ch = DIALOG1972_CHARACTERS[characterId];
   if (!ch) return;
@@ -11289,6 +11382,9 @@ function openDialog1972(characterId) {
   document.getElementById('dialog1972Name').textContent = ch.name;
   document.getElementById('dialog1972Role').textContent = ch.role;
   document.getElementById('dialog1972Counter').textContent = '0/' + _dialog1972State.maxMsg;
+  // Synchroniser l'état visuel du toggle voix avec la préférence utilisateur
+  const voiceBtn = document.getElementById('dialog1972VoiceToggle');
+  if (voiceBtn) voiceBtn.textContent = _dialog1972VoiceEnabled ? '🔊 Voix' : '🔇 Voix';
   document.getElementById('dialog1972Input').value = '';
   document.getElementById('dialog1972Input').disabled = false;
   document.getElementById('dialog1972SendBtn').disabled = false;
@@ -11309,11 +11405,15 @@ function openDialog1972(characterId) {
   document.getElementById('dialog1972Overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
   setTimeout(() => document.getElementById('dialog1972Input').focus(), 100);
+
+  // Auto-lecture vocale de l'opener (si voix activée)
+  setTimeout(() => speakDialog1972(ch.opener, characterId), 300);
 }
 
 function closeDialog1972() {
   document.getElementById('dialog1972Overlay').classList.remove('open');
   document.body.style.overflow = '';
+  stopDialog1972Speech();
 }
 
 function dialog1972KeyDown(ev) {
@@ -11413,6 +11513,9 @@ async function sendDialog1972() {
     charMsg.textContent = reply;
     body.appendChild(charMsg);
 
+    // Lecture vocale automatique de la réponse
+    speakDialog1972(reply, _dialog1972State.characterId);
+
     // Compteur
     document.getElementById('dialog1972Counter').textContent = _dialog1972State.msgCount + '/' + _dialog1972State.maxMsg;
 
@@ -11453,6 +11556,229 @@ async function sendDialog1972() {
     console.error('Dialog 1972 error:', err);
   }
   body.scrollTop = body.scrollHeight;
+}
+
+// ============================================================================
+// EFFET PAPILLON — chaînage systémique cas 2 → cas 3 → cas 4
+// ============================================================================
+// Lit les leviers cochés en cas 2 (Stratégie 10 ans) et fait apparaître des
+// notes contextuelles sur les phases du cas 3 (PCS Tempête) et les questions
+// du cas 4 (CDRNM). L'idée pédagogique : montrer que les décisions stratégiques
+// ont des conséquences cascade sur la gestion de crise et les arbitrages.
+// ============================================================================
+
+// Récupère les leviers cochés par MON groupe en cas 2.
+// Retourne un objet { leverId: true, ... } ou {} si rien.
+function _getMyLevers() {
+  // _leversCache est rempli par subscribeLevers() (cas 2) - voir vers ligne 8893
+  // En l'absence de Firebase, on retombe sur le localStorage du cas 2
+  if (typeof _leversCache === 'object' && _leversCache && Object.keys(_leversCache).length > 0) {
+    return _leversCache;
+  }
+  try {
+    const raw = localStorage.getItem('ansedegoulven_levers_local');
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) { return {}; }
+}
+
+// Règles butterfly pour le cas 4 (CDRNM) — clé = id de la question CDRNM
+// Chaque règle peut comporter:
+//   - test : fonction(levers) => boolean. Si vrai, la note s'affiche
+//   - tone : 'convergent' | 'tension' | 'incoherent' | 'manque'
+//   - text : texte HTML court de la note
+const BUTTERFLY_RULES_CDRNM = {
+  // === Section A — Outils réglementaires ===
+  'A1': [  // Réviser le PPRSM
+    {
+      test: l => !l.obs_capteurs,
+      tone: 'manque',
+      text: "Vous proposez de réviser le PPRSM mais vous n'avez pas voté l'<strong>observatoire local + capteurs</strong> en cas 2. Sur quelles données nouvelles allez-vous fonder cette révision ?"
+    }
+  ],
+  'A2': [  // Étendre aléa fort au Quartier de la Digue
+    {
+      test: l => l.digue_repare || l.digue_reconstruit,
+      tone: 'tension',
+      text: "Vous avez investi en cas 2 dans la <strong>protection de la digue</strong>. Étendre l'aléa fort au quartier qu'elle protège affaiblit la cohérence économique de cet investissement — comment expliquez-vous le double discours ?"
+    },
+    {
+      test: l => l.digue_decons,
+      tone: 'convergent',
+      text: "Cohérent avec votre vote cas 2 de <strong>déconstruire la digue + restaurer le marais</strong>. La recomposition du Quartier devient incontournable."
+    }
+  ],
+  'A4': [  // Inscrire les 12 maisons de la falaise sur la liste L. 121-22-1
+    {
+      test: l => !l.panel_citoyen,
+      tone: 'manque',
+      text: "Vous activez une procédure d'expropriation sans avoir mis en place de <strong>panel citoyen permanent</strong> en cas 2. Qui légitime cette décision auprès des 12 ménages concernés ?"
+    }
+  ],
+  // === Section B — Outils financiers ===
+  'B1': [  // FPRNM acquisition amiable des 47 maisons
+    {
+      test: l => l.digue_decons,
+      tone: 'convergent',
+      text: "Cohérent avec la déconstruction de la digue (cas 2) : l'acquisition amiable est l'outil financier qui rend possible la recomposition spatiale."
+    }
+  ],
+  'B3': [  // Fonds État pour relocaliser PME et Camping 1
+    {
+      test: l => l.pme_relocate,
+      tone: 'tension',
+      text: "Vous avez déjà voté en cas 2 le <strong>relocalisation de la PME Bretzel-Marine</strong>. La part « PME » de cette demande est donc redondante : reformulez la saisine en ne demandant que la part Camping 1."
+    },
+    {
+      test: l => l.campings_recompose && !l.pme_relocate,
+      tone: 'convergent',
+      text: "Cohérent avec le <strong>plan campings 4 saisons</strong> voté en cas 2 — ce financement État active le calendrier de votre stratégie."
+    }
+  ],
+  // === Section C — Planification & doctrine ===
+  'C1': [  // SLGTC inter-communale
+    {
+      test: l => l.papi_complet,
+      tone: 'convergent',
+      text: "Vous avez voté le <strong>PAPI complet</strong> en cas 2 : la SLGTC en est le pendant inter-communal naturel. Articulation cohérente."
+    }
+  ],
+  'C2': [  // Reconstruire OU déconstruire la digue
+    {
+      test: l => l.digue_reconstruit,
+      tone: 'incoherent',
+      text: "Vous avez voté en cas 2 la <strong>reconstruction</strong> de la digue. Voter ici autre chose que POUR (reconstruction) serait contradictoire avec votre stratégie 10 ans."
+    },
+    {
+      test: l => l.digue_decons,
+      tone: 'incoherent',
+      text: "Vous avez voté en cas 2 la <strong>déconstruction</strong> de la digue. Voter POUR (reconstruction) ici serait incohérent avec votre cas 2."
+    },
+    {
+      test: l => l.digue_repare,
+      tone: 'tension',
+      text: "Vous avez voté en cas 2 le <strong>confortement</strong> de la digue (espérance 20 ans). Cette CDRNM vous demande maintenant de vous prononcer sur l'horizon 50 ans : est-ce le même choix ?"
+    }
+  ],
+  'C3': [  // ADAPTO + Conservatoire
+    {
+      test: l => l.digue_decons || l.papi_complet,
+      tone: 'convergent',
+      text: "Cohérent avec votre cas 2 (digue déconstruite ou PAPI complet) : ADAPTO complète le dispositif sur le marais."
+    },
+    {
+      test: l => l.digue_reconstruit,
+      tone: 'tension',
+      text: "Vous avez choisi la digue dure en cas 2. ADAPTO porte une logique inverse (renaturation) — vous pouvez les combiner mais explicitez-en la complémentarité."
+    }
+  ]
+};
+
+// Règles butterfly pour les briefings du cas 3 (PCS Tempête Argonne)
+// Clé = id de phase du cas 3
+const BUTTERFLY_RULES_PCS = {
+  'phase0': [  // J−18h — Vigilance rouge
+    {
+      test: l => l.obs_capteurs,
+      tone: 'convergent',
+      text: "Votre <strong>observatoire local</strong> (cas 2) remonte les premières mesures : surcote attendue 1,8 m sur l'estuaire."
+    },
+    {
+      test: l => !l.obs_capteurs,
+      tone: 'manque',
+      text: "Sans observatoire local (cas 2 non voté), vous découvrez l'événement comme tout le monde : par les bulletins Météo-France."
+    }
+  ],
+  'phase1': [  // J−6h — Décisions préventives
+    {
+      test: l => l.pcs_rcsc,
+      tone: 'convergent',
+      text: "La <strong>RCSC</strong> que vous avez créée en cas 2 active 25 volontaires SDIS pour le porte-à-porte d'évacuation."
+    },
+    {
+      test: l => !l.pcs_rcsc,
+      tone: 'manque',
+      text: "Pas de RCSC formée (cas 2 non voté). Le porte-à-porte repose sur les seuls policiers municipaux et gendarmes — capacité réduite."
+    },
+    {
+      test: l => l.campings_recompose,
+      tone: 'convergent',
+      text: "Le <strong>plan campings 4 saisons</strong> permet une évacuation préventive ordonnée — Pierre Le Guen (Camping 1) coopère."
+    }
+  ],
+  'phase2': [  // J0 — Pic de l'événement
+    {
+      test: l => l.digue_repare,
+      tone: 'tension',
+      text: "Votre <strong>digue confortée</strong> tient à 80 % de l'aléa observé. Un panneau cède côté nord — mais sans rupture franche."
+    },
+    {
+      test: l => l.digue_reconstruit,
+      tone: 'convergent',
+      text: "Votre <strong>digue reconstruite (+1,2 m)</strong> tient sans dommage majeur. Le coût est justifié, mais le débat sur l'effet d'enfermement va resurgir."
+    },
+    {
+      test: l => l.digue_decons,
+      tone: 'convergent',
+      text: "Le <strong>marais restauré</strong> a absorbé -25 % de l'énergie de la houle. Le Quartier reculé n'a pris que quelques cm d'eau dans les jardins."
+    }
+  ],
+  'phase3': [  // J+8h — Premières heures
+    {
+      test: l => !l.pcs_rcsc,
+      tone: 'manque',
+      text: "Sans RCSC (cas 2), la phase post-tempête repose sur les seuls SDIS et bénévoles improvisés. Les voisins-relais ne sont pas formés."
+    }
+  ],
+  'phase4': [  // J+72h — RETEX
+    {
+      test: l => l.panel_citoyen,
+      tone: 'convergent',
+      text: "Votre <strong>panel citoyen</strong> (cas 2) est mobilisé pour le RETEX participatif — premier débat public dans 48 h."
+    },
+    {
+      test: l => !l.panel_citoyen,
+      tone: 'manque',
+      text: "Pas de panel citoyen permanent (cas 2 non voté). Le RETEX repose sur les seules instances classiques (CDRNM) — frustration des sinistrés."
+    }
+  ]
+};
+
+// Convertit une liste de règles en HTML de notes butterfly
+function _renderButterflyNotes(rules, levers) {
+  if (!rules || !rules.length) return '';
+  const matched = rules.filter(r => {
+    try { return r.test(levers); } catch(e) { return false; }
+  });
+  if (matched.length === 0) return '';
+  return matched.map(r => {
+    const colors = {
+      convergent:  { bg: 'rgba(92,138,79,0.10)',  bd: '#5C8A4F', icon: '↗' },
+      tension:     { bg: 'rgba(232,110,85,0.10)', bd: '#E86E55', icon: '⚠' },
+      incoherent:  { bg: 'rgba(168,58,54,0.10)',  bd: '#A83A36', icon: '✕' },
+      manque:      { bg: 'rgba(126,107,74,0.10)', bd: '#7E6B4A', icon: '○' },
+    };
+    const c = colors[r.tone] || colors.manque;
+    return `<div style="background:${c.bg};border-left:3px solid ${c.bd};padding:10px 14px;margin:8px 0;border-radius:4px;font-size:13px;line-height:1.5;">
+      <strong style="color:${c.bd};font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase;">
+        ${c.icon} Effet papillon — votre cas 2
+      </strong>
+      <div style="margin-top:4px;color:var(--grey-txt);">${r.text}</div>
+    </div>`;
+  }).join('');
+}
+
+// API publique : renvoie HTML de notes pour une question CDRNM
+function renderButterflyNotesCdrnm(qid) {
+  const rules = BUTTERFLY_RULES_CDRNM[qid];
+  if (!rules) return '';
+  return _renderButterflyNotes(rules, _getMyLevers());
+}
+
+// API publique : renvoie HTML de notes pour une phase PCS
+function renderButterflyNotesPcs(phaseId) {
+  const rules = BUTTERFLY_RULES_PCS[phaseId];
+  if (!rules) return '';
+  return _renderButterflyNotes(rules, _getMyLevers());
 }
 </script>
 
