@@ -14004,6 +14004,18 @@ const TRAINER_MOMENTS = {
   },
 };
 
+// Helper : ouvre une fiche du Carnet en mémorisant le moment d'origine,
+// pour qu'à la fermeture de la fiche on revienne sur ce moment.
+function _openCardFromMoment(fid, momentNum) {
+  if (typeof _unlockCard === 'function') _unlockCard(fid, { silent: true });
+  window._carnetOpenedFromMoment = momentNum;
+  setTimeout(() => {
+    const ov = document.getElementById('trainerMomentOverlay');
+    if (ov) ov.remove();
+    if (typeof openCarnetCard === 'function') openCarnetCard(fid);
+  }, 100);
+}
+
 function openTrainerMoment(num) {
   const m = TRAINER_MOMENTS[num];
   if (!m) return;
@@ -14019,7 +14031,7 @@ function openTrainerMoment(num) {
       const blocColor = (card && DISCOVERY_BLOCS[card.bloc]) ? DISCOVERY_BLOCS[card.bloc].color : '#E86E55';
       // Pour les fiches verrouillées, on les déverrouille automatiquement à l'ouverture
       // (le formateur est en train de les présenter, pas de raison de les bloquer)
-      fichesHtml += '<button onclick="_unlockCard(\''+fid+'\',{silent:true});setTimeout(()=>{document.querySelector(\'#trainerMomentOverlay\')?.remove();openCarnetCard(\''+fid+'\');},100);" '+
+      fichesHtml += '<button onclick="_openCardFromMoment(\''+fid+'\','+num+')" '+
         'style="background:white;border:1.5px solid '+blocColor+';color:'+blocColor+';padding:8px 14px;border-radius:4px;font-size:13px;font-family:Georgia,serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.15s;" '+
         'onmouseover="this.style.background=\''+blocColor+'\';this.style.color=\'white\';" '+
         'onmouseout="this.style.background=\'white\';this.style.color=\''+blocColor+'\';">'+
@@ -15381,7 +15393,18 @@ function openCarnetCard(cardId) {
 function closeCarnetCard() {
   document.getElementById('carnetCardOverlay').classList.remove('open');
   document.body.style.overflow = '';
-  // Refocaliser sur la tuile que l'on vient de quitter (utile en plein écran)
+  // Si la fiche a été ouverte depuis un Moment formateur, rouvrir ce moment
+  // (l'utilisateur revient là d'où il est parti)
+  if (window._carnetOpenedFromMoment) {
+    const momentNum = window._carnetOpenedFromMoment;
+    window._carnetOpenedFromMoment = null;
+    _carnetCurrentCardId = null;
+    setTimeout(() => {
+      if (typeof openTrainerMoment === 'function') openTrainerMoment(momentNum);
+    }, 50);
+    return;
+  }
+  // Sinon : refocaliser sur la tuile (utile en plein écran)
   if (_carnetCurrentCardId) {
     const tile = document.querySelector('[data-card-id="' + _carnetCurrentCardId + '"]')
               || document.querySelector('.carnet-card-tile[onclick*="' + _carnetCurrentCardId + '"]');
