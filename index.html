@@ -3671,6 +3671,208 @@ h3.subhead {
   align-self: center;
   padding: 0 6px;
 }
+
+
+/* ===== PCS — Embûches, chrono, perturbateurs (v23.8) ===== */
+/* ========== PCS — CHRONOMÈTRE 2 minutes ========== */
+.pcs-phase-timer {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: white;
+  border: 1px solid var(--grey-border);
+  border-radius: 8px;
+  padding: 12px 18px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: all 0.3s ease;
+}
+.pcs-timer-block {
+  display: flex; flex-direction: column;
+  flex-shrink: 0;
+}
+.pcs-timer-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--grey-light);
+  margin-bottom: 2px;
+}
+.pcs-timer-value {
+  font-family: var(--mono);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--grey-txt);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.pcs-timer-bar {
+  flex: 1;
+  height: 10px;
+  background: var(--grey-border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.pcs-timer-bar-fill {
+  height: 100%;
+  background: #5A7858;
+  transition: width 0.5s linear, background-color 0.3s ease;
+  border-radius: 4px;
+}
+.pcs-phase-timer.warning .pcs-timer-bar-fill { background: #D49426; }
+.pcs-phase-timer.warning .pcs-timer-value { color: #A8761B; }
+.pcs-phase-timer.warning {
+  border-color: #D49426;
+  background: linear-gradient(180deg, #fff8eb 0%, white 100%);
+}
+.pcs-phase-timer.critical .pcs-timer-bar-fill { background: #C5482F; }
+.pcs-phase-timer.critical .pcs-timer-value { color: #8E2E1E; }
+.pcs-phase-timer.critical {
+  border-color: #C5482F;
+  background: linear-gradient(180deg, #fdf0ec 0%, white 100%);
+  animation: pcsTimerPulse 1.2s ease-in-out infinite;
+}
+@keyframes pcsTimerPulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(197, 72, 47, 0.10); }
+  50% { box-shadow: 0 2px 16px rgba(197, 72, 47, 0.35); }
+}
+
+/* ========== PCS — ÉVÉNEMENTS PERTURBATEURS (encart d'alerte) ========== */
+.pcs-disruptor {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: linear-gradient(180deg, #fff5e6 0%, #fefbf3 100%);
+  border-left: 4px solid #C5482F;
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin: 16px 0;
+  box-shadow: 0 4px 12px rgba(197, 72, 47, 0.12);
+  animation: pcsDisruptorIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes pcsDisruptorIn {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.pcs-disruptor-icon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.pcs-disruptor-content { flex: 1; }
+.pcs-disruptor-title {
+  font-family: 'Georgia', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #8E2E1E;
+  margin-bottom: 6px;
+}
+.pcs-disruptor-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--grey-txt);
+}
+.pcs-disruptor-text strong { color: #8E2E1E; }
+.pcs-disruptor-expired {
+  background: linear-gradient(180deg, #f8e8e3 0%, #faf0ec 100%);
+  border-left-color: #8E2E1E;
+}
+.pcs-disruptor-expired .pcs-disruptor-content {
+  font-family: 'Georgia', serif;
+  font-size: 15px;
+  color: #8E2E1E;
+}
+
+/* ========== PCS — DÉBRIEF DES PIÈGES (overlay) ========== */
+.pcs-trap-overlay {
+  position: fixed; inset: 0;
+  background: rgba(20, 20, 30, 0.78);
+  backdrop-filter: blur(3px);
+  z-index: 1100;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: overlayFade 0.2s ease-out;
+}
+.pcs-trap-modal {
+  background: white;
+  width: min(640px, 100%);
+  max-height: 88vh;
+  border-radius: 10px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  border-top: 5px solid #C5482F;
+  animation: modalSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.pcs-trap-head {
+  padding: 22px 28px 16px;
+  background: linear-gradient(180deg, #fff5f0 0%, white 100%);
+  border-bottom: 1px solid var(--grey-border);
+}
+.pcs-trap-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #C5482F;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.pcs-trap-title {
+  font-family: 'Georgia', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #8E2E1E;
+  line-height: 1.25;
+}
+.pcs-trap-title strong { color: #C5482F; }
+.pcs-trap-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+}
+.pcs-trap-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  background: #fdf6f3;
+  border: 1px solid #f5d6cb;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+.pcs-trap-item-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.pcs-trap-item-text {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--grey-txt);
+}
+.pcs-trap-footer-note {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #f4f7f4;
+  border-left: 3px solid #5A7858;
+  border-radius: 4px;
+  font-size: 13px;
+  font-style: italic;
+  color: #4A6B47;
+  line-height: 1.55;
+}
+.pcs-trap-foot {
+  display: flex; justify-content: flex-end;
+  padding: 16px 28px;
+  border-top: 1px solid var(--grey-border);
+  background: #FAF7F2;
+}
+
 </style>
 </head>
 
@@ -3720,6 +3922,7 @@ h3.subhead {
       <div class="pcs-phase-time" id="pcsPhaseTime">—</div>
     </div>
     <div class="pcs-phase-body">
+      <div id="pcsPhaseTimer" class="pcs-phase-timer ok" style="display:none;"></div>
       <div id="pcsVariantPanel" style="display:none;"></div>
       <div class="pcs-phase-briefing" id="pcsPhaseBriefing"></div>
       <div class="pcs-phase-question" id="pcsPhaseQuestion"></div>
@@ -15362,6 +15565,405 @@ if (document.readyState !== 'loading') {
   document.addEventListener('DOMContentLoaded', () => setTimeout(initCarnet, 100));
 }
 
+
+
+
+// ===== PCS — Embûches, chrono, perturbateurs (v23.8) =====
+// =============================================================================
+// PCS — EMBÛCHES, ÉVÉNEMENTS PERTURBATEURS et CHRONOMÈTRE 2 minutes
+// =============================================================================
+// Ajout v23.8 : pour rendre le PCS plus immersif, on introduit
+//   1) des actions PIÉGÉES (séduisantes mais contre-productives) qui se révèlent
+//      au moment de la validation
+//   2) des ÉVÉNEMENTS PERTURBATEURS qui surviennent à mi-parcours du chrono
+//   3) un CHRONOMÈTRE de 2 minutes visible, avec auto-validation à T=0
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// 1. EMBÛCHES — actions piégées par phase et par groupe
+// -----------------------------------------------------------------------------
+// On référence l'id de l'action dans les tableaux de PCS_PHASES.
+// reason = phrase courte qui s'affiche en débrief si l'action a été cochée.
+const PCS_TRAP_ACTIONS = {
+  phase0: {
+    g1: [
+      { id: 'g1_5', reason: "Trop tôt pour un arrêté préfectoral d'évacuation : à 18h, la décision relève de l'évaluation conjointe avec le maire (PCS), pas de la décision verticale unilatérale. Risque de panique sans préparation logistique." },
+      { id: 'g1_6', reason: "Mobiliser la presse à 18h sans message coordonné = canal ouvert sans contenu. Risque de cacophonie. Le point presse se prépare, il ne s'improvise pas." },
+    ],
+    g2: [
+      { id: 'g2_5', reason: "Fermer les écoles 18 heures à l'avance, hors information confirmée des inspecteurs, expose le maire à une décision désavouée si la tempête s'écarte. À cette heure-là, on PRÉ-AVERTIT (consigne aux directions, info parents)." },
+      { id: 'g2_6', reason: "Un \"message rassurant\" à 18h en vigilance rouge = niez le risque que vous venez d'identifier. Confusion garantie." },
+    ],
+    g3: [
+      { id: 'g3_6', reason: "Préparer le RETEX environnemental AVANT l'événement = pré-conclure. Le travail à faire à 18h est l'inspection et la sécurisation, pas la rédaction." },
+      { id: 'g3_8', reason: "Photographier en début d'événement les sites Natura 2000 a peu de valeur : les dégâts surviennent pendant et après. À cette heure, les équipes doivent se mettre en sécurité." },
+    ],
+    g4: [
+      { id: 'g4_6', reason: "Une fermeture coordonnée des commerces 18h à l'avance, en vigilance, c'est de la sur-réaction. Un magasin qui ferme la veille perd des recettes irrécupérables." },
+      { id: 'g4_7', reason: "Préparer la déclaration cat-nat AVANT l'événement = présupposer le sinistre. Le constat se fait après le pic." },
+    ],
+    g5: [
+      { id: 'g5_6', reason: "Demander un point information à la mairie 18h avant le pic, alors qu'elle est déjà en cellule de crise, lui ajoute une charge sans valeur immédiate. À ce stade, on s'organise entre voisins." },
+      { id: 'g5_8', reason: "Préparer une réunion publique 18h avant l'événement = anticipation excessive. Le sujet du moment, c'est la mise en sécurité, pas le post-événement." },
+    ],
+  },
+  phase1: {
+    g1: [
+      { id: 'g1p1_4', reason: "Demander des hélicoptères en standby à 6h alors que les vents montent à 110 km/h : le seuil de mise au sol des appareils est ~80-100 km/h. Demande tardive et probablement impossible à satisfaire." },
+      { id: 'g1p1_6', reason: "Préparer un point presse à 9h alors que le pic est à 12h : vous serez en pleine gestion à ce moment-là. Décalez à l'après-midi." },
+    ],
+    g2: [
+      { id: 'g2p1_3', reason: "« Garder en alerte sans évacuer » : c'est exactement le compromis qui a tué à La Faute-sur-Mer en 2010. Si vous évacuez, vous évacuez. Sinon, vous protégez les 22 personnes isolées AVEC un plan." },
+      { id: 'g2p1_8', reason: "Couper l'électricité préventivement à 6h avec personnes âgées dépendantes (oxygène, dialyse) à domicile = mise en danger. Coupe AU PIC, pas avant." },
+    ],
+    g3: [
+      { id: 'g3p1_3', reason: "Drone à 6h en vents 110 km/h : crash assuré. Limite typique d'usage : 30-45 km/h." },
+      { id: 'g3p1_6', reason: "RETEX à 6h, à nouveau, c'est inversé. Vos équipes doivent être en sécurité, pas en train de rédiger." },
+    ],
+    g4: [
+      { id: 'g4p1_5', reason: "« Fermer définitivement les commerces » : excès. Une fermeture pour la journée du pic suffit. Le mot \"définitivement\" sème de la panique." },
+      { id: 'g4p1_8', reason: "Mettre à l'abri les bétaillères agricoles à 6h dans une commune littorale = action déplacée (peu d'élevage en zone côtière dense). Ressource éparpillée pour zéro effet." },
+    ],
+    g5: [
+      { id: 'g5p1_6', reason: "Demander un compte-rendu officiel à la mairie à 6h, qui est en pleine cellule de crise, c'est de l'obstruction administrative. Le compte-rendu se fait au RETEX." },
+    ],
+  },
+  phase2: {
+    g1: [
+      // À enrichir : pic de l'événement, actions pièges centrées sur la sur-communication, sur-engagement de moyens
+    ],
+    g2: [],
+    g3: [],
+    g4: [],
+    g5: [],
+  },
+  phase3: { g1:[], g2:[], g3:[], g4:[], g5:[] },
+  phase4: { g1:[], g2:[], g3:[], g4:[], g5:[] },
+};
+
+// État courant : pour la phase ouverte, les pièges TIRÉS sont ici
+// Format : Set d'ids d'actions, chacun associé à sa raison
+var _pcsActiveTraps = {};  // { actionId: reason }
+window._pcsActiveTraps = _pcsActiveTraps;
+
+// Tire 1-2 pièges aléatoirement parmi les pièges disponibles pour cette phase/groupe
+function _drawPcsTraps(phaseId, grp) {
+  const pool = (PCS_TRAP_ACTIONS[phaseId] && PCS_TRAP_ACTIONS[phaseId][grp]) || [];
+  if (pool.length === 0) return {};
+  // 0-2 pièges, biais vers 1
+  const r = Math.random();
+  let nTraps;
+  if (r < 0.20) nTraps = 0;
+  else if (r < 0.75) nTraps = 1;
+  else nTraps = Math.min(2, pool.length);
+  // Mélanger et prendre les nTraps premiers
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  const drawn = shuffled.slice(0, nTraps);
+  const out = {};
+  drawn.forEach(t => { out[t.id] = t.reason; });
+  return out;
+}
+
+// -----------------------------------------------------------------------------
+// 2. ÉVÉNEMENTS PERTURBATEURS — surviennent en cours de phase
+// -----------------------------------------------------------------------------
+// Chaque événement a une probabilité de survenance, applicable à toutes les phases
+// (sauf si phaseFilter le restreint)
+const PCS_DISRUPTORS = [
+  {
+    id: 'fralert_fail',
+    title: "FR-Alert n'arrive pas à se déclencher",
+    text: "<strong>20 secondes plus tard…</strong> La cellule de crise vous informe que <strong>FR-Alert ne s'est pas diffusé</strong> sur la zone : la cellule 4G locale est saturée. Le SDIS demande des instructions sur le moyen de relais (sirènes ? haut-parleurs en porte-à-porte ?).",
+    icon: "📡",
+    phaseFilter: ['phase0', 'phase1'],
+  },
+  {
+    id: 'journaliste',
+    title: "Un journaliste à la porte",
+    text: "<strong>Imprévu :</strong> un journaliste de France Bleu vient de débarquer en mairie/préfecture et demande une interview <strong>en direct dans 15 minutes</strong>. Il a déjà tweeté qu'il \"attendait des réponses sur l'évacuation\".",
+    icon: "🎤",
+    phaseFilter: ['phase0', 'phase1', 'phase2'],
+  },
+  {
+    id: 'rcsc_indispo',
+    title: "Un membre clé de la RCSC est indisponible",
+    text: "<strong>Mauvaise nouvelle :</strong> le coordinateur de la RCSC est cloué au lit avec une grippe. Son adjoint, qui n'a jamais animé d'opération, vous demande au téléphone <strong>quelles sont ses priorités</strong>.",
+    icon: "🚨",
+    phaseFilter: ['phase0', 'phase1'],
+  },
+  {
+    id: 'route_coupee',
+    title: "Route principale coupée",
+    text: "<strong>Information de la gendarmerie :</strong> un arbre est tombé sur la <strong>RD786 au nord du bourg</strong>, route principale d'accès. Évacuation vers le centre d'accueil = détour de 25 minutes. Désencombrement = 1h minimum.",
+    icon: "🌲",
+    phaseFilter: ['phase1', 'phase2'],
+  },
+  {
+    id: 'panique_camping',
+    title: "Panique dans un camping",
+    text: "<strong>Appel d'un gérant :</strong> un camping refuse de fermer. Il dit qu'il a déjà rendu 12 000 € aux clients pour des annulations \"injustifiées\" en 2023, qu'il ne le fera pas une seconde fois, et qu'il assumera. Que faites-vous ?",
+    icon: "🏕️",
+    phaseFilter: ['phase0', 'phase1'],
+  },
+  {
+    id: 'enedis_indispo',
+    title: "Enedis ne peut pas couper",
+    text: "<strong>Réponse Enedis :</strong> la coupure préventive demandée n'est pas possible avant 4h ouvrables (procédure GRD). En cas de défaillance pendant la tempête, la coupure sera AUTOMATIQUE — donc imprévisible. Que prévoyez-vous pour les personnes en oxygénothérapie ?",
+    icon: "⚡",
+    phaseFilter: ['phase1', 'phase2'],
+  },
+  {
+    id: 'voisin_refuse',
+    title: "Un voisin refuse d'évacuer",
+    text: "<strong>Sur le terrain :</strong> un retraité de 78 ans, à mobilité réduite, refuse catégoriquement de quitter sa maison du Quartier de la Digue. \"J'ai déjà vu pire, j'irai pas en gymnase, point.\" Sa famille est à 200 km.",
+    icon: "👴",
+    phaseFilter: ['phase1', 'phase2'],
+  },
+  {
+    id: 'reseau_satu',
+    title: "Réseaux téléphoniques saturés",
+    text: "<strong>10 minutes plus tard :</strong> les appels vers les portables ne passent plus dans la zone — réseau saturé. Vos messages WhatsApp arrivent avec retard. La radio locale (FM) reste le canal le plus fiable.",
+    icon: "📱",
+    phaseFilter: ['phase2', 'phase3'],
+  },
+  {
+    id: 'pompiers_loin',
+    title: "Pompiers déjà engagés ailleurs",
+    text: "<strong>SDIS :</strong> 60% des moyens du département sont engagés sur deux tempêtes simultanées dans les communes voisines. Vos demandes seront traitées par <strong>ordre de priorité vitale</strong>.",
+    icon: "🚒",
+    phaseFilter: ['phase1', 'phase2', 'phase3'],
+  },
+  {
+    id: 'rumeur_reseaux',
+    title: "Rumeur sur les réseaux sociaux",
+    text: "<strong>Une vidéo virale :</strong> un habitant a filmé la digue en disant qu'elle « va lâcher d'une minute à l'autre ». 12 000 vues en 30 minutes. La rumeur d'effondrement imminent se propage. Or les ingénieurs disent que la digue tient.",
+    icon: "📲",
+    phaseFilter: ['phase1', 'phase2'],
+  },
+];
+
+// Tire 0-1 perturbateur compatible avec la phase
+function _drawPcsDisruptor(phaseId) {
+  const pool = PCS_DISRUPTORS.filter(d => d.phaseFilter.includes(phaseId));
+  if (pool.length === 0) return null;
+  // 70% chance d'avoir un perturbateur
+  if (Math.random() > 0.7) return null;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// -----------------------------------------------------------------------------
+// 3. CHRONOMÈTRE 2 minutes
+// -----------------------------------------------------------------------------
+const PCS_TIMER_DURATION = 120; // secondes
+let _pcsTimerInterval = null;
+let _pcsTimerStartTs = 0;
+let _pcsTimerRemaining = 0;
+let _pcsDisruptorTriggered = false;
+
+function _startPcsTimer() {
+  _stopPcsTimer();
+  _pcsTimerStartTs = Date.now();
+  _pcsTimerRemaining = PCS_TIMER_DURATION;
+  _pcsDisruptorTriggered = false;
+  const timerEl = document.getElementById('pcsPhaseTimer');
+  if (timerEl) timerEl.style.display = '';
+  _renderPcsTimer();
+  _pcsTimerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - _pcsTimerStartTs) / 1000);
+    _pcsTimerRemaining = Math.max(0, PCS_TIMER_DURATION - elapsed);
+    _renderPcsTimer();
+    // Déclenchement du perturbateur entre 60 et 90 secondes
+    const disruptorAt = 60 + Math.floor(Math.random() * 31);
+    if (!_pcsDisruptorTriggered && elapsed >= disruptorAt && elapsed < 95) {
+      _pcsDisruptorTriggered = true;
+      _triggerPcsDisruptor();
+    }
+    if (_pcsTimerRemaining === 0) {
+      _stopPcsTimer();
+      _onPcsTimerExpired();
+    }
+  }, 250);
+}
+
+function _stopPcsTimer() {
+  if (_pcsTimerInterval) {
+    clearInterval(_pcsTimerInterval);
+    _pcsTimerInterval = null;
+  }
+  const timerEl = document.getElementById('pcsPhaseTimer');
+  if (timerEl) timerEl.style.display = 'none';
+}
+
+function _renderPcsTimer() {
+  const el = document.getElementById('pcsPhaseTimer');
+  if (!el) return;
+  const m = Math.floor(_pcsTimerRemaining / 60);
+  const s = _pcsTimerRemaining % 60;
+  const ratio = _pcsTimerRemaining / PCS_TIMER_DURATION;
+  let cls = 'ok';
+  if (ratio < 0.25) cls = 'critical';
+  else if (ratio < 0.50) cls = 'warning';
+  el.className = 'pcs-phase-timer ' + cls;
+  el.innerHTML = `
+    <div class="pcs-timer-block">
+      <div class="pcs-timer-label">Temps restant</div>
+      <div class="pcs-timer-value">${m}:${String(s).padStart(2, '0')}</div>
+    </div>
+    <div class="pcs-timer-bar"><div class="pcs-timer-bar-fill" style="width:${ratio*100}%"></div></div>
+  `;
+}
+
+function _onPcsTimerExpired() {
+  // Toast + désactivation des modifs et bascule en mode "temps écoulé"
+  const briefingEl = document.getElementById('pcsPhaseBriefing');
+  if (briefingEl) {
+    const now = document.createElement('div');
+    now.className = 'pcs-disruptor pcs-disruptor-expired';
+    now.innerHTML = `<div class="pcs-disruptor-icon">⏰</div>
+      <div class="pcs-disruptor-content">
+        <strong>Temps écoulé.</strong> Validez votre vote tel quel — sinon, l'absence de décision vaut décision (et c'est rarement la meilleure).
+      </div>`;
+    briefingEl.parentNode.insertBefore(now, briefingEl.nextSibling);
+  }
+  // Vibrer (si dispo)
+  try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch(e) {}
+}
+
+function _triggerPcsDisruptor() {
+  const phase = PCS_PHASES[_pcsViewingPhaseIdx];
+  if (!phase) return;
+  const dis = _drawPcsDisruptor(phase.id);
+  if (!dis) return;
+  const briefingEl = document.getElementById('pcsPhaseBriefing');
+  if (!briefingEl) return;
+  const insert = document.createElement('div');
+  insert.className = 'pcs-disruptor';
+  insert.innerHTML = `
+    <div class="pcs-disruptor-icon">${dis.icon}</div>
+    <div class="pcs-disruptor-content">
+      <div class="pcs-disruptor-title">${dis.title}</div>
+      <div class="pcs-disruptor-text">${dis.text}</div>
+    </div>
+  `;
+  briefingEl.parentNode.insertBefore(insert, briefingEl.nextSibling);
+  // Scroll fluide vers l'élément
+  setTimeout(() => insert.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+  // Vibrer (si dispo)
+  try { navigator.vibrate && navigator.vibrate([100, 50, 100]); } catch(e) {}
+}
+
+// -----------------------------------------------------------------------------
+// 4. DÉBRIEF DES PIÈGES À LA VALIDATION
+// -----------------------------------------------------------------------------
+function _showPcsTrapsDebrief(selectedActions) {
+  // Repère les actions sélectionnées qui sont des pièges actifs
+  const traps = (typeof _pcsActiveTraps !== 'undefined' && Object.keys(_pcsActiveTraps).length)
+    ? _pcsActiveTraps
+    : (window._pcsActiveTraps || {});
+  const triggeredTraps = [];
+  selectedActions.forEach(aid => {
+    if (traps[aid]) {
+      triggeredTraps.push({ id: aid, reason: traps[aid] });
+    }
+  });
+  if (triggeredTraps.length === 0) return false;
+  // Construire un overlay débrief
+  const html = `
+    <div class="pcs-trap-overlay" id="pcsTrapDebriefOverlay" onclick="if(event.target===this)closePcsTrapDebrief()">
+      <div class="pcs-trap-modal">
+        <div class="pcs-trap-head">
+          <div class="pcs-trap-eyebrow">Débrief de la phase</div>
+          <div class="pcs-trap-title">Vous avez choisi ${triggeredTraps.length} action${triggeredTraps.length>1?'s':''} <strong>contre-productive${triggeredTraps.length>1?'s':''}</strong></div>
+        </div>
+        <div class="pcs-trap-body">
+          ${triggeredTraps.map(t => `
+            <div class="pcs-trap-item">
+              <div class="pcs-trap-item-icon">⚠️</div>
+              <div class="pcs-trap-item-text">${t.reason}</div>
+            </div>
+          `).join('')}
+          <div class="pcs-trap-footer-note">Ces choix sont fréquents en formation. Notez-les : ils sont pédagogiquement plus précieux qu'un \"sans-faute\".</div>
+        </div>
+        <div class="pcs-trap-foot">
+          <button class="btn btn-primary" onclick="closePcsTrapDebrief()">J'ai compris</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+  return true;
+}
+
+function closePcsTrapDebrief() {
+  const ov = document.getElementById('pcsTrapDebriefOverlay');
+  if (ov) ov.remove();
+}
+
+// -----------------------------------------------------------------------------
+// 5. WRAPPERS sur les fonctions existantes
+// -----------------------------------------------------------------------------
+// Wrapper de openPcsPhase : tire les pièges, démarre le chrono
+const _origOpenPcsPhase = openPcsPhase;
+openPcsPhase = function(phaseIdx) {
+  _origOpenPcsPhase(phaseIdx);
+  // Si le modal n'est pas ouvert (cas refusé), ne rien faire
+  const ov = document.getElementById('pcsPhaseOverlay');
+  if (!ov || !ov.classList.contains('open')) return;
+  const phase = PCS_PHASES[phaseIdx];
+  if (!phase) return;
+  const myGrp = (typeof getMyGroup === 'function') ? getMyGroup() : null;
+  if (myGrp) {
+    _pcsActiveTraps = _drawPcsTraps(phase.id, myGrp);
+  } else {
+    _pcsActiveTraps = {};
+  }
+  window._pcsActiveTraps = _pcsActiveTraps;
+  // Démarrer le chrono (sauf si lecture seule = phase déjà passée)
+  const isClosed = (typeof isTrainer === 'function' && isTrainer()) ? false :
+                    (_pcsViewingPhaseIdx < _pcsCurrentPhaseIdx);
+  if (!isClosed) {
+    _startPcsTimer();
+  }
+};
+
+// Wrapper de closePcsPhase : arrête le chrono
+const _origClosePcsPhase = closePcsPhase;
+closePcsPhase = function() {
+  _stopPcsTimer();
+  _pcsActiveTraps = {};
+  window._pcsActiveTraps = _pcsActiveTraps;
+  // Nettoyer les perturbateurs injectés
+  document.querySelectorAll('.pcs-disruptor').forEach(el => el.remove());
+  _origClosePcsPhase();
+};
+
+// Wrapper de validatePcsVote : afficher le débrief des pièges AVANT la validation
+// Si pièges détectés : débrief s'affiche, validation différée jusqu'à clic sur "J'ai compris"
+// Sinon : validation immédiate
+const _origValidatePcsVote = validatePcsVote;
+let _pcsPendingValidation = false;
+validatePcsVote = function() {
+  if (_pcsViewingPhaseIdx == null) return;
+  const selected = Array.from(_pcsSelected);
+  const hasTraps = _showPcsTrapsDebrief(selected);
+  if (hasTraps) {
+    // On diffère la validation Firebase + alert jusqu'à fermeture du débrief
+    _pcsPendingValidation = true;
+  } else {
+    // Pas de pièges → validation immédiate (comportement original)
+    _origValidatePcsVote();
+  }
+};
+
+// Wrapper de closePcsTrapDebrief : si une validation est en attente, la déclencher
+const _origCloseTrapDebrief = closePcsTrapDebrief;
+closePcsTrapDebrief = function() {
+  _origCloseTrapDebrief();
+  if (_pcsPendingValidation) {
+    _pcsPendingValidation = false;
+    _origValidatePcsVote();
+  }
+};
 
 </script>
 
