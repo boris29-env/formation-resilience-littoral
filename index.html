@@ -11387,10 +11387,23 @@ async function speakDialog1972(text, characterId) {
       const audioUrl = URL.createObjectURL(audioBlob);
       _dialog1972AudioEl = new Audio(audioUrl);
       _dialog1972AudioEl.onended = () => URL.revokeObjectURL(audioUrl);
-      _dialog1972AudioEl.onerror = () => { URL.revokeObjectURL(audioUrl); _speakWithWebSpeech(text, ch); };
+      // Le onerror ne doit déclencher le fallback Web Speech QUE si l'audio
+      // n'a pas été annulé volontairement par stopDialog1972Speech().
+      // On vérifie via le token : si le token a changé, c'est une annulation, on ignore.
+      _dialog1972AudioEl.onerror = () => {
+        URL.revokeObjectURL(audioUrl);
+        if (myToken === _dialog1972AudioToken) {
+          // Vraie erreur de lecture — fallback légitime
+          _speakWithWebSpeech(text, ch);
+        }
+        // Sinon : annulation volontaire (l'utilisateur a déclenché une nouvelle lecture)
+        // → on ne fait rien, la nouvelle lecture est déjà en cours
+      };
       await _dialog1972AudioEl.play();
       return;  // succès Voxtral
     } catch (err) {
+      // Si on a été annulé entre-temps, on ignore l'erreur
+      if (myToken !== _dialog1972AudioToken) return;
       console.warn('[Voxtral TTS] échec, bascule sur Web Speech API :', err.message);
       // Tomber sur le fallback ci-dessous
     }
@@ -11416,7 +11429,15 @@ function _speakWithWebSpeech(text, ch) {
 function stopDialog1972Speech() {
   // Couper l'audio Voxtral en cours (s'il y en a un)
   if (_dialog1972AudioEl) {
-    try { _dialog1972AudioEl.pause(); _dialog1972AudioEl.src = ''; } catch(e) {}
+    try {
+      // Important : retirer les handlers AVANT de pause/src=''
+      // Certains navigateurs déclenchent onerror lors d'un src='' brutal,
+      // ce qui activerait le fallback Web Speech à tort.
+      _dialog1972AudioEl.onerror = null;
+      _dialog1972AudioEl.onended = null;
+      _dialog1972AudioEl.pause();
+      _dialog1972AudioEl.src = '';
+    } catch(e) {}
     _dialog1972AudioEl = null;
   }
   // Invalider toute requête Voxtral en attente
