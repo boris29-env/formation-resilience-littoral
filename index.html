@@ -980,15 +980,11 @@ h3.subhead {
 .carnet-card-overlay {
   display: none;
   position: fixed; inset: 0;
-  background: rgba(20, 20, 30, 0.72);
-  backdrop-filter: blur(2px);
+  background: #FAF7F2;
   z-index: 1000;
-  align-items: center; justify-content: center;
-  padding: 20px;
-  overflow-y: auto;
 }
 .carnet-card-overlay.open {
-  display: flex;
+  display: block;
   animation: overlayFade 0.2s ease-out;
 }
 @keyframes overlayFade {
@@ -997,17 +993,58 @@ h3.subhead {
 }
 .carnet-card-modal {
   background: white;
-  width: min(720px, 100%);
-  max-height: 90vh;
-  border-radius: 8px;
+  width: 100%;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
   display: flex; flex-direction: column;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-  animation: modalSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: none;
+  animation: modalSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
 @keyframes modalSlide {
-  from { transform: translateY(20px) scale(0.97); opacity: 0; }
-  to   { transform: translateY(0) scale(1); opacity: 1; }
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.carnet-card-back {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent;
+  border: 1px solid var(--grey-border);
+  border-radius: 999px;
+  padding: 7px 16px 7px 12px;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--grey-txt); cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: 14px;
+}
+.carnet-card-back:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: var(--grey-txt);
+  transform: translateX(-2px);
+}
+.carnet-card-back svg {
+  width: 14px; height: 14px;
+  stroke: currentColor; stroke-width: 2;
+  fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+.carnet-card-modal .carnet-card-body {
+  max-width: 880px;
+  margin: 0 auto;
+  width: 100%;
+}
+.carnet-card-modal .carnet-card-head {
+  max-width: 880px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+.carnet-card-modal .carnet-card-foot {
+  max-width: 880px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 .carnet-card-head {
   padding: 24px 28px 20px;
@@ -6098,12 +6135,16 @@ h3.subhead {
 <div class="carnet-card-overlay" id="carnetCardOverlay" onclick="if(event.target===this)closeCarnetCard()">
   <div class="carnet-card-modal">
     <div class="carnet-card-head">
+      <button class="carnet-card-back" onclick="closeCarnetCard()" aria-label="Retour à la liste des fiches">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Retour à la liste
+      </button>
       <div class="carnet-card-meta">
         <div class="carnet-card-bloc-tag" id="carnetCardBlocTag">—</div>
         <h3 class="carnet-card-title" id="carnetCardTitle">—</h3>
         <div class="carnet-card-subtitle" id="carnetCardSubtitle">—</div>
       </div>
-      <button class="carnet-card-close" onclick="closeCarnetCard()">×</button>
+      <button class="carnet-card-close" onclick="closeCarnetCard()" aria-label="Fermer">×</button>
     </div>
     <div class="carnet-card-body" id="carnetCardBody">
       <!-- Rempli dynamiquement -->
@@ -12420,6 +12461,45 @@ function _pickVoiceFor(profile) {
 let _dialog1972AudioEl = null;
 let _dialog1972AudioToken = 0;  // jeton d'annulation (incrément à chaque nouvelle requête)
 
+// === Boost de volume Voxtral via Web Audio API ===
+// HTMLAudioElement.volume est plafonné à 1.0 (volume de la source).
+// Pour amplifier au-delà, on connecte l'élément à un GainNode avec gain > 1.
+// Réglage 1.8 = +80% par rapport au volume natif (compromis : suffisamment audible
+// sans saturer/distorsionner pour la majorité des sources Voxtral).
+const _DIALOG1972_GAIN = 1.8;
+let _dialog1972AudioCtx = null;
+let _dialog1972GainNode = null;
+function _getOrCreateAudioCtx() {
+  if (!_dialog1972AudioCtx) {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      _dialog1972AudioCtx = new Ctx();
+    } catch(e) { return null; }
+  }
+  // Reprendre le contexte si suspendu (Safari/iOS et politiques d'autoplay)
+  if (_dialog1972AudioCtx.state === 'suspended') {
+    _dialog1972AudioCtx.resume().catch(() => {});
+  }
+  return _dialog1972AudioCtx;
+}
+function _connectAudioWithGain(audioEl) {
+  const ctx = _getOrCreateAudioCtx();
+  if (!ctx) return false;  // Web Audio indisponible → on garde le volume natif
+  try {
+    const source = ctx.createMediaElementSource(audioEl);
+    const gain = ctx.createGain();
+    gain.gain.value = _DIALOG1972_GAIN;
+    source.connect(gain);
+    gain.connect(ctx.destination);
+    return true;
+  } catch(e) {
+    // Si MediaElementSource échoue (rare), on garde la lecture native
+    console.warn('[Voxtral] gain non appliqué :', e.message);
+    return false;
+  }
+}
+
 // === FONCTION PRINCIPALE : Voxtral en priorité, Web Speech en secours ===
 async function speakDialog1972(text, characterId) {
   if (!_dialog1972VoiceEnabled) return;
@@ -12463,6 +12543,8 @@ async function speakDialog1972(text, characterId) {
 
       const audioUrl = URL.createObjectURL(audioBlob);
       _dialog1972AudioEl = new Audio(audioUrl);
+      _dialog1972AudioEl.volume = 1.0;  // max natif, le gain Web Audio amplifie au-delà
+      _connectAudioWithGain(_dialog1972AudioEl);
       _dialog1972AudioEl.onended = () => URL.revokeObjectURL(audioUrl);
       // Le onerror ne doit déclencher le fallback Web Speech QUE si l'audio
       // n'a pas été annulé volontairement par stopDialog1972Speech().
@@ -12498,6 +12580,7 @@ function _speakWithWebSpeech(text, ch) {
   utt.lang = 'fr-FR';
   utt.pitch = profile.pitch;
   utt.rate = profile.rate;
+  utt.volume = 1.0;  // Web Speech plafonné à 1 — pas de boost possible nativement
   const voice = _pickVoiceFor(profile);
   if (voice) utt.voice = voice;
   window.speechSynthesis.speak(utt);
@@ -15095,6 +15178,14 @@ function openCarnetCard(cardId) {
 function closeCarnetCard() {
   document.getElementById('carnetCardOverlay').classList.remove('open');
   document.body.style.overflow = '';
+  // Refocaliser sur la tuile que l'on vient de quitter (utile en plein écran)
+  if (_carnetCurrentCardId) {
+    const tile = document.querySelector('[data-card-id="' + _carnetCurrentCardId + '"]')
+              || document.querySelector('.carnet-card-tile[onclick*="' + _carnetCurrentCardId + '"]');
+    if (tile) {
+      tile.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
   _carnetCurrentCardId = null;
 }
 
