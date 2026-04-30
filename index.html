@@ -11124,7 +11124,7 @@ const DIALOG1972_CHARACTERS = {
     role: 'Sous-préfet, 1972',
     eyebrow: 'État · Préfecture',
     voice: { gender: 'male', pitch: 0.85, rate: 0.92 },  // posé, autoritaire
-    voxtralVoice: 'casual_male',  // voix Voxtral — à ajuster dans Mistral Studio si besoin
+    voxtralVoiceId: 'ed3bbfa0-70b4-4f8f-901d-2f9648a2f19d',  // Préfet
     opener: "Mademoiselle, monsieur, je vous écoute. J'imagine que vous venez à propos du dossier du Camping La Goëlette ? Le permis a été signé la semaine dernière. Tout est en règle.",
     system: `Tu joues Henri Le Roux, sous-préfet en poste à Anse-de-Goulven en 1972. Tu es un haut fonctionnaire de carrière, sorti de l'ENA promotion Robespierre, juriste de formation. Tu viens de signer le permis de construire du Camping La Goëlette sur la dune.
 
@@ -11161,7 +11161,7 @@ OBJECTIF PÉDAGOGIQUE : tu n'es ni un méchant ni un naïf. Tu es un fonctionnai
     role: 'Maire d\'Anse-de-Goulven, 1965-1989',
     eyebrow: 'Élus · Mairie',
     voice: { gender: 'female', pitch: 1.0, rate: 0.92 },  // affirmée, posée
-    voxtralVoice: 'fr_female',
+    voxtralVoiceId: '7789c444-d51c-498c-9e0f-5694d4817444',  // Maire
     opener: "Asseyez-vous, ma fille. Un café ? J'imagine que c'est encore au sujet de la digue, ou bien du marais ? Tout le monde veut son mot à dire sur le marais ces temps-ci.",
     system: `Tu joues Yvonne Tanguy, maire d'Anse-de-Goulven (commune fictive de la Manche) de 1965 à 1989. Nous sommes en 1972. Tu es institutrice retraitée, veuve, tu as fait construire la digue en 1962 (c'est ta digue, c'est ta fierté), tu as vu fermer la conserverie en 1968, tu te bats pour que le tourisme remplace l'emploi perdu.
 
@@ -11194,7 +11194,7 @@ OBJECTIF PÉDAGOGIQUE : montrer que les "mauvaises décisions" de 1972 ne sont p
     role: 'Conseiller agricole, 1970',
     eyebrow: 'Marais · Agriculture',
     voice: { gender: 'male', pitch: 0.95, rate: 1.0 },  // technique, neutre
-    voxtralVoice: 'alloy',
+    voxtralVoiceId: 'e89485a9-ce87-43b7-814d-22b6f2f14722',  // Agri
     opener: "Bonjour. Vous êtes ce stagiaire de l'INRA ? Bon, alors expliquez-moi ce qu'on va faire avec le marais. Parce que là, à laisser ça en jachère salée, on perd 60 hectares de bonnes terres pour rien.",
     system: `Tu joues Joseph Coïc, conseiller agricole départemental en 1970, chargé du dossier du marais d'Anse-de-Goulven (commune fictive de la Manche). Tu es ingénieur agronome formé à Rennes, technicien remembrement.
 
@@ -11225,7 +11225,7 @@ OBJECTIF PÉDAGOGIQUE : montrer que les destructions de zones humides en France 
     role: 'Gérant du Camping La Goëlette',
     eyebrow: 'Économique · Tourisme',
     voice: { gender: 'male', pitch: 1.05, rate: 1.05 },  // jovial, énergique
-    voxtralVoice: 'echo',
+    voxtralVoiceId: 'a41ffdfe-1e9a-4584-858a-22a0710d9bb5',  // Camping
     opener: "Ah, vous voilà ! Venez, je vous fais visiter. J'ai 40 emplacements ouverts depuis l'été dernier, j'attends 80 de plus pour 1973. Les Parisiens, ils en redemandent. C'est la chance du siècle, ce coin.",
     system: `Tu joues Jean-Pierre Allain, gérant et propriétaire du Camping La Goëlette à Anse-de-Goulven. Nous sommes en 1972. Tu as acheté le terrain en 1968 quand c'était une dune semi-mobile. Tu as obtenu ton permis en 1971. Tu as ouvert 40 emplacements en 1972, tu en prévois 80 de plus pour 1973.
 
@@ -11255,7 +11255,7 @@ OBJECTIF PÉDAGOGIQUE : montrer la rationalité économique d'une décision qui 
     role: 'Riveraine du Quartier de la Digue',
     eyebrow: 'Société civile · Mémoire',
     voice: { gender: 'female', pitch: 1.05, rate: 0.85 },  // hésitante, lente
-    voxtralVoice: 'neutral_female',
+    voxtralVoiceId: 'e45e8688-1078-419b-8c80-1ec027765afb',  // Rescapée
     opener: "Vous voulez un café ? ... Bon, asseyez-vous. J'ai pas grand-chose à dire, vous savez. Je vis ici, c'est tout. Ma mère vivait ici aussi, et sa mère avant. Elles ont vu des choses.",
     system: `Tu joues Marie Quéré, 47 ans en 1972, ouvrière de la conserverie (qui a fermé en 1968, tu fais maintenant des ménages) et riveraine du Quartier de la Digue à Anse-de-Goulven. Tu vis dans la maison de famille, transmise depuis ton arrière-grand-père.
 
@@ -11359,7 +11359,7 @@ async function speakDialog1972(text, characterId) {
   const baseUrl = (window.DIALOG1972_API_URL || '').replace(/\/$/, '');
   const ttsUrl = baseUrl ? baseUrl + '/tts' : null;
 
-  if (ttsUrl && ch.voxtralVoice) {
+  if (ttsUrl && ch.voxtralVoiceId) {
     const myToken = ++_dialog1972AudioToken;  // ID unique pour cette requête
     try {
       const response = await fetch(ttsUrl, {
@@ -11367,7 +11367,7 @@ async function speakDialog1972(text, characterId) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: text,
-          voice: ch.voxtralVoice,
+          voice_id: ch.voxtralVoiceId,
         }),
       });
 
