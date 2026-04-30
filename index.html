@@ -15990,5 +15990,583 @@ closePcsTrapDebrief = function() {
 
 </script>
 
+
+
+
+
+<script>
+// ===== RESEARCH LOG MODULE (v23.9) =====
+// =============================================================================
+// MODULE DE JOURNALISATION POUR LA RECHERCHE (v23.9)
+// =============================================================================
+// Captation des traces d'interaction des participants à des fins de recherche.
+// Conforme au cadre RGPD : pas de donnée nominative — uniquement deviceId
+// (anonyme, généré localement) + groupe + horodatage + type d'événement.
+//
+// Architecture :
+//   - Chaque événement est poussé sur Firebase à `research/{sessionId}/events/`
+//   - Stockage non bloquant : si Firebase est indisponible, les événements
+//     sont mis en file d'attente locale (localStorage) et envoyés au retour
+//   - Export JSON / CSV depuis le panneau formateur en fin de session
+//
+// Typologie des événements captés :
+//   - SESSION : début/fin/pause
+//   - GROUP   : déverrouillage du groupe, identification
+//   - CASE    : ouverture d'un cas, validation, modifications
+//   - LEVER   : vote sur un levier (cas 2), changement, retrait
+//   - PCS     : ouverture phase, sélection action, perturbateur déclenché,
+//               piège tiré, piège coché, validation, expiration timer
+//   - CARNET  : déverrouillage fiche, ouverture, fermeture, durée d'ouverture,
+//               scroll au bas, impression
+//   - DIALOG  : ouverture dialogue 1972, message envoyé, durée
+//   - POLL    : vote sondage plénière
+//   - CDRNM   : ouverture, vote, modification
+//   - MOMENT  : ouverture/fermeture moment formateur
+//   - NAV     : navigation entre sections (timestamps de présence)
+// =============================================================================
+
+(function() {
+'use strict';
+
+// ---------------------------------------------------------------------------
+// CONFIGURATION
+// ---------------------------------------------------------------------------
+const RESEARCH_LOG_VERSION = '1.0';
+const QUEUE_KEY = 'ansedegoulven_research_queue';
+const RESEARCH_CONSENT_KEY = 'ansedegoulven_research_consent';
+const FLUSH_INTERVAL_MS = 5000;       // tentative d'envoi toutes les 5s
+const MAX_QUEUE_SIZE = 1000;          // plafond de sécurité avant écrasement FIFO
+
+// ---------------------------------------------------------------------------
+// CONSENTEMENT — sans consentement explicite, aucun log n'est émis
+// ---------------------------------------------------------------------------
+function hasResearchConsent() {
+  try {
+    return localStorage.getItem(RESEARCH_CONSENT_KEY) === 'yes';
+  } catch(e) { return false; }
+}
+
+function setResearchConsent(value) {
+  try {
+    localStorage.setItem(RESEARCH_CONSENT_KEY, value ? 'yes' : 'no');
+  } catch(e) {}
+}
+
+// Exposé pour le formulaire de consentement (à appeler en début de session)
+window.researchConsent = {
+  has: hasResearchConsent,
+  set: setResearchConsent,
+};
+
+// ---------------------------------------------------------------------------
+// FILE D'ATTENTE LOCALE (résilience aux coupures réseau)
+// ---------------------------------------------------------------------------
+function _readQueue() {
+  try {
+    const raw = localStorage.getItem(QUEUE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function _writeQueue(queue) {
+  try {
+    if (queue.length > MAX_QUEUE_SIZE) {
+      queue = queue.slice(-MAX_QUEUE_SIZE); // FIFO sécurité
+    }
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+  } catch(e) {}
+}
+
+// ---------------------------------------------------------------------------
+// LOG — fonction principale d'émission d'un événement
+// ---------------------------------------------------------------------------
+function logEvent(category, action, payload) {
+  if (!hasResearchConsent()) return;
+
+  const evt = {
+    v: RESEARCH_LOG_VERSION,
+    ts: Date.now(),
+    iso: new Date().toISOString(),
+    cat: category,
+    act: action,
+    grp: (typeof getMyGroup === 'function') ? getMyGroup() : null,
+    dev: (typeof getDeviceId === 'function') ? getDeviceId() : 'unknown',
+    sid: (window.FB && window.FB.getSessionId) ? window.FB.getSessionId() : 'default',
+    p: payload || {},
+  };
+
+  // Tentative d'envoi direct
+  if (window.FB && window.FB.pushVal) {
+    const path = `research/${evt.sid}/events`;
+    window.FB.pushVal(path, evt).catch(e => {
+      // En cas d'échec : on met en file d'attente
+      const q = _readQueue();
+      q.push(evt);
+      _writeQueue(q);
+    });
+  } else {
+    // Firebase pas encore prêt : file d'attente
+    const q = _readQueue();
+    q.push(evt);
+    _writeQueue(q);
+  }
+}
+
+// Exposé global
+window.researchLog = logEvent;
+
+// ---------------------------------------------------------------------------
+// FLUSH — vidage périodique de la file vers Firebase
+// ---------------------------------------------------------------------------
+function _flushQueue() {
+  if (!window.FB || !window.FB.pushVal) return;
+  const q = _readQueue();
+  if (q.length === 0) return;
+  const sid = (window.FB && window.FB.getSessionId) ? window.FB.getSessionId() : 'default';
+  const path = `research/${sid}/events`;
+  // On envoie la file dans l'ordre, par lots (max 50 par tentative)
+  const batch = q.slice(0, 50);
+  const remaining = q.slice(50);
+  Promise.all(batch.map(evt => window.FB.pushVal(path, evt).catch(() => evt)))
+    .then(results => {
+      const failed = results.filter(r => r && typeof r === 'object' && r.ts);
+      _writeQueue([...failed, ...remaining]);
+    });
+}
+
+setInterval(_flushQueue, FLUSH_INTERVAL_MS);
+window.addEventListener('online', _flushQueue);
+
+// ---------------------------------------------------------------------------
+// HELPERS POUR EXPORT (côté formateur)
+// ---------------------------------------------------------------------------
+async function exportResearchLog(format) {
+  if (!window.FB || !window.FB.getVal) {
+    alert("Firebase indisponible — export impossible.");
+    return;
+  }
+  format = format || 'json';
+  const sid = window.FB.getSessionId ? window.FB.getSessionId() : 'default';
+  const data = await window.FB.getVal(`research/${sid}/events`);
+  if (!data) {
+    alert("Aucun événement journalisé pour cette session.");
+    return;
+  }
+  const events = Object.values(data).sort((a, b) => a.ts - b.ts);
+  let blob, filename;
+  if (format === 'csv') {
+    const headers = ['iso', 'ts', 'cat', 'act', 'grp', 'dev', 'sid', 'payload'];
+    const lines = [headers.join(';')];
+    events.forEach(e => {
+      const row = [
+        e.iso,
+        e.ts,
+        e.cat,
+        e.act,
+        e.grp || '',
+        e.dev,
+        e.sid,
+        JSON.stringify(e.p || {}).replace(/"/g, '""'),
+      ];
+      lines.push(row.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(';'));
+    });
+    blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    filename = `anse-de-goulven_${sid}_${Date.now()}.csv`;
+  } else {
+    blob = new Blob([JSON.stringify({ session: sid, exported_at: new Date().toISOString(), version: RESEARCH_LOG_VERSION, events }, null, 2)],
+      { type: 'application/json' });
+    filename = `anse-de-goulven_${sid}_${Date.now()}.json`;
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+window.exportResearchLog = exportResearchLog;
+
+// ---------------------------------------------------------------------------
+// INSTRUMENTATION — wrappers sur les fonctions existantes
+// On intercepte les fonctions principales de la plateforme pour journaliser
+// sans toucher à leur logique.
+// ---------------------------------------------------------------------------
+
+// Attendre que la plateforme soit chargée pour wrapper
+document.addEventListener('DOMContentLoaded', function() {
+
+  // -- CARNET : ouverture / fermeture de fiches --
+  if (typeof openCarnetCard === 'function') {
+    const _orig = openCarnetCard;
+    let _cardOpenedAt = null;
+    let _cardOpenedId = null;
+    window.openCarnetCard = function(cardId) {
+      _cardOpenedAt = Date.now();
+      _cardOpenedId = cardId;
+      logEvent('CARNET', 'open', { fid: cardId });
+      return _orig(cardId);
+    };
+    if (typeof closeCarnetCard === 'function') {
+      const _origClose = closeCarnetCard;
+      window.closeCarnetCard = function() {
+        if (_cardOpenedAt && _cardOpenedId) {
+          logEvent('CARNET', 'close', {
+            fid: _cardOpenedId,
+            duration_ms: Date.now() - _cardOpenedAt,
+          });
+        }
+        _cardOpenedAt = null;
+        _cardOpenedId = null;
+        return _origClose();
+      };
+    }
+  }
+
+  // -- CARNET : déverrouillage de fiche --
+  if (typeof _unlockCard === 'function') {
+    const _orig = _unlockCard;
+    window._unlockCard = function(fid, opts) {
+      logEvent('CARNET', 'unlock', { fid, silent: !!(opts && opts.silent) });
+      return _orig(fid, opts);
+    };
+  }
+
+  // -- PCS : ouverture phase --
+  if (typeof openPcsPhase === 'function') {
+    const _orig = openPcsPhase;
+    window.openPcsPhase = function(phaseIdx) {
+      logEvent('PCS', 'phase_open', { phase: phaseIdx });
+      const result = _orig(phaseIdx);
+      // Capter aussi les pièges tirés et le perturbateur (après ouverture)
+      setTimeout(() => {
+        if (window._pcsActiveTraps) {
+          const trapIds = Object.keys(window._pcsActiveTraps);
+          if (trapIds.length > 0) {
+            logEvent('PCS', 'traps_drawn', { phase: phaseIdx, trap_ids: trapIds });
+          }
+        }
+      }, 100);
+      return result;
+    };
+  }
+
+  // -- PCS : sélection d'action --
+  if (typeof togglePcsAction === 'function') {
+    const _orig = togglePcsAction;
+    window.togglePcsAction = function(actionId) {
+      const wasSelected = (window._pcsSelected && window._pcsSelected.has) ? window._pcsSelected.has(actionId) : false;
+      const result = _orig(actionId);
+      const isTrap = !!(window._pcsActiveTraps && window._pcsActiveTraps[actionId]);
+      logEvent('PCS', wasSelected ? 'action_uncheck' : 'action_check', {
+        phase: window._pcsViewingPhaseIdx,
+        action_id: actionId,
+        is_trap: isTrap,
+      });
+      return result;
+    };
+  }
+
+  // -- PCS : validation du vote --
+  if (typeof validatePcsVote === 'function') {
+    const _orig = validatePcsVote;
+    window.validatePcsVote = function() {
+      if (window._pcsViewingPhaseIdx != null && window._pcsSelected) {
+        const selected = Array.from(window._pcsSelected);
+        const trapsTriggered = selected.filter(aid => window._pcsActiveTraps && window._pcsActiveTraps[aid]);
+        logEvent('PCS', 'vote_validate', {
+          phase: window._pcsViewingPhaseIdx,
+          selected,
+          n_selected: selected.length,
+          traps_triggered: trapsTriggered,
+          n_traps_triggered: trapsTriggered.length,
+        });
+      }
+      return _orig();
+    };
+  }
+
+  // -- MOMENT formateur --
+  if (typeof openTrainerMoment === 'function') {
+    const _orig = openTrainerMoment;
+    window.openTrainerMoment = function(num) {
+      logEvent('MOMENT', 'open', { moment: num });
+      return _orig(num);
+    };
+  }
+
+  // -- DIALOG 1972 --
+  if (typeof openDialog1972 === 'function') {
+    const _orig = openDialog1972;
+    let _dialogOpenedAt = null;
+    let _dialogChar = null;
+    window.openDialog1972 = function(characterId) {
+      _dialogOpenedAt = Date.now();
+      _dialogChar = characterId;
+      logEvent('DIALOG', 'open', { character: characterId });
+      return _orig(characterId);
+    };
+    if (typeof closeDialog1972 === 'function') {
+      const _origClose = closeDialog1972;
+      window.closeDialog1972 = function() {
+        if (_dialogOpenedAt) {
+          logEvent('DIALOG', 'close', {
+            character: _dialogChar,
+            duration_ms: Date.now() - _dialogOpenedAt,
+          });
+        }
+        _dialogOpenedAt = null;
+        return _origClose();
+      };
+    }
+  }
+
+  if (typeof sendDialog1972 === 'function') {
+    const _orig = sendDialog1972;
+    window.sendDialog1972 = function() {
+      const input = document.getElementById('dialog1972Input');
+      const text = input ? input.value : '';
+      logEvent('DIALOG', 'message_sent', {
+        message_length: text.length,
+        message_first_chars: text.substring(0, 80),  // pour catégorisation thématique
+      });
+      return _orig();
+    };
+  }
+
+  // -- POLL plénière --
+  if (typeof votePoll === 'function') {
+    const _orig = votePoll;
+    window.votePoll = function(pollId, idx) {
+      logEvent('POLL', 'vote', { poll_id: pollId, choice: idx });
+      return _orig(pollId, idx);
+    };
+  }
+
+  // -- LEVERS (cas 2) --
+  if (typeof toggleLever === 'function') {
+    const _orig = toggleLever;
+    window.toggleLever = function(leverId) {
+      const wasSelected = window._myLevers && window._myLevers[leverId];
+      logEvent('LEVER', wasSelected ? 'uncheck' : 'check', { lever_id: leverId });
+      return _orig(leverId);
+    };
+  }
+
+  // -- NAV : changement de section (présence) --
+  let _lastSection = null;
+  let _lastSectionAt = Date.now();
+  function _trackSection() {
+    const sections = document.querySelectorAll('section[id]');
+    let current = null;
+    const scrollY = window.scrollY + window.innerHeight / 3;
+    sections.forEach(s => {
+      const r = s.getBoundingClientRect();
+      const top = r.top + window.scrollY;
+      if (top <= scrollY && top + r.height > scrollY) {
+        current = s.id;
+      }
+    });
+    if (current && current !== _lastSection) {
+      if (_lastSection) {
+        logEvent('NAV', 'leave_section', {
+          section: _lastSection,
+          duration_ms: Date.now() - _lastSectionAt,
+        });
+      }
+      _lastSection = current;
+      _lastSectionAt = Date.now();
+      logEvent('NAV', 'enter_section', { section: current });
+    }
+  }
+  let _scrollTimer = null;
+  window.addEventListener('scroll', () => {
+    clearTimeout(_scrollTimer);
+    _scrollTimer = setTimeout(_trackSection, 500);
+  });
+
+  // -- SESSION : début (à condition d'avoir consenti) --
+  if (hasResearchConsent()) {
+    logEvent('SESSION', 'start', {
+      ua: navigator.userAgent.substring(0, 200),
+      lang: navigator.language,
+      screen_w: screen.width,
+      screen_h: screen.height,
+    });
+  }
+
+  // -- SESSION : fin (avant fermeture onglet) --
+  window.addEventListener('beforeunload', () => {
+    if (hasResearchConsent()) {
+      logEvent('SESSION', 'end', {});
+      _flushQueue();
+    }
+  });
+
+  // -- VEILLE / RETOUR : pause détectée --
+  let _hiddenAt = null;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      _hiddenAt = Date.now();
+      logEvent('SESSION', 'hidden', {});
+    } else if (_hiddenAt) {
+      logEvent('SESSION', 'visible', { hidden_duration_ms: Date.now() - _hiddenAt });
+      _hiddenAt = null;
+      _flushQueue();
+    }
+  });
+
+}); // DOMContentLoaded
+
+})();
+
+</script>
+<!-- ========== CONSENTEMENT RECHERCHE (RGPD) ========== -->
+<div id="researchConsentOverlay" style="display:none; position:fixed; inset:0; background:rgba(20,20,30,0.78); backdrop-filter:blur(3px); z-index:9999; align-items:center; justify-content:center; padding:24px;">
+  <div style="background:white; max-width:680px; width:100%; max-height:90vh; overflow-y:auto; border-radius:10px; box-shadow:0 24px 60px rgba(0,0,0,0.45); border-top:5px solid #1E3A5F;">
+    <div style="padding:28px 32px 18px; border-bottom:1px solid #E5DCC8; background:linear-gradient(180deg, #FAF7F2 0%, white 100%);">
+      <div style="font-family:'Courier New',monospace; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#1E3A5F; font-weight:700; margin-bottom:8px;">Recherche universitaire — VAE doctorale UBO</div>
+      <h2 style="font-family:Georgia,serif; font-size:24px; font-weight:700; color:#1E3A5F; line-height:1.25; margin:0;">Information et consentement éclairé</h2>
+    </div>
+    <div style="padding:24px 32px; font-family:Georgia,serif; font-size:14.5px; line-height:1.6; color:#2A2520;">
+      <p style="margin:0 0 14px 0;">Cette formation est aussi un terrain d'observation pour une <strong>recherche doctorale par VAE</strong> conduite par Boris Leclerc, inspecteur à l'IGEDD, sur les <em>dispositifs expérientiels de formation à la résilience territoriale</em>.</p>
+
+      <h3 style="font-family:Georgia,serif; font-size:15px; font-weight:700; color:#1E3A5F; margin:22px 0 8px;">Quelles données sont enregistrées ?</h3>
+      <ul style="margin:0; padding-left:22px;">
+        <li style="margin-bottom:6px;">Vos <strong>choix dans les exercices</strong> (votes, sélections d'actions, leviers, sondages)</li>
+        <li style="margin-bottom:6px;">Vos <strong>parcours de navigation</strong> (fiches consultées, durées, sections visitées)</li>
+        <li style="margin-bottom:6px;">Vos <strong>échanges avec le dialogue 1972</strong> (longueur des messages, sujets abordés)</li>
+        <li style="margin-bottom:0;">Les <strong>horodatages</strong> de vos actions et la <strong>configuration technique</strong> de votre poste</li>
+      </ul>
+
+      <h3 style="font-family:Georgia,serif; font-size:15px; font-weight:700; color:#1E3A5F; margin:22px 0 8px;">Quelles données ne sont PAS enregistrées ?</h3>
+      <ul style="margin:0; padding-left:22px;">
+        <li style="margin-bottom:6px;">Aucun <strong>nom, prénom, e-mail ou information identifiante</strong> n'est collecté</li>
+        <li style="margin-bottom:6px;">Aucun <strong>enregistrement audio ou vidéo</strong> par la plateforme</li>
+        <li style="margin-bottom:0;">Vous êtes identifié uniquement par un <strong>code anonyme</strong> attribué à votre poste (de type <code>d_a3f4k29</code>)</li>
+      </ul>
+
+      <h3 style="font-family:Georgia,serif; font-size:15px; font-weight:700; color:#1E3A5F; margin:22px 0 8px;">À quoi servent ces données ?</h3>
+      <p style="margin:0 0 10px;">Elles permettent d'analyser, de manière anonyme et collective, comment des décideurs publics s'approprient les notions de risque et de résilience à travers un dispositif expérientiel. Les résultats nourriront un <strong>mémoire de thèse</strong> et pourront donner lieu à des publications scientifiques.</p>
+      <p style="margin:0 0 10px;">Aucun résultat individuel ne sera publié ; seules des analyses agrégées (par groupe, par session, etc.) seront diffusées.</p>
+
+      <h3 style="font-family:Georgia,serif; font-size:15px; font-weight:700; color:#1E3A5F; margin:22px 0 8px;">Vos droits</h3>
+      <p style="margin:0 0 10px;">Conformément au RGPD, vous pouvez à tout moment :</p>
+      <ul style="margin:0; padding-left:22px;">
+        <li style="margin-bottom:6px;">Refuser de participer à la recherche (la formation se déroule normalement)</li>
+        <li style="margin-bottom:6px;">Retirer votre consentement en cours de session</li>
+        <li style="margin-bottom:6px;">Demander la suppression de vos données (en communiquant votre code anonyme)</li>
+        <li style="margin-bottom:0;">Contacter le <strong>délégué à la protection des données de l'UBO</strong> pour toute réclamation</li>
+      </ul>
+
+      <p style="margin:22px 0 0; padding:14px 16px; background:#F4F7F4; border-left:3px solid #5C8A4F; border-radius:4px; font-size:13.5px; font-style:italic; color:#3A5235;">Les données seront conservées pendant la durée de la thèse et de ses publications associées (5 ans maximum), hébergées sur Firebase Realtime Database (Google Cloud, Francfort, UE), puis archivées dans le laboratoire d'accueil sous forme anonymisée.</p>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:12px; padding:18px 32px; border-top:1px solid #E5DCC8; background:#FAF7F2;">
+      <button onclick="declineResearchConsent()" style="background:white; border:1px solid #888; color:#666; padding:10px 18px; border-radius:4px; font-family:Georgia,serif; font-size:14px; cursor:pointer;">Je ne souhaite pas participer à la recherche</button>
+      <button onclick="acceptResearchConsent()" style="background:#1E3A5F; border:none; color:white; padding:10px 22px; border-radius:4px; font-family:Georgia,serif; font-size:14px; font-weight:600; cursor:pointer;">J'accepte de participer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showResearchConsentOverlay() {
+  const ov = document.getElementById('researchConsentOverlay');
+  if (ov) ov.style.display = 'flex';
+}
+function acceptResearchConsent() {
+  if (window.researchConsent) window.researchConsent.set(true);
+  const ov = document.getElementById('researchConsentOverlay');
+  if (ov) ov.style.display = 'none';
+  // Logger l'acceptation
+  if (window.researchLog) window.researchLog('SESSION', 'consent_accepted', {});
+}
+function declineResearchConsent() {
+  if (window.researchConsent) window.researchConsent.set(false);
+  const ov = document.getElementById('researchConsentOverlay');
+  if (ov) ov.style.display = 'none';
+}
+// Affichage automatique au premier chargement, si pas de choix précédent
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    let stored = null;
+    try { stored = localStorage.getItem('ansedegoulven_research_consent'); } catch(e) {}
+    if (stored === null) {
+      // Pas encore de choix : on attend que l'utilisateur se soit identifié à un groupe avant de demander
+      // (sinon, c'est trop tôt et perturbant)
+      const checkLater = setInterval(() => {
+        const myGrp = (typeof getMyGroup === 'function') ? getMyGroup() : null;
+        if (myGrp) {
+          clearInterval(checkLater);
+          showResearchConsentOverlay();
+        }
+      }, 2000);
+      // Stop après 30 minutes
+      setTimeout(() => clearInterval(checkLater), 30 * 60 * 1000);
+    }
+  }, 1500);
+});
+</script>
+
+
+<!-- ========== PANNEAU FORMATEUR — RECHERCHE ========== -->
+<div id="researchPanel" style="display:none; position:fixed; bottom:20px; right:20px; width:340px; background:white; border:1.5px solid #1E3A5F; border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.18); z-index:500; font-family:Georgia,serif;">
+  <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:linear-gradient(180deg, #1E3A5F 0%, #2A4A6F 100%); color:white; border-radius:7px 7px 0 0;">
+    <div>
+      <div style="font-family:'Courier New',monospace; font-size:9.5px; letter-spacing:0.12em; text-transform:uppercase; opacity:0.85;">Recherche · journalisation</div>
+      <div style="font-size:14px; font-weight:600;">Panneau formateur-chercheur</div>
+    </div>
+    <button onclick="document.getElementById('researchPanel').style.display='none'" style="background:rgba(255,255,255,0.15); border:none; color:white; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:18px; line-height:1;">×</button>
+  </div>
+  <div style="padding:16px; font-size:13px; line-height:1.55; color:#2A2520;">
+    <div id="researchPanelStats" style="margin-bottom:12px; padding:10px 12px; background:#FAF7F2; border-radius:5px; font-family:'Courier New',monospace; font-size:11.5px; color:#666;">
+      <div>Session : <strong id="rpSession" style="color:#1E3A5F;">—</strong></div>
+      <div>Événements captés : <strong id="rpCount" style="color:#1E3A5F;">—</strong></div>
+      <div>Consentement local : <strong id="rpConsent" style="color:#1E3A5F;">—</strong></div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <button onclick="researchPanelRefresh()" style="background:white; border:1px solid #888; color:#444; padding:8px 12px; border-radius:4px; font-family:Georgia,serif; font-size:13px; cursor:pointer;">↻ Rafraîchir le compteur</button>
+      <button onclick="exportResearchLog('json')" style="background:#1E3A5F; border:none; color:white; padding:9px 12px; border-radius:4px; font-family:Georgia,serif; font-size:13px; font-weight:600; cursor:pointer;">⬇ Exporter en JSON</button>
+      <button onclick="exportResearchLog('csv')" style="background:#5C8A4F; border:none; color:white; padding:9px 12px; border-radius:4px; font-family:Georgia,serif; font-size:13px; font-weight:600; cursor:pointer;">⬇ Exporter en CSV</button>
+      <button onclick="researchPanelPurge()" style="background:white; border:1px solid #C5482F; color:#C5482F; padding:8px 12px; border-radius:4px; font-family:Georgia,serif; font-size:13px; cursor:pointer;">⌫ Effacer les événements de cette session</button>
+    </div>
+    <div style="margin-top:12px; font-size:11px; font-style:italic; color:#888; line-height:1.5;">
+      L'export inclut tous les événements captés depuis le début de la session, anonymisés (deviceId + groupe).
+    </div>
+  </div>
+</div>
+
+<script>
+function showResearchPanel() {
+  document.getElementById('researchPanel').style.display = 'block';
+  researchPanelRefresh();
+}
+async function researchPanelRefresh() {
+  const sid = (window.FB && window.FB.getSessionId) ? window.FB.getSessionId() : 'default';
+  document.getElementById('rpSession').textContent = sid;
+  document.getElementById('rpConsent').textContent =
+    (window.researchConsent && window.researchConsent.has()) ? '✓ accordé' : '— non accordé';
+  if (window.FB && window.FB.getVal) {
+    try {
+      const data = await window.FB.getVal(`research/${sid}/events`);
+      const n = data ? Object.keys(data).length : 0;
+      document.getElementById('rpCount').textContent = n;
+    } catch(e) {
+      document.getElementById('rpCount').textContent = '?';
+    }
+  }
+}
+async function researchPanelPurge() {
+  if (!confirm("Effacer définitivement tous les événements journalisés de cette session ?\n\nCette action est irréversible.")) return;
+  const sid = (window.FB && window.FB.getSessionId) ? window.FB.getSessionId() : 'default';
+  if (window.FB && window.FB.removeVal) {
+    await window.FB.removeVal(`research/${sid}/events`);
+    alert("✓ Événements de cette session effacés.");
+    researchPanelRefresh();
+  }
+}
+window.showResearchPanel = showResearchPanel;
+</script>
+
+
 </body>
 </html>
