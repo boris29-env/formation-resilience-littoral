@@ -11103,8 +11103,9 @@ window.addEventListener('fb-ready', () => { _unsubsAttached = true; });
 // GitHub Pages, il faut un proxy serveur qui détient la clé API.
 //
 // La variable globale ci-dessous est l'URL appelée par le module. On peut la
-// surcharger avant chargement (par exemple en ajoutant <script>window.DIALOG1972_API_URL = "https://mon-proxy.workers.dev/v1/messages"</script>
-// dans la page) ou la modifier directement ici.
+// surcharger avant chargement (par exemple en ajoutant une balise script qui
+// définit window.DIALOG1972_API_URL avant le chargement de cette page) ou la
+// modifier directement ici.
 //
 // Voir la note d'accompagnement de la version v17 pour 3 options de proxy.
 // ============================================================================
