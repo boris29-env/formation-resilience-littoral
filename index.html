@@ -11614,12 +11614,36 @@ const BUTTERFLY_RULES_CDRNM = {
       text: "Vous activez une procédure d'expropriation sans avoir mis en place de <strong>panel citoyen permanent</strong> en cas 2. Qui légitime cette décision auprès des 12 ménages concernés ?"
     }
   ],
+  'A3': [  // Modifier PLU pour interdire constructions zone aléa moyen
+    {
+      test: l => l.plu_recul,
+      tone: 'convergent',
+      text: "Cohérent avec votre vote cas 2 de <strong>révision du PLU avec OAP « risques »</strong> : cette CDRNM matérialise votre stratégie d'urbanisme."
+    },
+    {
+      test: l => !l.plu_recul && !l.digue_decons && !l.papi_complet && !l.campings_recompose,
+      tone: 'manque',
+      text: "Vous restreignez le droit à construire sans avoir voté de stratégie de recomposition (cas 2). Quelle est l'offre faite aux propriétaires dont le foncier perd 30 % de sa valeur ?"
+    }
+  ],
   // === Section B — Outils financiers ===
   'B1': [  // FPRNM acquisition amiable des 47 maisons
     {
       test: l => l.digue_decons,
       tone: 'convergent',
       text: "Cohérent avec la déconstruction de la digue (cas 2) : l'acquisition amiable est l'outil financier qui rend possible la recomposition spatiale."
+    }
+  ],
+  'B2': [  // FPRNM (autre intitulé selon question)
+    {
+      test: l => l.campings_recompose || l.digue_decons,
+      tone: 'convergent',
+      text: "Cohérent avec votre stratégie de recomposition (cas 2) : le FPRNM accompagne le portage foncier des départs."
+    },
+    {
+      test: l => !l.campings_recompose && !l.plu_recul && !l.digue_decons,
+      tone: 'manque',
+      text: "Vous demandez du foncier sans stratégie de recomposition (cas 2). Que ferez-vous concrètement des terrains acquis ?"
     }
   ],
   'B3': [  // Fonds État pour relocaliser PME et Camping 1
@@ -11707,6 +11731,11 @@ const BUTTERFLY_RULES_PCS = {
   ],
   'phase2': [  // J0 — Pic de l'événement
     {
+      test: l => !l.digue_repare && !l.digue_reconstruit && !l.digue_decons,
+      tone: 'manque',
+      text: "Aucune action n'a été votée sur la digue de 1962 en cas 2. À H+2, elle cède partiellement côté nord — <strong>8 maisons du Quartier sont inondées</strong>. Vous découvrez en direct ce que la stratégie 10 ans aurait dû préparer."
+    },
+    {
       test: l => l.digue_repare,
       tone: 'tension',
       text: "Votre <strong>digue confortée</strong> tient à 80 % de l'aléa observé. Un panneau cède côté nord — mais sans rupture franche."
@@ -11731,12 +11760,17 @@ const BUTTERFLY_RULES_PCS = {
   ],
   'phase4': [  // J+72h — RETEX
     {
+      test: l => !l.pcs_rcsc && !l.panel_citoyen && !l.obs_capteurs && !l.papi_complet,
+      tone: 'incoherent',
+      text: "<strong>RETEX accablant.</strong> Aucun investissement de prévention humaine n'avait été voté en cas 2. Bilan : <strong>47 sinistres, 2 blessés graves, 1 décès</strong> dans le Quartier. Le préfet ouvre une enquête administrative. La presse régionale couvre l'affaire."
+    },
+    {
       test: l => l.panel_citoyen,
       tone: 'convergent',
       text: "Votre <strong>panel citoyen</strong> (cas 2) est mobilisé pour le RETEX participatif — premier débat public dans 48 h."
     },
     {
-      test: l => !l.panel_citoyen,
+      test: l => !l.panel_citoyen && (l.pcs_rcsc || l.obs_capteurs),
       tone: 'manque',
       text: "Pas de panel citoyen permanent (cas 2 non voté). Le RETEX repose sur les seules instances classiques (CDRNM) — frustration des sinistrés."
     }
