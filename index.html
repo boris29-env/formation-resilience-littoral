@@ -3190,6 +3190,7 @@ h3.subhead {
       <div class="pcs-phase-time" id="pcsPhaseTime">—</div>
     </div>
     <div class="pcs-phase-body">
+      <div id="pcsVariantPanel" style="display:none;"></div>
       <div class="pcs-phase-briefing" id="pcsPhaseBriefing"></div>
       <div class="pcs-phase-question" id="pcsPhaseQuestion"></div>
       <div class="pcs-phase-instr" id="pcsPhaseInstr">Cochez les <strong>3 actions prioritaires</strong> de votre groupe.</div>
@@ -3223,6 +3224,27 @@ h3.subhead {
         placeholder="Posez votre question..." onkeydown="dialog1972KeyDown(event)"></textarea>
       <span class="dialog1972-counter" id="dialog1972Counter">0/8</span>
       <button class="dialog1972-send-btn" id="dialog1972SendBtn" onclick="sendDialog1972()">Envoyer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DÉBRIEFING MIROIR MODAL ============ -->
+<div class="dialog1972-overlay" id="debriefingOverlay" onclick="if(event.target===this)closeDebriefing()">
+  <div class="dialog1972-modal">
+    <div class="dialog1972-modal-head">
+      <div class="dialog1972-modal-meta-block">
+        <div class="dialog1972-modal-eyebrow">Débriefing miroir</div>
+        <div class="dialog1972-modal-name" id="debriefingName">Votre groupe face à ses décisions</div>
+        <div class="dialog1972-modal-role" id="debriefingRole">—</div>
+      </div>
+      <button class="dialog1972-close-btn" onclick="closeDebriefing()">Fermer</button>
+    </div>
+    <div class="dialog1972-modal-body" id="debriefingBody"></div>
+    <div class="dialog1972-modal-input">
+      <textarea class="dialog1972-textarea" id="debriefingInput" rows="1"
+        placeholder="Votre réponse..." onkeydown="debriefingKeyDown(event)"></textarea>
+      <span class="dialog1972-counter" id="debriefingCounter">0/6</span>
+      <button class="dialog1972-send-btn" id="debriefingSendBtn" onclick="sendDebriefing()">Envoyer</button>
     </div>
   </div>
 </div>
@@ -5433,10 +5455,80 @@ h3.subhead {
   </div>
 </section>
 
+<!-- ============ DÉBRIEFING MIROIR (IA face à votre groupe) ============ -->
+<section id="debriefing">
+  <div class="section-header">
+    <span class="section-num">13</span>
+    <span class="section-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </span>
+    <h2 class="section-title">Débriefing miroir — l'IA face à votre journée</h2>
+  </div>
+  <p class="section-intro">
+    À la fin d'une journée comme celle-ci, on se souvient des conclusions, mais rarement des chemins qu'on a empruntés pour y arriver.
+    Cette section vous propose un <strong>face-à-face avec vos propres décisions</strong>. L'IA prend connaissance de tous vos votes
+    (cas 2, cas 3 phase par phase, cas 4 CDRNM) et vous interroge dessus. Pas de jugement, pas de morale — juste « pourquoi ».
+  </p>
+
+  <div class="callout callout-orange">
+    <div class="callout-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div class="callout-body">
+      <strong>Quand l'utiliser ?</strong> En toute fin de journée, après le cas 4 CDRNM. Chaque groupe ouvre son propre débriefing
+      en parallèle (15-20 minutes). Le formateur peut ensuite ramasser les enseignements en plénière finale.
+      Cette modalité permet à chaque groupe de revisiter ses arbitrages au calme, ce que la dynamique collective ne permet pas toujours.
+    </div>
+  </div>
+
+  <div class="dialog1972-grid">
+    <div class="dialog1972-card" onclick="openDebriefing('g1')">
+      <div class="dialog1972-card-portrait" style="background:linear-gradient(135deg,#1e3a5f,#2a4a73);">
+        <span style="color:#FFFFFF;font-family:var(--mono);font-weight:600;font-size:13px;">G1</span>
+      </div>
+      <div class="dialog1972-card-name">Mission préfectorale</div>
+      <div class="dialog1972-card-role">État dans le territoire</div>
+      <div class="dialog1972-card-cta">▶ Ouvrir notre débriefing</div>
+    </div>
+    <div class="dialog1972-card" onclick="openDebriefing('g2')">
+      <div class="dialog1972-card-portrait" style="background:linear-gradient(135deg,#5e3a8a,#7250a3);">
+        <span style="color:#FFFFFF;font-family:var(--mono);font-weight:600;font-size:13px;">G2</span>
+      </div>
+      <div class="dialog1972-card-name">Mairie + EPCI</div>
+      <div class="dialog1972-card-role">Légitimité élective</div>
+      <div class="dialog1972-card-cta">▶ Ouvrir notre débriefing</div>
+    </div>
+    <div class="dialog1972-card" onclick="openDebriefing('g3')">
+      <div class="dialog1972-card-portrait" style="background:linear-gradient(135deg,#2d6e3e,#3e8a52);">
+        <span style="color:#FFFFFF;font-family:var(--mono);font-weight:600;font-size:13px;">G3</span>
+      </div>
+      <div class="dialog1972-card-name">Syndicat + Conservatoire</div>
+      <div class="dialog1972-card-role">Conservation du littoral</div>
+      <div class="dialog1972-card-cta">▶ Ouvrir notre débriefing</div>
+    </div>
+    <div class="dialog1972-card" onclick="openDebriefing('g4')">
+      <div class="dialog1972-card-portrait" style="background:linear-gradient(135deg,#a83a36,#c44a45);">
+        <span style="color:#FFFFFF;font-family:var(--mono);font-weight:600;font-size:13px;">G4</span>
+      </div>
+      <div class="dialog1972-card-name">Acteurs économiques</div>
+      <div class="dialog1972-card-role">Tourisme + agro + commerce</div>
+      <div class="dialog1972-card-cta">▶ Ouvrir notre débriefing</div>
+    </div>
+    <div class="dialog1972-card" onclick="openDebriefing('g5')">
+      <div class="dialog1972-card-portrait" style="background:linear-gradient(135deg,#7E6B4A,#9C8A6A);">
+        <span style="color:#FFFFFF;font-family:var(--mono);font-weight:600;font-size:13px;">G5</span>
+      </div>
+      <div class="dialog1972-card-name">Société civile</div>
+      <div class="dialog1972-card-role">Habitants + associations</div>
+      <div class="dialog1972-card-cta">▶ Ouvrir notre débriefing</div>
+    </div>
+  </div>
+</section>
+
 <!-- ============ AXES ============ -->
 <section id="axes">
   <div class="section-header">
-    <span class="section-num">13</span>
+    <span class="section-num">14</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg>
     </span>
@@ -5502,7 +5594,7 @@ h3.subhead {
 <!-- ============ LEXIQUE ============ -->
 <section id="lexique">
   <div class="section-header">
-    <span class="section-num">14</span>
+    <span class="section-num">15</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
     </span>
@@ -5537,7 +5629,7 @@ h3.subhead {
 <!-- ============ SOURCES NATIONALES ============ -->
 <section id="sources">
   <div class="section-header">
-    <span class="section-num">15</span>
+    <span class="section-num">16</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 4 9 14 14 0 0 1-4 9 14 14 0 0 1-4-9 14 14 0 0 1 4-9z"/></svg>
     </span>
@@ -5662,7 +5754,7 @@ h3.subhead {
 <!-- ============ TÉLÉCHARGEMENTS ============ -->
 <section id="telechargements">
   <div class="section-header">
-    <span class="section-num">16</span>
+    <span class="section-num">17</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     </span>
@@ -5710,7 +5802,7 @@ h3.subhead {
 <!-- ============ POUR ALLER PLUS LOIN ============ -->
 <section id="liens">
   <div class="section-header">
-    <span class="section-num">17</span>
+    <span class="section-num">18</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="9 12 12 15 15 12"/><line x1="12" y1="6" x2="12" y2="15"/></svg>
     </span>
@@ -9427,6 +9519,188 @@ async function resetCdrnm() {
 }
 
 // ============ PCS — TEMPÊTE ARGONNE (5 phases) ============
+// =============================================================================
+// PCS TRANSITION RULES — Cohérence narrative entre phases
+// =============================================================================
+// Pour chaque pair (phase précédente → phase suivante), on définit comment
+// la variante précédente module les probabilités de la suivante.
+// Logique : si C (aggravée) en t, plus probable d'avoir C en t+1.
+//           si B (doute) en t, l'incertitude se propage avec ~équilibre.
+//           si A (standard) en t, on tend vers A en t+1.
+// =============================================================================
+const PCS_TRANSITION_RULES = {
+  'phase0->phase1': {
+    A: { A: 0.70, B: 0.20, C: 0.10 },  // confirmé → tend vers approche normale
+    B: { A: 0.30, B: 0.40, C: 0.30 },  // doute météo → l'incertitude reste
+    C: { A: 0.10, B: 0.20, C: 0.70 },  // renforcement brutal → tempête en avance probable
+  },
+  'phase1->phase2': {
+    A: { A: 0.65, B: 0.10, C: 0.25 },  // approche normale → pic conforme
+    B: { A: 0.30, B: 0.40, C: 0.30 },  // calme suspect → soit ça passe, soit ça frappe
+    C: { A: 0.10, B: 0.10, C: 0.80 },  // tempête en avance → pic majoré quasi sûr
+  },
+  'phase2->phase3': {
+    A: { A: 0.65, B: 0.15, C: 0.20 },  // pic conforme → décrue normale
+    B: { A: 0.05, B: 0.65, C: 0.30 },  // pic atténué long → marée nocturne critique
+    C: { A: 0.05, B: 0.65, C: 0.30 },  // pic majoré + rupture → effondrement secondaire
+  },
+  'phase3->phase4': {
+    A: { A: 0.65, B: 0.15, C: 0.20 },  // décrue normale → récupération
+    B: { A: 0.20, B: 0.20, C: 0.60 },  // marée nocturne (sur-prolongation) → polémique politique
+    C: { A: 0.05, B: 0.70, C: 0.25 },  // effondrement secondaire → médiatisation nationale
+  },
+};
+
+const PHASE_ORDER = ['phase0', 'phase1', 'phase2', 'phase3', 'phase4'];
+
+// Renvoie les poids effectifs pour le tirage de phaseId, modulés par la variante
+// précédente (si elle existe). Sinon, renvoie les poids par défaut de PCS_PHASE_VARIANTS.
+function _effectiveWeights(phaseId) {
+  const idx = PHASE_ORDER.indexOf(phaseId);
+  if (idx > 0) {
+    const prevPhaseId = PHASE_ORDER[idx - 1];
+    const prevVariant = _pcsVariants[prevPhaseId];
+    if (prevVariant) {
+      const transitions = PCS_TRANSITION_RULES[prevPhaseId + '->' + phaseId];
+      if (transitions && transitions[prevVariant]) {
+        return { weights: transitions[prevVariant], modulated: true, prev: prevVariant };
+      }
+    }
+  }
+  // Pas de phase précédente OU pas de variante en t-1 → poids de base
+  const variants = PCS_PHASE_VARIANTS[phaseId] || [];
+  const weights = Object.fromEntries(variants.map(v => [v.id, v.weight || 0]));
+  return { weights, modulated: false, prev: null };
+}
+
+// =============================================================================
+// PCS PHASE VARIANTS — Tempête stochastique
+// =============================================================================
+// Pour chaque phase, 3 trajectoires possibles (A/B/C) avec poids de tirage.
+// Le formateur peut tirer aléatoirement OU forcer une variante manuellement.
+// L'état est synchronisé via Firebase (chemin pcs/variants/{phaseId}).
+// =============================================================================
+const PCS_PHASE_VARIANTS = {
+  phase0: [
+    {
+      id: 'A',
+      label: 'Trajectoire confirmée',
+      weight: 0.50,
+      tone: 'standard',
+      addendum: "<strong>Mise à jour Météo-France 18h15 :</strong> trajectoire confirmée. La tempête va frapper Anse-de-Goulven de plein fouet. Aucune incertitude sur le scénario."
+    },
+    {
+      id: 'B',
+      label: 'Trajectoire incertaine',
+      weight: 0.30,
+      tone: 'doute',
+      addendum: "<strong>Mise à jour Météo-France 18h15 — incertitude :</strong> deux modèles divergent. ECMWF prévoit un passage au sud (impact mineur, surcote ~0,8 m), ARPEGE confirme l'impact direct (surcote ~1,6 m). Vous devez engager les mesures dans le doute. Si vous sur-réagissez et que la tempête passe au sud, l'opposition vous attendra. Si vous sous-réagissez et qu'elle frappe, c'est pire."
+    },
+    {
+      id: 'C',
+      label: 'Renforcement brutal',
+      weight: 0.20,
+      tone: 'aggravé',
+      addendum: "<strong>Mise à jour Météo-France 18h15 — alerte renforcée :</strong> la tempête s'est intensifiée plus rapidement qu'attendu. Surcote portée à <strong>1,8 m</strong>, vent prévu jusqu'à <strong>160 km/h</strong>. Le pic pourrait être atteint dès <strong>04h du matin</strong>, soit 8 heures plus tôt. Vos 90 minutes de marge se réduisent. Le préfet de zone propose de bloquer la circulation poids lourds dès maintenant."
+    }
+  ],
+  phase1: [
+    {
+      id: 'A',
+      label: 'Approche normale',
+      weight: 0.50,
+      tone: 'standard',
+      addendum: "<strong>06h00 — approche conforme :</strong> les premières rafales atteignent 110 km/h. La tempête approche dans les délais prévus. Pas de surprise."
+    },
+    {
+      id: 'B',
+      label: 'Calme suspect',
+      weight: 0.25,
+      tone: 'doute',
+      addendum: "<strong>06h00 — calme étrange :</strong> vent à 60 km/h seulement, mer plate. Beaucoup de saisonniers refusent d'évacuer en disant que la tempête « est passée à côté ». Le président de l'UCAP appelle pour annuler les évacuations préventives. Le maire est sous pression : le préjudice économique d'une fausse alerte est estimé à 800 k€. Le préfet a-t-il tort de maintenir le dispositif ?"
+    },
+    {
+      id: 'C',
+      label: 'Tempête en avance',
+      weight: 0.25,
+      tone: 'aggravé',
+      addendum: "<strong>06h00 — la tempête est en avance :</strong> le vent monte plus vite que prévu, <strong>130 km/h déjà</strong>. Deux arbres sont tombés sur la départementale (1 voiture coincée, sans blessé). EDF signale les premières coupures (320 foyers). Le port a 2 bateaux qui dérivent. Vous avez moins de temps que prévu pour finir d'évacuer."
+    }
+  ],
+  phase2: [
+    {
+      id: 'A',
+      label: 'Pic conforme',
+      weight: 0.50,
+      tone: 'standard',
+      addendum: "<strong>12h — pic atteint :</strong> surcote 1,4 m, vent 130 km/h, conformes aux prévisions. La digue 1962 résiste à 80%. Quelques inondations dans les rues basses du Quartier de la Digue."
+    },
+    {
+      id: 'B',
+      label: 'Pic majoré + rupture',
+      weight: 0.30,
+      tone: 'aggravé',
+      addendum: "<strong>12h45 — rupture :</strong> le pic dépasse les prévisions (surcote mesurée <strong>1,9 m</strong>). La <strong>digue 1962 cède sur 30 m côté nord</strong>. La rue de la Plage est sous 60 cm d'eau. Le SDIS intervient pour 2 personnes coincées dans un VL. La presse locale est sur place avec des images du déversement. <strong>Premier blessé léger signalé</strong>."
+    },
+    {
+      id: 'C',
+      label: 'Pic atténué mais long',
+      weight: 0.20,
+      tone: 'doute',
+      addendum: "<strong>12h — pic modéré, événement long :</strong> surcote seulement 1,1 m. La digue tient sans dommage. <strong>Mais</strong> la dépression progresse lentement : la marée haute suivante, à <strong>00h30</strong>, ramènera une nouvelle submersion sur des défenses déjà sollicitées. La fatigue gagne les équipes. Sur Twitter et LinkedIn, des élus de l'opposition commencent à dire « le préfet a-t-il sur-réagi ? »."
+    }
+  ],
+  phase3: [
+    {
+      id: 'A',
+      label: 'Décrue normale',
+      weight: 0.45,
+      tone: 'standard',
+      addendum: "<strong>20h — décrue :</strong> l'eau se retire. Les premiers diagnostics démarrent. Pas de victime grave dans la commune. Les évacués demandent à rentrer chez eux."
+    },
+    {
+      id: 'B',
+      label: 'Effondrement secondaire',
+      weight: 0.30,
+      tone: 'aggravé',
+      addendum: "<strong>16h — effondrement secondaire :</strong> une <strong>falaise s'effondre rue des Goélands</strong>, emportant 3 maisons (les habitants étaient évacués, pas de victime). Le poteau électrique HT du quartier ouest tombe : <strong>coupure totale de 2 000 foyers</strong>. La 4G est saturée. Les sinistrés évacués vers le gymnase ne peuvent plus joindre leurs familles."
+    },
+    {
+      id: 'C',
+      label: 'Marée nocturne critique',
+      weight: 0.25,
+      tone: 'doute',
+      addendum: "<strong>20h — alerte marée nocturne :</strong> la marée haute prévue à <strong>00h30</strong> va frapper un cordon dunaire fragilisé. Surcote prévue 0,9 m, sur des défenses déjà saturées. Le préfet doit décider d'un nouveau confinement nocturne. Les évacués sont fatigués, certains veulent rentrer chez eux. Le maire est partagé : prolonger l'évacuation ou accepter le risque ?"
+    }
+  ],
+  phase4: [
+    {
+      id: 'A',
+      label: 'Récupération maîtrisée',
+      weight: 0.40,
+      tone: 'standard',
+      addendum: "<strong>J+72h — récupération en cours :</strong> l'eau est partie. Les expertises commencent. La presse régionale relaie un récit positif (« mobilisation exemplaire »). Le préfet et le maire visitent les sinistrés. Le bilan est gérable : 8 maisons sinistrées, 0 victime, 1 blessé léger."
+    },
+    {
+      id: 'B',
+      label: 'Médiatisation nationale',
+      weight: 0.30,
+      tone: 'aggravé',
+      addendum: "<strong>J+72h — emballement médiatique :</strong> les images de la <strong>rupture de la digue 1962</strong> tournent en boucle au JT de 20h. Une équipe de France 2 est sur place depuis 24h. Une polémique démarre sur LinkedIn entre le syndicat mixte (« nous avons alerté depuis 2018 sur l'état de la digue ») et le préfet. <strong>Le ministre veut un point presse à J+96h.</strong> Le RETEX devient un dossier politique."
+    },
+    {
+      id: 'C',
+      label: 'Polémique politique',
+      weight: 0.30,
+      tone: 'doute',
+      addendum: "<strong>J+72h — recours politique :</strong> l'opposition municipale, soutenue par 3 députés du département, dépose un <strong>recours contre la décision d'évacuation préventive</strong> : « le préfet a sur-réagi, l'évacuation a coûté 2 M€ à la commune et au tourisme pour une tempête modérée ». Le sous-préfet est convoqué pour une enquête administrative. Le préfet doit défendre publiquement le principe de précaution."
+    }
+  ],
+};
+
+// =============================================================================
+// PCS PHASES — scénario Tempête Argonne
+// =============================================================================
 const PCS_PHASES = [
   {
     id: 'phase0',
@@ -9790,10 +10064,12 @@ function openPcsPhase(phaseIdx) {
   document.getElementById('pcsPhaseEyebrow').textContent = phase.eyebrow;
   document.getElementById('pcsPhaseTitle').textContent = phase.title;
   document.getElementById('pcsPhaseTime').textContent = phase.time;
-  // Préfixer le briefing avec les "notes effet papillon" liées aux votes du cas 2
-  const butterflyNotes = (typeof renderButterflyNotesPcs === 'function') ? renderButterflyNotesPcs(phase.id) : '';
-  document.getElementById('pcsPhaseBriefing').innerHTML = butterflyNotes + phase.briefing;
+  // Briefing composé : effets papillon (cas 2) + variante stochastique (cas 3) + briefing original
+  document.getElementById('pcsPhaseBriefing').innerHTML = _composePcsBriefing(phase.id);
   document.getElementById('pcsPhaseQuestion').textContent = phase.question;
+
+  // Si on est formateur, afficher le panneau de tirage stochastique
+  renderPcsVariantPanel(phase.id);
 
   renderPcsActions();
   document.getElementById('pcsPhaseOverlay').classList.add('open');
@@ -9872,13 +10148,178 @@ async function pcsAdvancePhase() {
 }
 async function pcsResetTimeline() {
   if (!isTrainer()) return;
-  if (!confirm("Remettre toute la timeline PCS à zéro (votes inclus) ?")) return;
+  if (!confirm("Remettre toute la timeline PCS à zéro (votes inclus, variantes inclues) ?")) return;
   if (window.FB) {
     await Promise.all([
       window.FB.removeVal('pcs/currentPhase'),
       window.FB.removeVal('pcs/votes'),
+      window.FB.removeVal('pcs/variants'),
     ]);
   }
+}
+
+// =============================================================================
+// TEMPÊTE STOCHASTIQUE — Tirage et synchronisation des variantes par phase
+// =============================================================================
+let _pcsVariants = {};  // cache local, ex: { phase0: 'A', phase1: 'B', ... }
+
+function subscribePcsVariants() {
+  if (!window.FB || !window.FB.onVal) return;
+  window.FB.onVal('pcs/variants', val => {
+    _pcsVariants = val || {};
+    // Si une phase est ouverte au moment de la mise à jour, on rafraîchit le briefing
+    if (_pcsViewingPhaseIdx !== null && _pcsViewingPhaseIdx !== undefined) {
+      const phase = PCS_PHASES[_pcsViewingPhaseIdx];
+      if (phase) refreshPcsPhaseBriefing(phase.id);
+    }
+  });
+}
+
+// Tirage pondéré aléatoire d'une variante pour une phase
+// (les poids sont modulés par la variante de la phase précédente, si présente)
+function _drawWeightedVariant(phaseId) {
+  const variants = PCS_PHASE_VARIANTS[phaseId];
+  if (!variants || !variants.length) return null;
+  const { weights } = _effectiveWeights(phaseId);
+  const totalWeight = Object.values(weights).reduce((a, x) => a + x, 0);
+  if (totalWeight <= 0) return variants[0].id;
+  let r = Math.random() * totalWeight;
+  for (const [variantId, w] of Object.entries(weights)) {
+    r -= w;
+    if (r <= 0) return variantId;
+  }
+  return variants[variants.length - 1].id;
+}
+
+async function tirerVariantePcs(phaseId) {
+  if (!isTrainer()) return;
+  const newVariant = _drawWeightedVariant(phaseId);
+  if (!newVariant) return;
+  if (window.FB) await window.FB.setVal('pcs/variants/' + phaseId, newVariant);
+  _pcsVariants[phaseId] = newVariant;
+  refreshPcsPhaseBriefing(phaseId);
+}
+
+async function setVariantePcs(phaseId, variantId) {
+  if (!isTrainer()) return;
+  if (window.FB) await window.FB.setVal('pcs/variants/' + phaseId, variantId);
+  _pcsVariants[phaseId] = variantId;
+  refreshPcsPhaseBriefing(phaseId);
+}
+
+async function effacerVariantePcs(phaseId) {
+  if (!isTrainer()) return;
+  if (window.FB) await window.FB.removeVal('pcs/variants/' + phaseId);
+  delete _pcsVariants[phaseId];
+  refreshPcsPhaseBriefing(phaseId);
+}
+
+// Récupère la variante active pour une phase (ou null si pas de tirage)
+function _getActiveVariant(phaseId) {
+  const vid = _pcsVariants[phaseId];
+  if (!vid) return null;
+  const variants = PCS_PHASE_VARIANTS[phaseId];
+  if (!variants) return null;
+  return variants.find(v => v.id === vid) || null;
+}
+
+// Compose le briefing avec la variante active (si présente)
+function _composePcsBriefing(phaseId) {
+  const phase = PCS_PHASES.find(p => p.id === phaseId);
+  if (!phase) return '';
+
+  const butterflyNotes = (typeof renderButterflyNotesPcs === 'function')
+    ? renderButterflyNotesPcs(phaseId) : '';
+
+  const variant = _getActiveVariant(phaseId);
+  let variantBlock = '';
+  if (variant) {
+    const colors = {
+      standard:  { bg: 'rgba(120,120,140,0.10)', bd: '#5C6470', icon: '🌧️' },
+      doute:     { bg: 'rgba(232,178,85,0.12)',  bd: '#D49426', icon: '⚠️' },
+      aggravé:   { bg: 'rgba(168,58,54,0.12)',   bd: '#A83A36', icon: '🌪️' },
+    };
+    const c = colors[variant.tone] || colors.standard;
+    variantBlock = `
+      <div style="background:${c.bg};border-left:4px solid ${c.bd};padding:14px 18px;margin:0 0 16px 0;border-radius:4px;">
+        <div style="font-family:var(--mono);font-size:11px;letter-spacing:0.05em;text-transform:uppercase;color:${c.bd};margin-bottom:6px;">
+          ${c.icon} Trajectoire ${variant.id} — ${variant.label}
+        </div>
+        <div style="font-size:14px;line-height:1.55;color:var(--grey-txt);">${variant.addendum}</div>
+      </div>`;
+  }
+
+  return butterflyNotes + variantBlock + phase.briefing;
+}
+
+// Rafraîchit le briefing affiché si la phase est en cours d'ouverture
+function refreshPcsPhaseBriefing(phaseId) {
+  if (_pcsViewingPhaseIdx === null || _pcsViewingPhaseIdx === undefined) return;
+  const phase = PCS_PHASES[_pcsViewingPhaseIdx];
+  if (!phase || phase.id !== phaseId) return;
+  const briefingEl = document.getElementById('pcsPhaseBriefing');
+  if (briefingEl) {
+    briefingEl.innerHTML = _composePcsBriefing(phaseId);
+  }
+  // Re-render le panneau formateur s'il est présent
+  const trainerPanel = document.getElementById('pcsVariantPanel');
+  if (trainerPanel) renderPcsVariantPanel(phaseId);
+}
+
+// Rendu du panneau formateur (boutons tirer + override) dans la modale
+function renderPcsVariantPanel(phaseId) {
+  if (!isTrainer()) return;
+  const panel = document.getElementById('pcsVariantPanel');
+  if (!panel) return;
+  const variants = PCS_PHASE_VARIANTS[phaseId];
+  if (!variants) {
+    panel.innerHTML = '';
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'block';
+  const active = _pcsVariants[phaseId] || null;
+  const { weights, modulated, prev } = _effectiveWeights(phaseId);
+  const totalW = Object.values(weights).reduce((a, x) => a + x, 0) || 1;
+
+  const buttons = variants.map(v => {
+    const isActive = (v.id === active);
+    const w = weights[v.id] || 0;
+    const pct = Math.round((w / totalW) * 100);
+    const baseW = (v.weight || 0) * 100;
+    const isShifted = modulated && Math.abs(pct - baseW) > 2;
+    return `<button onclick="setVariantePcs('${phaseId}','${v.id}')"
+      style="padding:6px 10px;font-size:11px;font-family:var(--mono);
+      background:${isActive ? 'var(--orange)' : 'transparent'};
+      color:${isActive ? 'white' : 'var(--grey-txt)'};
+      border:1px solid ${isActive ? 'var(--orange)' : 'var(--grey-border)'};
+      border-radius:3px;cursor:pointer;margin-right:4px;">
+      ${v.id} · ${v.label} <span style="opacity:0.6;">(${pct}%${isShifted ? '↗' : ''})</span>
+    </button>`;
+  }).join('');
+
+  const modulationNote = modulated
+    ? `<div style="font-size:10px;color:#7E6B4A;margin-top:6px;font-style:italic;">
+         Probabilités modulées par la variante <strong>${prev}</strong> de la phase précédente.
+       </div>`
+    : '';
+
+  panel.innerHTML = `
+    <div style="background:#FAF7F2;border:1px dashed #C9BFA8;padding:10px 14px;margin-bottom:12px;border-radius:3px;">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#7E6B4A;margin-bottom:6px;">
+        🎲 Mode formateur — tempête stochastique
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;">
+        <button onclick="tirerVariantePcs('${phaseId}')"
+          style="padding:6px 12px;font-size:12px;font-weight:600;background:var(--blue);color:white;border:none;border-radius:3px;cursor:pointer;">
+          🎲 Tirer une trajectoire
+        </button>
+        <span style="color:#7E6B4A;font-size:11px;margin:0 4px;">ou forcer :</span>
+        ${buttons}
+        ${active ? `<button onclick="effacerVariantePcs('${phaseId}')" style="padding:6px 10px;font-size:11px;background:transparent;color:var(--grey-txt);border:1px solid var(--grey-border);border-radius:3px;cursor:pointer;">Effacer</button>` : ''}
+      </div>
+      ${modulationNote}
+    </div>`;
 }
 
 // ============ REPORT VIEWER (présentation par groupe) ============
@@ -11046,6 +11487,7 @@ function subscribeAll() {
   subscribeLevers();
   subscribeNotes();
   subscribePcs();
+  subscribePcsVariants();
 }
 
 // ============ INIT ============
@@ -11901,6 +12343,322 @@ function renderButterflyNotesPcs(phaseId) {
   if (!rules) return '';
   return _renderButterflyNotes(rules, _getMyLevers());
 }
+
+// =============================================================================
+// DÉBRIEFING MIROIR — IA face aux décisions du groupe
+// =============================================================================
+const DEBRIEFING_GROUPS = {
+  g1: { name: "Mission préfectorale", role: "État dans le territoire", color: "#1e3a5f" },
+  g2: { name: "Mairie + EPCI",        role: "Légitimité élective",      color: "#5e3a8a" },
+  g3: { name: "Syndicat + Conservatoire", role: "Conservation",         color: "#2d6e3e" },
+  g4: { name: "Acteurs économiques",  role: "Tourisme/agro/commerce",   color: "#a83a36" },
+  g5: { name: "Société civile",       role: "Habitants + associations", color: "#7E6B4A" },
+};
+
+const MAX_DEBRIEFING_TURNS = 6;
+
+let _debriefingState = {
+  groupKey: null,
+  history: [],
+  turnsUsed: 0,
+  systemPrompt: '',
+};
+
+// Agrège toutes les données Firebase pour un groupe : leviers cas 2 + votes cas 3
+// par phase + variantes tirées + votes CDRNM cas 4
+async function _aggregateGroupData(grp) {
+  const out = {
+    leviers: [],
+    pcs: {},      // { phase0: { actions: [...], variant: 'A' }, ... }
+    cdrnm: {},    // { A1: 'POUR', ... }
+  };
+
+  if (!window.FB || !window.FB.getVal) {
+    // Mode offline : on lit ce qu'on a localement
+    try {
+      const local = JSON.parse(localStorage.getItem('ansedegoulven_levers_local') || '{}');
+      out.leviers = Object.keys(local).filter(k => local[k]);
+    } catch(e) {}
+    return out;
+  }
+
+  try {
+    // === Leviers cas 2 (agrégés depuis tous les devices du groupe) ===
+    const leversSnapshot = await window.FB.getVal('levers');
+    const leverSet = new Set();
+    if (leversSnapshot) {
+      for (const [deviceId, deviceData] of Object.entries(leversSnapshot)) {
+        if (deviceData?.meta?.grp === grp && deviceData.data) {
+          for (const k of Object.keys(deviceData.data)) {
+            if (deviceData.data[k]) leverSet.add(k);
+          }
+        }
+      }
+    }
+    out.leviers = Array.from(leverSet);
+
+    // === Variantes tirées + votes cas 3 par phase ===
+    const variants = await window.FB.getVal('pcs/variants') || {};
+    const pcsVotes = await window.FB.getVal('pcs/votes') || {};
+    for (const phaseId of ['phase0','phase1','phase2','phase3','phase4']) {
+      const phaseVotes = pcsVotes[phaseId] || {};
+      const groupVotes = phaseVotes[grp] || {};
+      out.pcs[phaseId] = {
+        actions: Object.keys(groupVotes).filter(k => groupVotes[k]),
+        variant: variants[phaseId] || null,
+      };
+    }
+
+    // === Votes CDRNM cas 4 ===
+    const cdrnmVotes = await window.FB.getVal('cdrnm') || {};
+    for (const [qid, qData] of Object.entries(cdrnmVotes)) {
+      if (qData && qData[grp]) {
+        out.cdrnm[qid] = qData[grp].vote || qData[grp];
+      }
+    }
+  } catch(e) {
+    console.warn('[Debriefing] erreur agrégation:', e);
+  }
+
+  return out;
+}
+
+// Construit un système prompt humain qui résume les choix du groupe
+function _buildDebriefingPrompt(grp, data) {
+  const g = DEBRIEFING_GROUPS[grp];
+  const leverLabels = {
+    digue_repare: "réparer la digue (confortement 20 ans)",
+    digue_reconstruit: "reconstruire la digue rehaussée (+1,2 m)",
+    digue_decons: "déconstruire la digue + restaurer le marais",
+    pcs_rcsc: "créer une réserve communale de sécurité civile",
+    pme_relocate: "relocaliser la PME Bretzel-Marine",
+    papi_complet: "candidater à un PAPI complet",
+    obs_capteurs: "déployer un observatoire local + capteurs",
+    campings_recompose: "plan campings 4 saisons (recomposition)",
+    panel_citoyen: "créer un panel citoyen permanent",
+    diversif_cultures: "diversifier les cultures conchylicoles",
+    plu_recul: "réviser le PLU avec OAP « risques »",
+  };
+
+  const leviersTxt = data.leviers.length
+    ? data.leviers.map(l => '• ' + (leverLabels[l] || l)).join('\n')
+    : '• AUCUN levier voté';
+
+  const variantNarratives = {
+    phase0: { A: "trajectoire confirmée", B: "modèles divergents (doute)", C: "renforcement brutal" },
+    phase1: { A: "approche normale", B: "calme suspect", C: "tempête en avance" },
+    phase2: { A: "pic conforme", B: "pic atténué mais long", C: "rupture digue côté nord" },
+    phase3: { A: "décrue normale", B: "marée nocturne critique", C: "effondrement secondaire" },
+    phase4: { A: "récupération maîtrisée", B: "polémique politique", C: "médiatisation nationale" },
+  };
+
+  const phaseLabels = {
+    phase0: "J−18h Vigilance rouge",
+    phase1: "J−6h Décisions préventives",
+    phase2: "J0 Pic de l'événement",
+    phase3: "J+8h Premières heures",
+    phase4: "J+72h RETEX",
+  };
+
+  let pcsTxt = '';
+  for (const pid of ['phase0','phase1','phase2','phase3','phase4']) {
+    const ph = data.pcs[pid] || {};
+    const variant = ph.variant ? ` [variante ${ph.variant}: ${variantNarratives[pid][ph.variant] || '?'}]` : '';
+    const actions = (ph.actions && ph.actions.length) ? `${ph.actions.length} action(s) votée(s)` : 'aucune action votée';
+    pcsTxt += `  - ${phaseLabels[pid]}${variant} : ${actions}\n`;
+  }
+
+  let cdrnmTxt = '';
+  if (Object.keys(data.cdrnm).length) {
+    for (const [qid, vote] of Object.entries(data.cdrnm)) {
+      cdrnmTxt += `  - ${qid} : ${vote}\n`;
+    }
+  } else {
+    cdrnmTxt = '  - aucun vote enregistré\n';
+  }
+
+  return `Tu es un débriefer professionnel, neutre et bienveillant, pour la formation IGEDD à la résilience littorale (cas Anse-de-Goulven). Tu animes une session de débriefing à la fin d'une journée intense de simulation.
+
+## Le groupe en face de toi
+**${g.name}** (${g.role})
+
+## Ce qu'ils ont décidé sur la journée
+
+### Cas 2 — Stratégie 10 ans (leviers votés)
+${leviersTxt}
+
+### Cas 3 — Tempête Argonne (votes phase par phase + variantes stochastiques tirées)
+${pcsTxt}
+### Cas 4 — CDRNM (avis sur 10 propositions)
+${cdrnmTxt}
+
+## Ton rôle
+Tu fais de la maïeutique, pas de la pédagogie descendante. Tu ne juges JAMAIS leurs choix. Tu poses des questions ouvertes qui les forcent à articuler leurs propres arbitrages.
+
+Format de la conversation :
+1. **Ouverture** : tu commences par une synthèse de 3 lignes maximum de ce qu'ils ont fait sur la journée, factuelle, sans jugement. Puis tu poses UNE question ouverte qui touche un arbitrage central qu'ils ont fait. Pas plus.
+2. **Relances** : tu relances brièvement (50 mots maximum) après chaque réponse, en pointant une tension ou une cohérence dans leurs choix. Tu poses ensuite une nouvelle question.
+3. **Maximum ${MAX_DEBRIEFING_TURNS} échanges**. Au dernier échange, tu fais une synthèse de 3 lignes ("ce qui ressort de notre échange") et tu cloturent avec une question à laisser ouverte pour la suite.
+
+Règles :
+- Pas de "vous auriez dû". Pas de "c'était bien/mal".
+- Pointer les TENSIONS dans leurs choix : "vous avez voté X et Y, qu'est-ce qui a fait pencher la décision ?"
+- Pointer les ABSENCES significatives : "vous n'avez pas voté Z. Était-ce un choix conscient ou un oubli ?"
+- Si une variante stochastique tirée est en tension forte avec leur stratégie cas 2 (par exemple variante C "rupture digue" alors qu'ils ont voté pour reconstruire), poser la question.
+- Toujours en français, ton professionnel mais chaleureux. Pas d'émojis. Pas de listes à puces.
+
+Tu commences maintenant. Ouvre la conversation par ta synthèse + première question.`;
+}
+
+async function openDebriefing(grp) {
+  const g = DEBRIEFING_GROUPS[grp];
+  if (!g) return;
+
+  // Récupérer les données du groupe
+  const data = await _aggregateGroupData(grp);
+  const systemPrompt = _buildDebriefingPrompt(grp, data);
+
+  _debriefingState = {
+    groupKey: grp,
+    history: [],
+    turnsUsed: 0,
+    systemPrompt,
+  };
+
+  document.getElementById('debriefingName').textContent = g.name;
+  document.getElementById('debriefingRole').textContent = g.role;
+  document.getElementById('debriefingBody').innerHTML = `
+    <div style="text-align:center;padding:30px;color:var(--grey-txt);font-style:italic;">
+      <span style="display:inline-block;animation:pulse 1.5s ease-in-out infinite;">
+        Le débriefer prend connaissance de votre journée…
+      </span>
+    </div>`;
+  document.getElementById('debriefingInput').value = '';
+  document.getElementById('debriefingCounter').textContent = `0/${MAX_DEBRIEFING_TURNS}`;
+  document.getElementById('debriefingOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Premier appel : faire générer l'opening par l'IA
+  await _debriefingCall("");  // input vide = ouverture
+}
+
+function closeDebriefing() {
+  document.getElementById('debriefingOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  // Couper toute synthèse vocale en cours
+  if (typeof stopDialog1972Speech === 'function') stopDialog1972Speech();
+}
+
+function debriefingKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendDebriefing();
+  }
+}
+
+async function sendDebriefing() {
+  const input = document.getElementById('debriefingInput');
+  const text = (input.value || '').trim();
+  if (!text) return;
+  if (_debriefingState.turnsUsed >= MAX_DEBRIEFING_TURNS) {
+    alert("Cette session est terminée. Vous pouvez fermer la fenêtre.");
+    return;
+  }
+  input.value = '';
+  await _debriefingCall(text);
+}
+
+async function _debriefingCall(userText) {
+  const body = document.getElementById('debriefingBody');
+  const sendBtn = document.getElementById('debriefingSendBtn');
+  sendBtn.disabled = true;
+
+  // Si l'utilisateur a écrit, on l'ajoute à l'historique et au DOM
+  if (userText) {
+    _debriefingState.history.push({ role: 'user', content: userText });
+    _debriefingState.turnsUsed++;
+    const userBubble = document.createElement('div');
+    userBubble.className = 'dialog1972-bubble dialog1972-bubble-user';
+    userBubble.textContent = userText;
+    body.appendChild(userBubble);
+  }
+
+  // Bulle de loading
+  const loading = document.createElement('div');
+  loading.className = 'dialog1972-bubble dialog1972-bubble-character';
+  loading.innerHTML = '<span style="opacity:0.6;font-style:italic;">Le débriefer réfléchit…</span>';
+  body.appendChild(loading);
+  body.scrollTop = body.scrollHeight;
+
+  try {
+    const apiUrl = window.DIALOG1972_API_URL;
+    if (!apiUrl) throw new Error("URL API non configurée");
+
+    const messages = [..._debriefingState.history];
+    if (!userText && messages.length === 0) {
+      // Premier appel : on demande l'opening
+      messages.push({ role: 'user', content: 'Commence le débriefing maintenant.' });
+    }
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system: _debriefingState.systemPrompt,
+        messages: messages,
+        max_tokens: 500,
+      }),
+    });
+
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+
+    const data = await response.json();
+    let reply = data?.content?.[0]?.text || '';
+    reply = _cleanupReply(reply);
+
+    // Stocker dans l'historique
+    _debriefingState.history.push({ role: 'assistant', content: reply });
+
+    // Afficher
+    loading.classList.remove('dialog1972-bubble-character');
+    loading.className = 'dialog1972-bubble dialog1972-bubble-character';
+    loading.textContent = '';
+    loading.innerHTML = _formatReply(reply);
+    body.scrollTop = body.scrollHeight;
+
+    // Mettre à jour le compteur
+    document.getElementById('debriefingCounter').textContent =
+      `${_debriefingState.turnsUsed}/${MAX_DEBRIEFING_TURNS}`;
+
+    // Bloquer si terminé
+    if (_debriefingState.turnsUsed >= MAX_DEBRIEFING_TURNS) {
+      sendBtn.disabled = true;
+      document.getElementById('debriefingInput').placeholder = "Session terminée";
+    } else {
+      sendBtn.disabled = false;
+    }
+  } catch(err) {
+    loading.innerHTML = `<span style="color:var(--red);">Erreur : ${err.message}. Réessayez ou contactez le formateur.</span>`;
+    sendBtn.disabled = false;
+    console.error('[Debriefing] Erreur:', err);
+  }
+}
+
+function _cleanupReply(text) {
+  if (!text) return '';
+  // Retirer didascalies (*action*) longues, garder les emphases courtes
+  return text.replace(/\*([^*]{20,})\*/g, '');
+}
+
+function _formatReply(text) {
+  // Convertir les sauts de ligne en <br> et préserver typo française
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+}
+
 </script>
 
 </body>
