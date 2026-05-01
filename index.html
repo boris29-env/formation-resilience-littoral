@@ -4226,14 +4226,17 @@ h3.subhead {
   </div>
   <div class="sidebar-section">
     <span class="sidebar-label">Travailler</span>
+    <a href="#glossaireSeuil">Glossaire de seuil</a>
     <a href="#mailbox">Votre boîte mail</a>
     <a href="#restitution">Restitution</a>
+    <a href="#dialogue1972">Interlude — 1972</a>
     <a href="#cas1">Étude de cas n°1</a>
     <a href="#cas2">Étude de cas n°2</a>
     <a href="#cas3">Étude de cas n°3</a>
-    <a href="#dialogue1972">Interlude — 1972</a>
     <a href="#climateVoices">Interlude — voix du climat</a>
     <a href="#cas4">Étude de cas n°4</a>
+    <a href="#carnet">Carnet de découverte</a>
+    <a href="#debriefing">Débriefing miroir</a>
   </div>
   <div class="sidebar-section">
     <span class="sidebar-label">Ressources</span>
@@ -4294,6 +4297,164 @@ h3.subhead {
     <button class="pwd-panel-btn" onclick="openUnlockModal()">Saisir mon code</button>
   </div>
 </div>
+
+<!-- ============ GLOSSAIRE DE SEUIL ============ -->
+<section id="glossaireSeuil" class="glossaire-seuil-section">
+  <details class="glossaire-seuil-details">
+    <summary class="glossaire-seuil-summary">
+      <span class="glossaire-seuil-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </span>
+      <span class="glossaire-seuil-title">Avant de commencer — 12 termes pour suivre la journée</span>
+      <span class="glossaire-seuil-hint">Cliquez pour déplier · 3 min de lecture · vous pouvez sauter si vous êtes du métier</span>
+    </summary>
+    <div class="glossaire-seuil-body">
+      <p class="glossaire-seuil-intro">
+        Ce glossaire vous donne le strict nécessaire pour suivre la journée sans frustration. Les concepts approfondis sont dans le <strong>Carnet de découverte</strong> en fin de page (30 fiches détaillées, à consulter en autonomie).
+      </p>
+      <div class="glossaire-seuil-grid">
+        <div class="gs-term"><strong>Aléa</strong> — phénomène potentiel (submersion, érosion, tempête). On parle d'aléa de référence et d'aléa centennal.</div>
+        <div class="gs-term"><strong>Exposition</strong> — ce qui est là (population, bâtiments, activités, patrimoine).</div>
+        <div class="gs-term"><strong>Vulnérabilité</strong> — comment ce qui est exposé encaisse (technique, sociale, organisationnelle).</div>
+        <div class="gs-term"><strong>Risque</strong> — combinaison aléa × exposition × vulnérabilité.</div>
+        <div class="gs-term"><strong>Résilience</strong> — capacité à absorber, s'adapter, se transformer face au choc.</div>
+        <div class="gs-term"><strong>PPRSM</strong> — Plan de Prévention des Risques de Submersion Marine, document réglementaire qui zone les terrains constructibles ou non. Doit afficher l'aléa de référence et l'aléa à 100 ans.</div>
+        <div class="gs-term"><strong>PCS</strong> — Plan Communal de Sauvegarde, le document opérationnel de la commune en cas de crise (qui fait quoi, quand, comment).</div>
+        <div class="gs-term"><strong>PAPI</strong> — Programme d'Actions de Prévention des Inondations, contractualisation État + collectivités pour financer les actions de prévention.</div>
+        <div class="gs-term"><strong>FPRNM</strong> — Fonds de prévention des risques naturels majeurs (« fonds Barnier »), finance acquisitions amiables, études, travaux.</div>
+        <div class="gs-term"><strong>CDRNM</strong> — Commission départementale des risques naturels majeurs, instance consultative qui réunit État, élus, qualifiés.</div>
+        <div class="gs-term"><strong>TRACC</strong> — Trajectoire de Réchauffement de Référence (décret du 23 janvier 2026). Fixe pour la France : +2°C en 2030, +2,7°C en 2050, +4°C en 2100.</div>
+        <div class="gs-term"><strong>Recomposition / repli stratégique</strong> — déplacer en amont les biens et activités exposés, plutôt que défendre indéfiniment. Loi Climat & Résilience 2021.</div>
+      </div>
+      <p class="glossaire-seuil-tip">
+        <strong>Pas la peine de tout retenir maintenant.</strong> Vous pourrez revenir ici à tout moment depuis la sidebar. Les 6 acronymes en gras sont ceux qui reviennent le plus souvent dans la journée.
+      </p>
+    </div>
+  </details>
+</section>
+
+<style>
+.glossaire-seuil-section {
+  margin: 24px 0 0;
+  padding: 0;
+}
+.glossaire-seuil-details {
+  background: #FAF7F2;
+  border: 1px solid var(--grey-border);
+  border-left: 3px solid #1E3A5F;
+  border-radius: 4px;
+  padding: 0;
+}
+.glossaire-seuil-summary {
+  cursor: pointer;
+  padding: 16px 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  list-style: none;
+  user-select: none;
+}
+.glossaire-seuil-summary::-webkit-details-marker { display: none; }
+.glossaire-seuil-summary::after {
+  content: '▾';
+  margin-left: auto;
+  font-size: 14px;
+  color: #1E3A5F;
+  transition: transform 0.2s;
+}
+.glossaire-seuil-details[open] .glossaire-seuil-summary::after { transform: rotate(180deg); }
+.glossaire-seuil-icon {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  color: #1E3A5F;
+}
+.glossaire-seuil-icon svg { width: 100%; height: 100%; }
+.glossaire-seuil-title {
+  font-family: Georgia, serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--grey-txt);
+}
+.glossaire-seuil-hint {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: #888;
+  font-style: italic;
+}
+.glossaire-seuil-body {
+  padding: 4px 22px 22px;
+  border-top: 1px dashed #d8d2c4;
+  margin-top: 4px;
+  padding-top: 18px;
+}
+.glossaire-seuil-intro {
+  font-size: 14px;
+  line-height: 1.55;
+  color: #5a554d;
+  margin: 0 0 16px;
+}
+.glossaire-seuil-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px 22px;
+  margin: 12px 0;
+}
+.gs-term {
+  font-size: 13.5px;
+  line-height: 1.5;
+  padding: 6px 0;
+  border-bottom: 1px dotted #e0dccd;
+}
+.gs-term strong { color: #1E3A5F; }
+.glossaire-seuil-tip {
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: #fff8ed;
+  border-left: 3px solid #D49426;
+  font-size: 13px;
+  font-style: italic;
+  color: #5a554d;
+  border-radius: 3px;
+}
+
+/* Bloc d'acclimatation rupture de registre (cas 3) */
+.acclimatation-block {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 22px 26px;
+  margin: 22px 0 18px;
+  background: linear-gradient(135deg, #2C3E50 0%, #1E3A5F 100%);
+  color: #FFF;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.acclimatation-icon {
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  color: #FFCB7A;
+  margin-top: 2px;
+}
+.acclimatation-icon svg { width: 100%; height: 100%; }
+.acclimatation-body h4 {
+  font-family: Georgia, serif;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: #FFCB7A;
+  letter-spacing: 0.01em;
+}
+.acclimatation-body p {
+  font-size: 14.5px;
+  line-height: 1.6;
+  margin: 0 0 10px;
+  color: rgba(255,255,255,0.92);
+}
+.acclimatation-body p:last-child { margin-bottom: 0; }
+.acclimatation-body strong { color: #FFE0B0; font-weight: 600; }
+.acclimatation-body em { color: #FFCB7A; font-style: italic; font-weight: 600; }
+</style>
 
 <!-- ============ TERRITOIRE ============ -->
 <section id="territoire">
@@ -5345,6 +5506,10 @@ h3.subhead {
     convergences inattendues. Si vous voyiez tout d'avance, le jeu n'aurait plus d'objet.
   </div>
 
+  <div class="info-box" style="background:#FAF7F2;border-left-color:#A8761B;">
+    <strong>À noter dès maintenant — la CDRNM en fin de journée.</strong> En toute fin de journée (cas n°4), vous siégerez en Commission départementale des risques naturels majeurs. La CDRNM réelle compte trois collèges et non cinq : <strong>État, élus, qualifiés/socio-pro</strong>. Vos cinq groupes seront alors remappés ainsi : <span style="font-family:var(--mono);font-size:12px;background:white;padding:2px 6px;border-radius:3px;">G1 → État</span>  <span style="font-family:var(--mono);font-size:12px;background:white;padding:2px 6px;border-radius:3px;">G2 → Élus</span>  <span style="font-family:var(--mono);font-size:12px;background:white;padding:2px 6px;border-radius:3px;">G3+G4+G5 → Qualifiés</span>. Cela signifie que <strong>la société civile, les acteurs économiques et les gestionnaires d'espaces naturels devront construire une position commune</strong>, ce qui est un exercice politique réel : la CDRNM oblige des acteurs aux logiques distinctes à se coaliser. Gardez ce remapping en tête en construisant votre posture aujourd'hui.
+  </div>
+
   <!-- ===== G1 ===== -->
   <div class="group-card gh1 is-collapsed" id="g1-card">
     <div class="group-header" onclick="toggleGroup('g1-card')">
@@ -5804,10 +5969,86 @@ h3.subhead {
   </div>
 </section>
 
+<!-- ============ INTERLUDE — DIALOGUE 1972 ============ -->
+<section id="dialogue1972">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <span class="section-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>
+    </span>
+    <h2 class="section-title">Interlude — dialogue avec 1972</h2>
+  </div>
+  <p class="section-intro">
+    Avant de produire votre diagnostic du territoire, arrêtez-vous quelques minutes. Anse-de-Goulven n'est pas une page blanche :
+    c'est un palimpseste de décisions prises par d'autres avant vous. Vous allez dialoguer avec
+    <strong>la personne qui, en 1972, a pris une décision dont vous héritez</strong> — celle qui a autorisé un permis,
+    construit la digue, refusé de classer le marais, ou tu sa peur du raz-de-marée. Cette personne ne se justifie pas :
+    elle vous explique. Elle est de bonne foi, dans le cadre du droit, du savoir et de la doctrine de son époque.
+    <strong>Diagnostiquer un territoire, c'est aussi diagnostiquer la mémoire institutionnelle qu'il porte.</strong>
+  </p>
+
+  <div class="callout callout-orange">
+    <div class="callout-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r=".7" fill="currentColor"/></svg>
+    </div>
+    <div class="callout-body">
+      <strong>Le piège pédagogique.</strong> Vous allez sans doute reprocher à 1972 de ne pas avoir intégré l'aléa climatique,
+      la submersion marine, la fragilité du cordon dunaire. Mais ces concepts <strong>n'existent pas dans le vocabulaire administratif de 1972</strong>.
+      Le PPRSM date de 1995. Le mot « résilience » apparaît dans les textes en 2003. Le climat n'entre dans le code de l'urbanisme
+      qu'en 2010. Vous ne pouvez pas reprocher à 1972 ce qui n'a été pensé qu'après. <strong>Que pouvez-vous reprocher, alors ?</strong>
+    </div>
+  </div>
+
+  <div class="dialog1972-block">
+    <h3>Choisissez votre interlocuteur·rice de 1972</h3>
+    <p class="dialog1972-intro">
+      Chaque collège a un personnage attitré. Le formateur peut vous demander d'en choisir un autre pour comparer les angles morts.
+      Une conversation dure environ 10 minutes — 6 à 8 échanges.
+    </p>
+    <div class="dialog1972-grid">
+      <button class="dialog1972-card g1" onclick="openDialog1972('leroux')">
+        <div class="dialog1972-card-grp">G1 · État</div>
+        <div class="dialog1972-card-name">Henri Le Roux</div>
+        <div class="dialog1972-card-role">Sous-préfet, 1972</div>
+        <div class="dialog1972-card-line">A signé le permis du Camping 2 La Goëlette.</div>
+      </button>
+      <button class="dialog1972-card g2" onclick="openDialog1972('tanguy')">
+        <div class="dialog1972-card-grp">G2 · Élus</div>
+        <div class="dialog1972-card-name">Yvonne Tanguy</div>
+        <div class="dialog1972-card-role">Maire 1965-1989</div>
+        <div class="dialog1972-card-line">A fait construire la digue. « Le marais, c'est de la terre perdue. »</div>
+      </button>
+      <button class="dialog1972-card g3" onclick="openDialog1972('coic')">
+        <div class="dialog1972-card-grp">G3 · Marais</div>
+        <div class="dialog1972-card-name">Joseph Coïc</div>
+        <div class="dialog1972-card-role">Conseiller agricole, 1970</div>
+        <div class="dialog1972-card-line">Voulait poldériser le marais pour y planter du blé.</div>
+      </button>
+      <button class="dialog1972-card g4" onclick="openDialog1972('allain')">
+        <div class="dialog1972-card-grp">G4 · Économique</div>
+        <div class="dialog1972-card-name">Jean-Pierre Allain</div>
+        <div class="dialog1972-card-role">Gérant du Camping La Goëlette</div>
+        <div class="dialog1972-card-line">A acheté la dune en 1968. « La chance du siècle. »</div>
+      </button>
+      <button class="dialog1972-card g5" onclick="openDialog1972('quere')">
+        <div class="dialog1972-card-grp">G5 · Société civile</div>
+        <div class="dialog1972-card-name">Marie Quéré</div>
+        <div class="dialog1972-card-role">Riveraine, fille de rescapée 1953</div>
+        <div class="dialog1972-card-line">Sait quelque chose. Mais personne ne l'écoute.</div>
+      </button>
+    </div>
+    <p class="dialog1972-tip">
+      <strong>Conseil.</strong> Notez à la fin trois arguments qui vous ont gêné·e — pas trois arguments
+      que vous avez « gagnés ». Ces arguments dérangeants vont nourrir tout votre travail de la journée :
+      ils marquent les angles morts que vous risquez de reproduire si vous ne les rendez pas visibles.
+    </p>
+  </div>
+</section>
+
 <!-- ============ CAS 1 ============ -->
 <section id="cas1">
   <div class="section-header">
-    <span class="section-num">08</span>
+    <span class="section-num">09</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
     </span>
@@ -5938,7 +6179,7 @@ h3.subhead {
 <!-- ============ CAS 2 ============ -->
 <section id="cas2">
   <div class="section-header">
-    <span class="section-num">09</span>
+    <span class="section-num">10</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 12 9 18 21 6"/></svg>
     </span>
@@ -6047,7 +6288,7 @@ h3.subhead {
 <!-- ============ CAS 3 — GESTION DE CRISE PCS (timeline) ============ -->
 <section id="cas3">
   <div class="section-header">
-    <span class="section-num">10</span>
+    <span class="section-num">11</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
     </span>
@@ -6058,6 +6299,21 @@ h3.subhead {
     Le scénario que vous avez écrit en cas n°1 et 2 va être <strong>mis à l'épreuve dans l'urgence</strong>. Voici la timeline,
     avec cinq fenêtres de décision où chaque groupe vote ses trois actions prioritaires.
   </p>
+
+  <div class="acclimatation-block">
+    <div class="acclimatation-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <div class="acclimatation-body">
+      <h4>Vous changez de rythme et de logique</h4>
+      <p>
+        Jusqu'ici, vous travailliez dans le <strong>temps long délibératif</strong> : diagnostiquer, peser, arbitrer. À partir de maintenant, vous entrez dans le <strong>temps court de l'urgence</strong>. Cinq phases, deux minutes par phase, des informations qui arrivent en désordre, des pièges, des perturbateurs imprévus.
+      </p>
+      <p>
+        <strong>Trois choses à savoir avant d'entrer.</strong> D'abord, <em>vous allez vous tromper</em> — c'est normal et c'est la matière du débriefing. Ensuite, <em>vos décisions du cas 2 vont vous suivre</em> : si vous avez sous-investi dans tel équipement, vous le paierez ici. Enfin, <em>aucun groupe ne dispose de toute l'information</em> — c'est aussi ça, la crise. La cellule de crise réelle ressemble à ça.
+      </p>
+    </div>
+  </div>
 
   <div class="callout callout-orange">
     <div class="callout-icon">
@@ -6106,79 +6362,6 @@ h3.subhead {
       </div>
     </div>
     <p class="pcs-timeline-hint">Cliquez sur une étape pour voir le briefing et voter — uniquement quand le formateur a ouvert la phase.</p>
-  </div>
-</section>
-
-<!-- ============ INTERLUDE — DIALOGUE 1972 ============ -->
-<section id="dialogue1972">
-  <div class="section-header">
-    <span class="section-num">11</span>
-    <span class="section-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>
-    </span>
-    <h2 class="section-title">Interlude — dialogue avec 1972</h2>
-  </div>
-  <p class="section-intro">
-    Avant de voter à la CDRNM (cas n°4), arrêtez-vous. Vous allez dialoguer 10 minutes avec
-    <strong>la personne qui, en 1972, a pris une décision dont vous héritez</strong> — celle qui a autorisé un permis,
-    construit la digue, refusé de classer le marais, ou tu sa peur du raz-de-marée. Cette personne ne se justifie pas :
-    elle vous explique. Elle est de bonne foi, dans le cadre du droit, du savoir et de la doctrine de son époque.
-  </p>
-
-  <div class="callout callout-orange">
-    <div class="callout-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r=".7" fill="currentColor"/></svg>
-    </div>
-    <div class="callout-body">
-      <strong>Le piège pédagogique.</strong> Vous allez sans doute reprocher à 1972 de ne pas avoir intégré l'aléa climatique,
-      la submersion marine, la fragilité du cordon dunaire. Mais ces concepts <strong>n'existent pas dans le vocabulaire administratif de 1972</strong>.
-      Le PPRSM date de 1995. Le mot « résilience » apparaît dans les textes en 2003. Le climat n'entre dans le code de l'urbanisme
-      qu'en 2010. Vous ne pouvez pas reprocher à 1972 ce qui n'a été pensé qu'après. <strong>Que pouvez-vous reprocher, alors ?</strong>
-    </div>
-  </div>
-
-  <div class="dialog1972-block">
-    <h3>Choisissez votre interlocuteur·rice de 1972</h3>
-    <p class="dialog1972-intro">
-      Chaque collège a un personnage attitré. Le formateur peut vous demander d'en choisir un autre pour comparer les angles morts.
-      Une conversation dure environ 10 minutes — 6 à 8 échanges.
-    </p>
-    <div class="dialog1972-grid">
-      <button class="dialog1972-card g1" onclick="openDialog1972('leroux')">
-        <div class="dialog1972-card-grp">G1 · État</div>
-        <div class="dialog1972-card-name">Henri Le Roux</div>
-        <div class="dialog1972-card-role">Sous-préfet, 1972</div>
-        <div class="dialog1972-card-line">A signé le permis du Camping 2 La Goëlette.</div>
-      </button>
-      <button class="dialog1972-card g2" onclick="openDialog1972('tanguy')">
-        <div class="dialog1972-card-grp">G2 · Élus</div>
-        <div class="dialog1972-card-name">Yvonne Tanguy</div>
-        <div class="dialog1972-card-role">Maire 1965-1989</div>
-        <div class="dialog1972-card-line">A fait construire la digue. « Le marais, c'est de la terre perdue. »</div>
-      </button>
-      <button class="dialog1972-card g3" onclick="openDialog1972('coic')">
-        <div class="dialog1972-card-grp">G3 · Marais</div>
-        <div class="dialog1972-card-name">Joseph Coïc</div>
-        <div class="dialog1972-card-role">Conseiller agricole, 1970</div>
-        <div class="dialog1972-card-line">Voulait poldériser le marais pour y planter du blé.</div>
-      </button>
-      <button class="dialog1972-card g4" onclick="openDialog1972('allain')">
-        <div class="dialog1972-card-grp">G4 · Économique</div>
-        <div class="dialog1972-card-name">Jean-Pierre Allain</div>
-        <div class="dialog1972-card-role">Gérant du Camping La Goëlette</div>
-        <div class="dialog1972-card-line">A acheté la dune en 1968. « La chance du siècle. »</div>
-      </button>
-      <button class="dialog1972-card g5" onclick="openDialog1972('quere')">
-        <div class="dialog1972-card-grp">G5 · Société civile</div>
-        <div class="dialog1972-card-name">Marie Quéré</div>
-        <div class="dialog1972-card-role">Riveraine, fille de rescapée 1953</div>
-        <div class="dialog1972-card-line">Sait quelque chose. Mais personne ne l'écoute.</div>
-      </button>
-    </div>
-    <p class="dialog1972-tip">
-      <strong>Conseil.</strong> Notez à la fin trois arguments qui vous ont gêné·e — pas trois arguments
-      que vous avez « gagnés ». Ce sont les arguments dérangeants qui sont la matière de la prochaine étape (cas n°4 CDRNM).
-    </p>
   </div>
 </section>
 
@@ -6691,65 +6874,114 @@ async function sendClimateVoice() {
   }
 }
 
-// Synthèse vocale via Voxtral — réutilise la même infra (worker + Web Audio gain)
-// que speakDialog1972, mais avec les voiceIds de CLIMATE_VOICES.
+// Synthèse vocale via Voxtral — réutilise STRICTEMENT le pattern de speakDialog1972
+// (qui fonctionne en production). Mêmes tokens, même gestion d'erreur.
 let _climateAudioToken = 0;
-let _climateCurrentAudio = null;
+let _climateAudioEl = null;
+let _climateVoiceEnabled = true;
 
 function _stopClimateSpeech() {
-  if (_climateCurrentAudio) {
-    try { _climateCurrentAudio.pause(); _climateCurrentAudio.src = ''; } catch(e) {}
-    _climateCurrentAudio = null;
+  _climateAudioToken++;  // invalide toute requête TTS en cours
+  if (_climateAudioEl) {
+    try { _climateAudioEl.pause(); _climateAudioEl.src = ''; } catch(e) {}
+    _climateAudioEl = null;
   }
-  _climateAudioToken++;
+  // Couper aussi Web Speech au cas où il aurait été déclenché
+  if (window.speechSynthesis) {
+    try { window.speechSynthesis.cancel(); } catch(e) {}
+  }
 }
 
 async function speakClimateVoice(text, voiceCode) {
+  if (!_climateVoiceEnabled) return;
   if (!text) return;
   const v = window.CLIMATE_VOICES[voiceCode];
-  if (!v || !v.voxtralVoiceId) return;
+  if (!v || !v.voxtralVoiceId) {
+    console.warn('[ClimateVoice]', voiceCode, ': pas de voix Voxtral assignée');
+    return;
+  }
 
+  console.info('[ClimateVoice]', voiceCode, 'demande TTS,', text.length, 'chars, voiceId=', v.voxtralVoiceId.substring(0,8) + '…');
+
+  // Couper toute synthèse en cours
   _stopClimateSpeech();
+
+  // Tronquer prudemment si trop long (limite worker = 2000 chars)
+  let ttsText = text;
+  if (ttsText.length > 1900) {
+    const cut = ttsText.substring(0, 1900);
+    const lastPunct = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+    ttsText = lastPunct > 1500 ? cut.substring(0, lastPunct + 1) : cut;
+    console.info('[ClimateVoice] texte tronqué pour TTS :', text.length, '→', ttsText.length);
+  }
 
   const baseUrl = (window.DIALOG1972_API_URL || '').replace(/\/$/, '');
   const ttsUrl = baseUrl ? baseUrl + '/tts' : null;
-  if (!ttsUrl) return;
+
+  if (!ttsUrl) {
+    console.warn('[ClimateVoice] DIALOG1972_API_URL non défini → fallback Web Speech');
+    _climateSpeakWebSpeech(text);
+    return;
+  }
 
   const myToken = ++_climateAudioToken;
   try {
+    console.info('[ClimateVoice] POST', ttsUrl);
     const response = await fetch(ttsUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text, voice_id: v.voxtralVoiceId }),
+      body: JSON.stringify({
+        text: ttsText,
+        voice_id: v.voxtralVoiceId,
+      }),
     });
-    if (myToken !== _climateAudioToken) return;
-    if (!response.ok) throw new Error('Voxtral HTTP ' + response.status);
+
+    if (myToken !== _climateAudioToken) { console.info('[ClimateVoice] annulé pendant fetch'); return; }
+
+    if (!response.ok) {
+      let detail = '';
+      try { const j = await response.clone().json(); detail = j.detail || j.error || ''; } catch(_) {}
+      throw new Error('HTTP ' + response.status + (detail ? ' : ' + detail : ''));
+    }
 
     const audioBlob = await response.blob();
     if (myToken !== _climateAudioToken) return;
+    console.info('[ClimateVoice] TTS reçu :', audioBlob.size, 'bytes,', audioBlob.type);
 
     const audioUrl = URL.createObjectURL(audioBlob);
-    const audioEl = new Audio(audioUrl);
-    _climateCurrentAudio = audioEl;
-
-    // Réutilise le gain global de Voxtral si exposé, sinon volume natif.
+    _climateAudioEl = new Audio(audioUrl);
+    _climateAudioEl.volume = 1.0;
     if (typeof _connectAudioWithGain === 'function') {
-      _connectAudioWithGain(audioEl);
+      const gainOk = _connectAudioWithGain(_climateAudioEl);
+      console.info('[ClimateVoice] gain Voxtral 1.8x', gainOk ? 'appliqué' : 'non disponible');
     }
-    audioEl.addEventListener('ended', () => {
+    _climateAudioEl.onended = () => { URL.revokeObjectURL(audioUrl); console.info('[ClimateVoice] lecture terminée'); };
+    _climateAudioEl.onerror = (e) => {
       URL.revokeObjectURL(audioUrl);
-      if (_climateCurrentAudio === audioEl) _climateCurrentAudio = null;
-    });
-    audioEl.play().catch(e => console.warn('[ClimateVoice] play failed:', e.message));
-  } catch(e) {
-    console.warn('[ClimateVoice] Voxtral failed:', e.message);
-    // Fallback Web Speech si dispo (sans gain, juste pour ne pas casser)
-    if (window.speechSynthesis) {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'fr-FR';
-      window.speechSynthesis.speak(u);
-    }
+      if (myToken === _climateAudioToken) {
+        console.warn('[ClimateVoice] erreur lecture audio → fallback Web Speech');
+        _climateSpeakWebSpeech(text);
+      }
+    };
+    await _climateAudioEl.play();
+    console.info('[ClimateVoice] lecture Voxtral lancée ✓');
+    return;
+  } catch (err) {
+    if (myToken !== _climateAudioToken) return;
+    console.warn('[ClimateVoice] Voxtral échec → Web Speech :', err.message);
   }
+
+  _climateSpeakWebSpeech(text);
+}
+
+function _climateSpeakWebSpeech(text) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'fr-FR';
+  utt.rate = 1.0;
+  utt.pitch = 1.0;
+  window.speechSynthesis.speak(utt);
 }
 </script>
 
@@ -6802,10 +7034,73 @@ async function speakClimateVoice(text, voiceCode) {
   </div>
 </section>
 
-<!-- ============ DÉBRIEFING MIROIR (IA face à votre groupe) ============ -->
-<section id="debriefing">
+<!-- ============ CARNET DE DÉCOUVERTE ============ -->
+<section id="carnet">
   <div class="section-header">
     <span class="section-num">13</span>
+    <span class="section-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    </span>
+    <h2 class="section-title">Carnet de découverte</h2>
+  </div>
+  <p class="section-intro">
+    Trente fiches de référence, regroupées en six blocs. Au début de la session, seules les fiches de cadrage sont visibles.
+    <strong>Chaque action que vous menez en débloque de nouvelles</strong> : voter un levier, valider un cas, explorer une question — et la fiche concept correspondante s'ouvre dans votre carnet.
+  </p>
+
+  <div class="carnet-toolbar">
+    <div class="carnet-progress">
+      <div class="carnet-progress-label">Progression : <strong id="carnet-count">0</strong> / 30 fiches</div>
+      <div class="carnet-progress-bar"><div class="carnet-progress-fill" id="carnet-progress-fill"></div></div>
+    </div>
+    <div class="carnet-toolbar-actions">
+      <button class="btn btn-secondary" onclick="exportCarnetPDF('unlocked')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exporter (PDF)
+      </button>
+      <button class="btn btn-tertiary" onclick="exportCarnetPDF('all')" title="Permet d'imprimer toutes les fiches, y compris non encore débloquées (mode formateur)">
+        Tout imprimer
+      </button>
+    </div>
+  </div>
+
+  <div class="carnet-blocs" id="carnetBlocs">
+    <!-- Rempli dynamiquement par renderCarnet() -->
+  </div>
+</section>
+
+<!-- ============ MODALE FICHE CARNET ============ -->
+<div class="carnet-card-overlay" id="carnetCardOverlay" onclick="if(event.target===this)closeCarnetCard()">
+  <div class="carnet-card-modal">
+    <div class="carnet-card-head">
+      <button class="carnet-card-back" onclick="closeCarnetCard()" aria-label="Retour à la liste des fiches">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Retour à la liste
+      </button>
+      <div class="carnet-card-meta">
+        <div class="carnet-card-bloc-tag" id="carnetCardBlocTag">—</div>
+        <h3 class="carnet-card-title" id="carnetCardTitle">—</h3>
+        <div class="carnet-card-subtitle" id="carnetCardSubtitle">—</div>
+      </div>
+      <button class="carnet-card-close" onclick="closeCarnetCard()" aria-label="Fermer">×</button>
+    </div>
+    <div class="carnet-card-body" id="carnetCardBody">
+      <!-- Rempli dynamiquement -->
+    </div>
+    <div class="carnet-card-foot">
+      <button class="btn btn-secondary" onclick="closeCarnetCard()">Fermer</button>
+      <button class="btn btn-tertiary" onclick="exportSingleCard()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimer cette fiche
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DÉBRIEFING MIROIR (IA face à votre journée) ============ -->
+<section id="debriefing">
+  <div class="section-header">
+    <span class="section-num">14</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </span>
@@ -6872,73 +7167,340 @@ async function speakClimateVoice(text, voiceCode) {
   </div>
 </section>
 
-<!-- ============ CARNET DE DÉCOUVERTE ============ -->
-<section id="carnet">
+<!-- ============ FICHES MOMENT FORMATEUR ============ -->
+<section id="momentsFormateur" class="moments-formateur-section">
   <div class="section-header">
-    <span class="section-num">14</span>
+    <span class="section-num">15</span>
     <span class="section-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
     </span>
-    <h2 class="section-title">Carnet de découverte</h2>
+    <h2 class="section-title">Fiches Moment — pour l'animateur</h2>
   </div>
   <p class="section-intro">
-    Trente fiches de référence, regroupées en six blocs. Au début de la session, seules les fiches de cadrage sont visibles.
-    <strong>Chaque action que vous menez en débloque de nouvelles</strong> : voter un levier, valider un cas, explorer une question — et la fiche concept correspondante s'ouvre dans votre carnet.
+    La journée est ponctuée par <strong>sept Moments d'institutionnalisation</strong> de 5 à 15 minutes pendant lesquels l'animateur reprend la main pour fixer les concepts mobilisés. Ces fiches donnent à l'animateur la matière à dire — fiches Carnet à projeter, questions à reposer, transitions à tenir. <strong>Elles sont indispensables si vous transmettez le dispositif à un collègue formateur.</strong>
   </p>
 
-  <div class="carnet-toolbar">
-    <div class="carnet-progress">
-      <div class="carnet-progress-label">Progression : <strong id="carnet-count">0</strong> / 30 fiches</div>
-      <div class="carnet-progress-bar"><div class="carnet-progress-fill" id="carnet-progress-fill"></div></div>
-    </div>
-    <div class="carnet-toolbar-actions">
-      <button class="btn btn-secondary" onclick="exportCarnetPDF('unlocked')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Exporter (PDF)
-      </button>
-      <button class="btn btn-tertiary" onclick="exportCarnetPDF('all')" title="Permet d'imprimer toutes les fiches, y compris non encore débloquées (mode formateur)">
-        Tout imprimer
-      </button>
-    </div>
+  <div class="moments-grid">
+    <!-- MOMENT 1 -->
+    <details class="moment-card">
+      <summary class="moment-summary">
+        <span class="moment-num">1</span>
+        <div class="moment-head">
+          <div class="moment-time">10h15 — 10h30 · 15 min</div>
+          <div class="moment-title">Concepts fondamentaux — aléa, exposition, vulnérabilité</div>
+        </div>
+      </summary>
+      <div class="moment-body">
+        <p><strong>Position dans la journée.</strong> Après l'interlude 1972 et avant la pause matin. Les participants viennent de dialoguer avec un personnage de 1972 ; ils sont prêts à recevoir les concepts pour produire leur diagnostic.</p>
+        <p><strong>Fiches Carnet à projeter.</strong> B1 (Aléa) — B2 (Exposition) — B3 (Vulnérabilité) — B4 (Triptyque) — B5 (Résilience).</p>
+        <p><strong>Ce qu'il faut dire (en 12 minutes).</strong> Le triptyque fondateur de la prévention française : aléa × exposition × vulnérabilité = risque. Distinguer aléa (le phénomène, indépendant de l'humain) d'exposition (ce qu'on a placé en zone) et de vulnérabilité (comment ça encaisse). Insister sur le fait que <strong>l'aléa peut être stable mais le risque augmenter</strong> si l'exposition croît (urbanisation littorale) ou si la vulnérabilité s'aggrave (vieillissement, technicisation). Préciser que la résilience n'est pas le retour à la normale : c'est la capacité à absorber, s'adapter, voire se transformer.</p>
+        <p><strong>Questions à reposer aux participants.</strong> « Dans le diagnostic que vous allez faire, qu'est-ce qui relève de l'aléa, qu'est-ce qui relève de l'exposition, qu'est-ce qui relève de la vulnérabilité ? Êtes-vous capables de mettre une vulnérabilité en regard de chaque exposition que vous identifiez ? »</p>
+        <p><strong>Transition vers la suite.</strong> « Maintenant que vous avez le triptyque, vous pouvez produire votre diagnostic. Chaque collège va le faire depuis sa logique — c'est dans la confrontation que les angles morts apparaîtront. »</p>
+      </div>
+    </details>
+
+    <!-- MOMENT 2 -->
+    <details class="moment-card">
+      <summary class="moment-summary">
+        <span class="moment-num">2</span>
+        <div class="moment-head">
+          <div class="moment-time">11h45 — 12h00 · 15 min</div>
+          <div class="moment-title">Cadre réglementaire et TRACC</div>
+        </div>
+      </summary>
+      <div class="moment-body">
+        <p><strong>Position.</strong> Après le cas 1 (diagnostic restitué) et avant le brief du cas 2. C'est le moment où l'on bascule du diagnostic vers la stratégie — il faut donner le cadre dans lequel cette stratégie va devoir s'inscrire.</p>
+        <p><strong>Fiches Carnet à projeter.</strong> D1 (PPR) — D2 (Directive Inondation) — D3 (PAPI) — D4 (FPRNM) — A3 (TRACC). Optionnel selon le temps : D6 (Loi Climat & Résilience), D7 (Décret PPR 2019), D8 (Frise réglementaire).</p>
+        <p><strong>Ce qu'il faut dire.</strong> Le cadre réglementaire français de la prévention des risques s'est construit par strates depuis 1995 (PPRN), 2002 (DI), 2007 (PAPI), 2010 (loi Grenelle), 2021 (loi Climat & Résilience). La <strong>TRACC</strong>, inscrite au code de l'environnement par décret du 23 janvier 2026, est la dernière couche — elle fixe le climat de référence pour l'adaptation : +2°C en 2030, +2,7°C en 2050, <strong>+4°C en 2100 sur la France hexagonale</strong>. Tout dimensionnement d'ouvrage à durée de vie longue doit désormais l'intégrer. Le FPRNM (« Barnier ») est l'outil financier majeur, complété par les agences de l'eau et la Région.</p>
+        <p><strong>Questions à reposer.</strong> « Sur la stratégie 10 ans que vous allez construire, à quelle date sera dimensionnée votre digue, votre PCS, votre zonage PLU ? À 2026 ? À 2050 ? À 2100 ? Qui paie la différence ? »</p>
+        <p><strong>Transition.</strong> « Vous avez 15 M€ sur 10 ans. Vos contraintes réglementaires sont posées. À vous de jouer. »</p>
+      </div>
+    </details>
+
+    <!-- MOMENT 3 -->
+    <details class="moment-card">
+      <summary class="moment-summary">
+        <span class="moment-num">3</span>
+        <div class="moment-head">
+          <div class="moment-time">14h45 — 15h00 · 15 min</div>
+          <div class="moment-title">Acclimatation à la rupture de registre — entrer dans la crise</div>
+        </div>
+      </summary>
+      <div class="moment-body">
+        <p><strong>Position.</strong> Juste avant le cas 3 (PCS Tempête Argonne). C'est un moment court mais structurant : il prépare cognitivement les participants à changer de registre.</p>
+        <p><strong>Fiches Carnet à projeter.</strong> C1 (Capacité d'absorption) — C2 (Capacité d'adaptation) — F1 (Continuum prévention/préparation/gestion). Optionnel : F2 (Six axes SNGITC), pour rappeler l'axe 4 (gestion de crise) qui va être éprouvé.</p>
+        <p><strong>Ce qu'il faut dire (en 10 minutes).</strong> Vous quittez le temps long délibératif pour entrer dans le temps court de l'urgence. Trois choses à savoir : (1) en cellule de crise, <strong>aucun acteur ne dispose de toute l'information</strong> — chacun voit son angle ; (2) <strong>les décisions du temps long suivent dans la crise</strong> — si vous avez sous-investi dans tel équipement en cas 2, vous le paierez ici ; (3) <strong>vous allez vous tromper</strong>, et c'est la matière du débriefing. La crise n'est pas l'envers de la stratégie : c'est sa mise à l'épreuve.</p>
+        <p><strong>Pour les participants.</strong> « Vous allez voter en deux minutes par phase. Vous n'aurez pas le temps de tout discuter. Faites confiance à l'intuition collective. Notez ce qui vous a coincé — pas pour vous justifier après-coup, mais pour le débriefing. »</p>
+        <p><strong>Transition.</strong> « Le préfet active le COD. Vigilance rouge déclenchée. Phase 0 ouverte. »</p>
+      </div>
+    </details>
+
+    <!-- MOMENT 4 -->
+    <details class="moment-card">
+      <summary class="moment-summary">
+        <span class="moment-num">4</span>
+        <div class="moment-head">
+          <div class="moment-time">après cas 3 (16h15) · 5 min</div>
+          <div class="moment-title">Anatomie d'un PCS — ce qui a manqué</div>
+        </div>
+      </summary>
+      <div class="moment-body">
+        <p><strong>Position.</strong> À la sortie de la simulation PCS, juste avant l'interlude voix du climat. Très court — il s'agit de poser deux ou trois éclairages avant de basculer vers les voix climatiques.</p>
+        <p><strong>Fiches Carnet à projeter.</strong> Pas de fiche projetée à ce moment — l'animateur ramasse oralement à partir des votes agrégés visibles à l'écran.</p>
+        <p><strong>Ce qu'il faut dire (5 minutes).</strong> Trois constats à faire émerger des votes des participants : (1) <strong>les pièges qui ont été activés</strong> — pourquoi telle action paraît évidente alors qu'elle est contre-productive ; (2) <strong>l'effet papillon</strong> — telle décision du cas 2 a rendu telle action du cas 3 impossible ; (3) <strong>la solitude du décideur</strong> — qui a décidé en deux minutes, sans concertation interne, sous pression, sans toutes les informations. Ces trois constats sont la matière du futur débriefing miroir.</p>
+        <p><strong>Question à reposer.</strong> « Si c'était à refaire, quelle est la décision que vous reprendriez en premier ? Pas pour la corriger — pour la comprendre. »</p>
+        <p><strong>Transition.</strong> « On va maintenant changer encore de temporalité : depuis 2100 nous écoutent quatre voix. Elles ne sont pas une prédiction — elles sont quatre trajectoires que vous pouvez encore éviter ou subir. »</p>
+      </div>
+    </details>
+
+    <!-- MOMENT 5 -->
+    <details class="moment-card">
+      <summary class="moment-summary">
+        <span class="moment-num">5</span>
+        <div class="moment-head">
+          <div class="moment-time">après voix climat (16h35) · 5 min</div>
+          <div class="moment-title">Géographie des dilemmes — préparer la CDRNM</div>
+        </div>
+      </summary>
+      <div class="moment-body">
+        <p><strong>Position.</strong> Juste avant le cas 4 (CDRNM). Court, transitionnel.</p>
+        <p><strong>Fiches Carnet à projeter.</strong> E1 (Erosion vs submersion) — E3 (Niveau marin) — F5 (Boussole de l'arbitrage). C'est la dernière institutionalisation avant le vote final.</p>
+        <p><strong>Ce qu'il faut dire.</strong> Vous avez maintenant tout en main : un diagnostic, une stratégie, l'éprouvé d'une crise, la mémoire de 1972, l'horizon de 2100. La CDRNM ne tranche pas dans l'abstrait : elle arbitre entre des outils déployables maintenant. Trois grandes priorités vont structurer le vote : (1) la <strong>protection</strong> (digues, ouvrages) ; (2) la <strong>recomposition</strong> (recul stratégique, relocalisation) ; (3) la <strong>préparation</strong> (PCS, culture du risque, résilience sociale). Vous allez voter en collèges officiels — rappelez le remapping G1=État, G2=Élus, G3+G4+G5=Qualifiés.</p>
+        <p><strong>Question.</strong> « Sur quelle priorité êtes-vous prêts à céder pour obtenir une autre ? La CDRNM est aussi un lieu de coalitions. »</p>
+      </div>
+    </details>
+
+    <!-- MOMENT 6 -->
+    <details class="moment-card">
+      <summary class="moment-summary">
+        <span class="moment-num">6</span>
+        <div class="moment-head">
+          <div class="moment-time">après CDRNM (16h55) · 3 min</div>
+          <div class="moment-title">La boussole — qu'avez-vous arbitré, et au nom de quoi ?</div>
+        </div>
+      </summary>
+      <div class="moment-body">
+        <p><strong>Position.</strong> À la sortie du vote CDRNM, avant le débriefing miroir. Très court — il s'agit de marquer le résultat du vote et de poser le cadre du débriefing à venir.</p>
+        <p><strong>Fiches Carnet à projeter.</strong> F5 (Boussole de l'arbitrage) — F6 (Posture professionnelle).</p>
+        <p><strong>Ce qu'il faut dire.</strong> Lecture brève du résultat du vote : majorités, minorités, coalitions inattendues. Pointer une ou deux propositions sur lesquelles le vote a été serré — ce sont les vrais lieux de la délibération. Rappeler que ce n'est pas la « bonne » réponse qui est cherchée : c'est la <strong>compréhension de l'arbitrage</strong>. La boussole F5 propose quatre axes de lecture : court terme/long terme, défense/recomposition, sécurité/justice, technique/politique.</p>
+        <p><strong>Transition.</strong> « Vous allez maintenant ouvrir, par groupe, votre débriefing miroir. C'est un face-à-face avec vos propres décisions. Pas de jugement — juste pourquoi. »</p>
+      </div>
+    </details>
+
+    <!-- MOMENT 7 -->
+    <details class="moment-card">
+      <summary class="moment-summary">
+        <span class="moment-num">7</span>
+        <div class="moment-head">
+          <div class="moment-time">clôture (16h58 — 17h00) · 2 min</div>
+          <div class="moment-title">Synthèse finale — ce que vous emportez</div>
+        </div>
+      </summary>
+      <div class="moment-body">
+        <p><strong>Position.</strong> Tout dernier moment de la journée. Très bref — il ne s'agit pas de récapituler mais de donner une <em>image clé</em> à emporter.</p>
+        <p><strong>Pas de fiche à projeter.</strong> L'animateur parle, sans support.</p>
+        <p><strong>Ce qu'il faut dire (2 minutes).</strong> Trois choses, pas plus. (1) <strong>Le risque n'est jamais purement technique</strong> : c'est une construction politique, juridique, sociale, mémorielle — et vous l'avez vécu aujourd'hui. (2) <strong>Vos décisions auront des angles morts</strong>, comme celles de 1972 en avaient. La question n'est pas de les supprimer mais de les rendre visibles et négociables. (3) <strong>Le Carnet de découverte reste accessible</strong> sur cette page — 30 fiches qui vous permettent d'approfondir tout ce qu'on n'a pas eu le temps de creuser aujourd'hui.</p>
+        <p><strong>Dernière phrase possible.</strong> « Anse-de-Goulven n'existe pas. Mais ce que vous y avez fait aujourd'hui ressemble assez à ce que vous ferez bientôt — ailleurs, autrement. Merci. »</p>
+      </div>
+    </details>
   </div>
 
-  <div class="carnet-blocs" id="carnetBlocs">
-    <!-- Rempli dynamiquement par renderCarnet() -->
+  <div class="moments-trame">
+    <h3>Trame horaire de la journée (9h-17h)</h3>
+    <div class="trame-table">
+      <div class="trame-row trame-row-head"><span class="trame-time">Horaire</span><span class="trame-label">Étape</span><span class="trame-duration">Durée</span></div>
+      <div class="trame-row"><span class="trame-time">9h00</span><span class="trame-label">Accueil + glossaire de seuil</span><span class="trame-duration">20 min</span></div>
+      <div class="trame-row"><span class="trame-time">9h20</span><span class="trame-label">Découverte territoire + boîte mail</span><span class="trame-duration">25 min</span></div>
+      <div class="trame-row trame-row-key"><span class="trame-time">9h45</span><span class="trame-label">Interlude 1972 (dialogue avec un personnage)</span><span class="trame-duration">30 min</span></div>
+      <div class="trame-row trame-row-mom"><span class="trame-time">10h15</span><span class="trame-label">Moment 1 — Concepts (aléa/expo/vulnérabilité)</span><span class="trame-duration">15 min</span></div>
+      <div class="trame-row trame-row-pause"><span class="trame-time">10h30</span><span class="trame-label">Pause</span><span class="trame-duration">15 min</span></div>
+      <div class="trame-row trame-row-key"><span class="trame-time">10h45</span><span class="trame-label">Cas 1 — Diagnostic croisé</span><span class="trame-duration">1h</span></div>
+      <div class="trame-row trame-row-mom"><span class="trame-time">11h45</span><span class="trame-label">Moment 2 — Cadre réglementaire + TRACC</span><span class="trame-duration">15 min</span></div>
+      <div class="trame-row"><span class="trame-time">12h00</span><span class="trame-label">Brief cas 2 + amorce stratégie</span><span class="trame-duration">30 min</span></div>
+      <div class="trame-row trame-row-pause"><span class="trame-time">12h30</span><span class="trame-label">Déjeuner</span><span class="trame-duration">1h</span></div>
+      <div class="trame-row trame-row-key"><span class="trame-time">13h30</span><span class="trame-label">Cas 2 — Stratégie 10 ans (suite)</span><span class="trame-duration">1h15</span></div>
+      <div class="trame-row trame-row-mom"><span class="trame-time">14h45</span><span class="trame-label">Moment 3 — Acclimatation rupture de registre</span><span class="trame-duration">15 min</span></div>
+      <div class="trame-row trame-row-key"><span class="trame-time">15h00</span><span class="trame-label">Cas 3 — Tempête Argonne (phases 0-1)</span><span class="trame-duration">30 min</span></div>
+      <div class="trame-row trame-row-pause"><span class="trame-time">15h30</span><span class="trame-label">Pause</span><span class="trame-duration">15 min</span></div>
+      <div class="trame-row trame-row-key"><span class="trame-time">15h45</span><span class="trame-label">Cas 3 — Tempête Argonne (phases 2-3-4)</span><span class="trame-duration">30 min</span></div>
+      <div class="trame-row trame-row-mom"><span class="trame-time">16h15</span><span class="trame-label">Moment 4 — Anatomie d'un PCS</span><span class="trame-duration">5 min</span></div>
+      <div class="trame-row trame-row-key"><span class="trame-time">16h20</span><span class="trame-label">Interlude voix du climat</span><span class="trame-duration">15 min</span></div>
+      <div class="trame-row trame-row-mom"><span class="trame-time">16h35</span><span class="trame-label">Moment 5 — Géographie des dilemmes</span><span class="trame-duration">5 min</span></div>
+      <div class="trame-row trame-row-key"><span class="trame-time">16h40</span><span class="trame-label">Cas 4 — CDRNM (vote)</span><span class="trame-duration">15 min</span></div>
+      <div class="trame-row trame-row-mom"><span class="trame-time">16h55</span><span class="trame-label">Moment 6 — La boussole + ouverture débriefing</span><span class="trame-duration">3 min</span></div>
+      <div class="trame-row trame-row-mom"><span class="trame-time">16h58</span><span class="trame-label">Moment 7 — Synthèse finale + clôture</span><span class="trame-duration">2 min</span></div>
+      <div class="trame-row trame-row-end"><span class="trame-time">17h00</span><span class="trame-label">Fin de journée</span><span class="trame-duration">—</span></div>
+    </div>
+    <p class="trame-note">
+      <strong>Note sur le débriefing miroir.</strong> Le face-à-face avec l'IA est conçu pour être ouvert <strong>après</strong> la session, en autonomie ou en visio collective la semaine suivante. Il demande 15-20 min par groupe et ne peut pas tenir dans une journée déjà dense. Annoncez-le en clôture comme prolongement.
+    </p>
   </div>
 </section>
 
-<!-- ============ MODALE FICHE CARNET ============ -->
-<div class="carnet-card-overlay" id="carnetCardOverlay" onclick="if(event.target===this)closeCarnetCard()">
-  <div class="carnet-card-modal">
-    <div class="carnet-card-head">
-      <button class="carnet-card-back" onclick="closeCarnetCard()" aria-label="Retour à la liste des fiches">
-        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-        Retour à la liste
-      </button>
-      <div class="carnet-card-meta">
-        <div class="carnet-card-bloc-tag" id="carnetCardBlocTag">—</div>
-        <h3 class="carnet-card-title" id="carnetCardTitle">—</h3>
-        <div class="carnet-card-subtitle" id="carnetCardSubtitle">—</div>
-      </div>
-      <button class="carnet-card-close" onclick="closeCarnetCard()" aria-label="Fermer">×</button>
-    </div>
-    <div class="carnet-card-body" id="carnetCardBody">
-      <!-- Rempli dynamiquement -->
-    </div>
-    <div class="carnet-card-foot">
-      <button class="btn btn-secondary" onclick="closeCarnetCard()">Fermer</button>
-      <button class="btn btn-tertiary" onclick="exportSingleCard()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-        Imprimer cette fiche
-      </button>
-    </div>
-  </div>
-</div>
+<style>
+.moments-formateur-section {
+  margin-top: 32px;
+  padding-top: 22px;
+  border-top: 2px solid #1E3A5F;
+}
+.moments-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 22px 0;
+}
+.moment-card {
+  background: white;
+  border: 1px solid var(--grey-border);
+  border-left: 3px solid #1E3A5F;
+  border-radius: 4px;
+}
+.moment-summary {
+  cursor: pointer;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  list-style: none;
+  user-select: none;
+}
+.moment-summary::-webkit-details-marker { display: none; }
+.moment-summary::after {
+  content: '▾';
+  margin-left: auto;
+  color: #1E3A5F;
+  font-size: 14px;
+  transition: transform 0.2s;
+}
+.moment-card[open] .moment-summary::after { transform: rotate(180deg); }
+.moment-num {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  background: #1E3A5F;
+  color: white;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+}
+.moment-head { flex: 1; }
+.moment-time {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 2px;
+}
+.moment-title {
+  font-family: Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--grey-txt);
+}
+.moment-body {
+  padding: 4px 22px 20px 70px;
+  border-top: 1px dashed #d8d2c4;
+  margin-top: 0;
+  padding-top: 16px;
+}
+.moment-body p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 12px;
+  color: var(--grey-txt);
+}
+.moment-body p:last-child { margin-bottom: 0; }
+.moment-body strong { color: #1E3A5F; }
+
+.moments-trame {
+  background: #FAF7F2;
+  border: 1px solid var(--grey-border);
+  border-radius: 6px;
+  padding: 22px 26px;
+  margin-top: 28px;
+}
+.moments-trame h3 {
+  font-family: Georgia, serif;
+  font-size: 18px;
+  margin: 0 0 16px;
+  color: #1E3A5F;
+}
+.trame-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: white;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--grey-border);
+}
+.trame-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 90px;
+  gap: 14px;
+  padding: 9px 14px;
+  font-size: 13.5px;
+  align-items: center;
+  border-bottom: 1px solid #f0ece2;
+}
+.trame-row:last-child { border-bottom: none; }
+.trame-row-head {
+  background: #1E3A5F;
+  color: white;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.trame-row-key {
+  background: #fff8ed;
+  font-weight: 600;
+}
+.trame-row-mom {
+  background: #f4f7f4;
+  color: #3A5235;
+  font-style: italic;
+  font-size: 12.5px;
+}
+.trame-row-pause {
+  background: #f0ece2;
+  color: #888;
+  font-style: italic;
+  font-size: 12.5px;
+}
+.trame-row-end {
+  background: #1E3A5F;
+  color: white;
+  font-weight: 700;
+}
+.trame-time {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+.trame-duration {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-align: right;
+  color: #888;
+}
+.trame-row-key .trame-duration,
+.trame-row-end .trame-duration { color: inherit; }
+.trame-note {
+  margin-top: 14px;
+  font-size: 13px;
+  font-style: italic;
+  color: #5a554d;
+  line-height: 1.55;
+}
+</style>
 
 <!-- ============ AXES ============ -->
 <section id="axes">
   <div class="section-header">
-    <span class="section-num">15</span>
+    <span class="section-num">16</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg>
     </span>
@@ -7004,7 +7566,7 @@ async function speakClimateVoice(text, voiceCode) {
 <!-- ============ LEXIQUE ============ -->
 <section id="lexique">
   <div class="section-header">
-    <span class="section-num">16</span>
+    <span class="section-num">17</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
     </span>
@@ -7039,7 +7601,7 @@ async function speakClimateVoice(text, voiceCode) {
 <!-- ============ SOURCES NATIONALES ============ -->
 <section id="sources">
   <div class="section-header">
-    <span class="section-num">17</span>
+    <span class="section-num">18</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 4 9 14 14 0 0 1-4 9 14 14 0 0 1-4-9 14 14 0 0 1 4-9z"/></svg>
     </span>
@@ -7164,7 +7726,7 @@ async function speakClimateVoice(text, voiceCode) {
 <!-- ============ TÉLÉCHARGEMENTS ============ -->
 <section id="telechargements">
   <div class="section-header">
-    <span class="section-num">18</span>
+    <span class="section-num">19</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     </span>
@@ -7212,7 +7774,7 @@ async function speakClimateVoice(text, voiceCode) {
 <!-- ============ POUR ALLER PLUS LOIN ============ -->
 <section id="liens">
   <div class="section-header">
-    <span class="section-num">19</span>
+    <span class="section-num">20</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="9 12 12 15 15 12"/><line x1="12" y1="6" x2="12" y2="15"/></svg>
     </span>
