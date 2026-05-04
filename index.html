@@ -7283,6 +7283,14 @@ function _climateSpeakWebSpeech(text) {
     La journée est ponctuée par <strong>sept Moments d'institutionnalisation</strong> de 5 à 15 minutes pendant lesquels l'animateur reprend la main pour fixer les concepts mobilisés. Ces fiches donnent à l'animateur la matière à dire : fiches Carnet à projeter, questions à reposer, transitions à tenir. <strong>Elles sont indispensables si vous transmettez le dispositif à un collègue formateur.</strong>
   </p>
 
+  <!-- Bouton accès panneau recherche -->
+  <div style="margin: 0 0 28px; display:flex; justify-content:flex-end;">
+    <button onclick="showResearchPanel()" style="display:inline-flex; align-items:center; gap:8px; background:#1E3A5F; color:white; border:none; padding:10px 18px; border-radius:6px; font-family:Georgia,serif; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 2px 8px rgba(30,58,95,0.25); transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Données de session · export recherche
+    </button>
+  </div>
+
   <div class="moments-grid">
     <!-- MOMENT 1 -->
     <details class="moment-card">
