@@ -527,24 +527,21 @@ body.expert-mode .expert-only.expert-inline { display: inline !important; }
 body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap: 6px; }
 
 .expert-section {
-  background: linear-gradient(135deg, rgba(94,58,138,0.06) 0%, rgba(30,58,95,0.04) 100%);
-  border: 1px solid rgba(94,58,138,0.25);
-  border-left: 5px solid #5e3a8a;
-  border-radius: 8px;
-  padding: 24px 28px; margin: 28px 0;
+  margin: 28px 0;
 }
 .expert-section .expert-eyebrow {
-  font-family: var(--mono); font-size: 11px; font-weight: 700;
-  color: #5e3a8a; letter-spacing: 0.12em; text-transform: uppercase;
-  margin-bottom: 6px;
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  color: var(--grey-txt); letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: 10px;
 }
 .expert-section h3 {
   font-family: var(--serif); font-size: 22px; color: var(--navy);
   margin: 0 0 8px 0;
 }
 .expert-section .expert-source {
-  font-family: var(--mono); font-size: 11px; color: #777;
-  font-style: italic; margin-bottom: 18px;
+  font-family: var(--mono); font-size: 11px; color: #aaa;
+  font-style: italic; margin-top: 16px; padding-top: 10px;
+  border-top: 1px solid var(--grey-border);
 }
 
 /* Tableau typologie ternaire */
@@ -4319,7 +4316,7 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
 
 <div class="expert-badge" id="expertBadge" onclick="toggleExpertMode()" title="Cliquer pour désactiver le mode expert">
   <span style="display:inline-block;width:8px;height:8px;background:#fff;border-radius:50%;"></span>
-  Mode expert · Litto'Risques
+  Mode expert
 </div>
 
 <div class="trainer-panel" id="trainerPanel">
@@ -4397,9 +4394,9 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
       </button>
     </div>
     <div class="trainer-panel-section">
-      <div class="trainer-panel-label">Mode expert (Litto'Risques)</div>
+      <div class="trainer-panel-label">Mode expert</div>
       <p style="font-size:11px;color:rgba(255,255,255,0.6);margin:0 0 10px 0;line-height:1.4;font-style:italic;">
-        Active des annexes méthodologiques expertes (CD29 + UBO + Cerema) sur les cas 1, 2 et 4 : typologie ternaire des enjeux, cellule hydrosédimentaire, horizons 2050/2100, auto-évaluation Osirisc.
+        Active des modules d'approfondissement dans les cas 1, 2 et 4 : dynamiques côtières, trajectoires temporelles, vulnérabilité territoriale.
       </p>
       <button class="trainer-event-btn" id="expertModeToggleBtn" onclick="toggleExpertMode()" style="background:rgba(94,58,138,0.3);border-color:#5e3a8a;">
         <span class="target-badge tball" style="background:#5e3a8a;">⌬</span>
@@ -4560,11 +4557,11 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
     <a href="#debriefing">Appréciation miroir</a>
   </div>
   <div class="sidebar-section expert-only" style="border-top:2px solid #7E6B4A;margin-top:8px;padding-top:8px;">
-    <span class="sidebar-label" style="color:#7E6B4A;">⚙ Mode expert</span>
-    <a href="#cas1" style="color:#7E6B4A;font-size:12px;">↳ Cellule hydrosédim. · Typol. enjeux</a>
+    <span class="sidebar-label" style="color:#7E6B4A;">⚙ Approfondissements</span>
+    <a href="#cas1" style="color:#7E6B4A;font-size:12px;">↳ Dynamiques côtières · Enjeux</a>
     <a href="#cas2" style="color:#7E6B4A;font-size:12px;">↳ Horizons 2055/2125</a>
-    <a href="#cas4" style="color:#7E6B4A;font-size:12px;">↳ Auto-évaluation Osirisc</a>
-    <a href="#littorisques" style="color:#7E6B4A;font-size:12px;">↳ Méthodologie Litto'Risques</a>
+    <a href="#cas4" style="color:#7E6B4A;font-size:12px;">↳ Vulnérabilité territoriale</a>
+    <a href="#littorisques" style="color:#7E6B4A;font-size:12px;">↳ Cheminement méthodologique</a>
   </div>
   <div class="sidebar-section">
     <span class="sidebar-label">Ressources</span>
@@ -6383,10 +6380,6 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
     <h2 class="section-title">Étude de cas n°1 : Diagnostic croisé</h2>
   </div>
 
-  <div class="expert-only" style="background:#FAF5EC;border:1px solid #C8A96E;border-left:4px solid #7E6B4A;border-radius:4px;padding:9px 14px;margin:14px 0;display:flex;align-items:center;gap:10px;">
-    <span style="font-family:var(--mono);font-size:10px;background:#7E6B4A;color:#fff;padding:3px 7px;border-radius:3px;letter-spacing:.06em;white-space:nowrap;">⚙ MODE EXPERT</span>
-    <span style="font-size:13px;color:#5A4015;">Ce cas inclut 2 modules experts : cellule hydrosédimentaire + typologie ternaire des enjeux. <a href="#cas1" style="color:#7E6B4A;font-weight:600;">Voir ↓</a></span>
-  </div>
 
   <div class="key-fact-block" style="background:var(--orange);">
     <div>
@@ -6396,6 +6389,128 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
       et des vulnérabilités d'Anse-de-Goulven, <strong>depuis sa propre logique</strong>. Les cinq diagnostics seront comparés en plénière.
     </div>
   </div>
+
+  <!-- ============ MODULE EXPERT CAS 1 ============ -->
+  <div class="expert-section expert-only">
+    <div class="expert-eyebrow">Approfondissement · Cas 1</div>
+    <h3>Replacer Anse-de-Goulven dans sa cellule hydrosédimentaire</h3>
+    <div class="expert-source">CD29 + UBO + Cerema (2023) · Guide méthodologique de gestion des risques littoraux en Finistère, volet 2</div>
+    <p style="font-size:14px;line-height:1.65;color:var(--grey-dark);">
+      Anse-de-Goulven n'est pas une commune isolée : elle appartient à une <strong>cellule hydrosédimentaire</strong> délimitée par deux caps rocheux. À cette échelle, la dérive littorale transporte des sédiments d'une commune à l'autre. Les ouvrages d'Anse-de-Goulven produisent des effets en aval : ce qui protège ici se paie en érosion ailleurs.
+    </p>
+    <div class="cellule-schema">
+      <svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="font-family:Georgia,serif;">
+        <text x="360" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="#1E3A5F">Cellule hydrosédimentaire « Pointe Saint-Yves — Pointe du Rocher Noir »</text>
+        <!-- Mer en haut -->
+        <rect x="20" y="40" width="680" height="100" fill="#328088" fill-opacity="0.15"/>
+        <text x="35" y="58" font-size="10" fill="#328088" font-style="italic">Manche · Pleine mer marée 102</text>
+        <!-- Vagues -->
+        <g stroke="#328088" stroke-width="0.7" fill="none" opacity="0.45">
+          <path d="M 30 70 Q 60 65 90 70 T 150 70 T 210 70 T 270 70 T 330 70 T 390 70 T 450 70 T 510 70 T 570 70 T 630 70 T 690 70"/>
+          <path d="M 30 95 Q 60 90 90 95 T 150 95 T 210 95 T 270 95 T 330 95 T 390 95 T 450 95 T 510 95 T 570 95 T 630 95 T 690 95"/>
+        </g>
+        <!-- Cap Saint-Yves (gauche) -->
+        <path d="M 20 145 L 80 130 L 130 145 L 130 260 L 20 260 Z" fill="#7E6B4A" fill-opacity="0.6" stroke="#5C5237" stroke-width="1"/>
+        <text x="75" y="155" text-anchor="middle" font-size="10.5" font-weight="700" fill="white">Pointe Saint-Yves</text>
+        <text x="75" y="168" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.85)" font-style="italic">cap rocheux · limite ouest</text>
+        <!-- Cap Rocher Noir (droite) -->
+        <path d="M 700 145 L 640 130 L 590 145 L 590 260 L 700 260 Z" fill="#7E6B4A" fill-opacity="0.6" stroke="#5C5237" stroke-width="1"/>
+        <text x="645" y="155" text-anchor="middle" font-size="10.5" font-weight="700" fill="white">Pointe Rocher Noir</text>
+        <text x="645" y="168" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.85)" font-style="italic">cap rocheux · limite est</text>
+        <!-- Trait de côte sableux (cordon dunaire + plages) -->
+        <path d="M 130 145 Q 200 150 280 148 L 360 145 L 440 148 Q 510 150 590 145" fill="none" stroke="#D49426" stroke-width="3.5"/>
+        <!-- Plages annotations -->
+        <text x="200" y="135" text-anchor="middle" font-size="9.5" fill="#A8761B" font-style="italic">Saint-Yves-sur-Mer</text>
+        <text x="360" y="135" text-anchor="middle" font-size="11" font-weight="700" fill="#C5482F">ANSE-DE-GOULVEN</text>
+        <text x="520" y="135" text-anchor="middle" font-size="9.5" fill="#A8761B" font-style="italic">Tréguinec</text>
+        <!-- Pointillés communaux -->
+        <line x1="280" y1="145" x2="280" y2="280" stroke="#888" stroke-width="0.8" stroke-dasharray="3 3"/>
+        <line x1="440" y1="145" x2="440" y2="280" stroke="#888" stroke-width="0.8" stroke-dasharray="3 3"/>
+        <!-- Dérive littorale W → E (flèche bleue + texte courbé) -->
+        <path d="M 145 88 Q 360 70 575 88" fill="none" stroke="#1E3A5F" stroke-width="2.2" marker-end="url(#arrowderive)"/>
+        <defs>
+          <marker id="arrowderive" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M 0 0 L 9 3 L 0 6 Z" fill="#1E3A5F"/></marker>
+        </defs>
+        <text x="360" y="58" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1E3A5F">DÉRIVE LITTORALE OUEST → EST</text>
+        <text x="360" y="80" text-anchor="middle" font-size="9.5" fill="#1E3A5F" font-style="italic">apport ~ 5 000 m³/an entrant cellule par contournement Saint-Yves</text>
+        <!-- Bilan sédimentaire par commune -->
+        <g font-family="Courier New,monospace" font-size="9">
+          <!-- Saint-Yves : équilibré -->
+          <rect x="155" y="190" width="120" height="50" rx="4" fill="white" stroke="#5C8A4F" stroke-width="1.5"/>
+          <text x="215" y="205" text-anchor="middle" font-size="9" font-weight="700" fill="#5C8A4F">SAINT-YVES</text>
+          <text x="215" y="219" text-anchor="middle" font-size="9.5" fill="#2A2520">Bilan : équilibré</text>
+          <text x="215" y="232" text-anchor="middle" font-size="9" fill="#888" font-style="italic">peu d'ouvrages</text>
+          <!-- Anse-de-Goulven : déficitaire -->
+          <rect x="295" y="190" width="130" height="50" rx="4" fill="white" stroke="#C5482F" stroke-width="2"/>
+          <text x="360" y="205" text-anchor="middle" font-size="9" font-weight="700" fill="#C5482F">ANSE-DE-GOULVEN</text>
+          <text x="360" y="219" text-anchor="middle" font-size="9.5" fill="#2A2520">Bilan : −8 000 m³/an</text>
+          <text x="360" y="232" text-anchor="middle" font-size="9" fill="#888" font-style="italic">digue 1962 piège le transit</text>
+          <!-- Tréguinec : déficitaire en aval -->
+          <rect x="445" y="190" width="125" height="50" rx="4" fill="white" stroke="#C5482F" stroke-width="1.5"/>
+          <text x="507" y="205" text-anchor="middle" font-size="9" font-weight="700" fill="#C5482F">TRÉGUINEC</text>
+          <text x="507" y="219" text-anchor="middle" font-size="9.5" fill="#2A2520">Bilan : −12 000 m³/an</text>
+          <text x="507" y="232" text-anchor="middle" font-size="9" fill="#888" font-style="italic">érosion accélérée (effet aval)</text>
+        </g>
+        <!-- Bandeau angle mort -->
+        <rect x="40" y="280" width="640" height="56" rx="4" fill="#5e3a8a" fill-opacity="0.10" stroke="#5e3a8a" stroke-width="1"/>
+        <text x="55" y="298" font-size="10.5" font-weight="700" fill="#5e3a8a" letter-spacing="0.5">L'ANGLE MORT INTERCOMMUNAL</text>
+        <text x="55" y="313" font-size="11" fill="#2A2520">Reconstruire la digue d'Anse-de-Goulven (levier de 8 M€) sécurise 250 maisons côté commune.</text>
+        <text x="55" y="327" font-size="11" fill="#2A2520">Mais elle accentue l'érosion à Tréguinec (− 4 000 m³/an supplémentaires) : qui paie la compensation ?</text>
+      </svg>
+    </div>
+    <p style="font-size:13px;line-height:1.6;color:#555;font-style:italic;margin-top:16px;">
+      → Question à reposer aux groupes : <strong>votre stratégie 10 ans est-elle compatible avec celle de Tréguinec ?</strong> Quel niveau de gouvernance (EPCI ? syndicat mixte de bassin ? PAPI inter-communal ?) permet d'instruire ces effets transversaux ?
+    </p>
+
+    <h3 style="margin-top:34px;">Typologie ternaire des enjeux exposés</h3>
+    <div class="expert-source">Partie 4 du guide · fiche technique 15 « Identifier et catégoriser les enjeux exposés »</div>
+    <p style="font-size:14px;line-height:1.65;color:var(--grey-dark);">
+      La clé n'est pas l'intensité d'exposition, mais la <strong>capacité à être déplacé</strong>. Cette typologie ternaire conditionne entièrement la stratégie d'action : un enjeu relocalisable appelle FPRNM mesures 1-3 ou DPRTC ; un non-relocalisable appelle adaptation in situ (mitigation, BRAEC) ; un espace arrière-littoral appelle SFN et tampon écologique. Vous ne traitez pas ces trois catégories avec les mêmes leviers.
+    </p>
+    <div class="typologie-grid">
+      <div class="typologie-col relocalisable">
+        <h4>① Relocalisables</h4>
+        <div class="typologie-desc">Bâti et infrastructures qui peuvent fonctionner ailleurs sans perte de leur usage</div>
+        <ul>
+          <li>47 maisons en aléa fort PPRL</li>
+          <li>PME Bretzel-Marine (28 emplois)</li>
+          <li>3 campings (320 emplacements, 800 pers. en pic)</li>
+          <li>Station d'épuration (STEP)</li>
+          <li>Réseaux : eau potable, électrique, télécom</li>
+        </ul>
+        <div class="typologie-actions">
+          <strong>Leviers d'action :</strong> FPRNM mesures 1-3 (acquisition amiable / expropriation), mesure 18-19 (recul TC), DPRTC, BRAEC. Recomposition spatiale.
+        </div>
+      </div>
+      <div class="typologie-col non-relocalisable">
+        <h4>② Non-relocalisables</h4>
+        <div class="typologie-desc">Enjeux dont la fonction impose la proximité du littoral, ou enjeux d'usage</div>
+        <ul>
+          <li>Port-abri ostréicole (22 concessions)</li>
+          <li>Église XV<sup>e</sup> classée (patrimoine)</li>
+          <li>GR34 sentier des douaniers (enjeu d'usage)</li>
+          <li>Plage centrale (enjeu touristique)</li>
+          <li>22 personnes âgées isolées (réseau social tissé)</li>
+        </ul>
+        <div class="typologie-actions">
+          <strong>Leviers d'action :</strong> adaptation in situ, mitigation FPRNM mesure 6, renforcement bâti, BRAEC, accompagnement social, plan de continuité d'usage.
+        </div>
+      </div>
+      <div class="typologie-col arriere">
+        <h4>③ Espaces arrière-littoraux</h4>
+        <div class="typologie-desc">Interface terre-mer, ne sont pas des biens à défendre mais des zones tampons</div>
+        <ul>
+          <li>Marais d'eau saumâtre (60 ha)</li>
+          <li>Cordon dunaire (1,2 km)</li>
+          <li>Herbiers de zostères (52 ha)</li>
+          <li>Estuaire du Goulven (zone d'expansion)</li>
+        </ul>
+        <div class="typologie-actions">
+          <strong>Leviers d'action :</strong> SFN (Solutions Fondées sur la Nature), dépoldérisation, recharge dunaire, restauration écologique, statut de protection (ENS, Natura 2000).
+        </div>
+      </div>
+    </div>
+
 
   <h3 class="subhead">Cadre commun à remplir par tous les groupes</h3>
   <div class="cards-grid">
@@ -6496,126 +6611,6 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
     </div>
   </div>
 
-  <!-- ============ MODULE EXPERT CAS 1 ============ -->
-  <div class="expert-section expert-only">
-    <div class="expert-eyebrow">⌬ Annexe experte · Litto'Risques · Parties 2 &amp; 4</div>
-    <h3>Replacer Anse-de-Goulven dans sa cellule hydrosédimentaire</h3>
-    <div class="expert-source">CD29 + UBO + Cerema (2023) · Guide méthodologique de gestion des risques littoraux en Finistère, volet 2</div>
-    <p style="font-size:14px;line-height:1.65;color:var(--grey-dark);">
-      Le diagnostic actuel traite Anse-de-Goulven en autarcie. La méthodologie Litto'Risques (fiches techniques 4 à 8) impose au préalable de comprendre <strong>les dynamiques sédimentaires</strong> à l'échelle de la cellule, non de la commune. Une cellule hydrosédimentaire est délimitée par deux caps rocheux (limites naturelles du transit) ; elle a un sens de dérive littorale et un bilan sédimentaire (excédentaire ou déficitaire). Les ouvrages d'une commune produisent des effets en aval : ce que je gagne en protégeant ma plage, le voisin le paie en érosion accélérée.
-    </p>
-    <div class="cellule-schema">
-      <svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" style="font-family:Georgia,serif;">
-        <text x="360" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="#1E3A5F">Cellule hydrosédimentaire « Pointe Saint-Yves — Pointe du Rocher Noir »</text>
-        <!-- Mer en haut -->
-        <rect x="20" y="40" width="680" height="100" fill="#328088" fill-opacity="0.15"/>
-        <text x="35" y="58" font-size="10" fill="#328088" font-style="italic">Manche · Pleine mer marée 102</text>
-        <!-- Vagues -->
-        <g stroke="#328088" stroke-width="0.7" fill="none" opacity="0.45">
-          <path d="M 30 70 Q 60 65 90 70 T 150 70 T 210 70 T 270 70 T 330 70 T 390 70 T 450 70 T 510 70 T 570 70 T 630 70 T 690 70"/>
-          <path d="M 30 95 Q 60 90 90 95 T 150 95 T 210 95 T 270 95 T 330 95 T 390 95 T 450 95 T 510 95 T 570 95 T 630 95 T 690 95"/>
-        </g>
-        <!-- Cap Saint-Yves (gauche) -->
-        <path d="M 20 145 L 80 130 L 130 145 L 130 260 L 20 260 Z" fill="#7E6B4A" fill-opacity="0.6" stroke="#5C5237" stroke-width="1"/>
-        <text x="75" y="155" text-anchor="middle" font-size="10.5" font-weight="700" fill="white">Pointe Saint-Yves</text>
-        <text x="75" y="168" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.85)" font-style="italic">cap rocheux · limite ouest</text>
-        <!-- Cap Rocher Noir (droite) -->
-        <path d="M 700 145 L 640 130 L 590 145 L 590 260 L 700 260 Z" fill="#7E6B4A" fill-opacity="0.6" stroke="#5C5237" stroke-width="1"/>
-        <text x="645" y="155" text-anchor="middle" font-size="10.5" font-weight="700" fill="white">Pointe Rocher Noir</text>
-        <text x="645" y="168" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.85)" font-style="italic">cap rocheux · limite est</text>
-        <!-- Trait de côte sableux (cordon dunaire + plages) -->
-        <path d="M 130 145 Q 200 150 280 148 L 360 145 L 440 148 Q 510 150 590 145" fill="none" stroke="#D49426" stroke-width="3.5"/>
-        <!-- Plages annotations -->
-        <text x="200" y="135" text-anchor="middle" font-size="9.5" fill="#A8761B" font-style="italic">Saint-Yves-sur-Mer</text>
-        <text x="360" y="135" text-anchor="middle" font-size="11" font-weight="700" fill="#C5482F">ANSE-DE-GOULVEN</text>
-        <text x="520" y="135" text-anchor="middle" font-size="9.5" fill="#A8761B" font-style="italic">Tréguinec</text>
-        <!-- Pointillés communaux -->
-        <line x1="280" y1="145" x2="280" y2="280" stroke="#888" stroke-width="0.8" stroke-dasharray="3 3"/>
-        <line x1="440" y1="145" x2="440" y2="280" stroke="#888" stroke-width="0.8" stroke-dasharray="3 3"/>
-        <!-- Dérive littorale W → E (flèche bleue + texte courbé) -->
-        <path d="M 145 88 Q 360 70 575 88" fill="none" stroke="#1E3A5F" stroke-width="2.2" marker-end="url(#arrowderive)"/>
-        <defs>
-          <marker id="arrowderive" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M 0 0 L 9 3 L 0 6 Z" fill="#1E3A5F"/></marker>
-        </defs>
-        <text x="360" y="58" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1E3A5F">DÉRIVE LITTORALE OUEST → EST</text>
-        <text x="360" y="80" text-anchor="middle" font-size="9.5" fill="#1E3A5F" font-style="italic">apport ~ 5 000 m³/an entrant cellule par contournement Saint-Yves</text>
-        <!-- Bilan sédimentaire par commune -->
-        <g font-family="Courier New,monospace" font-size="9">
-          <!-- Saint-Yves : équilibré -->
-          <rect x="155" y="190" width="120" height="50" rx="4" fill="white" stroke="#5C8A4F" stroke-width="1.5"/>
-          <text x="215" y="205" text-anchor="middle" font-size="9" font-weight="700" fill="#5C8A4F">SAINT-YVES</text>
-          <text x="215" y="219" text-anchor="middle" font-size="9.5" fill="#2A2520">Bilan : équilibré</text>
-          <text x="215" y="232" text-anchor="middle" font-size="9" fill="#888" font-style="italic">peu d'ouvrages</text>
-          <!-- Anse-de-Goulven : déficitaire -->
-          <rect x="295" y="190" width="130" height="50" rx="4" fill="white" stroke="#C5482F" stroke-width="2"/>
-          <text x="360" y="205" text-anchor="middle" font-size="9" font-weight="700" fill="#C5482F">ANSE-DE-GOULVEN</text>
-          <text x="360" y="219" text-anchor="middle" font-size="9.5" fill="#2A2520">Bilan : −8 000 m³/an</text>
-          <text x="360" y="232" text-anchor="middle" font-size="9" fill="#888" font-style="italic">digue 1962 piège le transit</text>
-          <!-- Tréguinec : déficitaire en aval -->
-          <rect x="445" y="190" width="125" height="50" rx="4" fill="white" stroke="#C5482F" stroke-width="1.5"/>
-          <text x="507" y="205" text-anchor="middle" font-size="9" font-weight="700" fill="#C5482F">TRÉGUINEC</text>
-          <text x="507" y="219" text-anchor="middle" font-size="9.5" fill="#2A2520">Bilan : −12 000 m³/an</text>
-          <text x="507" y="232" text-anchor="middle" font-size="9" fill="#888" font-style="italic">érosion accélérée (effet aval)</text>
-        </g>
-        <!-- Bandeau angle mort -->
-        <rect x="40" y="280" width="640" height="56" rx="4" fill="#5e3a8a" fill-opacity="0.10" stroke="#5e3a8a" stroke-width="1"/>
-        <text x="55" y="298" font-size="10.5" font-weight="700" fill="#5e3a8a" letter-spacing="0.5">L'ANGLE MORT INTERCOMMUNAL</text>
-        <text x="55" y="313" font-size="11" fill="#2A2520">Reconstruire la digue d'Anse-de-Goulven (levier de 8 M€) sécurise 250 maisons côté commune.</text>
-        <text x="55" y="327" font-size="11" fill="#2A2520">Mais elle accentue l'érosion à Tréguinec (− 4 000 m³/an supplémentaires) : qui paie la compensation ?</text>
-      </svg>
-    </div>
-    <p style="font-size:13px;line-height:1.6;color:#555;font-style:italic;margin-top:16px;">
-      → Question à reposer aux groupes : <strong>votre stratégie 10 ans est-elle compatible avec celle de Tréguinec ?</strong> Quel niveau de gouvernance (EPCI ? syndicat mixte de bassin ? PAPI inter-communal ?) permet d'instruire ces effets transversaux ?
-    </p>
-
-    <h3 style="margin-top:34px;">Typologie ternaire des enjeux exposés</h3>
-    <div class="expert-source">Partie 4 du guide · fiche technique 15 « Identifier et catégoriser les enjeux exposés »</div>
-    <p style="font-size:14px;line-height:1.65;color:var(--grey-dark);">
-      Le guide impose de classer les enjeux non pas par leur intensité d'exposition, mais par leur <strong>capacité à être déplacés</strong>. Cette typologie ternaire conditionne entièrement la stratégie d'action : un enjeu relocalisable appelle FPRNM mesures 1-3 ou DPRTC ; un non-relocalisable appelle adaptation in situ (mitigation, BRAEC) ; un espace arrière-littoral appelle SFN et tampon écologique. Vous ne traitez pas ces trois catégories avec les mêmes leviers.
-    </p>
-    <div class="typologie-grid">
-      <div class="typologie-col relocalisable">
-        <h4>① Relocalisables</h4>
-        <div class="typologie-desc">Bâti et infrastructures qui peuvent fonctionner ailleurs sans perte de leur usage</div>
-        <ul>
-          <li>47 maisons en aléa fort PPRL</li>
-          <li>PME Bretzel-Marine (28 emplois)</li>
-          <li>3 campings (320 emplacements, 800 pers. en pic)</li>
-          <li>Station d'épuration (STEP)</li>
-          <li>Réseaux : eau potable, électrique, télécom</li>
-        </ul>
-        <div class="typologie-actions">
-          <strong>Leviers d'action :</strong> FPRNM mesures 1-3 (acquisition amiable / expropriation), mesure 18-19 (recul TC), DPRTC, BRAEC. Recomposition spatiale.
-        </div>
-      </div>
-      <div class="typologie-col non-relocalisable">
-        <h4>② Non-relocalisables</h4>
-        <div class="typologie-desc">Enjeux dont la fonction impose la proximité du littoral, ou enjeux d'usage</div>
-        <ul>
-          <li>Port-abri ostréicole (22 concessions)</li>
-          <li>Église XV<sup>e</sup> classée (patrimoine)</li>
-          <li>GR34 sentier des douaniers (enjeu d'usage)</li>
-          <li>Plage centrale (enjeu touristique)</li>
-          <li>22 personnes âgées isolées (réseau social tissé)</li>
-        </ul>
-        <div class="typologie-actions">
-          <strong>Leviers d'action :</strong> adaptation in situ, mitigation FPRNM mesure 6, renforcement bâti, BRAEC, accompagnement social, plan de continuité d'usage.
-        </div>
-      </div>
-      <div class="typologie-col arriere">
-        <h4>③ Espaces arrière-littoraux</h4>
-        <div class="typologie-desc">Interface terre-mer, ne sont pas des biens à défendre mais des zones tampons</div>
-        <ul>
-          <li>Marais d'eau saumâtre (60 ha)</li>
-          <li>Cordon dunaire (1,2 km)</li>
-          <li>Herbiers de zostères (52 ha)</li>
-          <li>Estuaire du Goulven (zone d'expansion)</li>
-        </ul>
-        <div class="typologie-actions">
-          <strong>Leviers d'action :</strong> SFN (Solutions Fondées sur la Nature), dépoldérisation, recharge dunaire, restauration écologique, statut de protection (ENS, Natura 2000).
-        </div>
-      </div>
-    </div>
   </div>
 
   <div style="margin-top:32px;padding:20px 22px;background:#FAF7F2;border:1px solid var(--grey-border);border-radius:4px;text-align:center;">
@@ -6640,10 +6635,6 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
     <h2 class="section-title">Étude de cas n°2 : Stratégie à 10 ans</h2>
   </div>
 
-  <div class="expert-only" style="background:#FAF5EC;border:1px solid #C8A96E;border-left:4px solid #7E6B4A;border-radius:4px;padding:9px 14px;margin:14px 0;display:flex;align-items:center;gap:10px;">
-    <span style="font-family:var(--mono);font-size:10px;background:#7E6B4A;color:#fff;padding:3px 7px;border-radius:3px;letter-spacing:.06em;white-space:nowrap;">⚙ MODE EXPERT</span>
-    <span style="font-size:13px;color:#5A4015;">Ce cas inclut 1 module expert : effet de chaque levier aux horizons 2055 et 2125. <a href="#cas2" style="color:#7E6B4A;font-weight:600;">Voir ↓</a></span>
-  </div>
 
   <div class="key-fact-block" style="background:var(--teal);">
     <div>
@@ -6654,83 +6645,13 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
     </div>
   </div>
 
-  <h3 class="subhead">Méthodologie en trois temps</h3>
-  <div class="cards-grid">
-    <div class="card">
-      <div class="card-eyebrow">Phase 1</div>
-      <h3 class="card-title">Relire</h3>
-      <p class="card-body">Reprendre votre fiche groupe et le diagnostic du matin. Identifier l'AXE central pour vous (cf. fiche).</p>
-    </div>
-    <div class="card">
-      <div class="card-eyebrow">Phase 2</div>
-      <h3 class="card-title">Construire</h3>
-      <p class="card-body">Répondre aux 6 axes communs ET aux questions spécifiques de votre fiche. Soyez concrets : pas de déclarations générales.</p>
-    </div>
-    <div class="card">
-      <div class="card-eyebrow">Phase 3</div>
-      <h3 class="card-title">Anticiper</h3>
-      <p class="card-body">Identifier vos points de friction avec les autres groupes. Préparer la restitution croisée.</p>
-    </div>
-  </div>
-
-  <h3 class="subhead">Simulateur d'arbitrage budgétaire</h3>
-
-  <div class="simulator-block">
-    <div class="simulator-header">
-      <div>
-        <h3>Vous disposez de 9 M€ sur 10 ans</h3>
-        <p>Cochez les leviers que vous activez et ajustez l'enveloppe. Le bilan se met à jour en temps réel.</p>
-      </div>
-      <div class="budget-meter">
-        <div class="budget-meter-label">Total engagé</div>
-        <div class="budget-meter-num"><em id="sim-total">0,0</em> M€  /  9 M€</div>
-        <div class="budget-meter-bar-wrap"><div class="budget-meter-bar" id="sim-bar" style="width:0%"></div></div>
-      </div>
-    </div>
-
-    <div id="levers-list">
-      <!-- généré par JS -->
-    </div>
-
-    <div class="simulator-impact">
-      <h4>Impact estimé de votre stratégie</h4>
-      <div class="impact-grid">
-        <div class="impact-cell">
-          <div class="impact-cell-label">Axes Alpes couverts</div>
-          <div class="impact-cell-val"><em id="sim-axes">0</em>/6</div>
-          <div class="impact-cell-sub" id="sim-axes-sub">Aucun levier activé</div>
-        </div>
-        <div class="impact-cell">
-          <div class="impact-cell-label">Population mieux protégée</div>
-          <div class="impact-cell-val"><em id="sim-pop">0</em></div>
-          <div class="impact-cell-sub">habitants permanents</div>
-        </div>
-        <div class="impact-cell">
-          <div class="impact-cell-label">Emplois sécurisés / créés</div>
-          <div class="impact-cell-val"><em id="sim-jobs">0</em></div>
-          <div class="impact-cell-sub">ETP locaux</div>
-        </div>
-        <div class="impact-cell">
-          <div class="impact-cell-label">Logements concernés</div>
-          <div class="impact-cell-val"><em id="sim-logements">0</em></div>
-          <div class="impact-cell-sub">protégés ou recomposés</div>
-        </div>
-        <div class="impact-cell">
-          <div class="impact-cell-label">Co-financements activables</div>
-          <div class="impact-cell-val"><em id="sim-cofin">0,0</em> M€</div>
-          <div class="impact-cell-sub">FPRNM, agence eau, Région</div>
-        </div>
-      </div>
-      <div id="sim-warnings" style="margin-top:14px;font-size:13px;line-height:1.5;color:#FFB496;display:none;"></div>
-    </div>
-
     <!-- ============ MODULE EXPERT CAS 2 ============ -->
     <div class="expert-section expert-only">
-      <div class="expert-eyebrow">⌬ Annexe experte · Litto'Risques · Partie 3</div>
+      <div class="expert-eyebrow">Approfondissement · Cas 2</div>
       <h3>Effet des leviers à deux horizons : 2055 et 2125</h3>
       <div class="expert-source">Fiches techniques 11, 13, 14 du guide · projection des aléas et de la position du trait de côte</div>
       <p style="font-size:14px;line-height:1.65;color:var(--grey-dark);">
-        Le guide impose de tester chaque levier à <strong>deux horizons explicites</strong>, l'un opposable au PLU (30 ans, ~2055), l'autre prospectif et structurant pour les infrastructures longues (100 ans, ~2125). Niveau marin de référence : TRACC France · +24 cm en 2050 · +56 cm en 2100. Surcote tempête centennale Anse-de-Goulven : 1,4 m (Xynthia-équivalent). Reculs projetés : 25 m en 2050 · 75 m en 2100.
+        Chaque levier stratégique doit être testé à <strong>deux horizons distincts</strong> : l'un opposable au PLU (30 ans, ~2055), l'autre prospectif et structurant pour les infrastructures longues (100 ans, ~2125). Niveau marin de référence : TRACC France · +24 cm en 2050 · +56 cm en 2100. Surcote tempête centennale Anse-de-Goulven : 1,4 m (Xynthia-équivalent). Reculs projetés : 25 m en 2050 · 75 m en 2100.
       </p>
       <table class="horizons-table">
         <thead>
@@ -6856,6 +6777,76 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
       <!-- généré par JS dynamiquement à partir des leviers validés au cas 2 -->
     </div>
   </div>
+
+  <h3 class="subhead">Méthodologie en trois temps</h3>
+  <div class="cards-grid">
+    <div class="card">
+      <div class="card-eyebrow">Phase 1</div>
+      <h3 class="card-title">Relire</h3>
+      <p class="card-body">Reprendre votre fiche groupe et le diagnostic du matin. Identifier l'AXE central pour vous (cf. fiche).</p>
+    </div>
+    <div class="card">
+      <div class="card-eyebrow">Phase 2</div>
+      <h3 class="card-title">Construire</h3>
+      <p class="card-body">Répondre aux 6 axes communs ET aux questions spécifiques de votre fiche. Soyez concrets : pas de déclarations générales.</p>
+    </div>
+    <div class="card">
+      <div class="card-eyebrow">Phase 3</div>
+      <h3 class="card-title">Anticiper</h3>
+      <p class="card-body">Identifier vos points de friction avec les autres groupes. Préparer la restitution croisée.</p>
+    </div>
+  </div>
+
+  <h3 class="subhead">Simulateur d'arbitrage budgétaire</h3>
+
+  <div class="simulator-block">
+    <div class="simulator-header">
+      <div>
+        <h3>Vous disposez de 9 M€ sur 10 ans</h3>
+        <p>Cochez les leviers que vous activez et ajustez l'enveloppe. Le bilan se met à jour en temps réel.</p>
+      </div>
+      <div class="budget-meter">
+        <div class="budget-meter-label">Total engagé</div>
+        <div class="budget-meter-num"><em id="sim-total">0,0</em> M€  /  9 M€</div>
+        <div class="budget-meter-bar-wrap"><div class="budget-meter-bar" id="sim-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div id="levers-list">
+      <!-- généré par JS -->
+    </div>
+
+    <div class="simulator-impact">
+      <h4>Impact estimé de votre stratégie</h4>
+      <div class="impact-grid">
+        <div class="impact-cell">
+          <div class="impact-cell-label">Axes Alpes couverts</div>
+          <div class="impact-cell-val"><em id="sim-axes">0</em>/6</div>
+          <div class="impact-cell-sub" id="sim-axes-sub">Aucun levier activé</div>
+        </div>
+        <div class="impact-cell">
+          <div class="impact-cell-label">Population mieux protégée</div>
+          <div class="impact-cell-val"><em id="sim-pop">0</em></div>
+          <div class="impact-cell-sub">habitants permanents</div>
+        </div>
+        <div class="impact-cell">
+          <div class="impact-cell-label">Emplois sécurisés / créés</div>
+          <div class="impact-cell-val"><em id="sim-jobs">0</em></div>
+          <div class="impact-cell-sub">ETP locaux</div>
+        </div>
+        <div class="impact-cell">
+          <div class="impact-cell-label">Logements concernés</div>
+          <div class="impact-cell-val"><em id="sim-logements">0</em></div>
+          <div class="impact-cell-sub">protégés ou recomposés</div>
+        </div>
+        <div class="impact-cell">
+          <div class="impact-cell-label">Co-financements activables</div>
+          <div class="impact-cell-val"><em id="sim-cofin">0,0</em> M€</div>
+          <div class="impact-cell-sub">FPRNM, agence eau, Région</div>
+        </div>
+      </div>
+      <div id="sim-warnings" style="margin-top:14px;font-size:13px;line-height:1.5;color:#FFB496;display:none;"></div>
+    </div>
 
 </section>
 
@@ -7570,10 +7561,6 @@ function _climateSpeakWebSpeech(text) {
     <h2 class="section-title">Étude de cas n°4 : La CDRNM siège</h2>
   </div>
 
-  <div class="expert-only" style="background:#FAF5EC;border:1px solid #C8A96E;border-left:4px solid #7E6B4A;border-radius:4px;padding:9px 14px;margin:14px 0;display:flex;align-items:center;gap:10px;">
-    <span style="font-family:var(--mono);font-size:10px;background:#7E6B4A;color:#fff;padding:3px 7px;border-radius:3px;letter-spacing:.06em;white-space:nowrap;">⚙ MODE EXPERT</span>
-    <span style="font-size:13px;color:#5A4015;">Ce cas inclut 1 module expert : auto-évaluation Osirisc (4 composantes). <a href="#cas4" style="color:#7E6B4A;font-weight:600;">Voir ↓</a></span>
-  </div>
   <p class="section-intro">
     Six mois après la tempête Argonne, le préfet réunit la <strong>Commission départementale des risques naturels majeurs</strong>.
     Elle est saisie pour <strong>arbitrer les priorités d'outils</strong> à déployer pour Anse-de-Goulven.
@@ -7594,29 +7581,11 @@ function _climateSpeakWebSpeech(text) {
     </div>
   </div>
 
-  <div class="cdrnm-block">
-    <div class="cdrnm-head">
-      <div class="cdrnm-eyebrow">Dossier soumis à la commission</div>
-      <h3>Quelles priorités d'outils déployer pour Anse-de-Goulven&nbsp;?</h3>
-      <p class="cdrnm-context">
-        Compte tenu du diagnostic croisé, de la stratégie 10 ans débattue, et du retour d'expérience de la tempête Argonne
-        (47 maisons inondées, 80 m de digue effondrée, marais Natura 2000 affecté sur 200 ha, pertes 8,2 M€), la commission
-        est saisie pour donner son avis sur 10 propositions structurées en trois grandes priorités.
-      </p>
-      <p class="cdrnm-context"><strong>Pour chaque proposition, vous votez : POUR / CONTRE / RÉSERVE.</strong> Vous pouvez ajouter un argument court (50 mots) : facultatif. Vous pouvez modifier votre vote tant que vous n'avez pas validé.</p>
-    </div>
-
-    <button class="cdrnm-launch-btn" onclick="openCdrnm()">
-      <span>Ouvrir le QCM de la commission</span>
-      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-    </button>
-  </div>
-
   <!-- ============ MODULE EXPERT CAS 4 : OSIRISC ============ -->
   <div class="expert-section expert-only">
-    <div class="expert-eyebrow">⌬ Annexe experte · Litto'Risques · Partie 5.4</div>
+    <div class="expert-eyebrow">Approfondissement · Cas 4</div>
     <h3>Auto-évaluation Osirisc : où en est le territoire ?</h3>
-    <div class="expert-source">Méthode développée par UBO + Cerema (fiche technique 25) · 4 composantes · note 0-5 par composante</div>
+    <div class="expert-source">Méthode Osirisc · UBO + Cerema (2023) · 4 composantes · note 0-5 par composante</div>
     <p style="font-size:14px;line-height:1.65;color:var(--grey-dark);">
       La méthode Osirisc évalue la <strong>vulnérabilité globale d'un territoire côtier</strong> selon 4 composantes interdépendantes : la connaissance des aléas, l'inventaire des enjeux, la maturité de la gestion publique, et la culture du risque. Une trajectoire de réduction de vulnérabilité passe par une progression équilibrée sur les 4 composantes — pas seulement par l'investissement infrastructurel. Notez Anse-de-Goulven sur chaque composante : 0 = absent, 5 = exemplaire.
     </p>
@@ -7692,6 +7661,25 @@ function _climateSpeakWebSpeech(text) {
       → La méthode Osirisc invite à <strong>équilibrer</strong> les 4 composantes plutôt qu'à exceller sur une seule. Un territoire avec 5/5 sur les aléas mais 1/5 sur les représentations reste fragile : les habitants n'agiront pas. C'est la composante la plus faible qui détermine la résilience effective.
     </p>
   </div>
+
+  <div class="cdrnm-block">
+    <div class="cdrnm-head">
+      <div class="cdrnm-eyebrow">Dossier soumis à la commission</div>
+      <h3>Quelles priorités d'outils déployer pour Anse-de-Goulven&nbsp;?</h3>
+      <p class="cdrnm-context">
+        Compte tenu du diagnostic croisé, de la stratégie 10 ans débattue, et du retour d'expérience de la tempête Argonne
+        (47 maisons inondées, 80 m de digue effondrée, marais Natura 2000 affecté sur 200 ha, pertes 8,2 M€), la commission
+        est saisie pour donner son avis sur 10 propositions structurées en trois grandes priorités.
+      </p>
+      <p class="cdrnm-context"><strong>Pour chaque proposition, vous votez : POUR / CONTRE / RÉSERVE.</strong> Vous pouvez ajouter un argument court (50 mots) : facultatif. Vous pouvez modifier votre vote tant que vous n'avez pas validé.</p>
+    </div>
+
+    <button class="cdrnm-launch-btn" onclick="openCdrnm()">
+      <span>Ouvrir le QCM de la commission</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </div>
+
 
 </section>
 
@@ -8234,10 +8222,10 @@ function _climateSpeakWebSpeech(text) {
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 13z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
     </span>
-    <h2 class="section-title">Méthodologie Litto'Risques · cheminement expert</h2>
+    <h2 class="section-title">Cheminement méthodologique expert</h2>
   </div>
   <p class="section-intro">
-    Le partenariat <strong>Litto'Risques</strong> (Conseil départemental du Finistère + UBO + Cerema, créé en 2019) propose une méthodologie en cinq parties pour structurer une stratégie locale de gestion des risques littoraux. Elle est calibrée pour le terrain : c'est ce que mobilisent les bureaux d'études, les services DDTM/DREAL et les techniciens des EPCI dans la pratique. Le cheminement est progressif et chaque étape s'appuie sur des fiches techniques détaillées (25 au total dans le volet 2).
+    La gestion durable d'un risque littoral suit un cheminement en cinq parties : de la clarification de la maîtrise d'ouvrage à la définition d'une stratégie locale. C'est ce que mobilisent les bureaux d'études, les services DDTM/DREAL et les techniciens des EPCI dans la pratique. Chaque partie s'appuie sur des méthodes et outils concrets.
   </p>
 
   <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:18px; margin-top:20px;">
@@ -18989,7 +18977,7 @@ function declineResearchConsent() {
 }
 // Affichage automatique au premier chargement, si pas de choix précédent
 // =============================================================================
-// MODE EXPERT (Litto'Risques) : toggle synchronisé Firebase + cache localStorage
+// MODE EXPERT : toggle synchronisé Firebase + cache localStorage
 // Trainer = seul à pouvoir basculer ; tous les écrans suivent en temps réel
 // =============================================================================
 const EXPERT_MODE_KEY = 'ansedegoulven_expert_mode';
@@ -19059,13 +19047,13 @@ function _showExpertToast() {
     'font-size:13px', 'line-height:1.55', 'animation:slideInRight 0.25s ease'
   ].join(';');
   t.innerHTML = `
-    <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:#FFD580;margin-bottom:8px;">⚙ MODE EXPERT ACTIVÉ</div>
-    <div style="font-weight:600;margin-bottom:6px;">4 modules visibles dans :</div>
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:#FFD580;margin-bottom:8px;">⚙ APPROFONDISSEMENT ACTIVÉ</div>
+    <div style="font-weight:600;margin-bottom:6px;">Modules supplémentaires dans :</div>
     <div style="opacity:.9;">
-      → <a href="#cas1" style="color:#9DC8FF;" onclick="document.getElementById('expertToast')?.remove()">Cas 1</a> — Cellule hydrosédimentaire + Typol. enjeux<br>
+      → <a href="#cas1" style="color:#9DC8FF;" onclick="document.getElementById('expertToast')?.remove()">Cas 1</a> — Dynamiques côtières + Enjeux<br>
       → <a href="#cas2" style="color:#9DC8FF;" onclick="document.getElementById('expertToast')?.remove()">Cas 2</a> — Horizons 2055 / 2125<br>
-      → <a href="#cas4" style="color:#9DC8FF;" onclick="document.getElementById('expertToast')?.remove()">Cas 4</a> — Auto-évaluation Osirisc<br>
-      → <a href="#littorisques" style="color:#9DC8FF;" onclick="document.getElementById('expertToast')?.remove()">Nav</a> — Méthodologie Litto'Risques
+      → <a href="#cas4" style="color:#9DC8FF;" onclick="document.getElementById('expertToast')?.remove()">Cas 4</a> — Vulnérabilité territoriale<br>
+      → <a href="#littorisques" style="color:#9DC8FF;" onclick="document.getElementById('expertToast')?.remove()">Bas de page</a> — Cheminement méthodologique
     </div>`;
   document.body.appendChild(t);
   setTimeout(() => t.style.opacity = '0', 6000);
