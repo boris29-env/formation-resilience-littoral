@@ -16733,7 +16733,7 @@ Ton appréciation suit cette structure en quatre temps, enchaînés naturellemen
 - Pas de "vous auriez dû" ou "c'était bien/mal"
 - Pas de liste à puces
 - Pas de formules académiques
-- Pas plus de 350 mots au total
+- Vise 280 à 320 mots. Ne dépasse jamais 350. Termine toujours sur une phrase complète.
 - Tu n'inventes pas des choix qu'ils n'ont pas faits
 
 ## Le groupe en face de toi
@@ -16854,7 +16854,7 @@ async function _debriefingCall(userText) {
       body: JSON.stringify({
         system: _debriefingState.systemPrompt,
         messages: messages,
-        max_tokens: 500,
+        max_tokens: 1024,
       }),
     });
 
@@ -16862,6 +16862,18 @@ async function _debriefingCall(userText) {
 
     const data = await response.json();
     let reply = data?.content?.[0]?.text || '';
+    // Détecter une coupure en plein milieu de phrase
+    if (data?.stop_reason === 'max_tokens' && reply) {
+      // Couper proprement à la dernière phrase complète
+      const lastStop = Math.max(
+        reply.lastIndexOf('. '),
+        reply.lastIndexOf('.\n'),
+        reply.lastIndexOf(' !')
+      );
+      if (lastStop > reply.length * 0.5) {
+        reply = reply.substring(0, lastStop + 1);
+      }
+    }
     reply = _cleanupReply(reply);
 
     // Stocker dans l'historique
