@@ -1068,6 +1068,185 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
   font-family: var(--mono); font-size: 11px; color: #999;
   font-style: italic; margin-top: 10px;
 }
+/* ══════════════════════════════════════════════
+   SYSTÈME DE CHAPITRES — navigation sessionelle
+   ══════════════════════════════════════════════ */
+
+/* Cacher toutes les sections du flux principal */
+main.content > section.ch-section,
+main.content > .hero.ch-section {
+  display: none;
+}
+main.content > section.ch-section.ch-active,
+main.content > .hero.ch-section.ch-active {
+  display: block;
+}
+
+/* Barre de chapitre (en haut du contenu principal) */
+.ch-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: #fff;
+  border-bottom: 2px solid var(--grey-border);
+  margin-bottom: 0;
+}
+.ch-bar-btn {
+  background: none;
+  border: none;
+  padding: 10px 14px;
+  cursor: pointer;
+  color: var(--grey-txt);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  transition: color .12s, background .12s;
+  border-right: 1px solid var(--grey-border);
+}
+.ch-bar-btn:last-child { border-right: none; border-left: 1px solid var(--grey-border); }
+.ch-bar-btn:hover { color: var(--navy); background: #F7F9FC; }
+.ch-bar-btn[disabled] { opacity: .25; cursor: default; pointer-events: none; }
+.ch-bar-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  overflow: hidden;
+}
+.ch-bar-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--orange);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ch-bar-title {
+  font-family: var(--serif);
+  font-size: 15px;
+  color: var(--navy);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ch-bar-dots {
+  display: flex;
+  gap: 5px;
+  margin-left: auto;
+  padding-right: 4px;
+}
+.ch-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--grey-border);
+  cursor: pointer;
+  transition: all .15s;
+}
+.ch-dot.active { background: var(--navy); transform: scale(1.2); }
+.ch-dot.done   { background: #5C8A4F; }
+
+/* Sidebar refonte — chapitres */
+.sidebar-chapters {
+  padding: 8px 0 4px;
+}
+.sb-ch-group {
+  padding: 0;
+  margin-bottom: 2px;
+}
+.sb-ch-grouplabel {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--grey-txt);
+  padding: 10px 20px 4px;
+}
+.sb-ch-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 9px 20px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--grey-dark);
+  transition: background .1s, color .1s;
+}
+.sb-ch-btn:hover {
+  background: rgba(0,0,0,.04);
+  color: var(--navy);
+}
+.sb-ch-btn.active {
+  background: rgba(30,58,95,.08);
+  color: var(--navy);
+  border-left: 3px solid var(--orange);
+  padding-left: 17px;
+  font-weight: 600;
+}
+.sb-ch-icon {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.sb-ch-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--grey-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+  color: var(--navy);
+}
+.sb-ch-btn.active .sb-ch-num {
+  background: var(--orange);
+  color: #fff;
+}
+.sb-ch-label {
+  font-size: 13px;
+  line-height: 1.3;
+  color: inherit;
+}
+.sb-ch-label small {
+  display: block;
+  font-size: 10.5px;
+  color: var(--grey-txt);
+  font-weight: 400;
+  margin-top: 1px;
+}
+.sb-ch-done {
+  margin-left: auto;
+  color: #5C8A4F;
+  font-size: 12px;
+}
+/* Roles section dans sidebar */
+.sb-roles {
+  padding: 4px 0 8px;
+  border-bottom: 1px solid var(--grey-border);
+}
+.sb-roles .sidebar-label {
+  padding: 6px 20px 3px;
+}
+.sb-roles .group-link {
+  padding: 5px 20px;
+}
+/* ═════════════════════════════════════════════ */
+
 /* ========== TIPS ========== */
 
 /* ========== TIPS ========== */
@@ -4892,59 +5071,89 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
 
 <!-- ============ SIDEBAR ============ -->
 <aside class="sidebar" id="sidebar">
-  <div class="sidebar-section">
-    <span class="sidebar-label">Le territoire</span>
-    <a href="#territoire">Le territoire</a>
-    <a href="#cartes">Cartes</a>
-    <a href="#chiffres">Chiffres clés</a>
-    <a href="#evenements">Événements</a>
-  </div>
-  <div class="sidebar-section">
+
+  <!-- Rôles / groupes -->
+  <div class="sb-roles">
     <span class="sidebar-label">Votre rôle</span>
-    <a href="#groupes" class="group-link"><span class="group-badge g1" id="sb-g1">G1</span><span>Mission préfectorale</span></a>
-    <a href="#groupes" class="group-link"><span class="group-badge g2" id="sb-g2">G2</span><span>Mairie + EPCI</span></a>
-    <a href="#groupes" class="group-link"><span class="group-badge g3" id="sb-g3">G3</span><span>Syndicat + Conserv.</span></a>
-    <a href="#groupes" class="group-link"><span class="group-badge g4" id="sb-g4">G4</span><span>Acteurs économiques</span></a>
-    <a href="#groupes" class="group-link"><span class="group-badge g5" id="sb-g5">G5</span><span>Société civile</span></a>
+    <a href="#groupes" class="group-link" onclick="showChapter('territoire')"><span class="group-badge g1" id="sb-g1">G1</span><span>Mission préfectorale</span></a>
+    <a href="#groupes" class="group-link" onclick="showChapter('territoire')"><span class="group-badge g2" id="sb-g2">G2</span><span>Mairie + EPCI</span></a>
+    <a href="#groupes" class="group-link" onclick="showChapter('territoire')"><span class="group-badge g3" id="sb-g3">G3</span><span>Syndicat + Conserv.</span></a>
+    <a href="#groupes" class="group-link" onclick="showChapter('territoire')"><span class="group-badge g4" id="sb-g4">G4</span><span>Acteurs économiques</span></a>
+    <a href="#groupes" class="group-link" onclick="showChapter('territoire')"><span class="group-badge g5" id="sb-g5">G5</span><span>Société civile</span></a>
   </div>
-  <div class="sidebar-section">
-    <span class="sidebar-label">Travailler</span>
-    <a href="#glossaireSeuil">Glossaire de seuil</a>
-    <a href="#boussole">Boussole des outils</a>
-    <a href="#mailbox">Votre boîte mail</a>
-    <a href="#restitution">Restitution</a>
-    <a href="#dialogue1972">Interlude : 1972</a>
-    <a href="#cas1">Étude de cas n°1</a>
-    <a href="#cas2">Étude de cas n°2</a>
-    <a href="#cas3">Étude de cas n°3</a>
-    <a href="#climateVoices">Interlude : voix du climat</a>
-    <a href="#cas4">Étude de cas n°4</a>
-    <a href="#carnet">Carnet de découverte</a>
-    <a href="#debriefing">Appréciation miroir</a>
-  </div>
-  <div class="sidebar-section expert-only" style="border-top:2px solid #7E6B4A;margin-top:8px;padding-top:8px;">
-    <span class="sidebar-label" style="color:#7E6B4A;">⚙ Approfondissements</span>
-    <a href="#cas1" style="color:#7E6B4A;font-size:12px;">↳ Dynamiques côtières · Enjeux</a>
-    <a href="#cas2" style="color:#7E6B4A;font-size:12px;">↳ Horizons 2055/2125</a>
-    <a href="#cas4" style="color:#7E6B4A;font-size:12px;">↳ Vulnérabilité territoriale</a>
-    <a href="#littorisques" style="color:#7E6B4A;font-size:12px;">↳ Cheminement méthodologique</a>
-    <a href="#pprl" style="color:#7E6B4A;font-size:12px;">↳ Aléa PPRL submersion marine</a>
-    <a href="#carto" style="color:#7E6B4A;font-size:12px;">↳ Carte interactive du territoire</a>
-  </div>
-  <div class="sidebar-section">
-    <span class="sidebar-label">Ressources</span>
-    <a href="#axes">Les 6 axes du rapport Alpes</a>
-    <a href="#telechargements">Téléchargements</a>
-    <a href="#lexique">Lexique</a>
-    <a href="#sources">Sources nationales</a>
-    <a href="#liens">Pour aller plus loin</a>
-  </div>
+
+  <!-- Navigation par chapitres -->
+  <nav class="sidebar-chapters" id="sidebar-ch-nav">
+
+    <div class="sb-ch-group">
+      <button class="sb-ch-btn active" data-ch="territoire" onclick="showChapter('territoire')">
+        <span class="sb-ch-icon">🗺</span>
+        <span class="sb-ch-label">Le territoire<small>Cartes · Chiffres · Rôles</small></span>
+        <span class="sb-ch-done" id="sbdone-territoire" style="display:none;">✓</span>
+      </button>
+      <button class="sb-ch-btn" data-ch="preparer" onclick="showChapter('preparer')">
+        <span class="sb-ch-icon">📚</span>
+        <span class="sb-ch-label">Se préparer<small>Glossaire · Outils · Mail</small></span>
+        <span class="sb-ch-done" id="sbdone-preparer" style="display:none;">✓</span>
+      </button>
+    </div>
+
+    <div class="sb-ch-group">
+      <div class="sb-ch-grouplabel">Études de cas</div>
+      <button class="sb-ch-btn" data-ch="cas1" onclick="showChapter('cas1')">
+        <span class="sb-ch-num">1</span>
+        <span class="sb-ch-label">Diagnostic croisé<small>Interlude 1972 inclus</small></span>
+        <span class="sb-ch-done" id="sbdone-cas1" style="display:none;">✓</span>
+      </button>
+      <button class="sb-ch-btn" data-ch="cas2" onclick="showChapter('cas2')">
+        <span class="sb-ch-num">2</span>
+        <span class="sb-ch-label">Stratégie 10 ans<small>Simulateur COPIL PAPI</small></span>
+        <span class="sb-ch-done" id="sbdone-cas2" style="display:none;">✓</span>
+      </button>
+      <button class="sb-ch-btn" data-ch="cas3" onclick="showChapter('cas3')">
+        <span class="sb-ch-num">3</span>
+        <span class="sb-ch-label">Gestion de crise<small>PCS · Voix du climat</small></span>
+        <span class="sb-ch-done" id="sbdone-cas3" style="display:none;">✓</span>
+      </button>
+      <button class="sb-ch-btn" data-ch="cas4" onclick="showChapter('cas4')">
+        <span class="sb-ch-num">4</span>
+        <span class="sb-ch-label">La CDRNM siège<small>Arbitrages finaux</small></span>
+        <span class="sb-ch-done" id="sbdone-cas4" style="display:none;">✓</span>
+      </button>
+    </div>
+
+    <div class="sb-ch-group">
+      <div class="sb-ch-grouplabel">Fin de journée</div>
+      <button class="sb-ch-btn" data-ch="cloture" onclick="showChapter('cloture')">
+        <span class="sb-ch-icon">🎯</span>
+        <span class="sb-ch-label">Clôture<small>Carnet · Appréciation IA</small></span>
+      </button>
+      <button class="sb-ch-btn" data-ch="ressources" onclick="showChapter('ressources')">
+        <span class="sb-ch-icon">📖</span>
+        <span class="sb-ch-label">Ressources<small>Lexique · Sources · Expert</small></span>
+      </button>
+    </div>
+
+  </nav>
 </aside>
 
 <!-- ============ MAIN ============ -->
+
 <main class="content">
 
+<!-- ============ BARRE DE CHAPITRE ============ -->
+<div class="ch-bar" id="ch-bar">
+  <button class="ch-bar-btn" id="ch-prev" onclick="chNav(-1)" title="Chapitre précédent">←</button>
+  <div class="ch-bar-info">
+    <span class="ch-bar-num" id="ch-bar-num">01/08</span>
+    <span class="ch-bar-title" id="ch-bar-title">Le territoire</span>
+    <div class="ch-bar-dots" id="ch-dots"></div>
+  </div>
+  <button class="ch-bar-btn" id="ch-next" onclick="chNav(1)" title="Chapitre suivant">→</button>
+</div>
+
 <!-- ============ HERO ============ -->
+
 <div class="hero">
   <span class="hero-tag">Formation animée par Boris Leclerc  ·  IGEDD - MTECT</span>
   <h1>Anse-de-Goulven<br><em>un territoire à inventer</em></h1>
@@ -8782,231 +8991,6 @@ function _climateSpeakWebSpeech(text) {
   </div>
 </section>
 
-<!-- ============ MODULE EXPERT : PPRL SUBMERSION MARINE ============ -->
-<section id="pprl" style="margin-top:48px;">
-
-  <div class="section-header">
-    <span class="section-num" style="background:#1E3A5F;">P</span>
-    <span class="section-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20M2 6c2 0 4 2 6 2s4-2 6-2 4 2 6 2M2 18c2 0 4-2 6-2s4 2 6 2 4-2 6-2"/></svg>
-    </span>
-    <h2 class="section-title">PPRL · Aléa submersion marine</h2>
-  </div>
-  <p class="section-intro">
-    Construction interactive de l'aléa de référence selon la démarche du guide méthodologique PPRL (DGPR 2014). Quatre modules interconnectés : le N_ref calculé au module 1 alimente automatiquement les modules 2, 3 et 4.
-  </p>
-
-  <!-- Bannière état global -->
-  <div class="pprl-banner" id="pprl-banner">
-    <div class="pprl-banner-cell">
-      <div class="pprl-banner-label">N_REF T100</div>
-      <div class="pprl-banner-val" id="pb-nref">—</div>
-    </div>
-    <div class="pprl-banner-cell">
-      <div class="pprl-banner-label">N_REF 2100</div>
-      <div class="pprl-banner-val" id="pb-nref2100">—</div>
-    </div>
-    <div class="pprl-banner-cell">
-      <div class="pprl-banner-label">SCÉNARIO RETENU</div>
-      <div id="pb-scenario" style="margin-top:2px;">—</div>
-    </div>
-    <div class="pprl-banner-cell">
-      <div class="pprl-banner-label">ZONES ROUGE</div>
-      <div class="pprl-banner-val" id="pb-rouges">—</div>
-    </div>
-    <div class="pprl-banner-cell">
-      <div class="pprl-banner-label">COTE PLANCHER BLEUE</div>
-      <div class="pprl-banner-val" id="pb-plancher">—</div>
-    </div>
-  </div>
-
-  <!-- MODULE 01 : Niveau marin de référence -->
-  <div class="pprl-mod" id="pmod1">
-    <div class="pprl-mod-head" onclick="pprlToggleMod('pmod1')">
-      <span class="pprl-mod-num">01</span>
-      <span class="pprl-mod-title">Niveau marin de référence N<sub>ref</sub></span>
-      <span class="pprl-mod-badge" id="mb1">—</span>
-      <span class="pprl-mod-chevron">▾</span>
-    </div>
-    <div class="pprl-mod-body">
-      <div class="pprl-2col">
-        <div>
-          <p style="font-size:13px;line-height:1.6;color:var(--grey-dark);margin-bottom:14px;">
-            N_ref cumule quatre composantes (§2.4.3.b). Ajustez chacune ; les modules suivants se mettent à jour en temps réel.
-          </p>
-          <div class="pprl-sliders" id="pprl-sliders"></div>
-          <div id="pprl-nref-results" class="pprl-nref-results"></div>
-          <div id="pprl-nref-alert" class="pprl-nref-alert" style="display:none;"></div>
-        </div>
-        <div class="pprl-viz-nref">
-          <div class="pprl-svg-wrap">
-            <svg id="pprl-svg-bar" viewBox="0 0 240 280" style="display:block;width:100%;height:auto;"></svg>
-          </div>
-        </div>
-      </div>
-      <div class="expert-source">Guide PPRL DGPR 2014, §2.4.3.b · TRACC décret 2026-23 · Marée SHOM Brest NGF-IGN69</div>
-    </div>
-  </div>
-
-  <!-- MODULE 02 : Diagnostic ouvrage -->
-  <div class="pprl-mod" id="pmod2">
-    <div class="pprl-mod-head" onclick="pprlToggleMod('pmod2')">
-      <span class="pprl-mod-num">02</span>
-      <span class="pprl-mod-title">Diagnostic de la digue de 1962</span>
-      <span class="pprl-mod-badge" id="mb2">—</span>
-      <span class="pprl-mod-chevron">▾</span>
-    </div>
-    <div class="pprl-mod-body">
-      <div class="pprl-2col">
-        <div>
-          <p style="font-size:13px;line-height:1.6;color:var(--grey-dark);margin-bottom:14px;">
-            Quatre critères déterminent si l'ouvrage est « résistant à l'aléa de référence » (§2.4.3.d). Cocher selon les données disponibles. Le critère 4 est calculé automatiquement depuis le module 01.
-          </p>
-          <div class="pprl-specs" style="font-size:12.5px;color:var(--grey-dark);margin-bottom:14px;line-height:1.8;">
-            <strong style="color:var(--navy);">Digue du Quartier · 1962</strong><br>
-            Type : béton armé, profil trapézoïdal · Cote crête : <strong>5,80 m NGF</strong><br>
-            Crête 2,5 m · Talus mer 3H:1V · Talus terre 2H:1V · Longueur 420 m
-          </div>
-          <div class="pprl-criteres" id="pprl-criteres"></div>
-          <div id="pprl-ouvrage-verdict" class="pprl-ouvrage-verdict" style="display:none;"></div>
-        </div>
-        <div class="pprl-svg-wrap">
-          <svg id="pprl-svg-digue" viewBox="0 0 620 220" style="display:block;width:100%;height:auto;"></svg>
-        </div>
-      </div>
-      <div class="expert-source">Guide PPRL DGPR 2014, §2.4.3.d « Prise en compte des structures jouant un rôle de protection »</div>
-    </div>
-  </div>
-
-  <!-- MODULE 03 : Qualification par zone -->
-  <div class="pprl-mod" id="pmod3">
-    <div class="pprl-mod-head" onclick="pprlToggleMod('pmod3')">
-      <span class="pprl-mod-num">03</span>
-      <span class="pprl-mod-title">Qualification de l'aléa par zone</span>
-      <span class="pprl-mod-badge" id="mb3">—</span>
-      <span class="pprl-mod-chevron">▾</span>
-    </div>
-    <div class="pprl-mod-body">
-      <p style="font-size:13px;line-height:1.6;color:var(--grey-dark);margin-bottom:16px;">
-        La matrice h × V (§2.4.5.a) qualifie l'aléa : faible / modéré / fort / très fort. Les hauteurs d'eau sont estimées depuis le N_ref et l'altimétrie de chaque zone. Ajustez ou saisissez les valeurs issues de la modélisation.
-      </p>
-      <div class="pprl-zones-wrap">
-        <div>
-          <table class="pprl-zones-table">
-            <thead>
-              <tr>
-                <th>Zone</th>
-                <th>Alt.<br>terrain</th>
-                <th>h (m)</th>
-                <th>V (m/s)</th>
-                <th>Aléa</th>
-                <th>Zone PPR</th>
-              </tr>
-            </thead>
-            <tbody id="pprl-zones-tbody"></tbody>
-          </table>
-          <div class="pprl-matrix">
-            <div class="pprl-mx-cell" style="border-left-color:#5C8A4F;">
-              <div class="pprl-mx-level" style="color:#5C8A4F;">FAIBLE</div>
-              <div class="pprl-mx-crit">h &lt; 0,5 m et V &lt; 0,5 m/s</div>
-            </div>
-            <div class="pprl-mx-cell" style="border-left-color:#D49426;">
-              <div class="pprl-mx-level" style="color:#D49426;">MODÉRÉ</div>
-              <div class="pprl-mx-crit">0,5 ≤ h ≤ 1 m et V &lt; 0,5 m/s<br>ou h &lt; 0,5 m et V ≥ 0,5 m/s</div>
-            </div>
-            <div class="pprl-mx-cell" style="border-left-color:#C5482F;">
-              <div class="pprl-mx-level" style="color:#C5482F;">FORT</div>
-              <div class="pprl-mx-crit">h &gt; 1 m ou V ≥ 1 m/s<br>ou V×h &gt; 0,5 m²/s</div>
-            </div>
-            <div class="pprl-mx-cell" style="border-left-color:#1E3A5F;">
-              <div class="pprl-mx-level" style="color:#1E3A5F;">TRÈS FORT</div>
-              <div class="pprl-mx-crit">Dissipation d'énergie post-brèche<br>Bande de précaution</div>
-            </div>
-          </div>
-        </div>
-        <div class="pprl-svg-wrap">
-          <svg id="pprl-svg-plan" viewBox="0 0 340 300" style="display:block;width:100%;height:auto;"></svg>
-        </div>
-      </div>
-      <div class="expert-source">Guide PPRL DGPR 2014, §2.4.5 · Seuils V×h issus du guide EVA (CETMEF 2010)</div>
-    </div>
-  </div>
-
-  <!-- MODULE 04 : Zonage réglementaire -->
-  <div class="pprl-mod" id="pmod4">
-    <div class="pprl-mod-head" onclick="pprlToggleMod('pmod4')">
-      <span class="pprl-mod-num">04</span>
-      <span class="pprl-mod-title">Zonage réglementaire</span>
-      <span class="pprl-mod-badge" id="mb4">—</span>
-      <span class="pprl-mod-chevron">▾</span>
-    </div>
-    <div class="pprl-mod-body">
-      <p style="font-size:13px;line-height:1.6;color:var(--grey-dark);margin-bottom:4px;">
-        Traduction de l'aléa en zonage (§4.2.1). Chaque zone est colorée selon la qualification du module 3. Les prescriptions types de la zone bleue sont calculées depuis le N_ref du module 1.
-      </p>
-      <table class="pprl-zonage-table" id="pprl-zonage-table"></table>
-      <div class="pprl-presc-grid" id="pprl-prescriptions"></div>
-      <div class="expert-source">DGPR. Guide méthodologique PPRL (2014), §4.2.1 · Circulaire du 27 juillet 2011 relative à la prise en compte du risque de submersion marine dans les PPRL</div>
-    </div>
-  </div>
-
-</section>
-
-<!-- ============ SOURCES NATIONALES ============ -->
-
-<!-- ============ MODULE CARTOGRAPHIQUE ============ -->
-<section id="carto" style="margin-top:48px;">
-
-  <div class="section-header">
-    <span class="section-num" style="background:#2A6E78;">◉</span>
-    <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></span>
-    <h2 class="section-title">Carte de territoire · Anse-de-Goulven</h2>
-  </div>
-  <p class="section-intro">
-    Représentation schématique des risques littoraux. Basculez entre les trois horizons temporels pour voir évoluer l'emprise de submersion, le recul du trait de côte et les enjeux exposés. Les valeurs de N<sub>ref</sub> proviennent du calculateur PPRL.
-  </p>
-
-  <div class="carte-wrap">
-    <!-- Sélecteur scénario -->
-    <div class="carte-pills">
-      <button class="carte-pill on" id="cpill-0" onclick="cartoScene(0)">T100 actuel<span class="carte-pill-sub" id="cpsub-0">—</span></button>
-      <button class="carte-pill"    id="cpill-1" onclick="cartoScene(1)">Horizon 2055<span class="carte-pill-sub">+24 cm · TRACC</span></button>
-      <button class="carte-pill"    id="cpill-2" onclick="cartoScene(2)">Horizon 2125<span class="carte-pill-sub">+60 cm · TRACC</span></button>
-    </div>
-
-    <!-- Carte SVG -->
-    <div class="carte-svg-wrap">
-      <svg id="carto-svg" viewBox="0 0 860 500" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto;"></svg>
-      <div id="carto-tt"></div>
-    </div>
-
-    <!-- Contrôles -->
-    <div class="carte-foot">
-      <div class="carte-toggles">
-        <label class="carte-toggle"><input type="checkbox" id="clt-sub" checked onchange="cartoRender()"><span class="carte-swatch" style="background:rgba(37,99,235,.42);"></span>Submersion</label>
-        <label class="carte-toggle"><input type="checkbox" id="clt-zon" checked onchange="cartoRender()"><span class="carte-swatch" style="background:rgba(197,72,47,.45);"></span>Zonage PPRL</label>
-        <label class="carte-toggle"><input type="checkbox" id="clt-tc"  checked onchange="cartoRender()"><span class="carte-swatch" style="background:#D49426;border-style:dashed;"></span>Trait de côte projeté</label>
-        <label class="carte-toggle"><input type="checkbox" id="clt-enj" checked onchange="cartoRender()"><span class="carte-swatch" style="background:#374151;"></span>Enjeux</label>
-      </div>
-      <div class="carte-legend">
-        <div class="carte-leg-item"><div class="carte-leg-swatch" style="background:#8B1A0A;opacity:.75;"></div>Rouge TF</div>
-        <div class="carte-leg-item"><div class="carte-leg-swatch" style="background:#C5482F;opacity:.75;"></div>Rouge</div>
-        <div class="carte-leg-item"><div class="carte-leg-swatch" style="background:#4A7FC4;opacity:.65;"></div>Bleue</div>
-        <div class="carte-leg-item"><div class="carte-leg-swatch" style="background:#E5E7EB;"></div>Blanche</div>
-      </div>
-    </div>
-
-    <!-- Statistiques -->
-    <div class="carte-stat-row" id="carto-stats"></div>
-  </div>
-
-  <div class="expert-source" style="margin-top:10px;">
-    Fond schématique · territoire fictif Anse-de-Goulven · TRACC décret 2026-23 · Guide PPRL DGPR 2014 · Altimétries indicatives NGF-IGN69
-  </div>
-
-</section>
-
-<!-- ============ SOURCES NATIONALES ============ -->
 
 <!-- ============ SOURCES NATIONALES ============ -->
 
@@ -20459,6 +20443,125 @@ function closeSigle() {
 
 window.showSigle = showSigle;
 window.closeSigle = closeSigle;
+
+// ══════════════════════════════════════════════════════════════
+// NAVIGATION PAR CHAPITRES
+// ══════════════════════════════════════════════════════════════
+const CH_DEFS = [
+  { id:'territoire', label:'Le territoire',       num:'01', ids:['hero-wrap','territoire','cartes','chiffres','evenements','groupes'] },
+  { id:'preparer',   label:'Se préparer',          num:'02', ids:['glossaireSeuil','boussole','mailbox','restitution'] },
+  { id:'cas1',       label:'Cas 1 · Diagnostic',   num:'03', ids:['dialogue1972','cas1'] },
+  { id:'cas2',       label:'Cas 2 · Stratégie',    num:'04', ids:['cas2'] },
+  { id:'cas3',       label:'Cas 3 · Crise',        num:'05', ids:['cas3','climateVoices'] },
+  { id:'cas4',       label:'Cas 4 · CDRNM',        num:'06', ids:['cas4'] },
+  { id:'cloture',    label:'Clôture',              num:'07', ids:['carnet','debriefing','momentsFormateur'] },
+  { id:'ressources', label:'Ressources & Méthode', num:'08', ids:['axes','lexique','littorisques','carto','sources','telechargements','liens'] },
+];
+const CH_MAP = Object.fromEntries(CH_DEFS.map(c => [c.id, c]));
+let _currentCh = 'territoire';
+let _chDoneSet = new Set();
+
+function showChapter(id, scroll=true) {
+  const def = CH_MAP[id];
+  if (!def) return;
+  _currentCh = id;
+
+  // Masquer toutes les sections gérées
+  document.querySelectorAll('.ch-section').forEach(el => el.classList.remove('ch-active'));
+
+  // Afficher les sections du chapitre actif
+  def.ids.forEach(sid => {
+    const el = document.getElementById(sid);
+    if (el) el.classList.add('ch-active');
+  });
+
+  // Mettre à jour la sidebar
+  document.querySelectorAll('.sb-ch-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.ch === id);
+  });
+
+  // Mettre à jour la barre de chapitre
+  const idx = CH_DEFS.findIndex(c => c.id === id);
+  const titleEl = document.getElementById('ch-bar-title');
+  const numEl   = document.getElementById('ch-bar-num');
+  const prevBtn = document.getElementById('ch-prev');
+  const nextBtn = document.getElementById('ch-next');
+  if (titleEl) titleEl.textContent = def.label;
+  if (numEl)   numEl.textContent   = def.num + ' / ' + CH_DEFS.length.toString().padStart(2,'0');
+  if (prevBtn) prevBtn.disabled = idx === 0;
+  if (nextBtn) nextBtn.disabled = idx === CH_DEFS.length - 1;
+
+  // Dots
+  const dotsEl = document.getElementById('ch-dots');
+  if (dotsEl) {
+    dotsEl.innerHTML = CH_DEFS.map((c, i) => {
+      const cls = i === idx ? 'ch-dot active' : _chDoneSet.has(c.id) ? 'ch-dot done' : 'ch-dot';
+      return `<span class="${cls}" onclick="showChapter('${c.id}')" title="${c.label}"></span>`;
+    }).join('');
+  }
+
+  // Scroll main en haut
+  const main = document.querySelector('main.content');
+  if (main && scroll) main.scrollTop = 0;
+
+  // Historique
+  try { history.replaceState({ ch: id }, '', '#' + id); } catch(e) {}
+}
+
+function chNav(dir) {
+  const idx = CH_DEFS.findIndex(c => c.id === _currentCh);
+  const next = CH_DEFS[idx + dir];
+  if (next) showChapter(next.id);
+}
+
+// Marquer un chapitre comme fait (appelé depuis les validations existantes)
+function chMarkDone(id) {
+  _chDoneSet.add(id);
+  const el = document.getElementById('sbdone-' + id);
+  if (el) el.style.display = '';
+}
+
+// Initialiser : déclarer toutes les sections ch-section
+function initChapters() {
+  CH_DEFS.forEach(def => {
+    def.ids.forEach(sid => {
+      const el = document.getElementById(sid);
+      if (el) el.classList.add('ch-section');
+    });
+  });
+
+  // Hero (div sans id standard)
+  const hero = document.querySelector('main.content > .hero');
+  if (hero) { hero.id = 'hero-wrap'; hero.classList.add('ch-section'); }
+
+  // Lire le hash ou partir de territoire
+  const hash = (location.hash || '').replace('#', '');
+  showChapter(CH_MAP[hash] ? hash : 'territoire', false);
+}
+
+// Intercepter les liens d'ancrage internes → switcher le bon chapitre
+document.addEventListener('click', ev => {
+  const link = ev.target.closest('a[href^="#"]');
+  if (!link) return;
+  const targetId = link.getAttribute('href').slice(1);
+  if (!targetId) return;
+
+  // Trouver le chapitre correspondant
+  for (const def of CH_DEFS) {
+    if (def.ids.includes(targetId)) {
+      ev.preventDefault();
+      showChapter(def.id);
+      setTimeout(() => {
+        document.getElementById(targetId)?.scrollIntoView({ behavior:'smooth', block:'start' });
+      }, 80);
+      return;
+    }
+  }
+}, { capture: true });
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(initChapters, 50);
+});
 
 function loadOsirisc() {
   try {
