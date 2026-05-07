@@ -875,108 +875,77 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
   border-top: 1px solid var(--grey-border);
 }
 
-/* ========== MODULE CARTOGRAPHIQUE ========== */
-.carto-wrap {
-  display: grid;
-  grid-template-columns: 1fr 280px;
-  gap: 0;
-  border: 1px solid var(--grey-border);
+/* ========== CARTE TERRITOIRE ========== */
+.carte-wrap {
   border-radius: 10px;
   overflow: hidden;
   background: #fff;
-  min-height: 540px;
+  box-shadow: 0 2px 16px rgba(0,0,0,.06);
+  border: 1px solid var(--grey-border);
 }
-@media (max-width: 900px) { .carto-wrap { grid-template-columns: 1fr; } }
-
-.carto-map-area {
-  position: relative;
-  background: #E8F4FD;
+.carte-pills {
+  display: flex; gap: 4px; padding: 12px 16px;
+  background: #F7F9FC; border-bottom: 1px solid var(--grey-border);
 }
-.carto-map-area svg {
-  display: block; width: 100%; height: auto; cursor: crosshair;
+.carte-pill {
+  padding: 6px 16px; border-radius: 20px; border: 1px solid var(--grey-border);
+  background: #fff; cursor: pointer; font-family: var(--mono); font-size: 11px;
+  font-weight: 600; letter-spacing: .04em; color: var(--grey-txt);
+  transition: all .15s; user-select: none; white-space: nowrap;
 }
-.carto-map-area svg text { pointer-events: none; }
-
-/* Scénario tabs */
-.carto-tabs {
-  display: flex; gap: 0; border-bottom: 2px solid var(--grey-border);
-  background: #F7F9FC; padding: 0 16px;
+.carte-pill:hover { border-color: var(--navy); color: var(--navy); }
+.carte-pill.on {
+  background: var(--navy); color: #fff; border-color: var(--navy);
 }
-.carto-tab {
-  padding: 10px 18px; font-family: var(--mono); font-size: 11px;
-  letter-spacing: .06em; text-transform: uppercase; font-weight: 700;
-  cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px;
-  color: var(--grey-txt); transition: all .15s; user-select: none;
+.carte-pill .carte-pill-sub {
+  font-weight: 400; opacity: .75; margin-left: 4px; font-size: 10px;
 }
-.carto-tab.active { color: var(--navy); border-bottom-color: var(--navy); background: #fff; }
-.carto-tab:hover:not(.active) { color: var(--navy); }
-.carto-tab .carto-tab-nref {
-  font-size: 9px; display: block; font-weight: 400; color: var(--grey-txt); margin-top: 1px;
+.carte-svg-wrap { position: relative; background: #A8CEE0; }
+.carte-svg-wrap svg { display: block; width: 100%; height: auto; }
+#carto-tt {
+  position: absolute; background: rgba(15,23,42,.92); color: #fff;
+  border-radius: 6px; padding: 9px 13px; font-size: 12.5px;
+  pointer-events: none; z-index: 50; max-width: 210px;
+  line-height: 1.5; display: none; box-shadow: 0 4px 14px rgba(0,0,0,.3);
 }
-.carto-tab.active .carto-tab-nref { color: var(--navy); opacity: .7; }
-
-/* Tooltip */
-#carto-tooltip {
-  position: absolute; background: rgba(15,23,42,0.93); color: #fff;
-  border-radius: 6px; padding: 10px 14px; font-size: 12.5px;
-  pointer-events: none; z-index: 100; max-width: 220px;
-  line-height: 1.5; display: none; box-shadow: 0 4px 16px rgba(0,0,0,.3);
+#carto-tt strong { color: #FFD580; display: block; margin-bottom: 2px; font-size: 13px; }
+#carto-tt .tt-alt { font-family: var(--mono); font-size: 10px; opacity: .65; margin-top: 3px; }
+.carte-foot {
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  padding: 10px 18px; background: #F7F9FC; border-top: 1px solid var(--grey-border);
 }
-#carto-tooltip strong { color: #FFD580; display: block; margin-bottom: 3px; font-size: 13px; }
-#carto-tooltip .carto-tt-zone { font-family: var(--mono); font-size: 10px; margin-top: 4px; opacity: .7; }
-
-/* Panneau de contrôle */
-.carto-ctrl {
-  border-left: 1px solid var(--grey-border);
-  padding: 0;
-  display: flex; flex-direction: column;
-  background: #FAFAFA;
+.carte-toggles { display: flex; gap: 14px; flex-wrap: wrap; flex: 1; }
+.carte-toggle {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  font-size: 12px; color: var(--grey-dark);
 }
-.carto-ctrl-section {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--grey-border);
+.carte-toggle input { accent-color: var(--navy); }
+.carte-swatch {
+  width: 14px; height: 10px; border-radius: 2px; flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,.12);
 }
-.carto-ctrl-section:last-child { border-bottom: none; }
-.carto-ctrl-title {
-  font-family: var(--mono); font-size: 10px; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--grey-txt); font-weight: 700; margin-bottom: 10px;
+.carte-legend { display: flex; gap: 14px; flex-wrap: wrap; }
+.carte-leg-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--grey-txt);
 }
-.carto-layer-row {
-  display: flex; align-items: center; gap: 8px; padding: 5px 0; cursor: pointer;
+.carte-leg-swatch {
+  width: 16px; height: 10px; border-radius: 2px;
+  border: 1px solid rgba(0,0,0,.12); flex-shrink: 0;
 }
-.carto-layer-swatch {
-  width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(0,0,0,.1);
+.carte-stat-row {
+  display: flex; gap: 24px; flex-wrap: wrap;
+  padding: 10px 18px 12px; background: #fff; border-top: 1px solid var(--grey-border);
 }
-.carto-layer-label { font-size: 12.5px; color: var(--grey-dark); }
-.carto-layer-row input[type=checkbox] { accent-color: var(--navy); }
-
-/* Stats enjeux touchés */
-.carto-stats {
-  padding: 14px 16px; flex: 1; overflow-y: auto;
+.carte-stat-item { text-align: center; }
+.carte-stat-num {
+  font-family: var(--mono); font-size: 20px; font-weight: 700;
+  color: var(--navy); display: block; line-height: 1;
 }
-.carto-stat-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 4px 0; border-bottom: 1px solid #EEE; font-size: 12px;
-}
-.carto-stat-row:last-child { border-bottom: none; }
-.carto-stat-label { color: var(--grey-dark); }
-.carto-stat-val {
-  font-family: var(--mono); font-size: 11px; font-weight: 700;
-  padding: 2px 7px; border-radius: 10px; background: var(--grey-border); color: var(--grey-dark);
-}
-.carto-stat-val.rouge { background: #FEE2E2; color: #991B1B; }
-.carto-stat-val.bleue { background: #DBEAFE; color: #1E40AF; }
-.carto-stat-val.blanche { background: #F3F4F6; color: #374151; }
-
-/* Légende */
-.carto-legend-row {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 11px; color: var(--grey-dark); padding: 2px 0;
-}
-.carto-legend-swatch {
-  width: 20px; height: 12px; border-radius: 2px; flex-shrink: 0;
-  border: 1px solid rgba(0,0,0,.1);
-}
+.carte-stat-num.r { color: #C5482F; }
+.carte-stat-num.b { color: #2D6E3E; }
+.carte-stat-label { font-size: 11px; color: var(--grey-txt); margin-top: 2px; }
+/* ========== TIPS ========== */
 /* ========== TIPS ========== */
 /* ========== TIPS ========== */
 /* ========== TIPS ========== */
@@ -8737,74 +8706,60 @@ function _climateSpeakWebSpeech(text) {
 </section>
 
 <!-- ============ SOURCES NATIONALES ============ -->
+
 <!-- ============ MODULE CARTOGRAPHIQUE ============ -->
 <section id="carto" style="margin-top:48px;">
 
   <div class="section-header">
-    <span class="section-num" style="background:#328088;">◉</span>
-    <span class="section-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
-    </span>
-    <h2 class="section-title">Carte interactive · Anse-de-Goulven</h2>
+    <span class="section-num" style="background:#2A6E78;">◉</span>
+    <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></span>
+    <h2 class="section-title">Carte de territoire · Anse-de-Goulven</h2>
   </div>
   <p class="section-intro">
-    Carte schématique du territoire en mode expert. Visualisez les zones d'aléa PPRL, les projections de submersion aux trois horizons temporels, le recul du trait de côte et les enjeux exposés. Les valeurs de N<sub>ref</sub> proviennent du module PPRL ci-dessus.
+    Représentation schématique des risques littoraux. Basculez entre les trois horizons temporels pour voir évoluer l'emprise de submersion, le recul du trait de côte et les enjeux exposés. Les valeurs de N<sub>ref</sub> proviennent du calculateur PPRL.
   </p>
 
-  <!-- Tabs scénario -->
-  <div class="carto-tabs">
-    <div class="carto-tab active" id="ctab-0" onclick="cartoSetScenario(0)">
-      T100 actuel<span class="carto-tab-nref" id="ctnref-0">—</span>
+  <div class="carte-wrap">
+    <!-- Sélecteur scénario -->
+    <div class="carte-pills">
+      <button class="carte-pill on" id="cpill-0" onclick="cartoScene(0)">T100 actuel<span class="carte-pill-sub" id="cpsub-0">—</span></button>
+      <button class="carte-pill"    id="cpill-1" onclick="cartoScene(1)">Horizon 2055<span class="carte-pill-sub">+24 cm · TRACC</span></button>
+      <button class="carte-pill"    id="cpill-2" onclick="cartoScene(2)">Horizon 2125<span class="carte-pill-sub">+60 cm · TRACC</span></button>
     </div>
-    <div class="carto-tab" id="ctab-1" onclick="cartoSetScenario(1)">
-      Horizon 2055<span class="carto-tab-nref" id="ctnref-1">+0,20 m</span>
-    </div>
-    <div class="carto-tab" id="ctab-2" onclick="cartoSetScenario(2)">
-      Horizon 2125<span class="carto-tab-nref" id="ctnref-2">+0,60 m</span>
-    </div>
-  </div>
 
-  <div class="carto-wrap">
-    <!-- Map -->
-    <div class="carto-map-area">
-      <svg id="carto-svg" viewBox="0 0 760 520"></svg>
-      <div id="carto-tooltip"></div>
+    <!-- Carte SVG -->
+    <div class="carte-svg-wrap">
+      <svg id="carto-svg" viewBox="0 0 860 500" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto;"></svg>
+      <div id="carto-tt"></div>
     </div>
 
     <!-- Contrôles -->
-    <div class="carto-ctrl">
-      <div class="carto-ctrl-section">
-        <div class="carto-ctrl-title">Couches</div>
-        <label class="carto-layer-row"><input type="checkbox" id="cl-submersion" checked onchange="cartoRender()"><span class="carto-layer-swatch" style="background:rgba(59,130,246,0.5);"></span><span class="carto-layer-label">Submersion marine</span></label>
-        <label class="carto-layer-row"><input type="checkbox" id="cl-zonage" checked onchange="cartoRender()"><span class="carto-layer-swatch" style="background:rgba(197,72,47,0.35);"></span><span class="carto-layer-label">Zonage PPRL</span></label>
-        <label class="carto-layer-row"><input type="checkbox" id="cl-erosion" checked onchange="cartoRender()"><span class="carto-layer-swatch" style="background:rgba(212,148,38,0.6);border-style:dashed;"></span><span class="carto-layer-label">Recul trait de côte</span></label>
-        <label class="carto-layer-row"><input type="checkbox" id="cl-enjeux" checked onchange="cartoRender()"><span class="carto-layer-swatch" style="background:#374151;"></span><span class="carto-layer-label">Enjeux</span></label>
-        <label class="carto-layer-row"><input type="checkbox" id="cl-ouvrages" checked onchange="cartoRender()"><span class="carto-layer-swatch" style="background:#6B7280;"></span><span class="carto-layer-label">Ouvrages de protection</span></label>
-        <label class="carto-layer-row"><input type="checkbox" id="cl-altimetrie" onchange="cartoRender()"><span class="carto-layer-swatch" style="background:linear-gradient(to right,#92C46E,#E5C547,#C5482F);"></span><span class="carto-layer-label">Altimétrie (MNT)</span></label>
+    <div class="carte-foot">
+      <div class="carte-toggles">
+        <label class="carte-toggle"><input type="checkbox" id="clt-sub" checked onchange="cartoRender()"><span class="carte-swatch" style="background:rgba(37,99,235,.42);"></span>Submersion</label>
+        <label class="carte-toggle"><input type="checkbox" id="clt-zon" checked onchange="cartoRender()"><span class="carte-swatch" style="background:rgba(197,72,47,.45);"></span>Zonage PPRL</label>
+        <label class="carte-toggle"><input type="checkbox" id="clt-tc"  checked onchange="cartoRender()"><span class="carte-swatch" style="background:#D49426;border-style:dashed;"></span>Trait de côte projeté</label>
+        <label class="carte-toggle"><input type="checkbox" id="clt-enj" checked onchange="cartoRender()"><span class="carte-swatch" style="background:#374151;"></span>Enjeux</label>
       </div>
-
-      <div class="carto-ctrl-section">
-        <div class="carto-ctrl-title">Légende</div>
-        <div class="carto-legend-row"><div class="carto-legend-swatch" style="background:#8B1A0A;opacity:.7;"></div>Zone rouge TF · Très fort</div>
-        <div class="carto-legend-row"><div class="carto-legend-swatch" style="background:#C5482F;opacity:.7;"></div>Zone rouge · Fort</div>
-        <div class="carto-legend-row"><div class="carto-legend-swatch" style="background:#4A7FC4;opacity:.55;"></div>Zone bleue · Modéré</div>
-        <div class="carto-legend-row"><div class="carto-legend-swatch" style="background:#E5E7EB;"></div>Zone blanche · Hors aléa</div>
-        <div class="carto-legend-row"><div class="carto-legend-swatch" style="background:rgba(59,130,246,0.5);"></div>Emprise submersion</div>
-        <div class="carto-legend-row"><div class="carto-legend-swatch" style="background:#D49426;opacity:.6;border-style:dashed;"></div>Trait de côte projeté</div>
-      </div>
-
-      <div class="carto-stats" id="carto-stats">
-        <div class="carto-ctrl-title">Enjeux touchés</div>
-        <!-- Généré par JS -->
+      <div class="carte-legend">
+        <div class="carte-leg-item"><div class="carte-leg-swatch" style="background:#8B1A0A;opacity:.75;"></div>Rouge TF</div>
+        <div class="carte-leg-item"><div class="carte-leg-swatch" style="background:#C5482F;opacity:.75;"></div>Rouge</div>
+        <div class="carte-leg-item"><div class="carte-leg-swatch" style="background:#4A7FC4;opacity:.65;"></div>Bleue</div>
+        <div class="carte-leg-item"><div class="carte-leg-swatch" style="background:#E5E7EB;"></div>Blanche</div>
       </div>
     </div>
+
+    <!-- Statistiques -->
+    <div class="carte-stat-row" id="carto-stats"></div>
   </div>
 
-  <div class="expert-source" style="margin-top:12px;">
-    Fond schématique calibré sur la fiction Anse-de-Goulven · TRACC décret 2026-23 · Guide PPRL DGPR 2014 · Altimétries indicatives (LIDAR BD ALTI®)
+  <div class="expert-source" style="margin-top:10px;">
+    Fond schématique · territoire fictif Anse-de-Goulven · TRACC décret 2026-23 · Guide PPRL DGPR 2014 · Altimétries indicatives NGF-IGN69
   </div>
 
 </section>
+
+<!-- ============ SOURCES NATIONALES ============ -->
 
 <!-- ============ SOURCES NATIONALES ============ -->
 
@@ -19602,419 +19557,365 @@ function subscribeExpertMode() {
 
 // === Osirisc : 4 composantes notées 0-5 ===
 let _osiriscScores = { aleas: null, enjeux: null, gestion: null, representations: null };
+
 // ============================================================
-// MODULE CARTOGRAPHIQUE — Anse-de-Goulven
-// Carte schématique SVG interactive, multi-couches, multi-scénarios
+// MODULE CARTOGRAPHIQUE v2 — Carte organique Anse-de-Goulven
 // ============================================================
+(function() {
 
-const CARTO = {
-  scenario: 0,  // 0=T100 actuel, 1=2055, 2=2125
-  W: 760, H: 520,
+// ── Géométrie du territoire ──────────────────────────────────
+// Viewbox 860 × 500 · Nord en haut · Mer au nord
+// Les chemins SVG sont des bezier pour des formes organiques
 
-  // Décalages élévation du niveau marin par scénario (en plus du N_ref PPRL)
-  slr: [0, 0.20, 0.60],
+const P = {
+  // Mer (fond bleu, rempli par le gradient)
+  sea: 'M0,0 H860 V133 C830,128 790,125 750,124 C700,123 650,124 600,126 C550,128 500,130 450,131 C400,132 350,133 300,135 C250,137 195,140 150,144 C110,147 60,151 0,157 Z',
 
-  // Recul trait de côte par scénario (mètres)
-  tcRecul: [0, 25, 75],
+  // Côte (frontière mer/terre, ligne de référence actuelle)
+  coast0: 'M0,157 C60,151 110,147 150,144 C195,140 250,137 300,135 C350,133 400,132 450,131 C500,130 550,128 600,126 C650,124 700,123 750,124 C790,125 830,128 860,133',
 
-  // ── Géographie du territoire (coordonnées SVG) ────────────────
-  // Axe Y : nord en haut (mer=haut, bourg=bas)
-  // Axe X : ouest=gauche, est=droite
-  // Digue : y≈125, x 180→580
+  // Côte projetée 2055 (+24cm ≈ +22px vers la terre)
+  coast1: 'M0,179 C60,173 110,169 150,166 C195,162 250,159 300,157 C350,155 400,154 450,153 C500,152 550,150 600,148 C650,146 700,145 750,146 C790,147 830,150 860,155',
 
-  zones: [
-    // MER
-    {
-      id: 'sea', label: 'Manche', type: 'sea',
-      pts: [[0,0],[760,0],[760,118],[640,108],[520,102],[380,98],[220,102],[100,108],[0,115]],
-      alt: -5, fillBase: '#BFDBFE'
-    },
-    // PLAGE OUEST (entre port et digue)
-    {
-      id: 'plage', label: 'Plage centrale', type: 'beach',
-      pts: [[0,115],[180,102],[180,155],[90,160],[0,155]],
-      alt: 1.5, fillBase: '#FEF3C7',
-      enjeux: [{icon:'🏖', label:'Plage baignade', note:'Enjeu usage (GR34)'}]
-    },
-    // PORT
-    {
-      id: 'port', label: 'Port-abri', type: 'port',
-      pts: [[0,115],[0,270],[80,270],[80,200],[30,155],[0,115]],
-      alt: 2.0, fillBase: '#D1FAE5',
-      enjeux: [{icon:'⚓', label:'Port-abri ostréicole', note:'22 concessions · non-relocalisable'}]
-    },
-    // DIGUE — rendue séparément (rectangle)
-    {
-      id: 'digue', label: 'Digue 1962', type: 'digue',
-      pts: [[180,102],[580,88],[580,126],[180,140]],
-      alt: 5.8, fillBase: '#6B7280'
-    },
-    // QUARTIER DE LA DIGUE (derrière la digue)
-    {
-      id: 'quartier', label: 'Quartier de la Digue', type: 'residential',
-      pts: [[180,140],[580,126],[580,310],[380,330],[180,320]],
-      alt: 2.5, fillBase: '#FEF9F0',
-      enjeux: [
-        {icon:'🏠', label:'47 maisons aléa fort', note:'FPRNM mes. 1-3'},
-        {icon:'👴', label:'22 personnes âgées isolées', note:'Non-relocalisables de fait'},
-        {icon:'🏭', label:'PME Bretzel-Marine', note:'28 emplois · relocalisable'}
-      ]
-    },
-    // BANDE DE PRÉCAUTION (post-digue, zone TF si brèche)
-    {
-      id: 'bande_prec', label: 'Bande de précaution (0-200 m)', type: 'danger',
-      pts: [[180,140],[580,126],[580,190],[180,200]],
-      alt: 2.5, fillBase: 'none', alwaysTF: true
-    },
-    // CAMPINGS EST
-    {
-      id: 'campings', label: 'Zone campings', type: 'camping',
-      pts: [[580,88],[760,80],[760,350],[580,330],[580,126]],
-      alt: 3.5, fillBase: '#ECFDF5',
-      enjeux: [
-        {icon:'🏕', label:'3 campings (320 emplacements)', note:'Plan recomposition 4 saisons'},
-        {icon:'🐚', label:'Conchyliculteurs (22 concess.)', note:'Port-abri partagé'}
-      ]
-    },
-    // DUNE / CORDON DUNAIRE
-    {
-      id: 'dune', label: 'Cordon dunaire', type: 'dune',
-      pts: [[0,155],[80,145],[180,140],[180,175],[80,185],[0,180]],
-      alt: 3.8, fillBase: '#FEF3C7',
-      enjeux: [{icon:'🌿', label:'Cordon dunaire (1,2 km)', note:'SFN · recharge naturelle'}]
-    },
-    // MARAIS
-    {
-      id: 'marais', label: 'Marais (60 ha)', type: 'wetland',
-      pts: [[80,270],[380,330],[580,310],[580,440],[280,460],[80,420]],
-      alt: 4.2, fillBase: '#D1FAE5',
-      enjeux: [
-        {icon:'🦆', label:'Marais d\'eau saumâtre (60 ha)', note:'Natura 2000 · tampon hydraulique'},
-        {icon:'🌊', label:'Herbiers zostères (52 ha)', note:'Offshore NW'}
-      ]
-    },
-    // STEP
-    {
-      id: 'step', label: 'Station d\'épuration', type: 'infrastructure',
-      pts: [[580,310],[680,305],[700,380],[590,390],[580,310]],
-      alt: 3.8, fillBase: '#FEF9F0',
-      enjeux: [{icon:'♻', label:'STEP (à délocaliser)', note:'1,8 M€ · hors zone aléa'}]
-    },
-    // ESTUAIRE GOULVEN
-    {
-      id: 'estuaire', label: 'Estuaire du Goulven', type: 'estuary',
-      pts: [[80,380],[280,360],[280,420],[80,440]],
-      alt: 0.5, fillBase: '#BFDBFE',
-      enjeux: [{icon:'🐟', label:'Estuaire Natura 2000', note:'Sensible intrusion saline'}]
-    },
-    // BOURG
-    {
-      id: 'bourg', label: 'Bourg historique', type: 'urban',
-      pts: [[0,270],[80,270],[80,520],[0,520]],
-      alt: 6.5, fillBase: '#F3F4F6'
-    },
-    {
-      id: 'bourg2', label: 'Bourg historique', type: 'urban',
-      pts: [[80,420],[580,440],[700,430],[760,440],[760,520],[80,520]],
-      alt: 6.5, fillBase: '#F3F4F6',
-      enjeux: [
-        {icon:'⛪', label:'Église XVe (MH)', note:'Non-relocalisable · patrimoine'},
-        {icon:'🏥', label:'EHPAD (22 résidents)', note:'ERP sensible · hors aléa requis'},
-        {icon:'🏫', label:'École + mairie', note:'ERP · zone blanche imposée'}
-      ]
-    },
-  ],
+  // Côte projetée 2125 (+60cm ≈ +55px vers la terre)
+  coast2: 'M0,212 C60,206 110,202 150,199 C195,195 250,192 300,190 C350,188 400,187 450,186 C500,185 550,183 600,181 C650,179 700,178 750,179 C790,180 830,183 860,188',
 
-  // ── Enjeux ponctuels ──────────────────────────────────────────
-  pointEnj: [
-    { id:'eglise',  x:160, y:470, icon:'⛪', label:'Église XVe', note:'MH · non-relocalisable', alt:6.8 },
-    { id:'ehpad',   x:240, y:475, icon:'🏥', label:'EHPAD', note:'22 résidents · ERP sensible', alt:7.0 },
-    { id:'pme',     x:470, y:230, icon:'🏭', label:'PME Bretzel-Marine', note:'28 emplois · aléa fort', alt:2.8 },
-    { id:'step',    x:630, y:350, icon:'♻',  label:'STEP', note:'À délocaliser · 1,8 M€', alt:3.8 },
-    { id:'port',    x:40,  y:200, icon:'⚓', label:'Port-abri', note:'22 concessions · non-relocalisable', alt:2.0 },
-    { id:'camping1',x:660, y:180, icon:'🏕', label:'Camping La Pointe', note:'120 empl. · recomposition', alt:3.5 },
-    { id:'camping2',x:700, y:260, icon:'🏕', label:'Camping Les Dunes', note:'140 empl. · recomposition', alt:3.8 },
-    { id:'gr34',    x:100, y:140, icon:'🥾', label:'GR34', note:'Sentier douaniers · usage', alt:3.0 },
-    { id:'maison1', x:280, y:200, icon:'🏠', label:'47 maisons', note:'Quartier Digue · aléa fort', alt:2.5 },
-    { id:'dune',    x:110, y:162, icon:'🌿', label:'Cordon dunaire', note:'1,2 km · SFN', alt:3.8 },
-  ],
+  // Terre (fond, couvre tout sous la côte)
+  land: 'M0,157 C60,151 110,147 150,144 C195,140 250,137 300,135 C350,133 400,132 450,131 C500,130 550,128 600,126 C650,124 700,123 750,124 C790,125 830,128 860,133 V500 H0 Z',
 
-  // Qualification aléa (reprend PPRL._qualifyAlea si disponible)
-  qualify(h, v) {
-    if (h <= 0) return 'HZ';
-    const vh = h * v;
-    if (h >= 1.5 || (h >= 1.0 && v >= 1.0) || vh >= 1.0) return 'TF';
-    if (h > 1.0 || v >= 1.0 || vh > 0.5) return 'Fo';
-    if (h >= 0.5 || v >= 0.5) return 'M';
-    return 'F';
-  },
+  // Dune / cordon sableux (bande fine le long de la côte, ouest)
+  dune: 'M110,144 C165,140 215,137 248,135 L250,160 C218,158 170,162 115,166 Z',
 
-  zoneColor(code, opacity) {
-    const op = opacity || 0.45;
-    const map = {
-      TF: `rgba(139,26,10,${op})`,
-      Fo: `rgba(197,72,47,${op})`,
-      M:  `rgba(74,127,196,${op})`,
-      F:  `rgba(74,127,196,${op*0.6})`,
-      HZ: 'rgba(229,231,235,0.15)',
-    };
-    return map[code] || 'transparent';
-  },
+  // Port-abri (petite baie creusée à l'ouest)
+  port: 'M0,157 C14,154 32,152 52,154 L60,228 L0,228 Z',
 
-  // N_ref courant (depuis module PPRL si disponible)
-  getNref() {
-    if (typeof PPRL !== 'undefined') return PPRL.nref + this.slr[this.scenario];
-    return 6.05 + this.slr[this.scenario];
-  },
+  // Môle du port (digue de protection)
+  mole: 'M52,154 L68,92 L76,94 L60,158 Z',
 
-  // Recul TC pour le scénario courant
-  getTcRecul() { return this.tcRecul[this.scenario]; },
+  // Digue principale (1962, légèrement inclinée)
+  digue: 'M248,135 L572,122 L572,152 L248,162 Z',
 
-  // Hauteur d'eau pour une zone (alt en m NGF)
-  getH(alt) { return Math.max(0, +(this.getNref() - alt).toFixed(2)); },
+  // Quartier de la Digue (zone résidentielle derrière la digue)
+  quartier: 'M248,162 L572,152 L574,298 C490,304 390,308 290,310 L248,304 Z',
 
-  // ── Rendu principal ───────────────────────────────────────────
-  render() {
-    const svg = document.getElementById('carto-svg');
-    if (!svg) return;
-    const nref = this.getNref();
-    const tcR = this.getTcRecul();
-    const showSub  = document.getElementById('cl-submersion')?.checked;
-    const showZon  = document.getElementById('cl-zonage')?.checked;
-    const showEros = document.getElementById('cl-erosion')?.checked;
-    const showEnj  = document.getElementById('cl-enjeux')?.checked;
-    const showOuv  = document.getElementById('cl-ouvrages')?.checked;
-    const showAlt  = document.getElementById('cl-altimetrie')?.checked;
-    const hasBreche = (typeof PPRL !== 'undefined') ? !PPRL.ouvrageOk : true;
+  // Zone PME / activité (est du quartier)
+  pme_zone: 'M572,152 L620,150 L622,268 L574,272 Z',
 
-    let s = `<defs>
-      <pattern id="hatch-tf" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
-        <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(139,26,10,0.4)" stroke-width="2"/>
-      </pattern>
-      <filter id="blur-sm"><feGaussianBlur stdDeviation="1.5"/></filter>
-      <clipPath id="carto-clip"><rect width="760" height="520"/></clipPath>
-    </defs>
-    <g clip-path="url(#carto-clip)">`;
+  // Campings (est, zone littorale)
+  campings: 'M572,122 L860,133 V358 L575,350 L572,152 Z',
 
-    // ── 1. Couche altimétrie ──────────────────────────────────────
-    if (showAlt) {
-      this.zones.forEach(z => {
-        if (z.type === 'sea' || z.type === 'digue') return;
-        const alt = z.alt;
-        let c = '#92C46E';
-        if (alt < 2) c = '#6BA8EB';
-        else if (alt < 3) c = '#A8D08D';
-        else if (alt < 4) c = '#D4E8A0';
-        else if (alt < 5) c = '#E5C547';
-        else if (alt < 6) c = '#D4956A';
-        else c = '#B5A4A4';
-        s += `<polygon points="${z.pts.map(p=>p.join(',')).join(' ')}" fill="${c}" opacity="0.35"/>`;
-      });
-    }
+  // Marais (zone humide organique)
+  marais: 'M60,228 L248,304 C330,310 440,306 574,298 L576,428 C460,436 340,438 210,435 L60,422 Z',
 
-    // ── 2. Fond territoire (zones de base) ────────────────────────
-    this.zones.forEach(z => {
-      if (z.type === 'digue') return;
-      const fill = z.fillBase && z.fillBase !== 'none' ? z.fillBase : 'transparent';
-      s += `<polygon points="${z.pts.map(p=>p.join(',')).join(' ')}" fill="${showAlt?'transparent':fill}" stroke="rgba(0,0,0,0.06)" stroke-width="0.5"/>`;
-    });
+  // Estuaire du Goulven (bras de mer dans le marais)
+  estuaire: 'M60,368 C95,355 145,350 180,358 C200,366 200,402 184,420 L60,422 Z',
 
-    // ── 3. Couche submersion ──────────────────────────────────────
-    if (showSub) {
-      this.zones.forEach(z => {
-        if (z.type === 'sea' || z.type === 'digue') return;
-        const h = this.getH(z.alt);
-        if (h <= 0) return;
-        const intensity = Math.min(1, h / 3);
-        const opacity = 0.35 + intensity * 0.3;
-        s += `<polygon points="${z.pts.map(p=>p.join(',')).join(' ')}" fill="rgba(59,130,246,${opacity.toFixed(2)})" />`;
-        // Cote d'eau label
-        if (h > 0.3) {
-          const cx = z.pts.reduce((a,p)=>a+p[0],0)/z.pts.length;
-          const cy = z.pts.reduce((a,p)=>a+p[1],0)/z.pts.length;
-          s += `<text x="${cx}" y="${cy+3}" text-anchor="middle" font-size="9" fill="rgba(30,58,95,0.8)" font-family="monospace" font-weight="700">h=${h.toFixed(1)}m</text>`;
-        }
-      });
-      // Brèche : zone TF en hachures derrière digue
-      if (hasBreche) {
-        s += `<polygon points="180,140 380,133 380,340 180,320" fill="url(#hatch-tf)" opacity="0.6"/>`;
-        s += `<text x="280" y="240" text-anchor="middle" font-size="10" fill="#8B1A0A" font-family="monospace" font-weight="700">⚡ ZONE TF</text>`;
-        s += `<text x="280" y="254" text-anchor="middle" font-size="8" fill="#8B1A0A" font-family="monospace">Bande précaution (brèche)</text>`;
-      }
-    }
+  // STEP (station d\'épuration)
+  step: 'M572,298 L648,294 L651,360 L574,364 Z',
 
-    // ── 4. Couche zonage PPRL ─────────────────────────────────────
-    if (showZon) {
-      this.zones.forEach(z => {
-        if (z.type === 'sea' || z.type === 'digue' || z.type === 'danger') return;
-        let code;
-        if (z.id === 'bande_prec' || (hasBreche && z.id === 'quartier')) {
-          code = 'TF';
-        } else {
-          const h = this.getH(z.alt);
-          const v = z.id === 'quartier' ? 0.6 : z.id === 'campings' ? 0.2 : z.id === 'marais' ? 0.1 : 0.1;
-          code = this.qualify(h, v);
-        }
-        const fill = this.zoneColor(code, 0.28);
-        if (fill === 'transparent') return;
-        s += `<polygon points="${z.pts.map(p=>p.join(',')).join(' ')}" fill="${fill}" stroke="${this.zoneColor(code, 0.5)}" stroke-width="1.5"/>`;
-      });
-    }
+  // Bourg historique + rest
+  bourg: 'M0,228 L60,228 L60,422 L210,435 C340,438 460,436 576,428 L860,436 V500 H0 Z',
 
-    // ── 5. Couche érosion / Trait de côte projeté ─────────────────
-    if (showEros && tcR > 0) {
-      // Recul = pixels (1m ≈ 0.9px en échelle carto fictive)
-      const px = tcR * 0.9;
-      // Trait de côte projeté (décalé vers terre)
-      const coast = [[0, 115+px],[180, 102+px],[580, 88+px],[760, 80+px]];
-      const erosionZone = [
-        [0,115],[180,102],[580,88],[760,80],
-        [760, 80+px],[580, 88+px],[180, 102+px],[0, 115+px]
-      ];
-      s += `<polygon points="${erosionZone.map(p=>p.join(',')).join(' ')}" fill="rgba(212,148,38,0.3)" stroke="none"/>`;
-      s += `<polyline points="${coast.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#D49426" stroke-width="2" stroke-dasharray="8 4"/>`;
-      s += `<text x="${760-10}" y="${80+px+14}" text-anchor="end" font-size="9" fill="#A8761B" font-family="monospace" font-weight="700">TC ${this.scenario===1?'2055':'2125'} (−${tcR}m)</text>`;
-      // Zone erosion label
-      s += `<text x="380" y="${100+px/2}" text-anchor="middle" font-size="9" fill="#92400E" font-family="monospace">Zone érosion (${tcR} m)</text>`;
-    }
+  // Champs agricoles (ouest, entre port et marais)
+  champs: 'M0,228 L60,228 L60,368 C42,362 20,358 0,355 Z',
 
-    // ── 6. Ouvrages ───────────────────────────────────────────────
-    if (showOuv) {
-      // Digue principale
-      const digueColor = (typeof PPRL !== 'undefined' && PPRL.ouvrageOk) ? '#4B7A4B' : '#C5482F';
-      s += `<polygon points="180,102 580,88 580,126 180,140" fill="${digueColor}" opacity="0.85"/>`;
-      s += `<text x="380" y="118" text-anchor="middle" font-size="9" fill="#fff" font-family="monospace" font-weight="700">DIGUE 1962 · 5,80 m NGF</text>`;
-      if (typeof PPRL !== 'undefined' && !PPRL.ouvrageOk) {
-        // Brèche visuelle
-        s += `<rect x="272" y="100" width="30" height="30" fill="#EF4444" opacity="0.9" rx="2"/>`;
-        s += `<text x="287" y="119" text-anchor="middle" font-size="8" fill="#fff" font-family="monospace" font-weight="700">⚡</text>`;
-      }
-      // N_ref ligne de montée des eaux
-      const yNref = 520 - (nref / 8.5) * 380;  // rough vertical scale
-      // On dessine la ligne de mer (horizontale à N_ref)
-      const seaY = Math.max(0, Math.min(140, 140 - (nref - 5.0) * 18));
-      s += `<line x1="0" y1="${seaY}" x2="180" y2="${seaY}" stroke="#1D4ED8" stroke-width="1.5" stroke-dasharray="4 3"/>`;
-      s += `<text x="8" y="${seaY-3}" font-size="8" fill="#1D4ED8" font-family="monospace">N_ref ${nref.toFixed(2).replace('.',',')} m</text>`;
-    }
-
-    // ── 7. Enjeux ponctuels ───────────────────────────────────────
-    if (showEnj) {
-      this.pointEnj.forEach(e => {
-        const h = this.getH(e.alt);
-        const submerged = h > 0;
-        const border = submerged ? '#EF4444' : '#374151';
-        const bg = submerged ? 'rgba(254,226,226,0.9)' : 'rgba(255,255,255,0.9)';
-        s += `<circle cx="${e.x}" cy="${e.y}" r="13" fill="${bg}" stroke="${border}" stroke-width="${submerged?2:1}" id="ep-${e.id}"/>`;
-        s += `<text x="${e.x}" y="${e.y+4}" text-anchor="middle" font-size="10">${e.icon}</text>`;
-      });
-    }
-
-    // ── 8. Grille de coordonnées ──────────────────────────────────
-    for (let x = 0; x <= 760; x += 190) {
-      s += `<line x1="${x}" y1="0" x2="${x}" y2="520" stroke="rgba(0,0,0,0.05)" stroke-width="0.5"/>`;
-    }
-    for (let y = 0; y <= 520; y += 130) {
-      s += `<line x1="0" y1="${y}" x2="760" y2="${y}" stroke="rgba(0,0,0,0.05)" stroke-width="0.5"/>`;
-    }
-
-    // ── 9. Orientations et toponymie ─────────────────────────────
-    s += `<text x="380" y="20" text-anchor="middle" font-size="11" fill="#1E40AF" font-family="monospace" font-weight="700">~ ~ ~ MANCHE ~ ~ ~</text>`;
-    s += `<text x="10" y="15" font-size="10" fill="#6B7280" font-family="monospace">N</text>`;
-    s += `<line x1="16" y1="20" x2="16" y2="35" stroke="#6B7280" stroke-width="1.5"/>`;
-    s += `<polygon points="16,18 13,26 19,26" fill="#6B7280"/>`;
-    // Echelle ~500m
-    s += `<line x1="10" y1="510" x2="60" y2="510" stroke="#374151" stroke-width="2"/>`;
-    s += `<text x="35" y="507" text-anchor="middle" font-size="8" fill="#374151" font-family="monospace">~500 m</text>`;
-    // Toponymie
-    const topo = [
-      {x:280, y:170, t:'Quartier de la Digue'},
-      {x:660, y:220, t:'Campings'},
-      {x:330, y:390, t:'Marais (60 ha)'},
-      {x:300, y:488, t:'Bourg historique'},
-      {x:40,  y:240, t:'Port'},
-    ];
-    topo.forEach(({x,y,t}) => {
-      s += `<text x="${x}" y="${y}" text-anchor="middle" font-size="9.5" fill="rgba(30,41,59,0.55)" font-family="Georgia,serif" font-style="italic">${t}</text>`;
-    });
-
-    s += '</g>';
-    svg.innerHTML = s;
-    this.attachEvents();
-    this.renderStats();
-    this.renderTabs();
-  },
-
-  // ── Tooltip au survol ─────────────────────────────────────────
-  attachEvents() {
-    const svg = document.getElementById('carto-svg');
-    const tt  = document.getElementById('carto-tooltip');
-    if (!svg || !tt) return;
-
-    // Enjeux
-    this.pointEnj.forEach(e => {
-      const el = document.getElementById('ep-' + e.id);
-      if (!el) return;
-      el.addEventListener('mouseenter', (ev) => {
-        const h = this.getH(e.alt);
-        tt.innerHTML = `<strong>${e.icon} ${e.label}</strong>${e.note}<div class="carto-tt-zone">Alt. : ${e.alt} m NGF · ${h>0?'Submergé (h='+h.toFixed(1)+'m)':'Hors submersion'}</div>`;
-        tt.style.display = 'block';
-        tt.style.left = (ev.offsetX + 14) + 'px';
-        tt.style.top  = (ev.offsetY - 10) + 'px';
-      });
-      el.addEventListener('mouseleave', () => { tt.style.display = 'none'; });
-    });
-
-    svg.addEventListener('mousemove', ev => {
-      if (tt.style.display === 'block') {
-        tt.style.left = (ev.offsetX + 14) + 'px';
-        tt.style.top  = (ev.offsetY - 10) + 'px';
-      }
-    });
-  },
-
-  // ── Stats enjeux exposés ──────────────────────────────────────
-  renderStats() {
-    const el = document.getElementById('carto-stats');
-    if (!el) return;
-    const nref = this.getNref();
-    const stats = [
-      { label:'Maisons en zone inondée', val: nref > 2.5 ? '47 / 47' : nref > 2.2 ? '32 / 47' : '0 / 47', cls: nref>2.3?'rouge':'blanche' },
-      { label:'Campings exposés',        val: nref > 3.5 ? '3 / 3' : nref > 3.2 ? '2 / 3' : '0 / 3',   cls: nref>3.3?'rouge':'blanche' },
-      { label:'STEP en zone inondée',    val: nref > 3.8 ? 'Oui' : 'Non', cls: nref>3.8?'rouge':'bleue' },
-      { label:'PME Bretzel-Marine',       val: nref > 2.8 ? 'Oui' : 'Non', cls: nref>2.8?'rouge':'bleue' },
-      { label:'Marais (60 ha)',           val: nref > 4.2 ? 'Inondé' : nref > 3.8 ? 'Partiel' : 'Sec',   cls: nref>4.2?'rouge':nref>3.8?'bleue':'blanche' },
-      { label:'Bourg / EHPAD',            val: 'Hors aléa', cls: 'blanche' },
-      { label:'Population en zone rouge', val: nref > 2.5 ? '~350 pers.' : '0', cls: nref>2.5?'rouge':'blanche' },
-    ];
-    el.innerHTML = '<div class="carto-ctrl-title">Enjeux touchés</div>' +
-      stats.map(r => `<div class="carto-stat-row"><span class="carto-stat-label">${r.label}</span><span class="carto-stat-val ${r.cls}">${r.val}</span></div>`).join('');
-  },
-
-  // ── Onglets scénario ─────────────────────────────────────────
-  renderTabs() {
-    const nref = this.getNref();
-    const base = typeof PPRL !== 'undefined' ? PPRL.nref : 6.05;
-    [0,1,2].forEach(i => {
-      const n = (base + this.slr[i]).toFixed(2).replace('.',',');
-      const el = document.getElementById('ctnref-'+i);
-      if (el) el.textContent = 'N_ref ' + n + ' m NGF';
-    });
-  },
+  // Herbiers de zostères (offshore, indiqué en pointillé)
+  zosteres: 'M60,60 C100,52 150,48 200,50 C240,52 260,62 250,74 C238,84 190,82 150,82 C110,82 70,76 60,60 Z',
 };
 
-function cartoSetScenario(i) {
-  CARTO.scenario = i;
-  [0,1,2].forEach(j => {
-    document.getElementById('ctab-'+j)?.classList.toggle('active', j===i);
-  });
-  cartoRender();
+// ── Enjeux ponctuels ─────────────────────────────────────────
+const ENJEUX = [
+  { id:'e1', x:36,  y:200, em:'⚓', name:'Port-abri ostréicole', note:'22 concessions · non-relocalisable', alt:2.0 },
+  { id:'e2', x:155, y:165, em:'🌿', name:'Cordon dunaire (1,2 km)', note:'SFN · recharge dunaire', alt:3.8 },
+  { id:'e3', x:390, y:240, em:'🏠', name:'47 maisons · Quartier Digue', note:'Aléa fort · FPRNM mes. 1-3', alt:2.5 },
+  { id:'e4', x:294, y:278, em:'👴', name:'22 personnes âgées isolées', note:'Non-relocalisables de fait', alt:2.5 },
+  { id:'e5', x:595, y:220, em:'🏭', name:'PME Bretzel-Marine', note:'28 emplois · relocalisable', alt:3.0 },
+  { id:'e6', x:695, y:210, em:'🏕', name:'3 campings (320 empl.)', note:'Plan recomposition 4 saisons', alt:3.5 },
+  { id:'e7', x:612, y:334, em:'♻',  name:'Station d\'épuration (STEP)', note:'À délocaliser · 1,8 M€', alt:3.8 },
+  { id:'e8', x:165, y:390, em:'🦆', name:'Marais Natura 2000 (60 ha)', note:'Tampon hydraulique · zostères', alt:4.2 },
+  { id:'e9', x:190, y:450, em:'⛪', name:'Église XVe siècle (MH)', note:'Non-relocalisable · patrimoine', alt:6.8 },
+  { id:'ea', x:300, y:460, em:'🏥', name:'EHPAD (22 résidents)', note:'ERP sensible · hors aléa requis', alt:7.0 },
+];
+
+// ── Altitudes de référence par zone ──────────────────────────
+const ALT = {
+  port:8.0, dune:2.8, quartier:2.5, pme_zone:3.0,
+  campings:3.5, marais:4.2, estuaire:0.5, step:3.8, bourg:6.5
+};
+
+// N_ref du module PPRL (ou valeur par défaut)
+const SLR = [0, 0.20, 0.60];
+const TC_RECUL = [0, 25, 75];  // mètres de recul côte
+let _scene = 0;
+
+function getNref() {
+  const base = (typeof PPRL !== 'undefined') ? PPRL.nref : 6.05;
+  return +(base + SLR[_scene]).toFixed(2);
+}
+function flooded(alt) { return getNref() > alt; }
+function depth(alt)   { return Math.max(0, +(getNref() - alt).toFixed(1)); }
+
+// Qualification PPRL (code couleur)
+function qualify(alt, v) {
+  const h = depth(alt);
+  if (h <= 0) return 'HZ';
+  const vh = h * v;
+  if (h >= 1.5 || (h >= 1.0 && v >= 1.0) || vh >= 1.0) return 'TF';
+  if (h > 1.0 || v >= 1.0 || vh > 0.5) return 'Fo';
+  if (h >= 0.5 || v >= 0.5) return 'M';
+  return 'F';
+}
+const ZONE_COL = {
+  TF:'rgba(139,26,10,.48)',
+  Fo:'rgba(197,72,47,.40)',
+  M:'rgba(74,127,196,.40)',
+  F:'rgba(74,127,196,.25)',
+  HZ:'transparent'
+};
+const ZONE_LABEL = { TF:'Rouge TF', Fo:'Rouge', M:'Bleue', F:'Bleue', HZ:'Blanche' };
+
+// ── Rendu principal ───────────────────────────────────────────
+function render() {
+  const svg = document.getElementById('carto-svg');
+  if (!svg) return;
+  const nref = getNref();
+  const tc   = TC_RECUL[_scene];
+  const hasBreche = (typeof PPRL !== 'undefined') ? !PPRL.ouvrageOk : true;
+  const showSub = document.getElementById('clt-sub')?.checked  !== false;
+  const showZon = document.getElementById('clt-zon')?.checked  !== false;
+  const showTc  = document.getElementById('clt-tc')?.checked   !== false;
+  const showEnj = document.getElementById('clt-enj')?.checked  !== false;
+
+  let s = `
+<defs>
+  <linearGradient id="gSea" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"   stop-color="#1A4B72"/>
+    <stop offset="60%"  stop-color="#2C7DAD"/>
+    <stop offset="100%" stop-color="#5AAAD4"/>
+  </linearGradient>
+  <linearGradient id="gSub" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"   stop-color="rgba(37,99,235,.55)"/>
+    <stop offset="100%" stop-color="rgba(37,99,235,.22)"/>
+  </linearGradient>
+  <filter id="fblur"><feGaussianBlur stdDeviation="2"/></filter>
+  <filter id="fglow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <clipPath id="clipLand">
+    <path d="${P.land}"/>
+  </clipPath>
+  <pattern id="maraisHatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+    <line x1="0" y1="0" x2="0" y2="8" stroke="#7BAF78" stroke-width="1.5" opacity="0.5"/>
+  </pattern>
+</defs>
+
+<!-- ── 1. Fond marin ── -->
+<path d="${P.sea}" fill="url(#gSea)"/>
+<!-- Herbiers zostères (pointillé) -->
+<path d="${P.zosteres}" fill="rgba(42,120,88,.18)" stroke="rgba(42,120,88,.5)" stroke-width="1" stroke-dasharray="3 3"/>
+<text x="155" y="68" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.5)" font-family="Georgia,serif" font-style="italic">Herbiers zostères</text>
+
+<!-- ── 2. Terre (couches de base) ── -->
+<path d="${P.land}"     fill="#EAE4D8"/>
+<path d="${P.bourg}"    fill="#DDD5C6"/>
+<path d="${P.champs}"   fill="#C9DCA8"/>
+<path d="${P.marais}"   fill="#9FC49A"/>
+<path d="${P.estuaire}" fill="#7BAACC" opacity=".6"/>
+<path d="${P.port}"     fill="#B8D8E8"/>
+<path d="${P.dune}"     fill="#EFE0BE"/>
+<path d="${P.quartier}" fill="#E4DBCD"/>
+<path d="${P.pme_zone}" fill="#D4C9B8"/>
+<path d="${P.campings}" fill="#D6E8BE"/>
+<path d="${P.step}"     fill="#D0C8B8" stroke="#9B9290" stroke-width="0.8"/>
+
+<!-- Marais texture -->
+<path d="${P.marais}" fill="url(#maraisHatch)"/>
+
+<!-- ── 3. Trait de côte projeté ── -->`;
+
+  if (showTc && tc > 0) {
+    const coastPath = _scene === 1 ? P.coast1 : P.coast2;
+    const tcZonePts = _scene === 1
+      ? `M0,157 C60,151 110,147 150,144 C195,140 250,137 300,135 C350,133 400,132 450,131 C500,130 550,128 600,126 C650,124 700,123 750,124 C790,125 830,128 860,133 V155 C830,150 790,147 750,146 C700,145 650,146 600,148 C550,150 500,152 450,153 C400,154 350,155 300,157 C250,159 195,162 150,166 C110,169 60,173 0,179 Z`
+      : `M0,157 C60,151 110,147 150,144 C195,140 250,137 300,135 C350,133 400,132 450,131 C500,130 550,128 600,126 C650,124 700,123 750,124 C790,125 830,128 860,133 V188 C830,183 790,180 750,179 C700,178 650,179 600,181 C550,183 500,185 450,186 C400,187 350,188 300,190 C250,192 195,195 150,199 C110,202 60,206 0,212 Z`;
+    s += `
+<!-- Zone érodée (entre côte actuelle et projetée) -->
+<path d="${tcZonePts}" fill="rgba(212,148,38,.28)"/>
+<!-- Trait de côte projeté -->
+<path d="${coastPath}" fill="none" stroke="#C47B10" stroke-width="1.8" stroke-dasharray="7 4"/>
+<text x="${_scene===1?560:560}" y="${_scene===1?144:177}" font-size="9" fill="#A8761B" font-family="monospace" font-weight="700">TC ${_scene===1?'2055':'2125'} −${tc} m</text>`;
+  }
+
+  // ── 4. Submersion ──
+  if (showSub) {
+    // Zones inondées (selon altimétrie vs N_ref)
+    // Toutes zones dont l'altitude < nref
+    const subZones = [
+      { path: P.port,     alt: ALT.port     },
+      { path: P.dune,     alt: ALT.dune     },
+      { path: P.quartier, alt: ALT.quartier },
+      { path: P.pme_zone, alt: ALT.pme_zone },
+      { path: P.campings, alt: ALT.campings },
+      { path: P.marais,   alt: ALT.marais   },
+      { path: P.estuaire, alt: ALT.estuaire },
+      { path: P.step,     alt: ALT.step     },
+    ];
+    subZones.forEach(z => {
+      const h = depth(z.alt);
+      if (h <= 0) return;
+      const op = Math.min(0.65, 0.28 + h * 0.08);
+      s += `<path d="${z.path}" fill="rgba(37,99,235,${op.toFixed(2)})" clip-path="url(#clipLand)"/>`;
+    });
+    // Hauteur d'eau labels (quelques zones clés)
+    if (depth(ALT.quartier) > 0) {
+      s += `<text x="390" y="240" text-anchor="middle" font-size="9.5" fill="rgba(255,255,255,.85)" font-family="monospace" font-weight="700">h=${depth(ALT.quartier).toFixed(1)} m</text>`;
+    }
+    if (depth(ALT.campings) > 0) {
+      s += `<text x="700" y="250" text-anchor="middle" font-size="9.5" fill="rgba(255,255,255,.85)" font-family="monospace" font-weight="700">h=${depth(ALT.campings).toFixed(1)} m</text>`;
+    }
+    if (depth(ALT.marais) > 0) {
+      s += `<text x="310" y="385" text-anchor="middle" font-size="9.5" fill="rgba(255,255,255,.85)" font-family="monospace" font-weight="700">h=${depth(ALT.marais).toFixed(1)} m</text>`;
+    }
+  }
+
+  // ── 5. Zonage PPRL ──
+  if (showZon) {
+    const zz = [
+      { path: P.port,     alt:ALT.port,     v:0.3 },
+      { path: P.quartier, alt:ALT.quartier, v:0.6 },
+      { path: P.pme_zone, alt:ALT.pme_zone, v:0.4 },
+      { path: P.campings, alt:ALT.campings, v:0.2 },
+      { path: P.marais,   alt:ALT.marais,   v:0.1 },
+      { path: P.step,     alt:ALT.step,     v:0.3 },
+    ];
+    zz.forEach(z => {
+      const code = qualify(z.alt, z.v);
+      if (code === 'HZ') return;
+      s += `<path d="${z.path}" fill="${ZONE_COL[code]}" clip-path="url(#clipLand)"/>`;
+    });
+    // Bande de précaution (TF si brèche)
+    if (hasBreche) {
+      s += `<path d="M248,162 L572,152 L574,330 L248,322 Z" fill="rgba(139,26,10,.45)" opacity="1"/>`;
+      s += `<text x="390" y="246" text-anchor="middle" font-size="9" fill="#fff" font-family="monospace" font-weight="700">⚡ TF — Bande précaution</text>`;
+    }
+  }
+
+  // ── 6. Digue ──
+  const digueOk = (typeof PPRL !== 'undefined') && PPRL.ouvrageOk;
+  const digueStroke = digueOk ? '#3A6B3A' : '#8B2020';
+  const digueFill   = digueOk ? '#4B7A4B' : '#8E3030';
+  s += `
+<!-- ── Digue ── -->
+<path d="${P.digue}" fill="${digueFill}" stroke="${digueStroke}" stroke-width="1"/>
+<path d="${P.mole}"  fill="#5A6A78" stroke="#3D4A54" stroke-width="0.8"/>`;
+  // Brèche symbol
+  if (hasBreche) {
+    s += `<rect x="398" y="128" width="28" height="22" rx="3" fill="${digueStroke}" opacity=".9"/>`;
+    s += `<text x="412" y="143" text-anchor="middle" font-size="11" fill="#fff">⚡</text>`;
+  }
+  // Label N_ref sur la mer
+  s += `<line x1="0" y1="${130 - (nref-5)*20}" x2="248" y2="${130 - (nref-5)*20}" stroke="#1D4ED8" stroke-width="1.2" stroke-dasharray="5 3" opacity=".7"/>`;
+  s += `<text x="6" y="${125 - (nref-5)*20}" font-size="8.5" fill="#1D4ED8" font-family="monospace" font-weight="700">N_ref ${nref.toFixed(2).replace('.',',')} m</text>`;
+
+  // ── 7. Enjeux ──
+  if (showEnj) {
+    ENJEUX.forEach(e => {
+      const sub = flooded(e.alt);
+      const ring = sub ? '#EF4444' : 'rgba(255,255,255,.85)';
+      const bg   = sub ? 'rgba(254,226,226,.92)' : 'rgba(255,255,255,.92)';
+      s += `<circle cx="${e.x}" cy="${e.y}" r="12" fill="${bg}" stroke="${ring}" stroke-width="${sub?2:1}" id="${e.id}" style="cursor:pointer;"/>`;
+      s += `<text x="${e.x}" y="${e.y+4}" text-anchor="middle" font-size="10" style="pointer-events:none;">${e.em}</text>`;
+    });
+  }
+
+  // ── 8. Toponymie et repères ──
+  s += `
+<!-- Labels territoire -->
+<text x="430" y="18" text-anchor="middle" font-size="11" fill="rgba(255,255,255,.55)" font-family="Georgia,serif" font-style="italic">~ ~ ~ Manche ~ ~ ~</text>
+<text x="390" y="240" text-anchor="middle" font-size="9" fill="rgba(30,40,60,.35)" font-family="Georgia,serif" font-style="italic">${showSub && depth(ALT.quartier)>0 ? '' : 'Quartier de la Digue'}</text>
+<text x="700" y="260" text-anchor="middle" font-size="9" fill="rgba(30,40,60,.35)" font-family="Georgia,serif" font-style="italic">${showSub && depth(ALT.campings)>0 ? '' : 'Campings'}</text>
+<text x="305" y="388" text-anchor="middle" font-size="9" fill="rgba(30,40,60,.35)" font-family="Georgia,serif" font-style="italic">${showSub && depth(ALT.marais)>0 ? '' : 'Marais (60 ha)'}</text>
+<text x="200" y="462" text-anchor="middle" font-size="9" fill="rgba(30,40,60,.35)" font-family="Georgia,serif" font-style="italic">Bourg historique</text>
+<text x="380" y="140" text-anchor="middle" font-size="8.5" fill="rgba(255,255,255,.8)" font-family="monospace" font-weight="700">${showZon||showSub ? 'DIGUE 1962 · 5,80 m NGF' : 'Digue 1962'}</text>
+<!-- Nord -->
+<line x1="824" y1="20" x2="824" y2="36" stroke="rgba(255,255,255,.6)" stroke-width="1.5"/>
+<polygon points="824,17 820,28 824,26 828,28" fill="rgba(255,255,255,.7)"/>
+<text x="824" y="46" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.5)" font-family="monospace">N</text>
+<!-- Échelle -->
+<line x1="10" y1="492" x2="55" y2="492" stroke="rgba(0,0,0,.4)" stroke-width="2"/>
+<text x="32" y="488" text-anchor="middle" font-size="7.5" fill="rgba(0,0,0,.45)" font-family="monospace">~500 m</text>`;
+
+  s += '';
+  svg.innerHTML = s;
+
+  // ── Tooltip ──
+  if (showEnj) {
+    const tt = document.getElementById('carto-tt');
+    ENJEUX.forEach(e => {
+      const el = document.getElementById(e.id);
+      if (!el) return;
+      el.addEventListener('mouseenter', ev => {
+        const h = depth(e.alt);
+        const sub = h > 0;
+        tt.innerHTML = `<strong>${e.em} ${e.name}</strong>${e.note}<div class="tt-alt">Alt. ${e.alt} m NGF · ${sub ? 'Submergé h='+h.toFixed(1)+'m' : 'Hors submersion'}</div>`;
+        tt.style.display = 'block';
+        _setTtPos(ev);
+      });
+      el.addEventListener('mousemove', _setTtPos);
+      el.addEventListener('mouseleave', () => { tt.style.display = 'none'; });
+    });
+  }
+
+  // ── Stats ──
+  renderStats();
+  // ── Pills mise à jour ──
+  renderPills();
 }
 
-function cartoRender() { CARTO.render(); }
+function _setTtPos(ev) {
+  const tt = document.getElementById('carto-tt');
+  const wrap = document.querySelector('.carte-svg-wrap');
+  if (!tt || !wrap) return;
+  const r = wrap.getBoundingClientRect();
+  const x = ev.clientX - r.left;
+  const y = ev.clientY - r.top;
+  tt.style.left = (x + 14) + 'px';
+  tt.style.top  = (y - 30) + 'px';
+}
 
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => CARTO.render(), 400);
-});
+function renderStats() {
+  const el = document.getElementById('carto-stats');
+  if (!el) return;
+  const nref = getNref();
+  const stats = [
+    { label:'Maisons exposées', num: nref>2.5?'47':'0', cls: nref>2.5?'r':'' },
+    { label:'Campings en zone rouge', num: nref>3.5?'3/3':nref>3.2?'2/3':'0/3', cls: nref>3.2?'r':'' },
+    { label:'STEP inondée', num: nref>3.8?'Oui':'Non', cls: nref>3.8?'r':'b' },
+    { label:'Population exposée', num: nref>2.5?'~350':'0', cls: nref>2.5?'r':'' },
+    { label:'Bourg / EHPAD', num:'Hors aléa', cls:'b' },
+    { label:'N_ref retenu', num:nref.toFixed(2).replace('.',',')+' m', cls:'' },
+  ];
+  el.innerHTML = stats.map(s =>
+    `<div class="carte-stat-item"><span class="carte-stat-num ${s.cls}">${s.num}</span><div class="carte-stat-label">${s.label}</div></div>`
+  ).join('');
+}
+
+function renderPills() {
+  const base = (typeof PPRL !== 'undefined') ? PPRL.nref : 6.05;
+  const nref = (base + SLR[_scene]).toFixed(2).replace('.',',');
+  const el = document.getElementById('cpsub-0');
+  if (el) el.textContent = nref + ' m NGF';
+  [0,1,2].forEach(i => {
+    document.getElementById('cpill-'+i)?.classList.toggle('on', i === _scene);
+  });
+}
+
+// ── API publique ──────────────────────────────────────────────
+window.cartoScene = function(i) { _scene = i; render(); };
+window.cartoRender = render;
+
+document.addEventListener('DOMContentLoaded', () => setTimeout(render, 450));
+
+})(); // fin IIFE module carto
+
 
 function loadOsirisc() {
   try {
