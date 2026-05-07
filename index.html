@@ -945,6 +945,131 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
 .carte-stat-num.r { color: #C5482F; }
 .carte-stat-num.b { color: #2D6E3E; }
 .carte-stat-label { font-size: 11px; color: var(--grey-txt); margin-top: 2px; }
+
+/* ========== BOUSSOLE DES OUTILS ========== */
+.boussole-section {
+  margin: 28px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--grey-border);
+  background: #fff;
+}
+.boussole-header {
+  padding: 22px 28px 18px;
+  border-bottom: 1px solid var(--grey-border);
+  background: linear-gradient(180deg, #FAFBFC 0%, #fff 100%);
+}
+.boussole-eyebrow {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .08em;
+  color: var(--grey-txt); text-transform: uppercase; margin-bottom: 6px;
+}
+.boussole-title {
+  font-family: var(--serif); font-size: 26px; color: var(--navy);
+  margin: 0 0 6px 0; font-weight: 600;
+}
+.boussole-sub {
+  font-size: 14px; color: var(--grey-dark); line-height: 1.55; max-width: 640px;
+}
+.boussole-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+  border-top: 1px solid var(--grey-border);
+}
+@media (max-width: 900px) { .boussole-grid { grid-template-columns: 1fr; } }
+.bouss-card {
+  padding: 22px 24px;
+  border-right: 1px solid var(--grey-border);
+  border-bottom: 1px solid var(--grey-border);
+  background: #fff;
+}
+.bouss-card:nth-child(3n) { border-right: none; }
+.bouss-card:nth-last-child(-n+3) { border-bottom: none; }
+@media (max-width: 900px) {
+  .bouss-card { border-right: none; }
+  .bouss-card:nth-last-child(-n+3) { border-bottom: 1px solid var(--grey-border); }
+  .bouss-card:last-child { border-bottom: none; }
+}
+.bouss-emoji {
+  font-size: 26px; line-height: 1; margin-bottom: 8px;
+  display: inline-block;
+}
+.bouss-card-title {
+  font-family: var(--serif); font-size: 18px; color: var(--navy);
+  font-weight: 600; margin: 0 0 4px 0;
+}
+.bouss-card-question {
+  font-size: 13px; color: var(--grey-txt); font-style: italic;
+  margin: 0 0 14px 0; line-height: 1.45;
+}
+.bouss-tools {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px;
+}
+.bouss-chip {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  padding: 5px 11px; border-radius: 4px;
+  background: #F1F4F8; color: var(--navy); border: 1px solid #DCE4EC;
+  cursor: pointer; transition: all .12s; letter-spacing: .03em;
+}
+.bouss-chip:hover { background: var(--navy); color: #fff; border-color: var(--navy); }
+.bouss-chip.active {
+  background: var(--orange); color: #fff; border-color: var(--orange);
+  box-shadow: 0 2px 8px rgba(232,110,85,.4);
+}
+.bouss-example {
+  font-size: 12.5px; line-height: 1.55;
+  color: var(--grey-dark);
+  border-left: 2px solid #E5DCC8;
+  padding: 6px 0 6px 12px;
+  margin: 0;
+}
+.bouss-example strong { color: #7E6B4A; font-weight: 600; }
+
+/* Panneau de définition */
+#boussole-panel {
+  background: linear-gradient(180deg, #FAFBFC 0%, #F5F7FA 100%);
+  border-top: 2px solid var(--navy);
+  padding: 0;
+  max-height: 0; overflow: hidden;
+  transition: max-height .35s ease, padding .35s ease;
+}
+#boussole-panel.visible {
+  max-height: 600px;
+  padding: 22px 28px 24px;
+}
+.bouss-panel-head {
+  display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--grey-border);
+}
+.bouss-panel-sigle {
+  font-family: var(--mono); font-size: 22px; font-weight: 700;
+  color: var(--orange); letter-spacing: .03em;
+}
+.bouss-panel-full {
+  font-family: var(--serif); font-size: 16px; color: var(--navy);
+  font-style: italic; flex: 1;
+}
+.bouss-panel-body p {
+  font-size: 14px; line-height: 1.65; color: var(--grey-dark);
+  margin: 0 0 10px 0;
+}
+.bouss-panel-body strong { color: var(--navy); }
+.bouss-panel-anse {
+  background: #FFF8E5; border-left: 3px solid #D49426;
+  padding: 11px 14px 11px 16px; border-radius: 4px;
+  font-size: 13px; line-height: 1.55; color: #5A4015;
+  margin: 12px 0;
+}
+.bouss-panel-tag {
+  display: inline-block; font-family: var(--mono); font-size: 9.5px;
+  background: #D49426; color: #fff; padding: 2px 8px; border-radius: 3px;
+  letter-spacing: .06em; margin-right: 8px; vertical-align: middle;
+  font-weight: 700;
+}
+.bouss-panel-base {
+  font-family: var(--mono); font-size: 11px; color: #999;
+  font-style: italic; margin-top: 10px;
+}
+/* ========== TIPS ========== */
+
 /* ========== TIPS ========== */
 /* ========== TIPS ========== */
 /* ========== TIPS ========== */
@@ -4785,6 +4910,7 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
   <div class="sidebar-section">
     <span class="sidebar-label">Travailler</span>
     <a href="#glossaireSeuil">Glossaire de seuil</a>
+    <a href="#boussole">Boussole des outils</a>
     <a href="#mailbox">Votre boîte mail</a>
     <a href="#restitution">Restitution</a>
     <a href="#dialogue1972">Interlude : 1972</a>
@@ -4899,6 +5025,127 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
     </div>
   </details>
 </section>
+
+
+<!-- ============ BOUSSOLE DES OUTILS ============ -->
+<section id="boussole" class="boussole-section">
+  <div class="boussole-header">
+    <div class="boussole-eyebrow">Avant les études de cas</div>
+    <h2 class="boussole-title">Boussole des outils</h2>
+    <p class="boussole-sub">
+      Les sigles français de la prévention des risques s'organisent autour de <strong>six actions concrètes</strong>. Cliquez sur un sigle pour découvrir sa définition, son effet juridique et un exemple sur Anse-de-Goulven.
+    </p>
+  </div>
+
+  <div class="boussole-grid">
+    <article class="bouss-card">
+      <span class="bouss-emoji">🔍</span>
+      <h3 class="bouss-card-title">Savoir où est le danger</h3>
+      <p class="bouss-card-question">Quels risques menacent mon territoire ? Comment le sait-on ?</p>
+      <div class="bouss-tools">
+        <button class="bouss-chip" data-sigle="DDRM" onclick="showSigle('DDRM')">DDRM</button>
+        <button class="bouss-chip" data-sigle="PPR"  onclick="showSigle('PPR')">PPR</button>
+        <button class="bouss-chip" data-sigle="PPRL" onclick="showSigle('PPRL')">PPRL</button>
+        <button class="bouss-chip" data-sigle="AZI"  onclick="showSigle('AZI')">AZI</button>
+        <button class="bouss-chip" data-sigle="EPRI" onclick="showSigle('EPRI')">EPRI</button>
+        <button class="bouss-chip" data-sigle="TRI"  onclick="showSigle('TRI')">TRI</button>
+        <button class="bouss-chip" data-sigle="DICRIM" onclick="showSigle('DICRIM')">DICRIM</button>
+        <button class="bouss-chip" data-sigle="IAL"  onclick="showSigle('IAL')">IAL</button>
+      </div>
+      <p class="bouss-example">
+        <strong>Sur Anse-de-Goulven.</strong> Le PPRL de 2014 trace les zones rouges du Quartier de la Digue. L'IAL informe les acheteurs avant signature.
+      </p>
+    </article>
+
+    <article class="bouss-card">
+      <span class="bouss-emoji">📐</span>
+      <h3 class="bouss-card-title">Encadrer la construction</h3>
+      <p class="bouss-card-question">Que peut-on construire, où, et à quelles conditions ?</p>
+      <div class="bouss-tools">
+        <button class="bouss-chip" data-sigle="PLU"  onclick="showSigle('PLU')">PLU</button>
+        <button class="bouss-chip" data-sigle="PLUi" onclick="showSigle('PLUi')">PLUi</button>
+        <button class="bouss-chip" data-sigle="SCOT" onclick="showSigle('SCOT')">SCOT</button>
+        <button class="bouss-chip" data-sigle="OAP"  onclick="showSigle('OAP')">OAP</button>
+        <button class="bouss-chip" data-sigle="ZAN"  onclick="showSigle('ZAN')">ZAN</button>
+        <button class="bouss-chip" data-sigle="BRAEC" onclick="showSigle('BRAEC')">BRAEC</button>
+        <button class="bouss-chip" data-sigle="DPRTC" onclick="showSigle('DPRTC')">DPRTC</button>
+        <button class="bouss-chip" data-sigle="ZIS"  onclick="showSigle('ZIS')">ZIS</button>
+        <button class="bouss-chip" data-sigle="Loi Littoral" onclick="showSigle('Loi Littoral')">Loi Littoral</button>
+      </div>
+      <p class="bouss-example">
+        <strong>Sur Anse-de-Goulven.</strong> Le PLU intègre le PPRL via une OAP « risques ». Le BRAEC permet d'occuper temporairement les zones de recul.
+      </p>
+    </article>
+
+    <article class="bouss-card">
+      <span class="bouss-emoji">🛡️</span>
+      <h3 class="bouss-card-title">Protéger physiquement</h3>
+      <p class="bouss-card-question">Quels ouvrages, quelle gestion, quelle gouvernance ?</p>
+      <div class="bouss-tools">
+        <button class="bouss-chip" data-sigle="GEMAPI" onclick="showSigle('GEMAPI')">GEMAPI</button>
+        <button class="bouss-chip" data-sigle="SFN"    onclick="showSigle('SFN')">SFN</button>
+        <button class="bouss-chip" data-sigle="ADAPTO" onclick="showSigle('ADAPTO')">ADAPTO</button>
+      </div>
+      <p class="bouss-example">
+        <strong>Sur Anse-de-Goulven.</strong> La digue de 1962 relève désormais de l'EPCI au titre de la GEMAPI. La restauration du marais est une SFN possible.
+      </p>
+    </article>
+
+    <article class="bouss-card">
+      <span class="bouss-emoji">💶</span>
+      <h3 class="bouss-card-title">Financer la prévention</h3>
+      <p class="bouss-card-question">Qui paie quoi, sur quels critères, à quel taux de cofinancement ?</p>
+      <div class="bouss-tools">
+        <button class="bouss-chip" data-sigle="FPRNM" onclick="showSigle('FPRNM')">FPRNM</button>
+        <button class="bouss-chip" data-sigle="PAPI"  onclick="showSigle('PAPI')">PAPI</button>
+        <button class="bouss-chip" data-sigle="Fonds vert" onclick="showSigle('Fonds vert')">Fonds vert</button>
+        <button class="bouss-chip" data-sigle="FEDER" onclick="showSigle('FEDER')">FEDER</button>
+      </div>
+      <p class="bouss-example">
+        <strong>Sur Anse-de-Goulven.</strong> Le PAPI cofinance 50% les digues. Le FPRNM acquiert les 47 maisons (mes. 3, 100% État).
+      </p>
+    </article>
+
+    <article class="bouss-card">
+      <span class="bouss-emoji">🚨</span>
+      <h3 class="bouss-card-title">Préparer et gérer la crise</h3>
+      <p class="bouss-card-question">Qui décide, qui agit, qui alerte la population ?</p>
+      <div class="bouss-tools">
+        <button class="bouss-chip" data-sigle="PCS"  onclick="showSigle('PCS')">PCS</button>
+        <button class="bouss-chip" data-sigle="PICS" onclick="showSigle('PICS')">PICS</button>
+        <button class="bouss-chip" data-sigle="RCSC" onclick="showSigle('RCSC')">RCSC</button>
+        <button class="bouss-chip" data-sigle="ORSEC" onclick="showSigle('ORSEC')">ORSEC</button>
+        <button class="bouss-chip" data-sigle="FR-Alert" onclick="showSigle('FR-Alert')">FR-Alert</button>
+        <button class="bouss-chip" data-sigle="COD" onclick="showSigle('COD')">COD</button>
+        <button class="bouss-chip" data-sigle="PCO" onclick="showSigle('PCO')">PCO</button>
+      </div>
+      <p class="bouss-example">
+        <strong>Sur Anse-de-Goulven.</strong> Le PCS du maire déclenche l'évacuation. Le préfet active ORSEC et le COD. FR-Alert prévient les estivants.
+      </p>
+    </article>
+
+    <article class="bouss-card">
+      <span class="bouss-emoji">🔧</span>
+      <h3 class="bouss-card-title">Indemniser et adapter</h3>
+      <p class="bouss-card-question">Comment sont financés les dommages et l'avenir du territoire ?</p>
+      <div class="bouss-tools">
+        <button class="bouss-chip" data-sigle="CatNat" onclick="showSigle('CatNat')">CatNat</button>
+        <button class="bouss-chip" data-sigle="CCR"  onclick="showSigle('CCR')">CCR</button>
+        <button class="bouss-chip" data-sigle="TRACC" onclick="showSigle('TRACC')">TRACC</button>
+        <button class="bouss-chip" data-sigle="PNACC" onclick="showSigle('PNACC')">PNACC</button>
+      </div>
+      <p class="bouss-example">
+        <strong>Sur Anse-de-Goulven.</strong> Après Argonne, l'arrêté CatNat ouvre les indemnisations. La TRACC cadre les choix d'adaptation à 2050 et 2100.
+      </p>
+    </article>
+
+  </div>
+
+  <!-- Panneau de définition (révélé au clic) -->
+  <div id="boussole-panel"></div>
+
+</section>
+
 
 <style>
 .glossaire-seuil-section {
@@ -19916,6 +20163,302 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(render, 450));
 
 })(); // fin IIFE module carto
 
+
+
+const SIGLES = {
+  // ═══════ 1. SAVOIR OÙ EST LE DANGER ═══════
+  'PPR': {
+    full: 'Plan de Prévention des Risques naturels',
+    short: 'Document juridique de l\'État qui zone le territoire selon le niveau de risque (rouge/bleu/blanc) et fixe des règles de construction.',
+    effect: 'Servitude d\'utilité publique annexée au PLU. S\'impose à toute autorisation d\'urbanisme.',
+    anse: 'Anse-de-Goulven a un PPR depuis 2014. Il classe les 47 maisons du Quartier de la Digue en zone rouge.',
+    base: 'Articles L.562-1 et suivants du code de l\'environnement · Loi Barnier 1995'
+  },
+  'PPRL': {
+    full: 'Plan de Prévention des Risques Littoraux',
+    short: 'PPR spécifique aux risques littoraux : submersion marine, érosion côtière, migration dunaire.',
+    effect: 'Cadre méthodologique précisé par circulaire du 27 juillet 2011 et guide DGPR 2014.',
+    anse: 'Le PPRL d\'Anse-de-Goulven est en révision pour intégrer la TRACC.',
+    base: 'Articles L.562-1 CE · Circulaire 27/07/2011'
+  },
+  'DDRM': {
+    full: 'Dossier Départemental des Risques Majeurs',
+    short: 'Document du préfet qui recense tous les risques connus dans le département. Public, en ligne sur le site préfecture.',
+    effect: 'Sert de base à l\'information des élus et des citoyens. Mis à jour tous les 5 ans.',
+    anse: 'Le DDRM du Finistère liste Anse-de-Goulven parmi les communes exposées à submersion + érosion + crue.',
+    base: 'Article R.125-11 du code de l\'environnement'
+  },
+  'IAL': {
+    full: 'Information Acquéreur-Locataire',
+    short: 'Document obligatoire remis lors de toute vente ou location d\'un bien situé en zone à risque.',
+    effect: 'Informe l\'acheteur sur les sinistres antérieurs et les zonages. Obligation du vendeur/bailleur.',
+    anse: 'Toute vente d\'une maison du Quartier de la Digue déclenche l\'IAL avec mention zone rouge PPRL.',
+    base: 'Article L.125-5 CE · loi Climat 2021 (extension érosion)'
+  },
+  'EPRI': {
+    full: 'Évaluation Préliminaire des Risques d\'Inondation',
+    short: 'Étape de la directive inondation 2007/60/CE : évaluation à l\'échelle d\'un bassin pour identifier les zones à risque important.',
+    effect: 'Mise à jour tous les 6 ans. Sert à désigner les TRI.',
+    anse: 'L\'EPRI Loire-Bretagne classe l\'estuaire du Goulven en zone à enjeux.',
+    base: 'Directive 2007/60/CE · L.566 CE'
+  },
+  'TRI': {
+    full: 'Territoire à Risque Important d\'inondation',
+    short: 'Périmètre identifié par la directive inondation où une stratégie locale doit être élaborée.',
+    effect: 'Déclenche l\'obligation d\'une SLGRI portée par les collectivités.',
+    anse: 'Anse-de-Goulven est intégré au TRI « littoral nord-Finistère ».',
+    base: 'Article L.566-5 CE'
+  },
+  'AZI': {
+    full: 'Atlas des Zones Inondables',
+    short: 'Document informatif (non opposable) qui cartographie les zones potentiellement inondables.',
+    effect: 'Sert de base à l\'élaboration du PPR. Disponible en DDTM.',
+    anse: 'L\'AZI du Finistère sert de point de départ à l\'EPRI puis au PPRL.',
+    base: 'Politique nationale de connaissance · DGPR'
+  },
+  'DICRIM': {
+    full: 'Document d\'Information Communal sur les Risques Majeurs',
+    short: 'Document du maire qui informe les habitants sur les risques de la commune et les comportements à adopter.',
+    effect: 'Obligatoire pour toute commune avec un risque majeur. Affichage et diffusion.',
+    anse: 'Le DICRIM d\'Anse-de-Goulven explique aux habitants les sirènes, FR-Alert, points de rassemblement.',
+    base: 'Articles R.125-10 et R.125-11 CE'
+  },
+
+  // ═══════ 2. ENCADRER LA CONSTRUCTION ═══════
+  'PLU': {
+    full: 'Plan Local d\'Urbanisme',
+    short: 'Document d\'urbanisme communal qui définit les règles de construction, les zones constructibles et les protections.',
+    effect: 'S\'impose à tout permis de construire. Doit intégrer les servitudes du PPR.',
+    anse: 'Le PLU d\'Anse-de-Goulven inscrit les zones rouges PPRL en N (naturelles inconstructibles).',
+    base: 'Code de l\'urbanisme'
+  },
+  'PLUi': {
+    full: 'Plan Local d\'Urbanisme intercommunal',
+    short: 'PLU élaboré à l\'échelle de l\'EPCI. Cohérence territoriale renforcée.',
+    effect: 'Remplace les PLU communaux. Recommandé pour la prévention à l\'échelle de bassin.',
+    anse: 'L\'EPCI auquel appartient Anse-de-Goulven envisage le passage au PLUi pour cohérence avec Tréguinec.',
+    base: 'Loi ALUR 2014'
+  },
+  'SCOT': {
+    full: 'Schéma de Cohérence Territoriale',
+    short: 'Document de planification stratégique à l\'échelle d\'un grand bassin. Fixe les grandes orientations.',
+    effect: 'Document supra-communal. Les PLU/PLUi doivent être compatibles.',
+    anse: 'Le SCOT du Pays de Brest cadre la gestion littorale d\'Anse-de-Goulven.',
+    base: 'Article L.141 CU'
+  },
+  'OAP': {
+    full: 'Orientation d\'Aménagement et de Programmation',
+    short: 'Outil du PLU qui décrit les conditions d\'aménagement de secteurs spécifiques. Permet d\'intégrer le risque.',
+    effect: 'Opposable. Plus souple qu\'un règlement classique.',
+    anse: 'Une OAP « risques » peut imposer des hauteurs de plancher pour les nouvelles constructions du bourg.',
+    base: 'Article L.151-7 CU'
+  },
+  'ZAN': {
+    full: 'Zéro Artificialisation Nette',
+    short: 'Objectif national : -50% de consommation d\'espaces naturels d\'ici 2031, zéro net en 2050.',
+    effect: 'Intégré aux PLU. Limite les extensions urbaines, favorise le renouvellement urbain.',
+    anse: 'Toute extension du bourg doit être compensée par renaturation ailleurs.',
+    base: 'Loi Climat & Résilience 2021'
+  },
+  'BRAEC': {
+    full: 'Bail Réel d\'Adaptation à l\'Érosion Côtière',
+    short: 'Outil foncier nouveau : bail temporaire (12-99 ans) qui permet d\'occuper un terrain destiné à être abandonné face à l\'érosion.',
+    effect: 'Le bâti devient temporaire. Le foncier reste public. Démontage prévu.',
+    anse: 'Outil potentiel pour les campings d\'Anse-de-Goulven dans une logique de recomposition.',
+    base: 'Décret 2023-535 du 30 juin 2023'
+  },
+  'DPRTC': {
+    full: 'Droit de Préemption Recul du Trait de Côte',
+    short: 'Permet à la commune de préempter prioritairement les biens situés en zone de recul du trait de côte.',
+    effect: 'Outil de maîtrise foncière progressive. Anticipe la recomposition.',
+    anse: 'La commune pourrait préempter les maisons du Quartier de la Digue mises en vente.',
+    base: 'Loi Climat 2021 · Décret 2022-750'
+  },
+  'ZIS': {
+    full: 'Zone d\'Intérêt Stratégique',
+    short: 'Statut spécifique pour des secteurs à enjeux dans une stratégie locale (loi Climat 2021).',
+    effect: 'Autorise des règles dérogatoires pour relogement, équipements, recomposition.',
+    anse: 'Le secteur portuaire d\'Anse-de-Goulven pourrait être classé ZIS.',
+    base: 'Article L.121-22-2 CU'
+  },
+  'Loi Littoral': {
+    full: 'Loi du 3 janvier 1986 relative à l\'aménagement, la protection et la mise en valeur du littoral',
+    short: 'Cadre fondateur. Limite l\'urbanisation à proximité du rivage. Protège les espaces remarquables.',
+    effect: 'Bande des 100 m inconstructible, urbanisation limitée à la continuité.',
+    anse: 'Aucune extension du bâti à moins de 100 m du rivage en dehors des espaces déjà urbanisés.',
+    base: 'Loi 86-2 du 3 janvier 1986'
+  },
+
+  // ═══════ 3. PROTÉGER PHYSIQUEMENT ═══════
+  'GEMAPI': {
+    full: 'Gestion des Milieux Aquatiques et Prévention des Inondations',
+    short: 'Compétence obligatoire des EPCI depuis 2018 : gestion des cours d\'eau, ouvrages de protection contre l\'eau.',
+    effect: 'Financement par taxe GEMAPI (40 €/hab max). Responsabilité juridique sur les digues.',
+    anse: 'L\'EPCI doit prendre la digue de 1962 dans son giron GEMAPI. Coût d\'entretien partagé.',
+    base: 'Loi MAPTAM 2014 · L.211-7 CE'
+  },
+  'SFN': {
+    full: 'Solutions Fondées sur la Nature',
+    short: 'Approche qui mobilise les écosystèmes (marais, dunes, forêts) pour réduire les risques.',
+    effect: 'Alternative aux ouvrages durs. Recharge dunaire, restauration de marais, dépoldérisation.',
+    anse: 'Restaurer le marais de 60 ha en tampon hydraulique = SFN. Plus durable que rehausser la digue.',
+    base: 'PNACC-3 · stratégie biodiversité'
+  },
+  'ADAPTO': {
+    full: 'Programme ADAPTO du Conservatoire du littoral',
+    short: 'Programme expérimental de restauration de la dynamique côtière sur sites protégés. Acceptation du recul.',
+    effect: 'Démantèlement d\'ouvrages, dépoldérisation, gestion souple.',
+    anse: 'L\'estuaire du Goulven (Natura 2000) pourrait être candidat à ADAPTO.',
+    base: 'Conservatoire du littoral · Agence de l\'eau'
+  },
+
+  // ═══════ 4. FINANCER LA PRÉVENTION ═══════
+  'FPRNM': {
+    full: 'Fonds de Prévention des Risques Naturels Majeurs (Fonds Barnier)',
+    short: 'Fonds national qui finance acquisitions amiables, expropriations, études, travaux de prévention.',
+    effect: '300 M€/an. 20 mesures éligibles. Taux de cofinancement État de 20% à 100%.',
+    anse: 'L\'acquisition amiable des 47 maisons en aléa fort du Quartier passe par FPRNM mes.3 (100% État).',
+    base: 'Loi Barnier 1995 · Articles L.561 CE'
+  },
+  'PAPI': {
+    full: 'Programme d\'Actions de Prévention des Inondations',
+    short: 'Contrat de 6 ans entre l\'État et un porteur de projet (EPCI). Cofinance des actions multi-axes.',
+    effect: 'Cofinancement État jusqu\'à 50%. 7 axes obligatoires (connaissance, alerte, urbanisme, ouvrages…).',
+    anse: 'L\'EPCI candidate à un PAPI complet : 9 M€ sur 10 ans pour digue, SFN, PCS, exercice grandeur.',
+    base: 'Cahier des charges PAPI 3 (2021)'
+  },
+  'Fonds vert': {
+    full: 'Fonds d\'accélération de la transition écologique dans les territoires',
+    short: 'Aide État aux projets territoriaux d\'adaptation et de transition écologique.',
+    effect: '2 Mds €/an depuis 2023. Couvre adaptation littorale, recomposition, SFN.',
+    anse: 'Co-financement possible pour la délocalisation de la STEP (1,8 M€).',
+    base: 'Circulaire ministérielle 2023'
+  },
+  'FEDER': {
+    full: 'Fonds Européen de Développement Régional',
+    short: 'Fonds européen géré par les régions. Cofinance des projets de prévention et d\'adaptation.',
+    effect: 'Programmation pluriannuelle. Cofinancement jusqu\'à 60%.',
+    anse: 'La cartographie locale du recul du trait de côte (0,3 M€) peut bénéficier du FEDER.',
+    base: 'Règlement UE 2021/1058'
+  },
+
+  // ═══════ 5. PRÉPARER ET GÉRER LA CRISE ═══════
+  'PCS': {
+    full: 'Plan Communal de Sauvegarde',
+    short: 'Document du maire qui organise la réponse communale en cas de crise : alerte, évacuation, hébergement.',
+    effect: 'Obligatoire dans toute commune avec PPR. Révisable tous les 5 ans (loi Matras).',
+    anse: 'Le PCS d\'Anse-de-Goulven déclenche l\'évacuation du Quartier de la Digue dès vigilance rouge.',
+    base: 'Article L.731-3 CSI · Loi Matras 2021'
+  },
+  'PICS': {
+    full: 'Plan Intercommunal de Sauvegarde',
+    short: 'PCS à l\'échelle de l\'EPCI. Mutualise moyens et coordination.',
+    effect: 'Recommandé. Particulièrement utile pour les communes côtières petites.',
+    anse: 'Un PICS au niveau de l\'EPCI permettrait de mutualiser les hébergements d\'urgence.',
+    base: 'Loi Matras 2021'
+  },
+  'RCSC': {
+    full: 'Réserve Communale de Sécurité Civile',
+    short: 'Bénévoles formés mobilisés par le maire pour appuyer les secours et la population en crise.',
+    effect: 'Statut juridique protecteur. Convention avec le SDIS. Formation annuelle.',
+    anse: 'La RCSC d\'Anse-de-Goulven (12 bénévoles) appuie l\'évacuation des 22 personnes âgées isolées.',
+    base: 'Article L.724-1 CSI'
+  },
+  'ORSEC': {
+    full: 'Organisation de la Réponse de SÉcurité Civile',
+    short: 'Plan préfectoral de gestion de crise. Coordonne tous les acteurs (SDIS, police, santé, mairies).',
+    effect: 'Activé par le préfet. Prévoit dispositifs spécifiques (POLMAR, NOVI, NRBC, etc.).',
+    anse: 'L\'ORSEC du Finistère intègre le volet « submersion littorale » avec déclenchement en T100.',
+    base: 'Loi MOSC 2004 · Décret 2005-1157'
+  },
+  'FR-Alert': {
+    full: 'FR-Alert · alerte multi-canaux',
+    short: 'Système national d\'alerte par SMS géolocalisé sur les téléphones présents dans une zone.',
+    effect: 'Activé par préfet ou ministre. Texte prédéfini ou personnalisé.',
+    anse: 'FR-Alert envoie un SMS aux 12 000 estivants présents en pic touristique en cas d\'alerte rouge.',
+    base: 'Décret 2022-739 · Directive UE 2018/1972'
+  },
+  'COD': {
+    full: 'Centre Opérationnel Départemental',
+    short: 'Salle de crise du préfet. Réunit tous les services de l\'État en gestion d\'événement majeur.',
+    effect: 'Activée par le préfet. Coordination opérationnelle, point presse, mobilisation moyens.',
+    anse: 'Le COD à Quimper coordonne les secours pour la tempête Argonne sur tout le Finistère nord.',
+    base: 'ORSEC départemental'
+  },
+  'PCO': {
+    full: 'Poste de Commandement Opérationnel',
+    short: 'Cellule opérationnelle déployée sur le terrain près de l\'événement, commandée par un sous-préfet.',
+    effect: 'Liaison COD ↔ terrain. Coordination du dispositif opérationnel local.',
+    anse: 'Le PCO se déploie en mairie d\'Anse-de-Goulven en lien avec le maire et le PCS.',
+    base: 'ORSEC · Code de la défense'
+  },
+
+  // ═══════ 6. INDEMNISER ET RECONSTRUIRE ═══════
+  'CatNat': {
+    full: 'Régime des Catastrophes Naturelles',
+    short: 'Régime d\'indemnisation des dommages liés à un aléa naturel anormal. Déclenché par arrêté interministériel.',
+    effect: 'Étend les garanties de toutes les assurances dommages. Surprime annuelle.',
+    anse: 'Après la tempête Argonne, l\'arrêté CatNat ouvre l\'indemnisation des biens du Quartier.',
+    base: 'Loi 82-600 du 13 juillet 1982 · L.125 Code des assurances'
+  },
+  'CCR': {
+    full: 'Caisse Centrale de Réassurance',
+    short: 'Établissement public qui réassure les assureurs privés sur le risque catastrophes naturelles.',
+    effect: 'Garantie de l\'État. Stabilise le système face aux événements extrêmes.',
+    anse: 'Sans la CCR, le coût d\'une Argonne ne pourrait pas être absorbé par les assureurs locaux.',
+    base: 'Loi 82-600 · Code des assurances'
+  },
+  'TRACC': {
+    full: 'Trajectoire de Réchauffement de référence pour l\'Adaptation au Changement climatique',
+    short: 'Référentiel officiel pour planifier l\'adaptation : +2,7°C en 2050, +4°C en 2100 (France hexagonale).',
+    effect: 'Doit être intégrée dans tous les PPR, PAPI, SLGRI à partir de 2026.',
+    anse: 'La TRACC impose à Anse-de-Goulven de planifier sur +24 cm (2050) et +56 cm (2100).',
+    base: 'Décret 2026-23 du 23 janvier 2026 · PNACC-3'
+  },
+  'PNACC': {
+    full: 'Plan National d\'Adaptation au Changement Climatique',
+    short: 'Plan stratégique national de l\'adaptation. PNACC-3 court de 2024 à 2029.',
+    effect: 'Cadre les politiques nationales et donne le tempo aux territoires.',
+    anse: 'Le PNACC-3 retient la TRACC comme référence et finance des appels à projets.',
+    base: 'Stratégie nationale d\'adaptation'
+  },
+};
+
+let _currentSigle = null;
+
+function showSigle(key) {
+  const data = SIGLES[key];
+  const panel = document.getElementById('boussole-panel');
+  if (!data || !panel) return;
+  // Reset des chips
+  document.querySelectorAll('.bouss-chip.active').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll(`.bouss-chip[data-sigle="${CSS.escape(key)}"]`).forEach(c => c.classList.add('active'));
+  _currentSigle = key;
+  panel.innerHTML = `
+    <div class="bouss-panel-head">
+      <div class="bouss-panel-sigle">${key}</div>
+      <div class="bouss-panel-full">${data.full}</div>
+    </div>
+    <div class="bouss-panel-body">
+      <p class="bouss-panel-short"><strong>En une phrase.</strong> ${data.short}</p>
+      <p class="bouss-panel-effect"><strong>Ce que ça produit.</strong> ${data.effect}</p>
+      <div class="bouss-panel-anse">
+        <span class="bouss-panel-tag">Anse-de-Goulven</span>
+        ${data.anse}
+      </div>
+      <div class="bouss-panel-base">${data.base}</div>
+    </div>`;
+  panel.classList.add('visible');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeSigle() {
+  document.getElementById('boussole-panel')?.classList.remove('visible');
+  document.querySelectorAll('.bouss-chip.active').forEach(c => c.classList.remove('active'));
+}
+
+window.showSigle = showSigle;
+window.closeSigle = closeSigle;
 
 function loadOsirisc() {
   try {
