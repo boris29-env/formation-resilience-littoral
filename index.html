@@ -709,116 +709,173 @@ body.expert-mode .expert-badge { display: inline-flex; align-items: center; gap:
 .acro-tip[data-pos="left"]::after  { left: auto; right: 0; transform: none; }
 
 /* ========== MODULE PPRL SUBMERSION MARINE ========== */
-.pprl-step {
-  border-top: 1px solid var(--grey-border);
-  padding: 32px 0 24px 0;
+/* Modules accordéon */
+.pprl-mod {
+  border: 1px solid var(--grey-border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  background: #fff;
 }
-.pprl-step:first-child { border-top: none; }
-.pprl-step-header {
-  display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px;
-}
-.pprl-step-num {
-  font-family: var(--mono); font-size: 28px; font-weight: 700;
-  color: var(--grey-border); line-height: 1; min-width: 40px;
-}
-.pprl-step-label {
-  font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
-  color: var(--grey-txt); text-transform: uppercase; margin-bottom: 4px;
-}
-.pprl-step-title { font-family: var(--serif); font-size: 22px; color: var(--navy); margin: 0; }
-
-/* Composantes niveau marin */
-.pprl-composantes { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-.pprl-comp-row {
-  display: flex; align-items: center; gap: 16px;
-  background: #fff; border: 1px solid var(--grey-border); border-radius: 6px; padding: 14px 18px;
-}
-.pprl-comp-label { flex: 1; }
-.pprl-comp-label strong { font-size: 13.5px; color: var(--navy); display: block; margin-bottom: 2px; }
-.pprl-comp-desc { font-size: 12px; color: var(--grey-txt); line-height: 1.4; }
-.pprl-comp-input { display: flex; align-items: center; gap: 10px; min-width: 200px; }
-.pprl-comp-input input[type=range] { width: 120px; accent-color: var(--navy); }
-.pprl-comp-val { font-family: var(--mono); font-size: 13px; color: var(--navy); font-weight: 600; white-space: nowrap; }
-
-/* Résultats N_ref */
-.pprl-nref-block {
-  background: var(--navy); color: #fff; border-radius: 8px; padding: 20px 24px; margin-top: 8px;
-}
-.pprl-nref-row { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
-.pprl-nref-label { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; opacity: .7; margin-bottom: 4px; }
-.pprl-nref-formula { font-size: 12px; opacity: .6; font-style: italic; margin-bottom: 6px; }
-.pprl-nref-val { font-family: var(--mono); font-size: 36px; font-weight: 700; color: #FFD580; line-height: 1; }
-.pprl-nref-unit { font-size: 13px; opacity: .7; margin-top: 3px; }
-
-/* Ouvrage */
-.pprl-ouvrage-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 20px; }
-@media (max-width: 768px) { .pprl-ouvrage-grid { grid-template-columns: 1fr; } }
-.pprl-ouvrage-name { font-family: var(--serif); font-size: 17px; font-weight: 600; color: var(--navy); margin-bottom: 12px; }
-.pprl-ouvrage-specs { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: var(--grey-dark); }
-.pprl-spec-label { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--grey-txt); text-transform: uppercase; margin-right: 6px; }
-.pprl-critere-title { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--grey-txt); text-transform: uppercase; margin-bottom: 12px; }
-.pprl-critere-row {
-  display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px;
-  border-radius: 4px; cursor: pointer; margin-bottom: 8px;
-  background: #FAFAFA; border: 1px solid var(--grey-border);
+.pprl-mod-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px; cursor: pointer;
+  background: #FAFAFA; user-select: none;
   transition: background .12s;
 }
-.pprl-critere-row:hover { background: #F0F4FF; }
-.pprl-critere-row input { margin-top: 3px; accent-color: var(--navy); }
-.pprl-critere-row strong { font-size: 13px; color: var(--navy); display: block; margin-bottom: 2px; }
-.pprl-critere-desc { font-size: 12px; color: var(--grey-txt); line-height: 1.4; }
-.pprl-ouvrage-result {
+.pprl-mod-head:hover { background: #F0F4FF; }
+.pprl-mod-num {
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  color: #fff; background: var(--navy); width: 28px; height: 28px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.pprl-mod-title { font-family: var(--serif); font-size: 17px; color: var(--navy); font-weight: 600; flex: 1; }
+.pprl-mod-badge {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .06em;
+  background: var(--navy); color: #FFD580; padding: 4px 10px; border-radius: 12px;
+  font-weight: 700;
+}
+.pprl-mod-badge.ok   { background: #2D6E3E; color: #fff; }
+.pprl-mod-badge.warn { background: #C5482F; color: #fff; }
+.pprl-mod-chevron { font-size: 14px; color: var(--grey-txt); transition: transform .2s; }
+.pprl-mod.closed .pprl-mod-chevron { transform: rotate(-90deg); }
+.pprl-mod-body { padding: 20px 22px 24px; display: block; }
+.pprl-mod.closed .pprl-mod-body { display: none; }
+
+/* Bannière état */
+.pprl-banner {
+  display: flex; align-items: stretch; gap: 0;
+  border-radius: 8px; overflow: hidden; margin-bottom: 18px;
+  background: var(--navy); color: #fff;
+}
+.pprl-banner-cell {
+  padding: 14px 20px; flex: 1;
+  border-right: 1px solid rgba(255,255,255,.12);
+}
+.pprl-banner-cell:last-child { border-right: none; }
+.pprl-banner-label { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; opacity: .6; margin-bottom: 4px; }
+.pprl-banner-val { font-family: var(--mono); font-size: 20px; font-weight: 700; color: #FFD580; }
+.pprl-banner-val.ok  { color: #86EFAC; }
+.pprl-banner-val.bad { color: #FCA5A5; }
+.pprl-scenario-badge {
+  display: inline-block; font-family: var(--mono); font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; padding: 5px 14px; border-radius: 20px; margin-top: 2px;
+}
+
+/* Layout 2 colonnes */
+.pprl-2col {
+  display: grid; grid-template-columns: 1fr 1.1fr; gap: 24px; align-items: start;
+}
+@media (max-width: 900px) { .pprl-2col { grid-template-columns: 1fr; } }
+
+/* Sliders composantes */
+.pprl-sliders { display: flex; flex-direction: column; gap: 10px; }
+.pprl-slider-row {
+  background: #F7F9FC; border: 1px solid var(--grey-border);
+  border-radius: 6px; padding: 12px 14px;
+}
+.pprl-slider-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.pprl-slider-name { font-size: 13px; font-weight: 600; color: var(--navy); }
+.pprl-slider-tag  { font-family: var(--mono); font-size: 11px; color: var(--grey-txt); }
+.pprl-slider-val  { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--navy); }
+.pprl-slider-row input[type=range] {
+  width: 100%; accent-color: var(--navy); height: 4px;
+}
+.pprl-slider-desc { font-size: 11px; color: var(--grey-txt); margin-top: 4px; line-height: 1.35; }
+
+/* Visualisation N_ref */
+.pprl-viz-nref { position: relative; }
+.pprl-nref-results {
+  display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap;
+}
+.pprl-nref-card {
+  flex: 1; min-width: 90px; background: var(--navy); color: #fff;
+  border-radius: 6px; padding: 10px 14px; text-align: center;
+}
+.pprl-nref-card-label { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; opacity: .6; margin-bottom: 4px; }
+.pprl-nref-card-val { font-family: var(--mono); font-size: 22px; font-weight: 700; color: #FFD580; }
+.pprl-nref-card-unit { font-size: 11px; opacity: .6; }
+.pprl-nref-alert { font-size: 13px; font-weight: 600; margin-top: 10px; padding: 8px 12px; border-radius: 4px; }
+.pprl-nref-alert.over  { background: #FDF0ED; color: #8E2E1E; }
+.pprl-nref-alert.ok    { background: #EBF5EB; color: #2D6E3E; }
+.pprl-nref-alert.warn  { background: #FFF8E5; color: #A8761B; }
+
+/* SVG cross-section */
+.pprl-svg-wrap { background: #EEF2F7; border-radius: 8px; overflow: hidden; }
+.pprl-svg-wrap svg { display: block; width: 100%; height: auto; }
+
+/* Checklist critères */
+.pprl-criteres { display: flex; flex-direction: column; gap: 8px; }
+.pprl-crit-label {
+  display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px;
+  background: #FAFAFA; border: 1px solid var(--grey-border); border-radius: 6px;
+  cursor: pointer; transition: background .12s;
+}
+.pprl-crit-label:hover { background: #F0F4FF; }
+.pprl-crit-label input { margin-top: 3px; accent-color: var(--navy); flex-shrink: 0; }
+.pprl-crit-label.auto { opacity: .65; cursor: default; pointer-events: none; }
+.pprl-crit-title { font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 2px; }
+.pprl-crit-desc  { font-size: 11.5px; color: var(--grey-txt); line-height: 1.35; }
+.pprl-ouvrage-verdict {
   margin-top: 14px; padding: 12px 16px; border-radius: 6px;
   font-size: 13.5px; font-weight: 600; line-height: 1.5;
+  border: 1px solid;
 }
-.pprl-ouvrage-result.resistant { background: #EBF5EB; color: #2D6E3E; border: 1px solid #A8D5A8; }
-.pprl-ouvrage-result.defaillant { background: #FDF0ED; color: #8E2E1E; border: 1px solid #F0B0A0; }
+.pprl-ouvrage-verdict.ok  { background: #EBF5EB; color: #2D6E3E; border-color: #A8D5A8; }
+.pprl-ouvrage-verdict.bad { background: #FDF0ED; color: #8E2E1E; border-color: #F0B0A0; }
 
-/* Qualification aléa */
-.pprl-qual-grid { overflow-x: auto; }
-.pprl-qual-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-.pprl-qual-table thead { background: var(--navy); color: #fff; }
-.pprl-qual-table th { padding: 10px 14px; text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
-.pprl-qual-table td { padding: 8px 14px; border-bottom: 1px solid var(--grey-border); vertical-align: top; }
-.pprl-qual-table input[type=number] {
-  width: 72px; padding: 5px 8px; border: 1px solid var(--grey-border);
-  border-radius: 3px; font-family: var(--mono); font-size: 13px; text-align: center;
+/* Qualification zones */
+.pprl-zones-wrap { display: grid; grid-template-columns: 1.1fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .pprl-zones-wrap { grid-template-columns: 1fr; } }
+.pprl-zones-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pprl-zones-table thead { background: var(--navy); color: #fff; }
+.pprl-zones-table th { padding: 8px 10px; text-align: left; font-family: var(--mono); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+.pprl-zones-table td { padding: 7px 10px; border-bottom: 1px solid var(--grey-border); vertical-align: middle; }
+.pprl-zones-table tr:hover td { background: #F7F9FC; }
+.pprl-zones-table input[type=number] {
+  width: 62px; padding: 4px 6px; border: 1px solid var(--grey-border);
+  border-radius: 3px; font-family: var(--mono); font-size: 12px; text-align: center;
 }
-.pprl-alea-badge {
-  display: inline-block; font-family: var(--mono); font-size: 11px; letter-spacing: .06em;
-  font-weight: 700; padding: 4px 10px; border-radius: 3px; white-space: nowrap;
+.pprl-alea-pill {
+  display: inline-block; font-family: var(--mono); font-size: 10px; letter-spacing: .05em;
+  font-weight: 700; padding: 3px 9px; border-radius: 10px; white-space: nowrap;
 }
-.pprl-alea-F { background: #EBF5EB; color: #2D6E3E; }
-.pprl-alea-M { background: #FFF8E5; color: #A8761B; }
-.pprl-alea-Fo { background: #FDF0ED; color: #8E2E1E; }
+.pprl-alea-HZ { background: #e5e7eb; color: #6b7280; }
+.pprl-alea-F  { background: #d1fae5; color: #065f46; }
+.pprl-alea-M  { background: #fef3c7; color: #92400e; }
+.pprl-alea-Fo { background: #fee2e2; color: #991b1b; }
 .pprl-alea-TF { background: #1E3A5F; color: #fff; }
-
-/* Matrices de référence */
-.pprl-matrix-cell {
-  background: #fff; border-radius: 4px; padding: 12px 14px;
-  border: 1px solid var(--grey-border);
+.pprl-zone-ppr {
+  display: inline-block; font-family: var(--mono); font-size: 10px;
+  padding: 3px 9px; border-radius: 3px; color: #fff; font-weight: 700;
 }
-.pprl-matrix-level { font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .08em; margin-bottom: 4px; }
-.pprl-matrix-crit { font-size: 12.5px; color: var(--navy); line-height: 1.4; margin-bottom: 4px; }
-.pprl-matrix-note { font-size: 11.5px; color: var(--grey-txt); font-style: italic; }
+
+/* Matrice h×V */
+.pprl-matrix { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-top: 14px; }
+.pprl-mx-cell { background: #fff; border-radius: 4px; padding: 10px 12px; border: 1px solid var(--grey-border); border-left: 3px solid; }
+.pprl-mx-level { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .08em; margin-bottom: 3px; }
+.pprl-mx-crit  { font-size: 12px; color: var(--navy); line-height: 1.4; }
 
 /* Zonage réglementaire */
-.pprl-zonage-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pprl-zonage-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 14px; }
 .pprl-zonage-table thead { background: var(--navy); color: #fff; }
-.pprl-zonage-table th { padding: 10px 12px; text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
-.pprl-zonage-table td { padding: 10px 12px; border-bottom: 1px solid var(--grey-border); vertical-align: top; }
-.pprl-zone-badge {
-  display: inline-block; color: #fff; font-family: var(--mono); font-size: 11px;
-  font-weight: 700; padding: 3px 10px; border-radius: 3px; letter-spacing: .05em;
-}
-.pprl-prescriptions { margin-top: 20px; background: #F5F8FF; border-radius: 6px; padding: 18px 20px; }
-.pprl-presc-title { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--navy); text-transform: uppercase; margin-bottom: 14px; font-weight: 600; }
-.pprl-presc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
-.pprl-presc-item { background: #fff; border-radius: 4px; padding: 12px 14px; border: 1px solid var(--grey-border); }
-.pprl-presc-label { font-size: 11px; color: var(--grey-txt); text-transform: uppercase; font-family: var(--mono); letter-spacing: .06em; margin-bottom: 4px; }
-.pprl-presc-val { font-family: var(--serif); font-size: 17px; font-weight: 600; color: var(--navy); margin-bottom: 4px; }
-.pprl-presc-note { font-size: 11.5px; color: var(--grey-txt); line-height: 1.4; }
+.pprl-zonage-table th { padding: 9px 12px; text-align: left; font-family: var(--mono); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+.pprl-zonage-table td { padding: 9px 12px; border-bottom: 1px solid var(--grey-border); vertical-align: top; font-size: 12.5px; }
+.pprl-zone-color { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.pprl-presc-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 10px; margin-top: 14px; }
+.pprl-presc-card { background: #F7F9FC; border-radius: 6px; padding: 12px 14px; border: 1px solid var(--grey-border); }
+.pprl-presc-card-label { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: var(--grey-txt); text-transform: uppercase; margin-bottom: 4px; }
+.pprl-presc-card-val { font-family: var(--serif); font-size: 18px; font-weight: 700; color: var(--navy); }
+.pprl-presc-card-note { font-size: 11px; color: var(--grey-txt); line-height: 1.35; margin-top: 4px; }
 
+.expert-source {
+  font-family: var(--mono); font-size: 11px; color: #aaa;
+  font-style: italic; margin-top: 18px; padding-top: 10px;
+  border-top: 1px solid var(--grey-border);
+}
+
+/* ========== TIPS ========== */
 /* ========== TIPS ========== */
 .tip-block {
   background: var(--orange); color: var(--white);
@@ -8407,321 +8464,175 @@ function _climateSpeakWebSpeech(text) {
 
 <!-- ============ MODULE EXPERT : PPRL SUBMERSION MARINE ============ -->
 <section id="pprl" class="expert-only" style="margin-top:48px;">
+
   <div class="section-header">
     <span class="section-num" style="background:#1E3A5F;">P</span>
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20M2 6c2 0 4 2 6 2s4-2 6-2 4 2 6 2M2 18c2 0 4-2 6-2s4 2 6 2 4-2 6-2"/></svg>
     </span>
-    <h2 class="section-title">Construction de l'aléa PPRL · Submersion marine</h2>
+    <h2 class="section-title">PPRL · Aléa submersion marine</h2>
   </div>
   <p class="section-intro">
-    Le PPRL impose de caractériser l'aléa de submersion marine selon une démarche en quatre temps : détermination du niveau marin de référence, prise en compte des ouvrages de protection, délimitation et qualification de l'aléa, traduction en zonage réglementaire. Chaque étape est calibrée ici sur Anse-de-Goulven.
+    Construction interactive de l'aléa de référence selon la démarche du guide méthodologique PPRL (DGPR 2014). Quatre modules interconnectés : le N_ref calculé au module 1 alimente automatiquement les modules 2, 3 et 4.
   </p>
 
-  <!-- ÉTAPE 1 : Niveau marin de référence -->
-  <div class="pprl-step" id="pprl-step1">
-    <div class="pprl-step-header">
-      <div class="pprl-step-num">01</div>
-      <div>
-        <div class="pprl-step-label">Étape 1 · Aléa de référence</div>
-        <h3 class="pprl-step-title">Détermination du niveau marin de référence</h3>
-      </div>
+  <!-- Bannière état global -->
+  <div class="pprl-banner" id="pprl-banner">
+    <div class="pprl-banner-cell">
+      <div class="pprl-banner-label">N_REF T100</div>
+      <div class="pprl-banner-val" id="pb-nref">—</div>
     </div>
-    <p style="font-size:14px;line-height:1.65;color:var(--grey-dark);margin-bottom:20px;">
-      Le niveau marin de référence N<sub>ref</sub> est la cote NGF utilisée pour délimiter l'emprise de submersion. Il cumule quatre composantes. Le guide PPRL 2014 (§2.4.3.b) exige de documenter chacune et d'y ajouter la majoration changement climatique pour l'horizon 100 ans.
-    </p>
-
-    <div class="pprl-composantes">
-      <!-- Composante 1 : Niveau moyen -->
-      <div class="pprl-comp-row">
-        <div class="pprl-comp-label">
-          <strong>C1 — Niveau moyen des mers (NMM)</strong>
-          <span class="pprl-comp-desc">Référence altimétrique NGF, rattaché au marégraphe de Brest (zéro hydrographique).</span>
-        </div>
-        <div class="pprl-comp-input">
-          <input type="range" min="1.8" max="2.8" step="0.05" value="2.30" id="nmm" oninput="updateNref()">
-          <span class="pprl-comp-val"><span id="nmm-val">2,30</span> m NGF</span>
-        </div>
-      </div>
-      <!-- Composante 2 : Marée -->
-      <div class="pprl-comp-row">
-        <div class="pprl-comp-label">
-          <strong>C2 — Marée astronomique (PMVE)</strong>
-          <span class="pprl-comp-desc">Pleine mer de vive-eau extrême (coeff. 120). À Brest : +4,83 m CM → converti NGF. Secteur Anse-de-Goulven (Finistère nord) : marnage macrotidal.</span>
-        </div>
-        <div class="pprl-comp-input">
-          <input type="range" min="4.0" max="5.5" step="0.05" value="4.72" id="maree" oninput="updateNref()">
-          <span class="pprl-comp-val"><span id="maree-val">4,72</span> m NGF</span>
-        </div>
-      </div>
-      <!-- Composante 3 : Surcote -->
-      <div class="pprl-comp-row">
-        <div class="pprl-comp-label">
-          <strong>C3 — Surcote météorologique centennale</strong>
-          <span class="pprl-comp-desc">Événement T100 ou événement historique si supérieur au centennal. Ciaran/Xynthia-équivalent pour la façade Manche-Atlantique : 1,0 à 1,4 m selon secteur.</span>
-        </div>
-        <div class="pprl-comp-input">
-          <input type="range" min="0.7" max="1.5" step="0.05" value="1.20" id="surcote" oninput="updateNref()">
-          <span class="pprl-comp-val"><span id="surcote-val">1,20</span> m</span>
-        </div>
-      </div>
-      <!-- Composante 4 : Wave setup -->
-      <div class="pprl-comp-row">
-        <div class="pprl-comp-label">
-          <strong>C4 — Setup de vagues (run-up résiduel)</strong>
-          <span class="pprl-comp-desc">Composante de surhaussement due aux vagues sur côte exposée. Estimée 0 à 0,30 m selon fetch et orientation. Anse-de-Goulven : exposition nord-ouest.</span>
-        </div>
-        <div class="pprl-comp-input">
-          <input type="range" min="0" max="0.3" step="0.05" value="0.15" id="setup" oninput="updateNref()">
-          <span class="pprl-comp-val"><span id="setup-val">0,15</span> m</span>
-        </div>
-      </div>
+    <div class="pprl-banner-cell">
+      <div class="pprl-banner-label">N_REF 2100</div>
+      <div class="pprl-banner-val" id="pb-nref2100">—</div>
     </div>
-
-    <!-- Résultats N_ref -->
-    <div class="pprl-nref-block">
-      <div class="pprl-nref-row">
-        <div>
-          <div class="pprl-nref-label">N<sub>ref</sub> T100 actuel</div>
-          <div class="pprl-nref-formula" id="nref-formula">2,30 + 4,72 + 1,20 + 0,15</div>
-          <div class="pprl-nref-val" id="nref-val">8,37</div>
-          <div class="pprl-nref-unit">m NGF</div>
-        </div>
-        <div>
-          <div class="pprl-nref-label">N<sub>ref</sub> horizon 2050<br><small style="font-weight:400;font-size:11px;">+ 0,20 m TRACC</small></div>
-          <div class="pprl-nref-val" id="nref-2050" style="font-size:26px;">8,57</div>
-          <div class="pprl-nref-unit">m NGF</div>
-        </div>
-        <div>
-          <div class="pprl-nref-label">N<sub>ref</sub> horizon 2100<br><small style="font-weight:400;font-size:11px;">+ 0,60 m TRACC</small></div>
-          <div class="pprl-nref-val" id="nref-2100" style="font-size:26px;">8,97</div>
-          <div class="pprl-nref-unit">m NGF</div>
-        </div>
-      </div>
-      <div id="nref-alert" style="margin-top:12px;font-size:13px;color:#C5482F;font-weight:600;"></div>
+    <div class="pprl-banner-cell">
+      <div class="pprl-banner-label">SCÉNARIO RETENU</div>
+      <div id="pb-scenario" style="margin-top:2px;">—</div>
     </div>
-    <div class="expert-source">
-      Méthode : guide PPRL DGPR 2014, §2.4.3.b · TRACC : décret 2026-23 du 23/01/2026 · Marée : SHOM Brest référence NGF-IGN69
+    <div class="pprl-banner-cell">
+      <div class="pprl-banner-label">ZONES ROUGE</div>
+      <div class="pprl-banner-val" id="pb-rouges">—</div>
+    </div>
+    <div class="pprl-banner-cell">
+      <div class="pprl-banner-label">COTE PLANCHER BLEUE</div>
+      <div class="pprl-banner-val" id="pb-plancher">—</div>
     </div>
   </div>
 
-  <!-- ÉTAPE 2 : Diagnostic ouvrage -->
-  <div class="pprl-step" id="pprl-step2">
-    <div class="pprl-step-header">
-      <div class="pprl-step-num">02</div>
-      <div>
-        <div class="pprl-step-label">Étape 2 · Prise en compte des ouvrages</div>
-        <h3 class="pprl-step-title">Diagnostic de la digue de 1962</h3>
-      </div>
+  <!-- MODULE 01 : Niveau marin de référence -->
+  <div class="pprl-mod" id="pmod1">
+    <div class="pprl-mod-head" onclick="pprlToggleMod('pmod1')">
+      <span class="pprl-mod-num">01</span>
+      <span class="pprl-mod-title">Niveau marin de référence N<sub>ref</sub></span>
+      <span class="pprl-mod-badge" id="mb1">—</span>
+      <span class="pprl-mod-chevron">▾</span>
     </div>
-    <p style="font-size:14px;line-height:1.65;color:var(--grey-dark);margin-bottom:16px;">
-      Le guide PPRL (§2.4.3.d) impose d'évaluer chaque ouvrage de protection selon quatre critères. Un ouvrage « résistant à l'aléa de référence » permet de retenir le scénario de débordement seul. Un ouvrage défaillant impose d'ajouter le scénario de brèche et ses effets (dissipation d'énergie, bande de précaution).
-    </p>
-
-    <div class="pprl-ouvrage-grid">
-      <div class="pprl-ouvrage-info">
-        <div class="pprl-ouvrage-name">Digue du Quartier de la Digue (1962)</div>
-        <div class="pprl-ouvrage-specs">
-          <div><span class="pprl-spec-label">Type</span> Digue en béton armé, profil trapézoïdal</div>
-          <div><span class="pprl-spec-label">Cote crête</span> <strong>5,80 m NGF</strong></div>
-          <div><span class="pprl-spec-label">Largeur crête</span> 2,5 m</div>
-          <div><span class="pprl-spec-label">Talus côté mer</span> 3H : 1V (pente 1/3)</div>
-          <div><span class="pprl-spec-label">Longueur</span> 420 m</div>
-          <div><span class="pprl-spec-label">Gestionnaire identifié</span> Mairie + EPCI (en cours)</div>
+    <div class="pprl-mod-body">
+      <div class="pprl-2col">
+        <div>
+          <p style="font-size:13px;line-height:1.6;color:var(--grey-dark);margin-bottom:14px;">
+            N_ref cumule quatre composantes (§2.4.3.b). Ajustez chacune ; les modules suivants se mettent à jour en temps réel.
+          </p>
+          <div class="pprl-sliders" id="pprl-sliders"></div>
+          <div id="pprl-nref-results" class="pprl-nref-results"></div>
+          <div id="pprl-nref-alert" class="pprl-nref-alert" style="display:none;"></div>
         </div>
-        <div id="revanche-info" style="margin-top:12px;padding:10px 14px;border-radius:4px;font-size:13px;font-weight:600;"></div>
+        <div class="pprl-viz-nref">
+          <div class="pprl-svg-wrap">
+            <svg id="pprl-svg-bar" viewBox="0 0 240 280" style="display:block;width:100%;height:auto;"></svg>
+          </div>
+        </div>
       </div>
-
-      <div class="pprl-criteres">
-        <div class="pprl-critere-title">Critères de classification (§2.4.3.d)</div>
-        <label class="pprl-critere-row">
-          <input type="checkbox" id="crit1" onchange="updateOuvrage()">
-          <div>
-            <strong>Résistance hydraulique documentée</strong>
-            <span class="pprl-critere-desc">Dimensionnement vérifié pour une crue de période de retour ≥ T100 actuel. Note de calcul disponible.</span>
-          </div>
-        </label>
-        <label class="pprl-critere-row">
-          <input type="checkbox" id="crit2" onchange="updateOuvrage()">
-          <div>
-            <strong>État physique satisfaisant</strong>
-            <span class="pprl-critere-desc">Contrôle visuel récent (< 5 ans), absence de désordres structurels (fissures, affouillements, poinçonnement).</span>
-          </div>
-        </label>
-        <label class="pprl-critere-row">
-          <input type="checkbox" id="crit3" onchange="updateOuvrage()">
-          <div>
-            <strong>Gestionnaire et entretien identifiés</strong>
-            <span class="pprl-critere-desc">Maître d'ouvrage désigné, convention de mise à disposition GEMAPI, programme d'entretien actif.</span>
-          </div>
-        </label>
-        <label class="pprl-critere-row">
-          <input type="checkbox" id="crit4" onchange="updateOuvrage()">
-          <div>
-            <strong>Cote crête ≥ N<sub>ref</sub> T100 + revanche minimale (0,5 m)</strong>
-            <span class="pprl-critere-desc">L'ouvrage doit tenir sans submersion pour l'aléa de référence actuel.</span>
-          </div>
-        </label>
-
-        <div id="ouvrage-result" class="pprl-ouvrage-result"></div>
-      </div>
-    </div>
-    <div class="expert-source">
-      Grille : guide PPRL DGPR 2014, §2.4.3.d « Prise en compte des structures jouant un rôle de protection et de leurs défaillances »
+      <div class="expert-source">Guide PPRL DGPR 2014, §2.4.3.b · TRACC décret 2026-23 · Marée SHOM Brest NGF-IGN69</div>
     </div>
   </div>
 
-  <!-- ÉTAPE 3 : Qualification de l'aléa par zone -->
-  <div class="pprl-step" id="pprl-step3">
-    <div class="pprl-step-header">
-      <div class="pprl-step-num">03</div>
-      <div>
-        <div class="pprl-step-label">Étape 3 · Qualification de l'aléa</div>
-        <h3 class="pprl-step-title">Grille de qualification par zone</h3>
-      </div>
+  <!-- MODULE 02 : Diagnostic ouvrage -->
+  <div class="pprl-mod" id="pmod2">
+    <div class="pprl-mod-head" onclick="pprlToggleMod('pmod2')">
+      <span class="pprl-mod-num">02</span>
+      <span class="pprl-mod-title">Diagnostic de la digue de 1962</span>
+      <span class="pprl-mod-badge" id="mb2">—</span>
+      <span class="pprl-mod-chevron">▾</span>
     </div>
-    <p style="font-size:14px;line-height:1.65;color:var(--grey-dark);margin-bottom:16px;">
-      La qualification de l'aléa submersion (§2.4.5) croise hauteur d'eau (h) et vitesse d'écoulement (V). Saisir les valeurs simulées par la modélisation ou estimées par la méthode des volumes pour chacune des zones d'Anse-de-Goulven.
-    </p>
-
-    <div class="pprl-qual-grid">
-      <table class="pprl-qual-table">
-        <thead>
-          <tr>
-            <th>Zone</th>
-            <th>h (m)</th>
-            <th>V (m/s)</th>
-            <th>Aléa qualifié</th>
-            <th>Justification</th>
-          </tr>
-        </thead>
-        <tbody id="pprl-zones-tbody">
-          <!-- Généré par JS -->
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Matrice de référence -->
-    <div style="margin-top:20px;">
-      <div style="font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--grey-txt);text-transform:uppercase;margin-bottom:10px;">Matrice h × V (guide PPRL 2014, §2.4.5.a)</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
-        <div class="pprl-matrix-cell" style="border-left:4px solid #5C8A4F;">
-          <div class="pprl-matrix-level" style="color:#5C8A4F;">FAIBLE</div>
-          <div class="pprl-matrix-crit">h &lt; 0,5 m <em>et</em> V &lt; 0,5 m/s</div>
-          <div class="pprl-matrix-note">Ou h &lt; 0,5 m et V×h &lt; 0,25 m²/s</div>
+    <div class="pprl-mod-body">
+      <div class="pprl-2col">
+        <div>
+          <p style="font-size:13px;line-height:1.6;color:var(--grey-dark);margin-bottom:14px;">
+            Quatre critères déterminent si l'ouvrage est « résistant à l'aléa de référence » (§2.4.3.d). Cocher selon les données disponibles. Le critère 4 est calculé automatiquement depuis le module 01.
+          </p>
+          <div class="pprl-specs" style="font-size:12.5px;color:var(--grey-dark);margin-bottom:14px;line-height:1.8;">
+            <strong style="color:var(--navy);">Digue du Quartier · 1962</strong><br>
+            Type : béton armé, profil trapézoïdal · Cote crête : <strong>5,80 m NGF</strong><br>
+            Crête 2,5 m · Talus mer 3H:1V · Talus terre 2H:1V · Longueur 420 m
+          </div>
+          <div class="pprl-criteres" id="pprl-criteres"></div>
+          <div id="pprl-ouvrage-verdict" class="pprl-ouvrage-verdict" style="display:none;"></div>
         </div>
-        <div class="pprl-matrix-cell" style="border-left:4px solid #D49426;">
-          <div class="pprl-matrix-level" style="color:#D49426;">MODÉRÉ</div>
-          <div class="pprl-matrix-crit">0,5 m ≤ h ≤ 1 m<br>et V &lt; 0,5 m/s</div>
-          <div class="pprl-matrix-note">Ou h &lt; 0,5 m et V ≥ 0,5 m/s</div>
-        </div>
-        <div class="pprl-matrix-cell" style="border-left:4px solid #C5482F;">
-          <div class="pprl-matrix-level" style="color:#C5482F;">FORT</div>
-          <div class="pprl-matrix-crit">h &gt; 1 m<br>ou V ≥ 1 m/s</div>
-          <div class="pprl-matrix-note">Ou combinaison V×h &gt; 0,5 m²/s</div>
-        </div>
-        <div class="pprl-matrix-cell" style="border-left:4px solid #1E3A5F;">
-          <div class="pprl-matrix-level" style="color:#1E3A5F;">TRÈS FORT</div>
-          <div class="pprl-matrix-crit">Zone de dissipation d'énergie derrière ouvrage</div>
-          <div class="pprl-matrix-note">Bande de précaution · Brèche · Chocs mécaniques</div>
+        <div class="pprl-svg-wrap">
+          <svg id="pprl-svg-digue" viewBox="0 0 620 220" style="display:block;width:100%;height:auto;"></svg>
         </div>
       </div>
-    </div>
-    <div class="expert-source">
-      Guide PPRL DGPR 2014, §2.4.5 « Qualification de l'aléa » · Seuils V×h issus du guide EVA (CETMEF 2010)
+      <div class="expert-source">Guide PPRL DGPR 2014, §2.4.3.d « Prise en compte des structures jouant un rôle de protection »</div>
     </div>
   </div>
 
-  <!-- ÉTAPE 4 : Zonage réglementaire -->
-  <div class="pprl-step" id="pprl-step4">
-    <div class="pprl-step-header">
-      <div class="pprl-step-num">04</div>
-      <div>
-        <div class="pprl-step-label">Étape 4 · Dossier réglementaire</div>
-        <h3 class="pprl-step-title">Traduction en zonage PPRL</h3>
-      </div>
+  <!-- MODULE 03 : Qualification par zone -->
+  <div class="pprl-mod" id="pmod3">
+    <div class="pprl-mod-head" onclick="pprlToggleMod('pmod3')">
+      <span class="pprl-mod-num">03</span>
+      <span class="pprl-mod-title">Qualification de l'aléa par zone</span>
+      <span class="pprl-mod-badge" id="mb3">—</span>
+      <span class="pprl-mod-chevron">▾</span>
     </div>
-    <p style="font-size:14px;line-height:1.65;color:var(--grey-dark);margin-bottom:16px;">
-      Le zonage réglementaire (§4.2.1 du guide) traduit la qualification de l'aléa en zones de couleur, auxquelles s'attachent des règles d'urbanisme. La logique : plus l'aléa est fort, plus le règlement est restrictif. La prise en compte de l'horizon 2100 crée une sur-couche d'anticipation.
-    </p>
-
-    <div style="overflow-x:auto;">
-      <table class="pprl-zonage-table">
-        <thead>
-          <tr>
-            <th>Zone PPR</th>
-            <th>Aléa de référence actuel</th>
-            <th>Horizon 2100</th>
-            <th>Principe</th>
-            <th>Application Anse-de-Goulven</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><span class="pprl-zone-badge" style="background:#C5482F;">Rouge</span></td>
-            <td>Fort ou Très fort</td>
-            <td>—</td>
-            <td>Interdiction quasi-totale. Sauf exceptions très limitées (extensions mesurées de bâti existant sous conditions strictes).</td>
-            <td id="pprl-rouge-app">Quartier de la Digue (bande de précaution 200 m post-brèche), zone immédiatement derrière la digue.</td>
-          </tr>
-          <tr>
-            <td><span class="pprl-zone-badge" style="background:#FFB84C;color:#333;">Rouge clair</span></td>
-            <td>Aléa faible/modéré actuel</td>
-            <td>Fort ou Très fort à 2100</td>
-            <td>Zone d'anticipation : pas d'extension de l'urbanisation. Prescriptions sur existant. Droit de délaissement ouvert.</td>
-            <td>Secteurs marais + extensions bourg à risque submersion 2100 (+0,60 m).</td>
-          </tr>
-          <tr>
-            <td><span class="pprl-zone-badge" style="background:#4A7FC4;">Bleue</span></td>
-            <td>Faible ou Modéré</td>
-            <td>Faible/modéré à 2100</td>
-            <td>Constructible sous prescriptions : plancher ≥ N<sub>ref</sub> + 0,20 m, accès ERP sécurisé, diagnostics de vulnérabilité.</td>
-            <td>Zones basses du bourg, route du littoral, campings en zone de risque modéré.</td>
-          </tr>
-          <tr>
-            <td><span class="pprl-zone-badge" style="background:#888;">Blanche</span></td>
-            <td>Hors zone d'aléa</td>
-            <td>—</td>
-            <td>Règles PLU applicables. Attention aux nouvelles constructions qui pourraient aggraver l'aléa en aval.</td>
-            <td>Bourg historique en arrière-pays (cote ≥ N<sub>ref</sub> 2100 + revanche).</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Prescriptions clés -->
-    <div class="pprl-prescriptions">
-      <div class="pprl-presc-title">Prescriptions types · Zone bleue (§4.3.1.b)</div>
-      <div class="pprl-presc-grid">
-        <div class="pprl-presc-item">
-          <div class="pprl-presc-label">Cote plancher</div>
-          <div class="pprl-presc-val" id="pprl-cote-plancher">—</div>
-          <div class="pprl-presc-note">N<sub>ref</sub> T100 + 0,20 m de revanche</div>
+    <div class="pprl-mod-body">
+      <p style="font-size:13px;line-height:1.6;color:var(--grey-dark);margin-bottom:16px;">
+        La matrice h × V (§2.4.5.a) qualifie l'aléa : faible / modéré / fort / très fort. Les hauteurs d'eau sont estimées depuis le N_ref et l'altimétrie de chaque zone. Ajustez ou saisissez les valeurs issues de la modélisation.
+      </p>
+      <div class="pprl-zones-wrap">
+        <div>
+          <table class="pprl-zones-table">
+            <thead>
+              <tr>
+                <th>Zone</th>
+                <th>Alt.<br>terrain</th>
+                <th>h (m)</th>
+                <th>V (m/s)</th>
+                <th>Aléa</th>
+                <th>Zone PPR</th>
+              </tr>
+            </thead>
+            <tbody id="pprl-zones-tbody"></tbody>
+          </table>
+          <div class="pprl-matrix">
+            <div class="pprl-mx-cell" style="border-left-color:#5C8A4F;">
+              <div class="pprl-mx-level" style="color:#5C8A4F;">FAIBLE</div>
+              <div class="pprl-mx-crit">h &lt; 0,5 m et V &lt; 0,5 m/s</div>
+            </div>
+            <div class="pprl-mx-cell" style="border-left-color:#D49426;">
+              <div class="pprl-mx-level" style="color:#D49426;">MODÉRÉ</div>
+              <div class="pprl-mx-crit">0,5 ≤ h ≤ 1 m et V &lt; 0,5 m/s<br>ou h &lt; 0,5 m et V ≥ 0,5 m/s</div>
+            </div>
+            <div class="pprl-mx-cell" style="border-left-color:#C5482F;">
+              <div class="pprl-mx-level" style="color:#C5482F;">FORT</div>
+              <div class="pprl-mx-crit">h &gt; 1 m ou V ≥ 1 m/s<br>ou V×h &gt; 0,5 m²/s</div>
+            </div>
+            <div class="pprl-mx-cell" style="border-left-color:#1E3A5F;">
+              <div class="pprl-mx-level" style="color:#1E3A5F;">TRÈS FORT</div>
+              <div class="pprl-mx-crit">Dissipation d'énergie post-brèche<br>Bande de précaution</div>
+            </div>
+          </div>
         </div>
-        <div class="pprl-presc-item">
-          <div class="pprl-presc-label">Zone refuge</div>
-          <div class="pprl-presc-val">+1 étage min.</div>
-          <div class="pprl-presc-note">Pour tout bâti en zone inondable, niveau supérieur accessible</div>
-        </div>
-        <div class="pprl-presc-item">
-          <div class="pprl-presc-label">ERP sensibles</div>
-          <div class="pprl-presc-val">Interdits</div>
-          <div class="pprl-presc-note">EHPAD, écoles, hôpitaux → zones hors aléa uniquement</div>
-        </div>
-        <div class="pprl-presc-item">
-          <div class="pprl-presc-label">Camping</div>
-          <div class="pprl-presc-val">PPI obligatoire</div>
-          <div class="pprl-presc-note">Plan particulier d'intervention + convention préfet</div>
+        <div class="pprl-svg-wrap">
+          <svg id="pprl-svg-plan" viewBox="0 0 340 300" style="display:block;width:100%;height:auto;"></svg>
         </div>
       </div>
+      <div class="expert-source">Guide PPRL DGPR 2014, §2.4.5 · Seuils V×h issus du guide EVA (CETMEF 2010)</div>
     </div>
-    <div class="expert-source">
-      DGPR. Guide méthodologique PPRL (2014), §4.2.1 « Principes appliqués au zonage réglementaire dans le cadre de la submersion marine » · Circulaire du 27 juillet 2011 relative à la prise en compte du risque de submersion marine dans les PPRL.
+  </div>
+
+  <!-- MODULE 04 : Zonage réglementaire -->
+  <div class="pprl-mod" id="pmod4">
+    <div class="pprl-mod-head" onclick="pprlToggleMod('pmod4')">
+      <span class="pprl-mod-num">04</span>
+      <span class="pprl-mod-title">Zonage réglementaire</span>
+      <span class="pprl-mod-badge" id="mb4">—</span>
+      <span class="pprl-mod-chevron">▾</span>
+    </div>
+    <div class="pprl-mod-body">
+      <p style="font-size:13px;line-height:1.6;color:var(--grey-dark);margin-bottom:4px;">
+        Traduction de l'aléa en zonage (§4.2.1). Chaque zone est colorée selon la qualification du module 3. Les prescriptions types de la zone bleue sont calculées depuis le N_ref du module 1.
+      </p>
+      <table class="pprl-zonage-table" id="pprl-zonage-table"></table>
+      <div class="pprl-presc-grid" id="pprl-prescriptions"></div>
+      <div class="expert-source">DGPR. Guide méthodologique PPRL (2014), §4.2.1 · Circulaire du 27 juillet 2011 relative à la prise en compte du risque de submersion marine dans les PPRL</div>
     </div>
   </div>
 
 </section>
 
+<!-- ============ SOURCES NATIONALES ============ -->
 <!-- ============ SOURCES NATIONALES ============ -->
 <section id="sources">
   <div class="section-header">
@@ -19517,191 +19428,6 @@ function subscribeExpertMode() {
 
 // === Osirisc : 4 composantes notées 0-5 ===
 let _osiriscScores = { aleas: null, enjeux: null, gestion: null, representations: null };
-// ============================================================
-// MODULE PPRL SUBMERSION MARINE
-// ============================================================
-
-// --- Étape 1 : Niveau marin de référence ---
-function _fmt(v) { return v.toFixed(2).replace('.', ','); }
-
-function updateNref() {
-  const nmm    = parseFloat(document.getElementById('nmm')?.value    || 2.30);
-  const maree  = parseFloat(document.getElementById('maree')?.value  || 4.72);
-  const surcote= parseFloat(document.getElementById('surcote')?.value|| 1.20);
-  const setup  = parseFloat(document.getElementById('setup')?.value  || 0.15);
-
-  // Mettre à jour les labels
-  const fmtEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = _fmt(v); };
-  fmtEl('nmm-val',    nmm);
-  fmtEl('maree-val',  maree);
-  fmtEl('surcote-val',surcote);
-  fmtEl('setup-val',  setup);
-
-  // Calculer
-  const nref     = nmm + surcote + setup; // La marée est déjà incluse dans "maree" comme niveau absolu
-  // En réalité : N_ref = maree (PMVE en NGF) + surcote + setup
-  const nref_abs = maree + surcote + setup;
-  const nref2050 = nref_abs + 0.20;
-  const nref2100 = nref_abs + 0.60;
-
-  const fEl = document.getElementById('nref-formula');
-  if (fEl) fEl.textContent = `${_fmt(maree)} + ${_fmt(surcote)} + ${_fmt(setup)}`;
-  fmtEl('nref-val',  nref_abs);
-  fmtEl('nref-2050', nref2050);
-  fmtEl('nref-2100', nref2100);
-
-  // Alerte : dépasse la digue ?
-  const coteDigue = 5.80;
-  const alert = document.getElementById('nref-alert');
-  if (alert) {
-    if (nref_abs > coteDigue) {
-      alert.textContent = `⚠ N_ref T100 (${_fmt(nref_abs)} m) dépasse la cote crête de la digue (${coteDigue} m NGF) de ${_fmt(nref_abs - coteDigue)} m → submersion par débordement confirmée.`;
-    } else {
-      alert.textContent = `La digue (${coteDigue} m NGF) résiste à N_ref T100 (${_fmt(nref_abs)} m). Revanche : ${_fmt(coteDigue - nref_abs)} m.`;
-      alert.style.color = '#2D6E3E';
-    }
-  }
-
-  // Mettre à jour cote plancher zone bleue
-  const cotePlancherEl = document.getElementById('pprl-cote-plancher');
-  if (cotePlancherEl) cotePlancherEl.textContent = `${_fmt(nref_abs + 0.20)} m NGF`;
-
-  // MAJ revanche info
-  updateRevanche(maree, surcote, setup, coteDigue);
-
-  // MAJ zones qualif
-  recalcZones(nref_abs);
-}
-
-function updateRevanche(maree, surcote, setup, coteDigue) {
-  const nref = maree + surcote + setup;
-  const el = document.getElementById('revanche-info');
-  if (!el) return;
-  const rev = coteDigue - nref;
-  if (rev < 0) {
-    el.style.background = '#FDF0ED'; el.style.color = '#8E2E1E';
-    el.innerHTML = `🔴 Débordement T100 : la cote de la digue (${coteDigue} m) est <strong>dépassée de ${_fmt(Math.abs(rev))} m</strong> par N_ref.`;
-  } else if (rev < 0.5) {
-    el.style.background = '#FFF8E5'; el.style.color = '#A8761B';
-    el.innerHTML = `🟡 Revanche insuffisante : ${_fmt(rev)} m (minimum requis : 0,50 m). L'ouvrage est vulnérable au franchissement par paquets de mer.`;
-  } else {
-    el.style.background = '#EBF5EB'; el.style.color = '#2D6E3E';
-    el.innerHTML = `🟢 Revanche satisfaisante : ${_fmt(rev)} m. L'ouvrage résiste à l'aléa T100.`;
-  }
-}
-
-// --- Étape 2 : Diagnostic ouvrage ---
-function updateOuvrage() {
-  const c = [1,2,3,4].map(i => document.getElementById(`crit${i}`)?.checked);
-  const score = c.filter(Boolean).length;
-  const el = document.getElementById('ouvrage-result');
-  if (!el) return;
-
-  const maree  = parseFloat(document.getElementById('maree')?.value || 4.72);
-  const surcote= parseFloat(document.getElementById('surcote')?.value || 1.20);
-  const setup  = parseFloat(document.getElementById('setup')?.value || 0.15);
-  const nref   = maree + surcote + setup;
-  const coteDigue = 5.80;
-  const revanche = coteDigue - nref;
-
-  // Critère 4 coché automatiquement si revanche > 0.5
-  if (revanche >= 0.5) {
-    const c4 = document.getElementById('crit4');
-    if (c4 && !c4.checked) c4.checked = true;
-  }
-
-  const allChecked = [1,2,3,4].every(i => document.getElementById(`crit${i}`)?.checked);
-
-  if (allChecked) {
-    el.className = 'pprl-ouvrage-result resistant';
-    el.innerHTML = `✓ <strong>Ouvrage résistant à l'aléa de référence.</strong> Scénario retenu : submersion par débordement uniquement. La bande de précaution est définie par la lame déversante calculée, sans scénario de brèche.`;
-  } else {
-    el.className = 'pprl-ouvrage-result defaillant';
-    const manquants = [1,2,3,4].filter(i => !document.getElementById(`crit${i}`)?.checked)
-      .map(i => ['résistance hydraulique documentée','état physique satisfaisant','gestionnaire identifié','cote crête suffisante'][i-1]);
-    el.innerHTML = `⚠ <strong>Ouvrage défaillant ou non qualifié.</strong> Critère(s) absent(s) : ${manquants.join(', ')}. Le guide impose d'intégrer un <strong>scénario de brèche</strong> : vague de rupture avec dissipation d'énergie sur 150-250 m en aval → aléa très fort sur cette bande. Bande de précaution à classer en zone rouge sans dérogation.`;
-  }
-}
-
-// --- Étape 3 : Zones et qualification ---
-const PPRL_ZONES = [
-  { id:'z1', label:'Bande de précaution (0-200 m post-digue)', h_default:1.8, v_default:1.2, note:'Vague de rupture en scenario brèche' },
-  { id:'z2', label:'Quartier de la Digue (zone basse)', h_default:1.2, v_default:0.6, note:'Submersion par débordement' },
-  { id:'z3', label:'Arrière-plage et campings', h_default:0.7, v_default:0.3, note:'Remplissage progressif' },
-  { id:'z4', label:'Zone marais (tampon hydraulique)', h_default:0.4, v_default:0.1, note:'Ruissellement résiduel' },
-  { id:'z5', label:'Bourg (cote > N_ref)', h_default:0.0, v_default:0.0, note:'Hors aléa actuel' },
-];
-
-function _qualifyAlea(h, v) {
-  const vh = h * v;
-  if (h === 0 && v === 0) return { code: 'HZ', label: 'Hors aléa', css: '' };
-  // Très fort : zones de dissipation (saisie manuelle via note)
-  if (h >= 1.5 || (h >= 1.0 && v >= 1.0) || vh >= 1.0)
-    return { code:'TF', label:'Très fort', css:'pprl-alea-TF' };
-  if (h > 1.0 || v >= 1.0 || vh > 0.5)
-    return { code:'Fo', label:'Fort', css:'pprl-alea-Fo' };
-  if ((h >= 0.5 && h <= 1.0 && v < 0.5) || (h < 0.5 && v >= 0.5))
-    return { code:'M', label:'Modéré', css:'pprl-alea-M' };
-  if (h < 0.5 && v < 0.5)
-    return { code:'F', label:'Faible', css:'pprl-alea-F' };
-  return { code:'M', label:'Modéré', css:'pprl-alea-M' };
-}
-
-function _aleatoZone(code) {
-  switch(code) {
-    case 'TF': return '<span class="pprl-zone-badge" style="background:#1E3A5F;">Rouge</span>';
-    case 'Fo': return '<span class="pprl-zone-badge" style="background:#C5482F;">Rouge</span>';
-    case 'M':  return '<span class="pprl-zone-badge" style="background:#4A7FC4;">Bleue</span>';
-    case 'F':  return '<span class="pprl-zone-badge" style="background:#4A7FC4;">Bleue</span>';
-    default:   return '<span class="pprl-zone-badge" style="background:#888;">Blanche</span>';
-  }
-}
-
-function buildZonesTable() {
-  const tbody = document.getElementById('pprl-zones-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = PPRL_ZONES.map(z => `
-    <tr>
-      <td style="font-size:13px;font-weight:500;">${z.label}<br><span style="font-size:11.5px;color:var(--grey-txt);font-style:italic;">${z.note}</span></td>
-      <td><input type="number" id="h_${z.id}" min="0" max="5" step="0.1" value="${z.h_default}" oninput="recalcRow('${z.id}')" style="width:72px;"></td>
-      <td><input type="number" id="v_${z.id}" min="0" max="5" step="0.1" value="${z.v_default}" oninput="recalcRow('${z.id}')" style="width:72px;"></td>
-      <td id="alea_${z.id}"></td>
-      <td id="zone_${z.id}" style="font-size:12px;color:var(--grey-txt);"></td>
-    </tr>`).join('');
-  PPRL_ZONES.forEach(z => recalcRow(z.id));
-}
-
-function recalcRow(zid) {
-  const h = parseFloat(document.getElementById(`h_${zid}`)?.value || 0);
-  const v = parseFloat(document.getElementById(`v_${zid}`)?.value || 0);
-  const q = _qualifyAlea(h, v);
-  const aleaEl = document.getElementById(`alea_${zid}`);
-  const zoneEl = document.getElementById(`zone_${zid}`);
-  if (aleaEl) aleaEl.innerHTML = q.code === 'HZ' ? '—' : `<span class="pprl-alea-badge ${q.css}">${q.label}</span>`;
-  if (zoneEl) zoneEl.innerHTML = _aleatoZone(q.code);
-}
-
-function recalcZones(nref) {
-  // Ajuster les hauteurs par défaut en fonction du N_ref calculé
-  // (simplification : zone 1 = nref - 4.5 m de terrain → hauteur résiduelle)
-  const altiZones = { z1: 4.0, z2: 4.6, z3: 5.0, z4: 5.2, z5: 6.5 };
-  PPRL_ZONES.forEach(z => {
-    const deltaH = Math.max(0, nref - altiZones[z.id]);
-    const hEl = document.getElementById(`h_${z.id}`);
-    // Seulement si l'utilisateur n'a pas modifié manuellement (compare à default)
-    if (hEl) { hEl.value = deltaH.toFixed(1); recalcRow(z.id); }
-  });
-}
-
-// Init au chargement
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    buildZonesTable();
-    updateNref();
-    updateOuvrage();
-  }, 200);
-});
-
 function loadOsirisc() {
   try {
     const raw = localStorage.getItem(OSIRISC_KEY);
@@ -20012,6 +19738,542 @@ async function researchPanelPurge() {
   }
 }
 window.showResearchPanel = showResearchPanel;
+
+
+// ============================================================
+// MODULE PPRL SUBMERSION MARINE — Architecture réactive
+// Un objet central PPRL, render() appelé sur tout changement
+// ============================================================
+const PPRL = {
+  // État persistant
+  s: {
+    maree: 4.70, surcote: 1.20, setup: 0.15,
+    c1: false, c2: false, c3: false,  // c4 = auto
+    zones: [
+      { id:'z1', label:'Bande de précaution', subLabel:'0-200 m post-digue', alt:2.0, h:2.1, v:1.2, note:'Vague de rupture (brèche)', autoCalc:true },
+      { id:'z2', label:'Quartier de la Digue', subLabel:'Zone basse, 47 maisons', alt:2.5, h:0, v:0.5, note:'Submersion par débordement', autoCalc:true },
+      { id:'z3', label:'Arrière-plage / campings', subLabel:'3 campings, 320 emplacements', alt:3.5, h:0, v:0.2, note:'Remplissage progressif', autoCalc:true },
+      { id:'z4', label:'Zone marais', subLabel:'60 ha, Natura 2000', alt:4.2, h:0, v:0.1, note:'Ruissellement résiduel', autoCalc:true },
+      { id:'z5', label:'Bourg historique', subLabel:'Centre, ERP, EHPAD', alt:6.5, h:0, v:0, note:'Hors aléa (cote élevée)', autoCalc:true },
+    ]
+  },
+
+  // Dérivés
+  get nref()    { return +(this.s.maree + this.s.surcote + this.s.setup).toFixed(2); },
+  get nref2050(){ return +(this.nref + 0.20).toFixed(2); },
+  get nref2100(){ return +(this.nref + 0.60).toFixed(2); },
+  get revanche(){ return +(5.80 - this.nref).toFixed(2); },
+  get c4auto()  { return this.revanche >= 0.50; },
+  get ouvrageOk(){ return this.s.c1 && this.s.c2 && this.s.c3 && this.c4auto; },
+  get scenario() { return this.ouvrageOk ? 'debordement' : 'breche'; },
+
+  // Qualification aléa
+  qualify(h, v) {
+    if (h === 0 && v === 0) return { code:'HZ', label:'—' };
+    const vh = h * v;
+    if (h >= 1.5 || (h >= 1.0 && v >= 1.0) || vh >= 1.0) return { code:'TF', label:'Très fort' };
+    if (h > 1.0 || v >= 1.0 || vh > 0.5)  return { code:'Fo', label:'Fort' };
+    if ((h >= 0.5 && v < 0.5) || (h < 0.5 && v >= 0.5)) return { code:'M', label:'Modéré' };
+    return { code:'F', label:'Faible' };
+  },
+
+  // Couleur PPR selon aléa
+  pprColor(code) {
+    return { TF:'#8B1A0A', Fo:'#C5482F', M:'#4A7FC4', F:'#4A7FC4', HZ:'#E5E7EB' }[code] || '#E5E7EB';
+  },
+  pprLabel(code) {
+    return { TF:'Rouge', Fo:'Rouge', M:'Bleue', F:'Bleue', HZ:'Blanche' }[code] || '—';
+  },
+
+  // Recalc hauteurs auto depuis N_ref
+  recalcZones() {
+    this.s.zones.forEach(z => {
+      if (!z.autoCalc) return;
+      const baseH = Math.max(0, this.nref - z.alt);
+      // Zone 1 : en brèche uniquement
+      if (z.id === 'z1') {
+        z.h = this.scenario === 'breche' ? +(baseH + 0.3).toFixed(1) : 0;
+        z.v = this.scenario === 'breche' ? 1.2 : 0;
+      } else {
+        z.h = +Math.max(0, baseH).toFixed(1);
+      }
+    });
+  },
+
+  // Rendu principal
+  render() {
+    this.recalcZones();
+    this.renderBanner();
+    this.renderBarSVG();
+    this.renderDigueSVG();
+    this.renderZonesTable();
+    this.renderPlanSVG();
+    this.renderZonage();
+    this.renderBadges();
+  },
+
+  // ── BANNER ──────────────────────────────────────────────
+  renderBanner() {
+    const nb = document.getElementById('pb-nref');
+    const n2 = document.getElementById('pb-nref2100');
+    const ps = document.getElementById('pb-scenario');
+    const pr = document.getElementById('pb-rouges');
+    const pp = document.getElementById('pb-plancher');
+    if (!nb) return;
+    nb.textContent = this.nref.toFixed(2).replace('.',',') + ' m';
+    nb.className = 'pprl-banner-val ' + (this.nref > 5.80 ? 'bad' : 'ok');
+    n2.textContent = this.nref2100.toFixed(2).replace('.',',') + ' m';
+    const rouge = this.s.zones.filter(z => {
+      const q = this.qualify(z.h, z.v); return q.code === 'TF' || q.code === 'Fo';
+    }).length;
+    pr.textContent = rouge + ' / ' + this.s.zones.length;
+    pr.className = 'pprl-banner-val ' + (rouge > 0 ? 'bad' : 'ok');
+    pp.textContent = (this.nref + 0.20).toFixed(2).replace('.',',') + ' m NGF';
+    ps.innerHTML = this.scenario === 'breche'
+      ? '<span class="pprl-scenario-badge" style="background:#C5482F;color:#fff;">BRÈCHE</span>'
+      : '<span class="pprl-scenario-badge" style="background:#2D6E3E;color:#fff;">DÉBORDEMENT SEUL</span>';
+  },
+
+  // ── MODULE BADGES ───────────────────────────────────────
+  renderBadges() {
+    const f = (id, txt, cls='') => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = txt; el.className = 'pprl-mod-badge ' + cls; }
+    };
+    const nrefStr = this.nref.toFixed(2).replace('.',',') + ' m NGF';
+    f('mb1', nrefStr, this.nref > 5.80 ? 'warn' : 'ok');
+    f('mb2', this.ouvrageOk ? 'Résistant' : 'Défaillant', this.ouvrageOk ? 'ok' : 'warn');
+    const rouge = this.s.zones.filter(z => { const q=this.qualify(z.h,z.v); return q.code==='TF'||q.code==='Fo'; }).length;
+    f('mb3', rouge + ' zone(s) rouge', rouge>0 ? 'warn' : 'ok');
+    f('mb4', 'Voir synthèse', '');
+  },
+
+  // ── SVG BAR (module 1) ───────────────────────────────────
+  renderBarSVG() {
+    const svg = document.getElementById('pprl-svg-bar');
+    if (!svg) return;
+    const W=240, H=280, marginL=50, barW=60, barX=90;
+    const maxNGF=9, scl=(H-40)/maxNGF;  // px per m
+    const toY = ngf => H-20 - ngf*scl;
+
+    let s = ``;
+    // Fond
+    s += `<rect width="${W}" height="${H}" fill="#F7F9FC"/>`;
+
+    // Axe Y
+    for (let ngf=0; ngf<=8; ngf+=1) {
+      const y = toY(ngf);
+      s += `<line x1="${barX-4}" y1="${y}" x2="${barX+barW+4}" y2="${y}" stroke="#DDD" stroke-width="${ngf%2===0?1:0.4}"/>`;
+      if (ngf%2===0) s += `<text x="${barX-8}" y="${y+3}" text-anchor="end" font-size="9" fill="#888" font-family="monospace">${ngf}</text>`;
+    }
+    s += `<line x1="${barX}" y1="${toY(0)}" x2="${barX}" y2="${toY(8)}" stroke="#BBB" stroke-width="0.5"/>`;
+    s += `<text x="${barX-8}" y="22" text-anchor="end" font-size="9" fill="#888" font-family="monospace">m NGF</text>`;
+
+    // Composantes empilées (depuis 0)
+    const comps = [
+      { val: this.s.maree,   color: '#3B82F6', label: 'Marée' },
+      { val: this.s.surcote, color: '#F59E0B', label: 'Surcote' },
+      { val: this.s.setup,   color: '#10B981', label: 'Setup' },
+    ];
+    let base = 0;
+    comps.forEach(c => {
+      const y1 = toY(base + c.val), y0 = toY(base);
+      s += `<rect x="${barX}" y="${y1}" width="${barW}" height="${y0-y1}" fill="${c.color}" opacity="0.85"/>`;
+      if ((y0-y1) > 14) {
+        s += `<text x="${barX+barW/2}" y="${(y0+y1)/2+3}" text-anchor="middle" font-size="9" fill="#fff" font-family="monospace" font-weight="700">${c.val.toFixed(2)}</text>`;
+        s += `<text x="${barX+barW+6}" y="${(y0+y1)/2+3}" text-anchor="start" font-size="9" fill="${c.color}" font-family="monospace">${c.label}</text>`;
+      }
+      base += c.val;
+    });
+
+    // Ligne digue
+    const yDigue = toY(5.80);
+    s += `<line x1="${barX-6}" y1="${yDigue}" x2="${barX+barW+60}" y2="${yDigue}" stroke="#374151" stroke-width="1.5" stroke-dasharray="5 3"/>`;
+    s += `<text x="${barX+barW+62}" y="${yDigue+3}" font-size="9" fill="#374151" font-family="monospace">Digue 5,80 m</text>`;
+
+    // N_ref
+    const yNref = toY(this.nref);
+    const nrefColor = this.nref > 5.80 ? '#C5482F' : '#1E3A5F';
+    s += `<line x1="${barX-6}" y1="${yNref}" x2="${barX+barW+60}" y2="${yNref}" stroke="${nrefColor}" stroke-width="2"/>`;
+    s += `<text x="${barX+barW+62}" y="${yNref+3}" font-size="9" fill="${nrefColor}" font-family="monospace" font-weight="700">N_ref ${this.nref.toFixed(2).replace('.',',')} m</text>`;
+
+    // 2050/2100
+    [{ ngf:this.nref2050, label:'2050', color:'#9CA3AF' }, { ngf:this.nref2100, label:'2100', color:'#6B7280' }].forEach(m => {
+      const y = toY(m.ngf);
+      s += `<line x1="${barX}" y1="${y}" x2="${barX+barW}" y2="${y}" stroke="${m.color}" stroke-width="1" stroke-dasharray="3 2"/>`;
+      s += `<circle cx="${barX-4}" cy="${y}" r="3" fill="${m.color}"/>`;
+      s += `<text x="${barX-8}" y="${y+3}" text-anchor="end" font-size="8" fill="${m.color}" font-family="monospace">${m.label}</text>`;
+    });
+
+    // Freeboard ou dépassement
+    if (this.nref > 5.80) {
+      s += `<rect x="${barX}" y="${yNref}" width="${barW}" height="${yDigue-yNref}" fill="#C5482F" opacity="0.2"/>`;
+      s += `<text x="${barX+barW/2}" y="${(yNref+yDigue)/2+3}" text-anchor="middle" font-size="9" fill="#C5482F" font-family="monospace" font-weight="700">+${(this.nref-5.80).toFixed(2)}m</text>`;
+    } else {
+      const rev = 5.80 - this.nref;
+      s += `<text x="${barX+barW/2}" y="${(yNref+yDigue)/2+3}" text-anchor="middle" font-size="8" fill="#2D6E3E" font-family="monospace">Rev. ${rev.toFixed(2)}m</text>`;
+    }
+
+    svg.innerHTML = s;
+  },
+
+  // ── SVG DIGUE CROSS-SECTION (module 2) ───────────────────
+  renderDigueSVG() {
+    const svg = document.getElementById('pprl-svg-digue');
+    if (!svg) return;
+    const W=620, H=220;
+    const maxNGF=8.5, scl=(H-30)/maxNGF;
+    const toY = ngf => H-15 - ngf*scl;
+    const nref = this.nref, crete=5.80;
+    const y_crete=toY(crete), y_nref=toY(nref), y_ter_mer=toY(2.0), y_ter_terre=toY(2.5);
+    const overtop = nref > crete;
+    const breche = !this.ouvrageOk;
+
+    // Positions x
+    const x_mer_end=240, x_base_mer=x_mer_end, x_crete_L=285, x_crete_R=315, x_base_terre=370, x_land_end=W-10;
+
+    let s = `<rect width="${W}" height="${H}" fill="#E8EFF5"/>`;
+
+    // Mer (fond)
+    s += `<rect x="0" y="0" width="${x_mer_end}" height="${H}" fill="#DBEAFE" opacity="0.5"/>`;
+
+    // Eau de mer (dynamique)
+    const y_water = Math.min(y_nref, toY(0));
+    const y_water_display = Math.max(y_water, y_crete); // au-dessus de la crête si débordement
+    if (y_ter_mer > y_water) {
+      s += `<polygon points="0,${y_water} ${x_base_mer},${y_water} ${x_base_mer},${y_ter_mer} 0,${y_ter_mer}" fill="#3B82F6" opacity="0.55"/>`;
+    }
+    s += `<rect x="0" y="${y_ter_mer}" width="${x_base_mer}" height="${H-y_ter_mer}" fill="#1E3A8A" opacity="0.08"/>`;
+
+    // Terrain naturel mer
+    s += `<line x1="0" y1="${y_ter_mer}" x2="${x_base_mer}" y2="${y_ter_mer}" stroke="#92400E" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+
+    // DIGUE (trapèze)
+    const diguePath = `${x_base_mer},${y_ter_mer} ${x_crete_L},${y_crete} ${x_crete_R},${y_crete} ${x_base_terre},${y_ter_terre} ${x_base_terre},${H} ${x_base_mer},${H}`;
+    s += `<polygon points="${diguePath}" fill="#6B7280" stroke="#374151" stroke-width="1.5"/>`;
+    // Crête highlight
+    s += `<line x1="${x_crete_L}" y1="${y_crete}" x2="${x_crete_R}" y2="${y_crete}" stroke="#D1FAE5" stroke-width="3" opacity="0.7"/>`;
+
+    // Terre
+    s += `<rect x="${x_base_terre}" y="${y_ter_terre}" width="${x_land_end-x_base_terre}" height="${H-y_ter_terre}" fill="#D97706" opacity="0.08"/>`;
+    s += `<line x1="${x_base_terre}" y1="${y_ter_terre}" x2="${x_land_end}" y2="${y_ter_terre}" stroke="#92400E" stroke-width="1" stroke-dasharray="4 3"/>`;
+
+    // Débordement
+    if (overtop) {
+      // Eau sur crête
+      s += `<rect x="${x_crete_L}" y="${y_nref}" width="${x_crete_R-x_crete_L}" height="${y_crete-y_nref}" fill="#3B82F6" opacity="0.7"/>`;
+      // Débordement côté terre
+      const xFlood = breche ? x_land_end : Math.min(x_base_terre + 80, x_land_end);
+      s += `<polygon points="${x_crete_R},${y_nref} ${x_crete_R},${y_crete} ${x_base_terre},${y_ter_terre} ${xFlood},${y_ter_terre} ${xFlood},${y_nref}" fill="#3B82F6" opacity="${breche?0.45:0.3}"/>`;
+      // Flèche flux
+      s += `<text x="${(x_crete_R+x_base_terre)/2}" y="${y_nref-5}" text-anchor="middle" font-size="9" fill="#C5482F" font-family="monospace" font-weight="700">→ DÉBORDEMENT</text>`;
+    }
+
+    // Brèche scenario
+    if (breche) {
+      // Gap rouge dans la digue
+      const gapL=290, gapR=310;
+      s += `<rect x="${gapL}" y="${y_crete}" width="${gapR-gapL}" height="30" fill="#C5482F" opacity="0.8"/>`;
+      s += `<text x="${(gapL+gapR)/2}" y="${y_crete+20}" text-anchor="middle" font-size="8" fill="#fff" font-family="monospace" font-weight="700">BRÈCHE</text>`;
+      // Zone TF derrière
+      s += `<rect x="${x_base_terre}" y="${y_ter_terre}" width="120" height="${H-y_ter_terre}" fill="#C5482F" opacity="0.15"/>`;
+      s += `<text x="${x_base_terre+60}" y="${y_ter_terre+22}" text-anchor="middle" font-size="9" fill="#C5482F" font-family="monospace" font-weight="700">ZONE TF</text>`;
+      s += `<text x="${x_base_terre+60}" y="${y_ter_terre+34}" text-anchor="middle" font-size="8" fill="#C5482F" font-family="monospace">Bande précaution</text>`;
+    }
+
+    // Ligne N_ref
+    const lineCol = nref > crete ? '#C5482F' : '#1E3A5F';
+    s += `<line x1="30" y1="${y_nref}" x2="${x_base_mer}" y2="${y_nref}" stroke="${lineCol}" stroke-width="2"/>`;
+    s += `<text x="32" y="${y_nref-4}" font-size="9" fill="${lineCol}" font-family="monospace" font-weight="700">N_ref ${nref.toFixed(2).replace('.',',')} m NGF</text>`;
+
+    // Ligne crête label
+    s += `<text x="${(x_crete_L+x_crete_R)/2}" y="${y_crete-6}" text-anchor="middle" font-size="9" fill="#D1FAE5" font-family="monospace" font-weight="700">5,80 m</text>`;
+
+    // Axe NGF
+    s += `<line x1="18" y1="${toY(0)}" x2="18" y2="${toY(7)}" stroke="#AAA" stroke-width="0.5"/>`;
+    for (let g=0; g<=7; g+=1) {
+      const y=toY(g);
+      s += `<line x1="14" y1="${y}" x2="22" y2="${y}" stroke="#AAA" stroke-width="0.7"/>`;
+      if (g%2===0) s += `<text x="12" y="${y+3}" text-anchor="end" font-size="8" fill="#888" font-family="monospace">${g}</text>`;
+    }
+    s += `<text x="18" y="${toY(7.2)}" text-anchor="middle" font-size="8" fill="#888" font-family="monospace">m</text>`;
+
+    // Labels fixes
+    s += `<text x="${x_mer_end/2}" y="${H-5}" text-anchor="middle" font-size="9" fill="#1E40AF" font-family="monospace">MER</text>`;
+    s += `<text x="${(x_base_terre+x_land_end)/2}" y="${H-5}" text-anchor="middle" font-size="9" fill="#78350F" font-family="monospace">TERRE</text>`;
+    s += `<text x="${(x_crete_L+x_crete_R)/2}" y="${H-5}" text-anchor="middle" font-size="8" fill="#4B5563" font-family="monospace">DIGUE</text>`;
+
+    svg.innerHTML = s;
+  },
+
+  // ── ZONES TABLE + inputs (module 3) ─────────────────────
+  renderZonesTable() {
+    const tbody = document.getElementById('pprl-zones-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = this.s.zones.map(z => {
+      const q = this.qualify(z.h, z.v);
+      const pprC = this.pprColor(q.code);
+      const pprL = this.pprLabel(q.code);
+      return `<tr>
+        <td style="font-size:12.5px;"><strong style="color:var(--navy);">${z.label}</strong><br><span style="font-size:11px;color:var(--grey-txt);">${z.subLabel}</span></td>
+        <td style="font-family:var(--mono);font-size:12px;color:var(--grey-txt);">${z.alt.toFixed(1)}</td>
+        <td><input type="number" id="ph_${z.id}" min="0" max="5" step="0.1" value="${z.h}" oninput="pprlZoneInput('${z.id}')" style="width:60px;"></td>
+        <td><input type="number" id="pv_${z.id}" min="0" max="5" step="0.1" value="${z.v}" oninput="pprlZoneInput('${z.id}')" style="width:60px;"></td>
+        <td><span class="pprl-alea-pill pprl-alea-${q.code}">${q.label}</span></td>
+        <td><span class="pprl-zone-ppr" style="background:${pprC};">${pprL}</span></td>
+      </tr>`;
+    }).join('');
+  },
+
+  // ── SVG PLAN TERRITOIRE (module 3) ───────────────────────
+  renderPlanSVG() {
+    const svg = document.getElementById('pprl-svg-plan');
+    if (!svg) return;
+    const W=340, H=300;
+    let s = `<rect width="${W}" height="${H}" fill="#EEF2F7" rx="6"/>`;
+
+    // Mer
+    s += `<rect x="0" y="0" width="${W}" height="65" fill="#BFDBFE" rx="2"/>`;
+    s += `<text x="${W/2}" y="36" text-anchor="middle" font-size="10" fill="#1E40AF" font-family="monospace">~ ~ MER ~ ~</text>`;
+
+    // Digue
+    s += `<rect x="0" y="65" width="${W}" height="8" fill="#4B5563"/>`;
+    s += `<text x="8" y="78" font-size="8" fill="#4B5563" font-family="monospace">DIGUE 1962</text>`;
+
+    // Zones configurables
+    const ZONE_RECTS = [
+      { id:'z1', x:0,   y:73, w:160, h:70, nx:80,  ny:115 },
+      { id:'z2', x:0,   y:143,w:160, h:70, nx:80,  ny:183 },
+      { id:'z3', x:160, y:73, w:180, h:70, nx:250, ny:115 },
+      { id:'z4', x:160, y:143,w:180, h:70, nx:250, ny:183 },
+      { id:'z5', x:50,  y:213,w:240, h:75, nx:170, ny:255 },
+    ];
+
+    ZONE_RECTS.forEach(r => {
+      const zone = this.s.zones.find(z => z.id === r.id);
+      if (!zone) return;
+      const q = this.qualify(zone.h, zone.v);
+      const col = this.pprColor(q.code);
+      const opacity = q.code === 'HZ' ? 0.15 : 0.35;
+      s += `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="${col}" opacity="${opacity}" stroke="${col}" stroke-width="1.5" stroke-opacity="0.5"/>`;
+      // Label
+      s += `<text x="${r.nx}" y="${r.ny-8}" text-anchor="middle" font-size="8.5" fill="#1F2937" font-family="monospace" font-weight="700">${zone.label.split(' ').slice(0,2).join(' ')}</text>`;
+      s += `<text x="${r.nx}" y="${r.ny+4}" text-anchor="middle" font-size="8" fill="${col === '#E5E7EB' ? '#6B7280' : col}" font-family="monospace" font-weight="700">${this.pprLabel(q.code)}</text>`;
+      // Badge h/V
+      if (zone.h > 0) {
+        s += `<text x="${r.nx}" y="${r.ny+15}" text-anchor="middle" font-size="7.5" fill="#4B5563" font-family="monospace">h=${zone.h}m  V=${zone.v}m/s</text>`;
+      }
+    });
+
+    // Légende
+    [['TF','Très fort','#1E3A5F'],['Fo','Fort','#C5482F'],['M','Modéré','#4A7FC4'],['F','Faible','#5C8A4F'],['HZ','Hors aléa','#9CA3AF']].forEach(([,label,color],i) => {
+      s += `<rect x="${8 + i*62}" y="${H-14}" width="10" height="10" fill="${color}" opacity="0.8" rx="2"/>`;
+      s += `<text x="${21 + i*62}" y="${H-6}" font-size="7.5" fill="#4B5563" font-family="monospace">${label}</text>`;
+    });
+
+    svg.innerHTML = s;
+  },
+
+  // ── ZONAGE RÉGLEMENTAIRE (module 4) ──────────────────────
+  renderZonage() {
+    const tbl = document.getElementById('pprl-zonage-table');
+    if (!tbl) return;
+    const zoneCounts = { TF:0, Fo:0, M:0, F:0, HZ:0 };
+    this.s.zones.forEach(z => { const q=this.qualify(z.h,z.v); zoneCounts[q.code]++; });
+
+    // Lignes zonage
+    const rows = [
+      {
+        col:'#8B1A0A', label:'Rouge (fort)',
+        alea:'Très fort', h100:'—',
+        principe:'Interdiction quasi-totale. Extensions de bâti existant très limitées, sous conditions strictes. Pas de nouveaux ERP.',
+        appli: this.s.zones.filter(z => this.qualify(z.h,z.v).code==='TF').map(z=>z.label).join(', ') || '—'
+      },
+      {
+        col:'#C5482F', label:'Rouge',
+        alea:'Fort', h100:'—',
+        principe:'Interdiction constructive. Mesures de protection et de réduction de vulnérabilité imposées sur existant dans les 5 ans.',
+        appli: this.s.zones.filter(z => this.qualify(z.h,z.v).code==='Fo').map(z=>z.label).join(', ') || '—'
+      },
+      {
+        col:'#F59E0B', label:'Rouge clair',
+        alea:'Faible/Modéré actuel', h100:'Fort ou TF',
+        principe:`Zone d'anticipation : pas d'extension de l'urbanisation. Droit de délaissement ouvert.`,
+        appli: 'Secteurs en aléa faible actuel mais fort à 2100 (+0,60 m)'
+      },
+      {
+        col:'#4A7FC4', label:'Bleue',
+        alea:'Faible ou Modéré', h100:'Faible/Modéré',
+        principe:`Constructible sous prescriptions : plancher ≥ ${(this.nref+0.20).toFixed(2).replace('.',',')} m NGF, accès zone refuge, diagnostics de vulnérabilité.`,
+        appli: this.s.zones.filter(z => { const c=this.qualify(z.h,z.v).code; return c==='M'||c==='F'; }).map(z=>z.label).join(', ') || '—'
+      },
+      {
+        col:'#D1D5DB', label:'Blanche',
+        alea:'Hors aléa', h100:'—',
+        principe:`Règles PLU applicables. Vigilance : nouvelles constructions ne doivent pas aggraver l'aléa en aval.`,
+        appli: this.s.zones.filter(z => this.qualify(z.h,z.v).code==='HZ').map(z=>z.label).join(', ') || '—'
+      },
+    ];
+
+    tbl.innerHTML = `<thead><tr>
+      <th>Zone</th><th>Aléa actuel</th><th>Horizon 2100</th><th>Principe</th><th>Anse-de-Goulven</th>
+    </tr></thead><tbody>` +
+    rows.map(r => `<tr>
+      <td><span class="pprl-zone-color" style="background:${r.col};"></span><strong>${r.label}</strong></td>
+      <td style="font-family:var(--mono);font-size:11px;">${r.alea}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--grey-txt);">${r.h100}</td>
+      <td>${r.principe}</td>
+      <td style="font-size:12px;color:var(--grey-txt);">${r.appli}</td>
+    </tr>`).join('') + '</tbody>';
+
+    // Prescriptions
+    const presc = document.getElementById('pprl-prescriptions');
+    if (presc) presc.innerHTML = [
+      { label:'Cote plancher (zone bleue)', val:(this.nref+0.20).toFixed(2).replace('.',',')+' m NGF', note:'N_ref T100 + 0,20 m revanche minimale' },
+      { label:'Cote plancher (zone rouge)', val:'≥ '+(this.nref+0.50).toFixed(2).replace('.',',')+' m NGF', note:'Si ERP existant maintenu par dérogation' },
+      { label:'Zone refuge', val:'+1 étage min.', note:'Niveau accessible hors submersion pour tout bâti' },
+      { label:'ERP sensibles', val:'Interdits', note:'EHPAD, écoles, hôpitaux : zones hors aléa uniquement' },
+      { label:'Campings', val:'PPI obligatoire', note:"Plan particulier d'intervention + convention préfet" },
+      { label:'Délai mise en conformité', val:'5 ans', note:'Art. L.562-1 III — réductible si urgence' },
+    ].map(p => `<div class="pprl-presc-card">
+      <div class="pprl-presc-card-label">${p.label}</div>
+      <div class="pprl-presc-card-val">${p.val}</div>
+      <div class="pprl-presc-card-note">${p.note}</div>
+    </div>`).join('');
+  },
+};
+
+// ── Fonctions d'UI ────────────────────────────────────────────
+function pprlToggleMod(id) {
+  document.getElementById(id)?.classList.toggle('closed');
+}
+
+function pprlSlider(key, val) {
+  PPRL.s[key] = parseFloat(val);
+  // Mettre à jour le label du slider
+  const el = document.getElementById('pprl-sval-'+key);
+  if (el) el.textContent = parseFloat(val).toFixed(2).replace('.',',');
+  PPRL.render();
+}
+
+function pprlCritere(key, checked) {
+  PPRL.s[key] = checked;
+  PPRL.render();
+}
+
+function pprlZoneInput(zid) {
+  const h = parseFloat(document.getElementById('ph_'+zid)?.value || 0);
+  const v = parseFloat(document.getElementById('pv_'+zid)?.value || 0);
+  const z = PPRL.s.zones.find(x => x.id===zid);
+  if (z) { z.h = h; z.v = v; z.autoCalc = false; }
+  PPRL.renderZonesTable();
+  PPRL.renderPlanSVG();
+  PPRL.renderZonage();
+  PPRL.renderBanner();
+  PPRL.renderBadges();
+}
+
+// ── Initialisation ────────────────────────────────────────────
+function pprlInit() {
+  // Sliders config
+  const sliderDefs = [
+    { key:'maree',   label:'C2 — Marée astronomique (PMVE)',  min:4.0, max:5.5, step:0.05, unit:'m NGF', desc:'Pleine mer de vive-eau extrême coeff. 120 — Brest/Finistère nord, marnage macrotidal' },
+    { key:'surcote', label:'C3 — Surcote météorologique T100', min:0.7, max:1.5, step:0.05, unit:'m',     desc:'Événement centennal ou historique si > T100 — Façade Manche-Atlantique : 1,0 à 1,4 m' },
+    { key:'setup',   label:'C4 — Wave setup (run-up résiduel)', min:0.0, max:0.30,step:0.05, unit:'m',    desc:'Surhaussement dû aux vagues — Anse-de-Goulven : exposition nord-ouest' },
+  ];
+  const container = document.getElementById('pprl-sliders');
+  if (container) container.innerHTML = sliderDefs.map(s => `
+    <div class="pprl-slider-row">
+      <div class="pprl-slider-top">
+        <span class="pprl-slider-name">${s.label}</span>
+        <span class="pprl-slider-val"><span id="pprl-sval-${s.key}">${PPRL.s[s.key].toFixed(2).replace('.',',')}</span> ${s.unit}</span>
+      </div>
+      <input type="range" min="${s.min}" max="${s.max}" step="${s.step}" value="${PPRL.s[s.key]}"
+             oninput="pprlSlider('${s.key}', this.value)">
+      <div class="pprl-slider-desc">${s.desc}</div>
+    </div>`).join('');
+
+  // Critères ouvrage
+  const critDefs = [
+    { key:'c1', label:'Résistance hydraulique documentée', desc:'Dimensionnement vérifié ≥ T100 actuel, note de calcul disponible.', auto:false },
+    { key:'c2', label:'État physique satisfaisant', desc:'Contrôle visuel < 5 ans, absence de désordres (fissures, affouillements, poinçonnement).', auto:false },
+    { key:'c3', label:'Gestionnaire et entretien identifiés', desc:"Maître d'ouvrage désigné, convention GEMAPI, programme d'entretien actif.", auto:false },
+    { key:'c4auto', label:'Cote crête ≥ N_ref T100 + 0,50 m revanche', desc:'Calculé automatiquement depuis le module 01.', auto:true },
+  ];
+  const cc = document.getElementById('pprl-criteres');
+  if (cc) cc.innerHTML = critDefs.map(c => `
+    <label class="pprl-crit-label${c.auto?' auto':''}">
+      <input type="checkbox" ${c.auto?'id="pprl-c4-auto" disabled':'onchange="pprlCritere(\''+c.key+'\', this.checked)"'}
+             ${c.auto && PPRL.c4auto ? 'checked':''}>
+      <div>
+        <div class="pprl-crit-title">${c.label}</div>
+        <div class="pprl-crit-desc">${c.desc}</div>
+      </div>
+    </label>`).join('');
+
+  PPRL.render();
+
+  // Mettre à jour nref-results & alert dynamiquement
+  pprlUpdateInlineResults();
+}
+
+function pprlUpdateInlineResults() {
+  const nref = PPRL.nref;
+  const res = document.getElementById('pprl-nref-results');
+  if (res) res.innerHTML = [
+    { label:'N_ref T100', val:nref, sub:'actuel' },
+    { label:'N_ref 2050', val:PPRL.nref2050, sub:'+0,20 m TRACC' },
+    { label:'N_ref 2100', val:PPRL.nref2100, sub:'+0,60 m TRACC' },
+  ].map(r => `<div class="pprl-nref-card">
+    <div class="pprl-nref-card-label">${r.label}</div>
+    <div class="pprl-nref-card-val">${r.val.toFixed(2).replace('.',',')}</div>
+    <div class="pprl-nref-unit">m NGF · ${r.sub}</div>
+  </div>`).join('');
+
+  const rev = PPRL.revanche;
+  const alert = document.getElementById('pprl-nref-alert');
+  if (alert) {
+    alert.style.display = 'block';
+    if (rev < 0) {
+      alert.className = 'pprl-nref-alert over';
+      alert.textContent = `⚠ Débordement T100 confirmé : N_ref dépasse la digue de ${Math.abs(rev).toFixed(2)} m`;
+    } else if (rev < 0.5) {
+      alert.className = 'pprl-nref-alert warn';
+      alert.textContent = `Revanche insuffisante : ${rev.toFixed(2)} m (minimum requis : 0,50 m)`;
+    } else {
+      alert.className = 'pprl-nref-alert ok';
+      alert.textContent = `Revanche satisfaisante : ${rev.toFixed(2)} m`;
+    }
+    // Critère 4 auto
+    const c4 = document.getElementById('pprl-c4-auto');
+    if (c4) c4.checked = PPRL.c4auto;
+    // Verdict ouvrage
+    const v = document.getElementById('pprl-ouvrage-verdict');
+    if (v) {
+      v.style.display = 'block';
+      if (PPRL.ouvrageOk) {
+        v.className = 'pprl-ouvrage-verdict ok';
+        v.innerHTML = '✓ Ouvrage résistant. Scénario retenu : submersion par débordement seul.';
+      } else {
+        v.className = 'pprl-ouvrage-verdict bad';
+        const manq = [!PPRL.s.c1&&'résistance hydraulique',!PPRL.s.c2&&'état physique',!PPRL.s.c3&&'gestionnaire',!PPRL.c4auto&&'revanche'].filter(Boolean);
+        v.innerHTML = `⚠ Ouvrage défaillant (${manq.join(', ')}). Scénario brèche imposé : bande de précaution en zone rouge sans dérogation.`;
+      }
+    }
+  }
+}
+
+// Surcharger render pour inclure updateInlineResults
+const _pprlRenderBase = PPRL.render.bind(PPRL);
+PPRL.render = function() {
+  _pprlRenderBase();
+  pprlUpdateInlineResults();
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(pprlInit, 250);
+});
+
 </script>
 
 
