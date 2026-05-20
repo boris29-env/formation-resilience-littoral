@@ -894,6 +894,196 @@ input.imm-range::-moz-range-thumb {
   border: 2px solid var(--paper);
   cursor: pointer;
 }
+.imm-slider-hint {
+  display: flex; justify-content: space-between;
+  margin-top: 8px;
+  font-family: var(--mono); font-size: 9px;
+  opacity: 0.65; letter-spacing: 0.06em;
+}
+.imm-slider-hint span:nth-child(2) {
+  color: var(--coral); font-weight: 600; opacity: 1;
+  text-transform: uppercase;
+}
+
+/* === Immersion loader & attribution === */
+.imm-loader {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(6,23,38,0.92);
+  border: 1px solid rgba(246,241,231,0.18);
+  border-radius: 14px;
+  padding: 24px 32px;
+  color: var(--paper);
+  display: flex; flex-direction: column; align-items: center;
+  gap: 14px;
+  z-index: 50;
+  min-width: 240px;
+}
+.imm-loader-spinner {
+  width: 32px; height: 32px;
+  border: 3px solid rgba(246,241,231,0.15);
+  border-top-color: var(--coral);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.imm-loader-text {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.10em; text-transform: uppercase;
+}
+.imm-attrib {
+  position: absolute; bottom: 8px; left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono); font-size: 9px;
+  color: rgba(246,241,231,0.55);
+  letter-spacing: 0.08em;
+  background: rgba(6,23,38,0.5);
+  padding: 4px 12px; border-radius: 999px;
+  pointer-events: none;
+}
+
+/* === Picker overlay === */
+.imm-picker {
+  position: fixed; inset: 0;
+  background: rgba(6,23,38,0.7);
+  z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(10px);
+}
+.imm-picker-box {
+  width: 480px; max-width: 92vw; max-height: 80vh;
+  background: var(--foam);
+  border-radius: 18px;
+  display: flex; flex-direction: column;
+  box-shadow: var(--shadow-lg);
+}
+.imm-picker-box header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.imm-picker-box header strong { font-family: var(--serif); font-size: 18px; font-weight: 600; }
+.imm-picker-box header button {
+  background: rgba(11,27,43,0.06); border-radius: 50%;
+  width: 28px; height: 28px;
+}
+.imm-picker-box input {
+  margin: 12px 20px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: inherit;
+}
+.imm-picker-list {
+  flex: 1; overflow-y: auto;
+  padding: 0 12px 12px;
+}
+.imm-picker-item {
+  padding: 12px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px;
+  align-items: center;
+  transition: background 0.15s;
+}
+.imm-picker-item:hover { background: rgba(11,27,43,0.05); }
+.imm-picker-item .flag {
+  width: 4px; height: 32px; border-radius: 2px;
+}
+.imm-picker-item .name { font-weight: 500; font-size: 14px; }
+.imm-picker-item .meta {
+  font-family: var(--mono); font-size: 10px;
+  opacity: 0.5; letter-spacing: 0.08em; text-transform: uppercase;
+  margin-top: 2px;
+}
+.imm-picker-item .rate {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--coral); font-weight: 600;
+}
+
+/* === Avant/Après comparateur === */
+.comparator {
+  background: var(--paper);
+  padding: 80px 28px;
+  max-width: none;
+}
+.comp-stage {
+  max-width: 1400px; margin: 28px auto 0;
+}
+#compMap {
+  height: 600px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  background: #0a1c2e;
+}
+#compMap .leaflet-container { background: #0a1c2e; }
+.comp-divider {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 4px;
+  background: var(--paper);
+  z-index: 400;
+  pointer-events: auto;
+  cursor: ew-resize;
+  box-shadow: 0 0 24px rgba(0,0,0,0.4);
+}
+.comp-divider::before {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 36px; height: 36px;
+  background: var(--paper);
+  border-radius: 50%;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.comp-divider::after {
+  content: "‹›"; position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--mono); font-size: 18px; font-weight: 700;
+  color: var(--ink);
+}
+.comp-label-overlay {
+  position: absolute; top: 16px;
+  background: rgba(6,23,38,0.85);
+  color: var(--paper);
+  padding: 8px 14px; border-radius: 999px;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  z-index: 401;
+  pointer-events: none;
+}
+.comp-controls {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 14px 18px;
+  background: var(--foam);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.comp-side {
+  display: flex; flex-direction: column; gap: 4px;
+  flex: 1;
+}
+.comp-label {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--ink-2); opacity: 0.6;
+}
+.comp-controls select {
+  font: inherit; font-size: 13px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+}
+.comp-pop { flex: 1; text-align: center; }
+.comp-pop select { font-weight: 500; }
+
+/* PPR/contour styles on map */
+.commune-contour { stroke: #E86E55; stroke-width: 3; fill: rgba(232,110,85,0.06); }
+.ppr-zone { stroke: #B84028; stroke-width: 1; fill: rgba(184,64,40,0.25); }
 
 /* =========================================================
    FLOOD MODULE
@@ -1290,7 +1480,8 @@ input.imm-range::-moz-range-thumb {
   <nav class="nav-main" aria-label="Navigation principale">
     <a href="#atlas" class="nav-link active">Atlas</a>
     <a href="#simulation" class="nav-link">Simulation</a>
-    <a href="#immersion" class="nav-link">Immersion 3D</a>
+    <a href="#immersion" class="nav-link">3D temps réel</a>
+    <a href="#avant-apres" class="nav-link">Avant/après</a>
     <a href="#inondation" class="nav-link">Inondation</a>
     <a href="#dashboard" class="nav-link">Tableau de bord</a>
   </nav>
@@ -1402,6 +1593,18 @@ input.imm-range::-moz-range-thumb {
             <label class="layer-toggle">
               <input type="checkbox" id="lyrSubmersion">
               <span>Submersion marine <em style="opacity:.55;font-style:normal;font-size:10px;">· Géolittoral</em></span>
+            </label>
+            <label class="layer-toggle">
+              <input type="checkbox" id="lyrOuvrages">
+              <span>Ouvrages côtiers <em style="opacity:.55;font-style:normal;font-size:10px;">· DGALN</em></span>
+            </label>
+            <label class="layer-toggle">
+              <input type="checkbox" id="lyrConservatoire">
+              <span>Conservatoire du littoral <em style="opacity:.55;font-style:normal;font-size:10px;">· CDL</em></span>
+            </label>
+            <label class="layer-toggle">
+              <input type="checkbox" id="lyrPPR">
+              <span>PPRN/PPRL <em style="opacity:.55;font-style:normal;font-size:10px;">· Géorisques</em></span>
             </label>
           </div>
           <div class="map-zoom-info" id="mapZoomInfo">ÉCHELLE&nbsp;: ~1:1 200 000</div>
@@ -1530,12 +1733,13 @@ input.imm-range::-moz-range-thumb {
 =========================================================== -->
 <section id="immersion" class="immersion">
   <div class="section-head" style="max-width:1400px;margin-left:auto;margin-right:auto;">
-    <div class="section-eyebrow">03 · Immersion volumétrique</div>
-    <h2 class="section-title">Voyez le territoire <em>en relief</em>,<br>tournez-le, plongez-le.</h2>
+    <div class="section-eyebrow">03 · Maquette 3D temps réel · données IGN</div>
+    <h2 class="section-title">Le <em>vrai relief</em>,<br>les vrais bâtiments.</h2>
     <p class="section-lead">
-      Une maquette 3D temps réel de votre secteur, accessible sans logiciel.
-      Faites monter la mer mètre par mètre, observez les bâtiments concernés,
-      partagez la vue à vos administrés en un lien.
+      Choisissez une commune littorale et la plateforme construit en quelques
+      secondes une maquette 3D&nbsp;: MNT IGN&nbsp;RGE&nbsp;ALTI® (5&nbsp;m),
+      bâtiments extrudés depuis la BD&nbsp;TOPO® (avec hauteur réelle),
+      orthophoto IGN drapée comme texture. Faites monter la mer en NGF-IGN69.
     </p>
   </div>
 
@@ -1543,45 +1747,126 @@ input.imm-range::-moz-range-thumb {
     <canvas id="threeCanvas"></canvas>
     <div class="imm-ui">
       <div class="imm-title">
-        <div class="imm-title-eyebrow">Maquette · Secteur démonstrateur</div>
-        <div class="imm-title-main">Anse du Phare · Vue oblique sud</div>
+        <div class="imm-title-eyebrow" id="immEyebrow">Maquette · MNT RGE ALTI® + BD TOPO®</div>
+        <div class="imm-title-main" id="immTitle">Soulac-sur-Mer · Le Signal</div>
       </div>
       <div class="imm-controls">
+        <button class="imm-btn" id="immChoose">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Changer de commune
+        </button>
         <button class="imm-btn active" id="immRotate">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
-          Rotation auto
+          Orbite auto
         </button>
         <button class="imm-btn" id="immTide">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12c3-3 6 3 9 0s6-3 9 0"/><path d="M3 18c3-3 6 3 9 0s6-3 9 0"/></svg>
-          Marées
+          Marée
         </button>
         <button class="imm-btn active" id="immBuildingsBtn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="6" height="10"/><rect x="14" y="6" width="6" height="14"/></svg>
-          Bâti exposé
+          BD TOPO
+        </button>
+        <button class="imm-btn" id="immWires">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18M6 3v18M12 3v18M18 3v18"/></svg>
+          Filaire
         </button>
       </div>
 
       <div class="imm-readout">
         <div class="imm-readout-item">
           <div class="imm-readout-label">Niveau marin</div>
-          <div class="imm-readout-value" id="immSeaLevel">+0,40<small>m</small></div>
+          <div class="imm-readout-value" id="immSeaLevel">+0,00<small>m NGF</small></div>
         </div>
         <div class="imm-readout-item">
-          <div class="imm-readout-label">Bâtiments inondés</div>
-          <div class="imm-readout-value" id="immBuildingsReadout">3<small>/ 28</small></div>
+          <div class="imm-readout-label">Bâti BD&nbsp;TOPO inondé</div>
+          <div class="imm-readout-value" id="immBuildingsReadout">— <small>/ —</small></div>
         </div>
         <div class="imm-readout-item">
           <div class="imm-readout-label">Surface immergée</div>
-          <div class="imm-readout-value" id="immArea">2,4<small>ha</small></div>
+          <div class="imm-readout-value" id="immArea">— <small>ha</small></div>
+        </div>
+        <div class="imm-readout-item">
+          <div class="imm-readout-label">Altitude min/max</div>
+          <div class="imm-readout-value" id="immAlti">— / —<small>m</small></div>
         </div>
       </div>
 
       <div class="imm-slider-wrap">
         <div class="imm-slider-label">
-          <span>Élévation simulée</span>
-          <strong id="immSliderValue">+0,40 m</strong>
+          <span>Niveau marin simulé</span>
+          <strong id="immSliderValue">+0,00 m</strong>
         </div>
-        <input type="range" class="imm-range" id="immRange" min="0" max="300" value="40">
+        <input type="range" class="imm-range" id="immRange" min="0" max="600" value="0" step="5">
+        <div class="imm-slider-hint">
+          <span>0 m</span>
+          <span id="immScenarioHint">SSP2-4.5 · 2100 : +0,56 m</span>
+          <span>+6 m</span>
+        </div>
+      </div>
+
+      <div class="imm-loader" id="immLoader" style="display:none;">
+        <div class="imm-loader-spinner"></div>
+        <div class="imm-loader-text" id="immLoaderText">Chargement…</div>
+      </div>
+
+      <div class="imm-attrib">
+        Sources : MNT RGE ALTI® · BD TOPO® · BD ORTHO® — © IGN-F / Géoplateforme
+      </div>
+    </div>
+  </div>
+
+  <!-- Commune picker overlay -->
+  <div class="imm-picker" id="immPicker" style="display:none;">
+    <div class="imm-picker-box">
+      <header>
+        <strong>Choisir une commune</strong>
+        <button id="immPickerClose">✕</button>
+      </header>
+      <input type="text" id="immPickerSearch" placeholder="Rechercher une commune…">
+      <div class="imm-picker-list" id="immPickerList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================================
+     AVANT / APRÈS ORTHOPHOTO
+=========================================================== -->
+<section id="avant-apres" class="comparator">
+  <div class="section-head" style="max-width:1400px;margin-left:auto;margin-right:auto;">
+    <div class="section-eyebrow">03b · Comparateur orthophoto · IGN</div>
+    <h2 class="section-title">Le <em>recul observé</em>, glissez la barre.</h2>
+    <p class="section-lead">
+      Côté gauche, l'orthophoto IGN de référence (campagnes 1950-1965 ou 2000),
+      côté droit la BD&nbsp;ORTHO® actuelle. Pas un montage, deux images officielles
+      géoréférencées au même endroit.
+    </p>
+  </div>
+
+  <div class="comp-stage">
+    <div id="compMap" role="application"></div>
+    <div class="comp-controls">
+      <div class="comp-side">
+        <span class="comp-label">Gauche</span>
+        <select id="compLeft">
+          <option value="1950-1965" selected>1950-1965 · BD ORTHO historique</option>
+          <option value="1965-1980">1965-1980 · BD ORTHO historique</option>
+          <option value="1980-1995">1980-1995 · BD ORTHO historique</option>
+          <option value="2000">~2000 · BD ORTHO COAST</option>
+          <option value="current">BD ORTHO actuelle</option>
+        </select>
+      </div>
+      <div class="comp-pop">
+        <select id="compCommunePicker"></select>
+      </div>
+      <div class="comp-side">
+        <span class="comp-label">Droite</span>
+        <select id="compRight">
+          <option value="current" selected>BD ORTHO actuelle</option>
+          <option value="2000">~2000 · BD ORTHO COAST</option>
+          <option value="1980-1995">1980-1995 · historique</option>
+          <option value="1950-1965">1950-1965 · historique</option>
+        </select>
       </div>
     </div>
   </div>
@@ -1831,11 +2116,13 @@ input.imm-range::-moz-range-thumb {
       <div class="method-col">
         <h4>Données branchées</h4>
         <ul>
-          <li><a href="https://data.geopf.fr/" target="_blank">IGN Géoplateforme</a> · WMTS Plan IGN, Orthophoto, LIDAR HD</li>
-          <li><a href="https://data.geopf.fr/wfs" target="_blank">WFS AdminExpress 2025</a> · communes, contours, population</li>
-          <li><a href="https://www.geolittoral.developpement-durable.gouv.fr/" target="_blank">Géolittoral DGALN</a> · trait de côte Histolitt, submersion</li>
+          <li><a href="https://data.geopf.fr/" target="_blank">IGN Géoplateforme</a> · WMTS Plan IGN, Orthophoto 2024 + historiques 1950-1965/65-80/80-95</li>
+          <li><a href="https://data.geopf.fr/altimetrie" target="_blank">RGE ALTI® API</a> · MNT 5 m utilisé en direct dans la 3D</li>
+          <li><a href="https://data.geopf.fr/wfs" target="_blank">WFS Géoplateforme</a> · BD TOPO® bâtiment (hauteur, altitude), AdminExpress</li>
+          <li><a href="https://apicarto.ign.fr/api/doc/" target="_blank">APIcarto IGN</a> · cadastre commune, PLU prescriptions risques</li>
+          <li><a href="https://www.geolittoral.developpement-durable.gouv.fr/" target="_blank">Géolittoral DGALN</a> · trait de côte Histolitt, submersion, ouvrages côtiers</li>
           <li><a href="https://www.cerema.fr/fr/actualites/indicateur-national-erosion-cotiere" target="_blank">Cerema</a> · indicateur d'érosion 2016/2022</li>
-          <li><a href="https://www.georisques.gouv.fr/" target="_blank">Géorisques</a> · PPRL, PPRNN, Cat'Nat</li>
+          <li><a href="https://www.georisques.gouv.fr/" target="_blank">Géorisques</a> · PPRN, Cat'Nat, PPRNN</li>
           <li><a href="https://www.ipcc.ch/report/ar6/wg1/" target="_blank">IPCC AR6 WG1</a> · scénarios SSP de niveau marin</li>
         </ul>
       </div>
@@ -2185,6 +2472,12 @@ const submersionWmsLayer = L.tileLayer.wms(geolittoralBase, {
   format: 'image/png', transparent: true, version: '1.3.0',
   opacity: 0.6, attribution: '© Géolittoral'
 });
+// Ouvrages côtiers (DGALN/Cerema, via Géolittoral)
+const ouvragesWmsLayer = L.tileLayer.wms(geolittoralBase, {
+  layers: 'ouvrages_de_protection_du_littoral',
+  format: 'image/png', transparent: true, version: '1.3.0',
+  attribution: '© DGALN / Cerema · Base ouvrages'
+});
 
 const markers = {};
 COMMUNES.forEach(c => {
@@ -2232,6 +2525,15 @@ COMMUNES.forEach(c => {
 document.getElementById('lyrSubmersion').addEventListener('change', e => {
   if (e.target.checked) { submersionWmsLayer.addTo(map); submersionFallback.addTo(map); }
   else { submersionWmsLayer.remove(); submersionFallback.remove(); }
+});
+document.getElementById('lyrOuvrages').addEventListener('change', e => {
+  if (e.target.checked) ouvragesWmsLayer.addTo(map); else ouvragesWmsLayer.remove();
+});
+document.getElementById('lyrConservatoire').addEventListener('change', e => {
+  if (e.target.checked) conservatoireLayer.addTo(map); else conservatoireLayer.remove();
+});
+document.getElementById('lyrPPR').addEventListener('change', e => {
+  if (e.target.checked) pprLayer.addTo(map); else pprLayer.remove();
 });
 
 /* Sélecteur de fond carto */
@@ -2287,16 +2589,63 @@ function renderCommuneList(filter = '') {
   });
 }
 
-function selectCommune(id) {
+let communeContourLayer = null;
+let pprLayerGroup = null;
+async function selectCommune(id) {
   state.selectedCommune = id;
   const c = COMMUNES.find(x => x.id === id);
   if (!c) return;
-  map.flyTo([c.lat, c.lng], 9, { duration: 1.2 });
+  map.flyTo([c.lat, c.lng], 11, { duration: 1.2 });
   showCommuneDetail(c);
   document.querySelectorAll('.side-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'detail'));
   document.getElementById('communeList').style.display = 'none';
   document.getElementById('communeDetail').classList.add('visible');
   renderCommuneList();
+
+  // Fetch real cadastre boundary + PPR overlays
+  if (communeContourLayer) { map.removeLayer(communeContourLayer); communeContourLayer = null; }
+  if (pprLayerGroup) { map.removeLayer(pprLayerGroup); pprLayerGroup = null; }
+  try {
+    const cadUrl = `https://apicarto.ign.fr/api/cadastre/commune?code_insee=${c.insee}`;
+    const r = await fetch(cadUrl);
+    if (r.ok) {
+      const gj = await r.json();
+      communeContourLayer = L.geoJSON(gj, {
+        style: { color: '#E86E55', weight: 3, fillColor: '#E86E55', fillOpacity: 0.05, dashArray: '6,4' }
+      }).addTo(map);
+    }
+  } catch (e) { /* ignore */ }
+
+  try {
+    const dLat = 0.06, dLng = 0.08;
+    const minLng = c.lng - dLng, maxLng = c.lng + dLng;
+    const minLat = c.lat - dLat, maxLat = c.lat + dLat;
+    const geom = JSON.stringify({
+      type: 'Polygon',
+      coordinates: [[[minLng,minLat],[maxLng,minLat],[maxLng,maxLat],[minLng,maxLat],[minLng,minLat]]]
+    });
+    const presUrl = `https://apicarto.ign.fr/api/gpu/prescription-surf?geom=${encodeURIComponent(geom)}`;
+    const r2 = await fetch(presUrl);
+    if (r2.ok) {
+      const gj2 = await r2.json();
+      const risk = {
+        type:'FeatureCollection',
+        features: (gj2.features||[]).filter(f => {
+          const l = (f.properties.libelle||'').toLowerCase();
+          return l.includes('submersion') || l.includes('érosion') || l.includes('erosion') ||
+                 l.includes('recul') || l.includes('inond') || l.includes('risque');
+        })
+      };
+      if (risk.features.length) {
+        pprLayerGroup = L.geoJSON(risk, {
+          style: { color: '#B84028', weight: 1, fillColor: '#E86E55', fillOpacity: 0.30 },
+          onEachFeature: (f, l) => {
+            l.bindPopup(`<strong>${f.properties.libelle || 'Prescription'}</strong>`);
+          }
+        }).addTo(map);
+      }
+    }
+  } catch (e) { /* ignore */ }
 }
 
 function showCommuneDetail(c) {
@@ -2356,6 +2705,7 @@ function showCommuneDetail(c) {
   });
   document.querySelector('.cd-actions .primary').addEventListener('click', () => {
     document.getElementById('immersion').scrollIntoView({ behavior: 'smooth' });
+    if (typeof loadCommune3D === 'function') loadCommune3D(c);
   });
 }
 
@@ -2729,6 +3079,7 @@ document.querySelectorAll('#scenarioGroup .scenario-option').forEach(opt => {
     updateSimReadouts();
     if (state.selectedCommune) showCommuneDetail(COMMUNES.find(c => c.id === state.selectedCommune));
     updateDashboardKpis();
+    if (typeof updateImmHint === 'function') updateImmHint();
   });
 });
 document.querySelectorAll('#coastTypeGroup .scenario-option').forEach(opt => {
@@ -2742,192 +3093,331 @@ document.querySelectorAll('#coastTypeGroup .scenario-option').forEach(opt => {
 setYear(2025);
 
 /* =========================================================
-   6 · 3D IMMERSION (Three.js)
+   6 · 3D IMMERSION · MNT RGE ALTI® + BD TOPO® + BD ORTHO®
+   Source : IGN-F Géoplateforme (data.geopf.fr)
 ========================================================= */
 const threeCanvas = document.getElementById('threeCanvas');
 const threeContainer = threeCanvas.parentElement;
-const renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, antialias: true, alpha: true });
+const renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace || 3001;
+
+const scene3 = new THREE.Scene();
+scene3.background = new THREE.Color(0x0a1c2e);
+scene3.fog = new THREE.Fog(0x0a1c2e, 2500, 6000);
+
+const camera = new THREE.PerspectiveCamera(38, 1, 1, 12000);
+camera.position.set(900, 600, 900);
+camera.lookAt(0, 0, 0);
+
+scene3.add(new THREE.AmbientLight(0xffffff, 0.5));
+const sun = new THREE.DirectionalLight(0xfff0d8, 1.0);
+sun.position.set(800, 1200, 400);
+scene3.add(sun);
+const fill = new THREE.DirectionalLight(0x88aacc, 0.35);
+fill.position.set(-400, 400, -600);
+scene3.add(fill);
+
 function resizeThree() {
   const r = threeContainer.getBoundingClientRect();
   renderer.setSize(r.width, r.height, false);
   camera.aspect = r.width / r.height;
   camera.updateProjectionMatrix();
 }
-const scene3 = new THREE.Scene();
-scene3.fog = new THREE.Fog(0x061726, 60, 220);
-const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 500);
-camera.position.set(60, 38, 80);
-camera.lookAt(0, 0, 0);
-
-// Lights
-scene3.add(new THREE.AmbientLight(0xffffff, 0.45));
-const sun = new THREE.DirectionalLight(0xfff0d8, 1.0);
-sun.position.set(40, 60, 30);
-scene3.add(sun);
-const fill = new THREE.DirectionalLight(0x6a99c2, 0.4);
-fill.position.set(-30, 20, -30);
-scene3.add(fill);
-
-// Ground / terrain (procedural)
-const terrainGeo = new THREE.PlaneGeometry(160, 160, 80, 80);
-terrainGeo.rotateX(-Math.PI / 2);
-const pos = terrainGeo.attributes.position;
-for (let i = 0; i < pos.count; i++) {
-  const x = pos.getX(i), z = pos.getZ(i);
-  // Headland rises in north (negative z), dips to water in south
-  const dist = Math.sqrt(x * x + z * z);
-  let y = 0;
-  const beachZ = 0;
-  if (z < beachZ) {
-    // land
-    const inland = Math.max(0, -z) / 80;
-    y = inland * 10 + 2;
-    y += Math.sin(x * 0.13 + z * 0.07) * 1.6;
-    y += Math.cos(x * 0.09 - z * 0.11) * 1.2;
-    // promontoires
-    const headland = Math.exp(-Math.pow((x + 50) / 30, 2)) * 14;
-    y += headland;
-    const headland2 = Math.exp(-Math.pow((x - 35) / 22, 2)) * 8;
-    y += headland2;
-  } else {
-    // sea floor descending
-    y = -z * 0.18 - Math.random() * 0.4;
-  }
-  pos.setY(i, y);
-}
-terrainGeo.computeVertexNormals();
-
-// Vertex coloring by height
-const colors = [];
-for (let i = 0; i < pos.count; i++) {
-  const y = pos.getY(i);
-  const c = new THREE.Color();
-  if (y < -2) c.setHex(0x1f4a5a);
-  else if (y < 0) c.setHex(0x3a738a);
-  else if (y < 1.5) c.setHex(0xe8d7a4);
-  else if (y < 5) c.setHex(0xc9b478);
-  else if (y < 10) c.setHex(0x8a9d6a);
-  else c.setHex(0x5c8a4f);
-  colors.push(c.r, c.g, c.b);
-}
-terrainGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-const terrain = new THREE.Mesh(
-  terrainGeo,
-  new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })
-);
-scene3.add(terrain);
-
-// Water plane
-const waterGeo = new THREE.PlaneGeometry(220, 220, 50, 50);
-waterGeo.rotateX(-Math.PI / 2);
-const waterMat = new THREE.MeshPhongMaterial({
-  color: 0x2a8c8c, transparent: true, opacity: 0.78,
-  shininess: 90, specular: 0xffffff,
-});
-const water = new THREE.Mesh(waterGeo, waterMat);
-water.position.y = 0.4;
-scene3.add(water);
-
-// Buildings group
-const buildingsGroup = new THREE.Group();
-scene3.add(buildingsGroup);
-
-function makeBuilding(x, z, w = 3, h = 4, d = 3, color = 0xf0e8d2) {
-  const g = new THREE.BoxGeometry(w, h, d);
-  const m = new THREE.MeshLambertMaterial({ color });
-  const mesh = new THREE.Mesh(g, m);
-  // sample terrain height
-  const terY = sampleTerrainHeight(x, z);
-  mesh.position.set(x, terY + h / 2, z);
-  mesh.userData = { baseY: terY };
-  buildingsGroup.add(mesh);
-  // roof
-  const rg = new THREE.ConeGeometry(Math.max(w, d) * 0.78, 1.6, 4);
-  const rm = new THREE.MeshLambertMaterial({ color: 0xb84028 });
-  const roof = new THREE.Mesh(rg, rm);
-  roof.position.set(x, terY + h + 0.7, z);
-  roof.rotation.y = Math.PI / 4;
-  buildingsGroup.add(roof);
-  return mesh;
-}
-
-function sampleTerrainHeight(x, z) {
-  // ray cast onto terrain
-  const raycaster = new THREE.Raycaster();
-  raycaster.set(new THREE.Vector3(x, 50, z), new THREE.Vector3(0, -1, 0));
-  const hits = raycaster.intersectObject(terrain);
-  return hits.length ? hits[0].point.y : 0;
-}
-
-// Plant buildings on land
-const buildingPositions = [
-  [-30, -22, 4, 5], [-26, -18, 3, 4], [-22, -14, 5, 7],
-  [-18, -22, 3, 5], [-14, -16, 4, 4], [-10, -22, 3, 5],
-  [-6, -12, 4, 6], [-2, -18, 3, 4], [2, -10, 5, 6],
-  [6, -22, 4, 5], [10, -16, 3, 5], [14, -22, 5, 6],
-  [18, -10, 3, 4], [22, -18, 4, 5], [26, -14, 3, 5],
-  [30, -22, 5, 7], [34, -18, 4, 5], [-32, -34, 3, 4],
-  [-12, -36, 5, 6], [10, -34, 4, 5], [28, -32, 3, 5],
-  [-26, -8, 3, 4], [-4, -8, 3, 4], [14, -6, 3, 4],
-  [-40, -28, 6, 8], [38, -28, 4, 5], [-44, -38, 5, 6], [44, -38, 4, 6],
-];
-buildingPositions.forEach(([x, z, w, h]) => {
-  makeBuilding(x, z, w, h, w * 0.9, [0xeee2c2, 0xe8d7a4, 0xddc6a0][Math.floor(Math.random() * 3)]);
-});
-
-// Trees (cones)
-for (let i = 0; i < 80; i++) {
-  const x = (Math.random() - 0.5) * 130;
-  const z = -Math.random() * 70;
-  if (Math.abs(x) > 70 || z > -2) continue;
-  const terY = sampleTerrainHeight(x, z);
-  if (terY < 1.2) continue;
-  const tg = new THREE.ConeGeometry(0.8, 2.8, 6);
-  const tm = new THREE.MeshLambertMaterial({ color: 0x4a7d40 });
-  const tree = new THREE.Mesh(tg, tm);
-  tree.position.set(x, terY + 1.4, z);
-  scene3.add(tree);
-}
-
-// Lighthouse
-{
-  const lhg = new THREE.CylinderGeometry(0.8, 1.0, 8, 16);
-  const lhm = new THREE.MeshLambertMaterial({ color: 0xf6f1e7 });
-  const lh = new THREE.Mesh(lhg, lhm);
-  const terY = sampleTerrainHeight(-50, -10);
-  lh.position.set(-50, terY + 4, -10);
-  scene3.add(lh);
-  const cap = new THREE.Mesh(new THREE.ConeGeometry(1.2, 2, 16), new THREE.MeshLambertMaterial({ color: 0xb84028 }));
-  cap.position.set(-50, terY + 9, -10);
-  scene3.add(cap);
-}
-
 resizeThree();
 window.addEventListener('resize', resizeThree);
 
-function updateThreeReadouts() {
-  const y = water.position.y;
-  document.getElementById('immSeaLevel').textContent = `+${(y - 0.4).toFixed(2).replace('.', ',')}`;
-  document.getElementById('immSeaLevel').innerHTML = `+${(y - 0.4).toFixed(2).replace('.', ',')}<small>m</small>`;
-  let flooded = 0;
-  buildingsGroup.children.forEach(m => {
-    if (m.userData && m.userData.baseY !== undefined) {
-      if (m.userData.baseY < y - 0.3) flooded++;
-    }
-  });
-  document.getElementById('immBuildingsReadout').innerHTML = `${flooded}<small>/ ${buildingPositions.length}</small>`;
-  const area = (y - 0.4) * 4.2;
-  document.getElementById('immArea').innerHTML = `${area.toFixed(1).replace('.', ',')}<small>ha</small>`;
+/* === Three.js scene state === */
+const NX = 60, NZ = 60;          // DEM grid (60x60 = 3600 points, 18 requêtes IGN)
+const SIZE = 2000;                // bbox 2 km × 2 km
+const VSCALE = 2.0;               // exagération verticale
+const METER_PER_DEG_LAT = 111320;
+function meterPerDegLng(lat) { return METER_PER_DEG_LAT * Math.cos(lat * Math.PI / 180); }
+
+const t3d = {
+  loaded: false, loading: false,
+  centerLat: 45.4954, centerLng: -1.0947, // Soulac default
+  bboxSizeMeters: SIZE,
+  altMin: 0, altMax: 50, altMean: 5,
+  buildings: [],
+  flooded: 0,
+  cellArea: (SIZE/NX) * (SIZE/NZ), // m² per DEM cell
+  rotate: true,
+  tide: false,
+  wireframe: false,
+  showBuildings: true,
+  elev: null,            // Float32Array du DEM
+  waterArea: 0,
+  controls: null,        // OrbitControls
+  cam: { angle: -0.6, dist: 1700, height: 600 },
+};
+
+let terrainMesh = null;
+const buildingsGroup = new THREE.Group(); scene3.add(buildingsGroup);
+let waterMesh = null;
+const waterGeo = new THREE.PlaneGeometry(SIZE * 1.8, SIZE * 1.8, 64, 64);
+waterGeo.rotateX(-Math.PI / 2);
+const waterMat = new THREE.MeshStandardMaterial({
+  color: 0x2a6c7c, transparent: true, opacity: 0.78,
+  roughness: 0.05, metalness: 0.6,
+});
+waterMesh = new THREE.Mesh(waterGeo, waterMat);
+waterMesh.position.y = 0;
+scene3.add(waterMesh);
+
+// UI elements
+const immLoader = document.getElementById('immLoader');
+const immLoaderText = document.getElementById('immLoaderText');
+const immRange = document.getElementById('immRange');
+function showLoader(text) {
+  immLoaderText.textContent = text;
+  immLoader.style.display = '';
+}
+function hideLoader() { immLoader.style.display = 'none'; }
+
+/* === Géo helpers === */
+function lonLatToXZ(lng, lat) {
+  const mpx = meterPerDegLng(t3d.centerLat);
+  const x = (lng - t3d.centerLng) * mpx;
+  const z = -(lat - t3d.centerLat) * METER_PER_DEG_LAT;
+  return [x, z];
 }
 
-const immRange = document.getElementById('immRange');
-immRange.addEventListener('input', () => {
+/* === Load commune in 3D === */
+async function loadCommune3D(c) {
+  if (t3d.loading) return;
+  t3d.loading = true;
+  t3d.centerLat = c.lat; t3d.centerLng = c.lng;
+  document.getElementById('immTitle').textContent = `${c.nom} · ${c.dept}`;
+  document.getElementById('immEyebrow').textContent = `Maquette · ${c.type} · ${c.facade}`;
+
+  try {
+    // -- Bounding box in lat/lng --
+    const halfMeters = SIZE / 2;
+    const dLat = halfMeters / METER_PER_DEG_LAT;
+    const dLng = halfMeters / meterPerDegLng(c.lat);
+    const minLat = c.lat - dLat, maxLat = c.lat + dLat;
+    const minLng = c.lng - dLng, maxLng = c.lng + dLng;
+
+    // -- 1. Fetch DEM grid (IGN altimétrie API) --
+    showLoader('MNT RGE ALTI® IGN…');
+    const points = [];
+    for (let zi = 0; zi < NZ; zi++) {
+      const lat = maxLat - (zi / (NZ - 1)) * (maxLat - minLat);
+      for (let xi = 0; xi < NX; xi++) {
+        const lng = minLng + (xi / (NX - 1)) * (maxLng - minLng);
+        points.push([lng, lat]);
+      }
+    }
+    const BATCH = 180;
+    const elev = new Float32Array(points.length);
+    const batches = [];
+    for (let i = 0; i < points.length; i += BATCH) batches.push([i, points.slice(i, i + BATCH)]);
+    let done = 0;
+    await Promise.all(batches.map(async ([offset, batch]) => {
+      const lons = batch.map(p => p[0].toFixed(6)).join('|');
+      const lats = batch.map(p => p[1].toFixed(6)).join('|');
+      const url = `https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json?lon=${lons}&lat=${lats}&zonly=true&resource=ign_rge_alti_wld`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('IGN altimétrie ' + r.status);
+      const j = await r.json();
+      j.elevations.forEach((z, k) => { elev[offset + k] = (z === undefined || z === null) ? 0 : z; });
+      done++;
+      showLoader(`MNT IGN · ${done}/${batches.length} blocs…`);
+    }));
+    t3d.elev = elev;
+    // stats
+    let minZ = Infinity, maxZ = -Infinity, sum = 0;
+    for (const z of elev) {
+      if (z < minZ) minZ = z;
+      if (z > maxZ) maxZ = z;
+      sum += z;
+    }
+    t3d.altMin = minZ; t3d.altMax = maxZ; t3d.altMean = sum / elev.length;
+
+    // -- 2. Fetch orthophoto texture --
+    showLoader('BD ORTHO® IGN…');
+    function lonToMercX(lon) { return lon * 20037508.34 / 180; }
+    function latToMercY(lat) {
+      const y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
+      return y * 20037508.34 / 180;
+    }
+    const orthoUrl = `https://data.geopf.fr/wms-r/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=ORTHOIMAGERY.ORTHOPHOTOS&WIDTH=1024&HEIGHT=1024&CRS=EPSG:3857&BBOX=${lonToMercX(minLng)},${latToMercY(minLat)},${lonToMercX(maxLng)},${latToMercY(maxLat)}&FORMAT=image/jpeg&STYLES=`;
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin('anonymous');
+    const orthoTex = await new Promise((res, rej) => loader.load(orthoUrl, res, undefined, rej));
+    orthoTex.colorSpace = THREE.SRGBColorSpace || 3001;
+    orthoTex.anisotropy = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 4;
+
+    // -- 3. Fetch BDTOPO buildings (cap ~600) --
+    showLoader('BD TOPO® bâtiments…');
+    const bbox = `${minLng},${minLat},${maxLng},${maxLat},EPSG:4326`;
+    const bUrl = `https://data.geopf.fr/wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=BDTOPO_V3:batiment&BBOX=${bbox}&OUTPUTFORMAT=application/json&COUNT=800&PROPERTYNAME=nature,hauteur,altitude_minimale_sol,altitude_maximale_toit,nombre_d_etages,geometrie&SRSNAME=EPSG:4326`;
+    const bResp = await fetch(bUrl);
+    if (!bResp.ok) throw new Error('BDTOPO ' + bResp.status);
+    const bJson = await bResp.json();
+
+    // -- 4. Build terrain mesh --
+    showLoader('Maillage 3D…');
+    if (terrainMesh) {
+      scene3.remove(terrainMesh);
+      terrainMesh.geometry.dispose();
+      terrainMesh.material.dispose();
+    }
+    const geo = new THREE.PlaneGeometry(SIZE, SIZE, NX - 1, NZ - 1);
+    geo.rotateX(-Math.PI / 2);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      pos.setY(i, elev[i] * VSCALE);
+    }
+    pos.needsUpdate = true;
+    geo.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({
+      map: orthoTex,
+      roughness: 0.92, metalness: 0.0,
+      wireframe: false,
+    });
+    terrainMesh = new THREE.Mesh(geo, mat);
+    scene3.add(terrainMesh);
+
+    // -- 5. Build buildings (extruded) --
+    while (buildingsGroup.children.length) {
+      const ch = buildingsGroup.children.pop();
+      ch.geometry?.dispose();
+      ch.material?.dispose();
+    }
+    t3d.buildings = [];
+    const buildingMat = new THREE.MeshStandardMaterial({
+      color: 0xebe2d2, roughness: 0.9, metalness: 0.0,
+    });
+    const floodedMat = new THREE.MeshStandardMaterial({
+      color: 0xe86e55, roughness: 0.85, metalness: 0.0,
+      emissive: 0x3b1a14, emissiveIntensity: 0.4,
+    });
+    bJson.features.forEach(f => {
+      const g = f.geometry;
+      if (!g) return;
+      const polys = g.type === 'MultiPolygon' ? g.coordinates : [g.coordinates];
+      polys.forEach(poly => {
+        const ring = poly[0];
+        if (!ring || ring.length < 4) return;
+        const shape = new THREE.Shape();
+        ring.forEach((p, i) => {
+          const [lx, lz] = lonLatToXZ(p[0], p[1]);
+          if (i === 0) shape.moveTo(lx, -lz); else shape.lineTo(lx, -lz);
+          // note: ExtrudeGeometry extrudes along Z, so we work in XY-plane and rotate after
+        });
+        const hRaw = f.properties.hauteur ||
+                     (f.properties.nombre_d_etages ? f.properties.nombre_d_etages * 3 : null) ||
+                     6;
+        const h = Math.max(3, Math.min(80, hRaw)) * VSCALE;
+        const eg = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false });
+        eg.rotateX(Math.PI / 2);
+        eg.translate(0, 0, 0);
+        // compute baseAlt
+        let baseAlt = f.properties.altitude_minimale_sol;
+        if (baseAlt == null || isNaN(baseAlt)) {
+          const [bx, bz] = lonLatToXZ(ring[0][0], ring[0][1]);
+          const gx = Math.max(0, Math.min(NX - 1, Math.round((bx + SIZE / 2) / SIZE * (NX - 1))));
+          const gz = Math.max(0, Math.min(NZ - 1, Math.round((bz + SIZE / 2) / SIZE * (NZ - 1))));
+          baseAlt = elev[gz * NX + gx];
+        }
+        const mesh = new THREE.Mesh(eg, buildingMat);
+        mesh.position.y = baseAlt * VSCALE;
+        mesh.userData = { baseAlt, hRaw, footprintArea: polygonArea(ring) };
+        t3d.buildings.push(mesh);
+        buildingsGroup.add(mesh);
+      });
+    });
+    buildingsGroup.userData.normalMat = buildingMat;
+    buildingsGroup.userData.floodedMat = floodedMat;
+
+    // -- 6. Set camera --
+    const ax = t3d.altMean * VSCALE;
+    t3d.cam.angle = -0.6;
+    t3d.cam.dist = SIZE * 0.9;
+    t3d.cam.height = Math.max(400, (t3d.altMax - t3d.altMin) * VSCALE + 350);
+    updateCamera();
+
+    t3d.loaded = true;
+    state.selectedCommune3D = c.insee;
+    hideLoader();
+    document.getElementById('immAlti').innerHTML =
+      `${t3d.altMin.toFixed(1)} / ${t3d.altMax.toFixed(1)}<small>m</small>`;
+    applyWaterLevel();
+  } catch (err) {
+    console.error(err);
+    immLoaderText.innerHTML = `Échec : ${err.message}<br><span style="opacity:.6;text-transform:none;letter-spacing:0;">Vérifiez votre connexion. Les API IGN peuvent être momentanément indisponibles.</span>`;
+    setTimeout(hideLoader, 4000);
+  }
+  t3d.loading = false;
+}
+
+function polygonArea(ring) {
+  let a = 0;
+  for (let i = 0; i < ring.length - 1; i++) {
+    a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+  }
+  return Math.abs(a) * 0.5;
+}
+
+function applyWaterLevel() {
+  if (!waterMesh || !t3d.elev) return;
   const v = parseFloat(immRange.value) / 100;
-  water.position.y = 0.4 + v;
-  document.getElementById('immSliderValue').textContent = `+${v.toFixed(2).replace('.', ',')} m`;
-  updateThreeReadouts();
+  waterMesh.position.y = v * VSCALE;
+  // Compte bâtiments inondés
+  let flooded = 0;
+  t3d.buildings.forEach(b => {
+    if (b.userData.baseAlt < v) {
+      flooded++;
+      if (b.material !== buildingsGroup.userData.floodedMat) b.material = buildingsGroup.userData.floodedMat;
+    } else {
+      if (b.material !== buildingsGroup.userData.normalMat) b.material = buildingsGroup.userData.normalMat;
+    }
+  });
+  t3d.flooded = flooded;
+  // Surface immergée : compte cellules DEM < waterLevel
+  let cellsInWater = 0;
+  for (const z of t3d.elev) if (z < v) cellsInWater++;
+  t3d.waterArea = cellsInWater * t3d.cellArea / 10000; // ha
+  // UI
+  document.getElementById('immSeaLevel').innerHTML = `+${v.toFixed(2).replace('.', ',')}<small>m NGF</small>`;
+  document.getElementById('immBuildingsReadout').innerHTML =
+    `${flooded}<small>/ ${t3d.buildings.length}</small>`;
+  document.getElementById('immArea').innerHTML =
+    `${t3d.waterArea.toFixed(1).replace('.', ',')}<small>ha</small>`;
+  document.getElementById('immSliderValue').textContent =
+    `+${v.toFixed(2).replace('.', ',')} m`;
+}
+
+immRange.addEventListener('input', applyWaterLevel);
+
+function updateCamera() {
+  const a = t3d.cam.angle;
+  camera.position.x = Math.cos(a) * t3d.cam.dist;
+  camera.position.z = Math.sin(a) * t3d.cam.dist;
+  camera.position.y = t3d.cam.height;
+  camera.lookAt(0, t3d.altMean * VSCALE, 0);
+}
+
+// Mouse / touch orbit (no OrbitControls dep)
+let dragStart = null;
+threeCanvas.addEventListener('mousedown', e => { dragStart = { x: e.clientX, y: e.clientY, a: t3d.cam.angle, h: t3d.cam.height }; });
+window.addEventListener('mouseup', () => dragStart = null);
+window.addEventListener('mousemove', e => {
+  if (!dragStart) return;
+  const dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
+  t3d.cam.angle = dragStart.a - dx * 0.008;
+  t3d.cam.height = Math.max(200, Math.min(2500, dragStart.h - dy * 4));
+  state.immRotate = false;
+  document.getElementById('immRotate').classList.remove('active');
+  updateCamera();
 });
+threeCanvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  t3d.cam.dist = Math.max(400, Math.min(5000, t3d.cam.dist + e.deltaY * 1.5));
+  updateCamera();
+}, { passive: false });
 
 document.getElementById('immRotate').addEventListener('click', e => {
   state.immRotate = !state.immRotate;
@@ -2942,36 +3432,79 @@ document.getElementById('immBuildingsBtn').addEventListener('click', e => {
   buildingsGroup.visible = state.immBuildings;
   e.currentTarget.classList.toggle('active', state.immBuildings);
 });
+document.getElementById('immWires').addEventListener('click', e => {
+  t3d.wireframe = !t3d.wireframe;
+  if (terrainMesh) terrainMesh.material.wireframe = t3d.wireframe;
+  e.currentTarget.classList.toggle('active', t3d.wireframe);
+});
 
-let camAngle = 0;
+/* === Picker === */
+document.getElementById('immChoose').addEventListener('click', () => openImmPicker());
+document.getElementById('immPickerClose').addEventListener('click', () => closeImmPicker());
+function openImmPicker() {
+  document.getElementById('immPicker').style.display = '';
+  renderImmPicker('');
+}
+function closeImmPicker() { document.getElementById('immPicker').style.display = 'none'; }
+function renderImmPicker(filter) {
+  const term = filter.toLowerCase().trim();
+  const list = COMMUNES.filter(c =>
+    !term || c.nom.toLowerCase().includes(term) ||
+    c.region.toLowerCase().includes(term) || c.dept.includes(term)
+  );
+  document.getElementById('immPickerList').innerHTML = list.map(c => `
+    <div class="imm-picker-item" data-insee="${c.insee}">
+      <span class="flag" style="background:${RISK_COLOR[c.risk]}"></span>
+      <div>
+        <div class="name">${c.nom}</div>
+        <div class="meta">${c.dept} · ${c.region} · ${c.type}</div>
+      </div>
+      <span class="rate">${c.retreat.toFixed(1)} m/an</span>
+    </div>
+  `).join('');
+  document.getElementById('immPickerList').querySelectorAll('.imm-picker-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const c = COMMUNES.find(x => x.insee === el.dataset.insee);
+      closeImmPicker();
+      loadCommune3D(c);
+    });
+  });
+}
+document.getElementById('immPickerSearch').addEventListener('input', e => renderImmPicker(e.target.value));
+
+/* === Sync slider scenario hint === */
+function updateImmHint() {
+  const s = SCENARIOS[state.scenario];
+  document.getElementById('immScenarioHint').textContent =
+    `${s.name.split(' · ')[0]} · 2100 : +${s.sea2100.toFixed(2).replace('.', ',')} m`;
+}
+
+let camAngleAuto = 0;
 function animateThree(t) {
   if (state.immRotate) {
-    camAngle += 0.002;
-    camera.position.x = Math.cos(camAngle) * 95;
-    camera.position.z = Math.sin(camAngle) * 95;
-    camera.position.y = 38;
-    camera.lookAt(0, 0, -15);
+    t3d.cam.angle += 0.0015;
+    updateCamera();
   }
-  // water ripple
+  // ripple water
   const wp = waterGeo.attributes.position;
   for (let i = 0; i < wp.count; i++) {
     const x = wp.getX(i), z = wp.getZ(i);
-    wp.setY(i, Math.sin(t * 0.0008 + x * 0.05) * 0.12 + Math.cos(t * 0.001 + z * 0.04) * 0.12);
+    wp.setY(i, Math.sin(t * 0.0008 + x * 0.005) * 0.4 + Math.cos(t * 0.001 + z * 0.004) * 0.4);
   }
   wp.needsUpdate = true;
-
-  // tide animation
-  if (state.immTide) {
+  // tide
+  if (state.immTide && t3d.loaded) {
     const base = parseFloat(immRange.value) / 100;
-    water.position.y = 0.4 + base + Math.sin(t * 0.0008) * 0.25;
-    updateThreeReadouts();
+    waterMesh.position.y = (base + Math.sin(t * 0.0008) * 0.3) * VSCALE;
   }
-
   renderer.render(scene3, camera);
   requestAnimationFrame(animateThree);
 }
 requestAnimationFrame(animateThree);
-updateThreeReadouts();
+updateImmHint();
+
+// Charger Soulac par défaut
+loadCommune3D(COMMUNES.find(c => c.insee === '33514'));
 
 /* =========================================================
    7 · FLOOD SCENARIO 2D
@@ -3320,10 +3853,128 @@ new Chart(ctx2, {
 });
 
 /* =========================================================
-   10 · NAV active state
+   10 · AVANT / APRÈS · COMPARATEUR ORTHOPHOTO IGN
+========================================================= */
+const ORTHO_LAYERS = {
+  current:    { name:'BD ORTHO® actuelle',   layer:'ORTHOIMAGERY.ORTHOPHOTOS',           fmt:'image/jpeg' },
+  '1950-1965':{ name:'1950-1965 historique', layer:'ORTHOIMAGERY.ORTHOPHOTOS.1950-1965', fmt:'image/png'  },
+  '1965-1980':{ name:'1965-1980 historique', layer:'ORTHOIMAGERY.ORTHOPHOTOS.1965-1980', fmt:'image/png'  },
+  '1980-1995':{ name:'1980-1995 historique', layer:'ORTHOIMAGERY.ORTHOPHOTOS.1980-1995', fmt:'image/png'  },
+  '2000':     { name:'BD ORTHO COAST 2000',   layer:'ORTHOIMAGERY.ORTHOPHOTOS.COAST2000', fmt:'image/jpeg' },
+};
+function makeOrthoTileLayer(key) {
+  const o = ORTHO_LAYERS[key];
+  return L.tileLayer(
+    `https://data.geopf.fr/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=${o.layer}&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&STYLE=normal&TILEMATRIXSET=PM&FORMAT=${o.fmt}`,
+    { attribution: '© IGN-F · BD ORTHO®', minZoom: 0, maxZoom: 19, tileSize: 256 }
+  );
+}
+
+// Populate commune picker
+const compCommunes = COMMUNES.filter(c => c.facade !== 'inland');
+document.getElementById('compCommunePicker').innerHTML = compCommunes
+  .map(c => `<option value="${c.insee}" ${c.insee==='33514'?'selected':''}>${c.nom} (${c.dept}) · ${c.retreat.toFixed(1)} m/an</option>`).join('');
+
+const compMap = L.map('compMap', { zoomControl: false, attributionControl: true });
+compMap.attributionControl.setPrefix('');
+L.control.zoom({ position: 'bottomright' }).addTo(compMap);
+
+let compLeftLayer = makeOrthoTileLayer('1950-1965').addTo(compMap);
+let compRightLayer = makeOrthoTileLayer('current').addTo(compMap);
+
+// Implement side-by-side clip via leaflet container layout
+const compShell = document.querySelector('#avant-apres .comp-stage');
+const divider = document.createElement('div');
+divider.className = 'comp-divider';
+divider.style.left = '50%';
+compShell.appendChild(divider);
+
+const lblLeft = document.createElement('div');
+lblLeft.className = 'comp-label-overlay';
+lblLeft.style.left = '20px';
+lblLeft.textContent = ORTHO_LAYERS['1950-1965'].name;
+compShell.appendChild(lblLeft);
+
+const lblRight = document.createElement('div');
+lblRight.className = 'comp-label-overlay';
+lblRight.style.right = '20px';
+lblRight.textContent = ORTHO_LAYERS.current.name;
+compShell.appendChild(lblRight);
+
+// Implement clip via clip-path on Leaflet tile-pane
+function applyClipPaths(pct) {
+  const compMapEl = document.getElementById('compMap');
+  const panes = compMapEl.querySelectorAll('.leaflet-tile-pane > .leaflet-layer');
+  // First child = left layer (1950s), second = right (current)
+  if (panes.length >= 2) {
+    panes[0].style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
+    panes[1].style.clipPath = `inset(0 0 0 ${pct}%)`;
+  }
+  divider.style.left = pct + '%';
+  lblLeft.style.display  = pct > 10 ? '' : 'none';
+  lblRight.style.display = pct < 90 ? '' : 'none';
+}
+
+let compDragging = false;
+divider.addEventListener('mousedown', () => { compDragging = true; });
+window.addEventListener('mouseup', () => compDragging = false);
+window.addEventListener('mousemove', e => {
+  if (!compDragging) return;
+  const rect = compShell.getBoundingClientRect();
+  let pct = ((e.clientX - rect.left) / rect.width) * 100;
+  pct = Math.max(2, Math.min(98, pct));
+  applyClipPaths(pct);
+});
+divider.addEventListener('touchstart', e => { compDragging = true; e.preventDefault(); }, { passive: false });
+window.addEventListener('touchmove', e => {
+  if (!compDragging) return;
+  const rect = compShell.getBoundingClientRect();
+  const t = e.touches[0];
+  let pct = ((t.clientX - rect.left) / rect.width) * 100;
+  pct = Math.max(2, Math.min(98, pct));
+  applyClipPaths(pct);
+});
+window.addEventListener('touchend', () => compDragging = false);
+
+function compSetView(c) {
+  compMap.setView([c.lat, c.lng], 15);
+}
+
+function rebuildOrthoLayer(side, key) {
+  if (side === 'left') {
+    compMap.removeLayer(compLeftLayer);
+    compLeftLayer = makeOrthoTileLayer(key);
+    compLeftLayer.addTo(compMap);
+    // ensure left is rendered first
+    lblLeft.textContent = ORTHO_LAYERS[key].name;
+  } else {
+    compMap.removeLayer(compRightLayer);
+    compRightLayer = makeOrthoTileLayer(key);
+    compRightLayer.addTo(compMap);
+    lblRight.textContent = ORTHO_LAYERS[key].name;
+  }
+  // re-apply layer order : left must be first, right second
+  // Leaflet doesn't natively support reordering tile layers, but since both are tile layers,
+  // we rely on z-index of layer panes. Easier: just always rebuild both.
+  applyClipPaths(parseFloat(divider.style.left) || 50);
+}
+
+document.getElementById('compLeft').addEventListener('change', e => rebuildOrthoLayer('left', e.target.value));
+document.getElementById('compRight').addEventListener('change', e => rebuildOrthoLayer('right', e.target.value));
+document.getElementById('compCommunePicker').addEventListener('change', e => {
+  const c = COMMUNES.find(x => x.insee === e.target.value);
+  if (c) compSetView(c);
+});
+
+// initial view
+compSetView(COMMUNES.find(c => c.insee === '33514'));
+setTimeout(() => applyClipPaths(50), 250);
+
+/* =========================================================
+   11 · NAV active state
 ========================================================= */
 const navLinks = document.querySelectorAll('.nav-link');
-const sections = ['#atlas', '#simulation', '#immersion', '#inondation', '#dashboard'].map(s => document.querySelector(s));
+const sections = ['#atlas', '#simulation', '#immersion', '#avant-apres', '#inondation', '#dashboard'].map(s => document.querySelector(s));
 window.addEventListener('scroll', () => {
   const y = window.scrollY + 120;
   let curr = sections[0];
