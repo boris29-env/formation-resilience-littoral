@@ -4253,10 +4253,86 @@ h3.subhead {
   .cartes-viz-scale { font-size: 9px; padding: 5px 8px; }
 }
 
+/* =================================================================
+   MODERN NAV LAYER : ajouts non destructifs pour navigation simplifiée
+   ================================================================= */
+
+/* --- Scroll progress bar (haut de page) --- */
+.scroll-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 200; pointer-events: none; background: transparent; }
+.scroll-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--teal) 0%, var(--orange) 50%, var(--g5) 100%); transition: width 0.06s linear; box-shadow: 0 0 8px rgba(232, 110, 85, 0.45); }
+
+/* --- Topbar revisité : glassmorphism --- */
+.topbar { backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: linear-gradient(180deg, rgba(30, 45, 92, 0.96) 0%, rgba(30, 45, 92, 0.92) 100%); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.topbar-btn { transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.topbar-btn:hover { transform: translateY(-1px); }
+.topbar-btn.primary { box-shadow: 0 4px 14px rgba(232, 110, 85, 0.35); }
+.topbar-btn.primary:hover { box-shadow: 0 6px 20px rgba(232, 110, 85, 0.50); }
+
+/* --- Bouton de recherche dans la topbar (raccourci ⌘K / Ctrl+K) --- */
+.topbar-search-hint { display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 6px; padding: 7px 10px 7px 12px; font-family: var(--sans); font-size: 12px; color: rgba(255, 255, 255, 0.78); cursor: pointer; transition: all 0.2s; }
+.topbar-search-hint:hover { background: rgba(255, 255, 255, 0.16); color: var(--white); border-color: rgba(255, 255, 255, 0.32); }
+.topbar-search-hint svg { width: 13px; height: 13px; stroke: currentColor; flex-shrink: 0; fill: none; }
+.topbar-search-hint kbd { font-family: var(--mono); font-size: 10px; background: rgba(0, 0, 0, 0.3); padding: 2px 6px; border-radius: 3px; color: rgba(255, 255, 255, 0.92); }
+@media (max-width: 720px) { .topbar-search-hint .search-label, .topbar-search-hint kbd { display: none; } .topbar-search-hint { padding: 7px 9px; } }
+
+/* --- Sidebar : motif pointillé + état actif + transitions --- */
+.sidebar { background-image: radial-gradient(circle at 1px 1px, rgba(30, 45, 92, 0.06) 1px, transparent 0); background-size: 18px 18px; }
+.sidebar a { transition: background 0.18s ease, color 0.18s ease, border-left-color 0.18s ease, box-shadow 0.18s ease; }
+.sidebar a.active { background: var(--white); color: var(--teal-deep); border-left-color: var(--teal); font-weight: 600; box-shadow: 0 1px 4px rgba(50, 128, 136, 0.10); }
+.sidebar-label { display: flex; align-items: center; gap: 8px; }
+.sidebar-label::before { content: ""; width: 14px; height: 1px; background: var(--orange); display: inline-block; flex-shrink: 0; }
+
+/* --- Drawer mobile : backdrop + slide animation --- */
+.sidebar-backdrop { display: none; position: fixed; inset: 60px 0 0 0; background: rgba(15, 26, 56, 0.45); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); z-index: 49; opacity: 0; transition: opacity 0.25s; }
+.sidebar-backdrop.open { display: block; opacity: 1; }
+@media (max-width: 900px) {
+  .sidebar { display: block !important; position: fixed; top: 60px; left: 0; right: auto; height: calc(100vh - 60px); width: min(320px, 85vw) !important; background: var(--grey-bg); padding: 24px; border-right: none; z-index: 50; transform: translateX(-100%); transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 4px 0 30px rgba(0, 0, 0, 0.18); overflow-y: auto; }
+  .sidebar.open { transform: translateX(0); }
+}
+
+/* --- Bouton retour en haut --- */
+.back-to-top { position: fixed; bottom: 22px; right: 22px; width: 46px; height: 46px; border-radius: 50%; background: var(--navy); color: var(--white); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(15, 26, 56, 0.28); opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 90; }
+.back-to-top.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.back-to-top:hover { background: var(--orange); transform: translateY(-3px); box-shadow: 0 10px 28px rgba(232, 110, 85, 0.42); }
+.back-to-top svg { width: 18px; height: 18px; stroke: currentColor; fill: none; }
+
+/* --- Palette de commandes (⌘K / Ctrl+K) --- */
+.cmdk-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 26, 56, 0.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 200; align-items: flex-start; justify-content: center; padding: 12vh 16px 16px 16px; }
+.cmdk-overlay.open { display: flex; }
+.cmdk-modal { width: min(560px, 100%); background: var(--white); border-radius: 12px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28); overflow: hidden; animation: cmdk-pop 0.18s ease-out; display: flex; flex-direction: column; max-height: 70vh; }
+@keyframes cmdk-pop { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.cmdk-input-wrap { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--grey-line); flex-shrink: 0; }
+.cmdk-input-wrap svg { width: 18px; height: 18px; stroke: var(--grey-txt); fill: none; flex-shrink: 0; }
+.cmdk-input { flex: 1; border: none; outline: none; font-family: var(--sans); font-size: 16px; background: transparent; color: var(--black); min-width: 0; }
+.cmdk-input::placeholder { color: var(--grey-txt); }
+.cmdk-kbd { font-family: var(--mono); font-size: 11px; background: var(--grey-bg); padding: 3px 7px; border-radius: 4px; color: var(--grey-txt); border: 1px solid var(--grey-line); flex-shrink: 0; }
+.cmdk-list { overflow-y: auto; padding: 8px; flex: 1; }
+.cmdk-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; cursor: pointer; transition: background 0.12s; }
+.cmdk-item:hover, .cmdk-item.selected { background: var(--teal-light); }
+.cmdk-item-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); flex-shrink: 0; }
+.cmdk-item.selected .cmdk-item-dot { background: var(--teal); }
+.cmdk-item-label { flex: 1; font-size: 14px; color: var(--black); }
+.cmdk-item-cat { font-size: 10px; color: var(--grey-txt); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+.cmdk-empty { padding: 32px 20px; text-align: center; color: var(--grey-txt); font-size: 14px; }
+.cmdk-foot { padding: 10px 16px; border-top: 1px solid var(--grey-line); background: var(--grey-bg); display: flex; gap: 16px; font-size: 11px; color: var(--grey-txt); flex-wrap: wrap; flex-shrink: 0; }
+.cmdk-foot kbd { font-family: var(--mono); font-size: 10px; background: var(--white); padding: 2px 6px; border-radius: 3px; border: 1px solid var(--grey-line); margin-right: 4px; }
+
+/* --- Mini-dock vertical de navigation (à droite) --- */
+.quick-dock { position: fixed; right: 18px; top: 50%; transform: translateY(-50%); z-index: 80; display: flex; flex-direction: column; gap: 6px; background: rgba(255, 255, 255, 0.88); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid var(--grey-line); border-radius: 999px; padding: 10px 7px; box-shadow: 0 10px 30px rgba(15, 26, 56, 0.10); opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.quick-dock.visible { opacity: 1; pointer-events: auto; }
+.quick-dock-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--grey-line); cursor: pointer; transition: all 0.22s ease; position: relative; border: none; padding: 0; }
+.quick-dock-dot:hover { background: var(--teal); transform: scale(1.45); }
+.quick-dock-dot.active { background: var(--orange); transform: scale(1.45); }
+.quick-dock-dot[data-label]:hover::after { content: attr(data-label); position: absolute; right: calc(100% + 14px); top: 50%; transform: translateY(-50%); background: var(--navy); color: var(--white); font-family: var(--sans); font-size: 11px; padding: 5px 10px; border-radius: 4px; white-space: nowrap; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
+@media (max-width: 1100px) { .quick-dock { display: none; } }
+
 </style>
 </head>
 
 <body>
+
+<!-- ============ SCROLL PROGRESS BAR ============ -->
+<div class="scroll-progress" aria-hidden="true"><div class="scroll-progress-fill" id="scrollProgressFill"></div></div>
 
 <!-- ============ TOP BAR ============ -->
 <header class="topbar">
@@ -4265,6 +4341,11 @@ h3.subhead {
     <span class="topbar-title">Anse-de-Goulven  ·  <em>espace participant</em></span>
   </div>
   <div class="topbar-right">
+    <button class="topbar-search-hint" onclick="openCmdk()" aria-label="Rechercher une section">
+      <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <span class="search-label">Rechercher</span>
+      <kbd>⌘K</kbd>
+    </button>
     <span class="fb-status" id="fb-status" title="Cliquez pour changer de session" style="cursor:pointer;">
       <span class="fb-status-dot" id="fb-status-dot"></span>
       <span class="fb-status-label" id="fb-status-label">Session : <strong id="fb-session-label">default</strong> ✎</span>
@@ -4273,6 +4354,34 @@ h3.subhead {
     <button class="topbar-btn menu-toggle-btn" id="menuToggle">Menu</button>
   </div>
 </header>
+
+<!-- ============ MOBILE DRAWER BACKDROP ============ -->
+<div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
+<!-- ============ BACK TO TOP ============ -->
+<button class="back-to-top" id="backToTop" aria-label="Retour en haut">
+  <svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+</button>
+
+<!-- ============ COMMAND PALETTE (⌘K / Ctrl+K) ============ -->
+<div class="cmdk-overlay" id="cmdkOverlay" onclick="if(event.target===this)closeCmdk()">
+  <div class="cmdk-modal" role="dialog" aria-label="Navigation rapide">
+    <div class="cmdk-input-wrap">
+      <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input class="cmdk-input" id="cmdkInput" type="text" placeholder="Rechercher une section, un cas, une ressource…" autocomplete="off" spellcheck="false" />
+      <span class="cmdk-kbd">esc</span>
+    </div>
+    <div class="cmdk-list" id="cmdkList"></div>
+    <div class="cmdk-foot">
+      <span><kbd>↑</kbd><kbd>↓</kbd> naviguer</span>
+      <span><kbd>↵</kbd> ouvrir</span>
+      <span><kbd>esc</kbd> fermer</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MINI-DOCK DE NAVIGATION (à droite) ============ -->
+<nav class="quick-dock" id="quickDock" aria-label="Navigation rapide entre sections"></nav>
 
 <!-- ============ CDRNM MODAL ============ -->
 <div class="cdrnm-overlay" id="cdrnmOverlay" onclick="if(event.target===this)closeCdrnm()">
@@ -7974,15 +8083,202 @@ function toggleGroup(cardId) {
 
 // ============ MOBILE MENU ============
 document.getElementById('menuToggle').addEventListener('click', function() {
-  document.getElementById('sidebar').classList.toggle('open');
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('sidebarBackdrop');
+  sb.classList.toggle('open');
+  if (bd) bd.classList.toggle('open', sb.classList.contains('open'));
 });
 document.querySelectorAll('.sidebar a').forEach(link => {
   link.addEventListener('click', function() {
     if (window.innerWidth <= 900) {
       document.getElementById('sidebar').classList.remove('open');
+      const bd = document.getElementById('sidebarBackdrop');
+      if (bd) bd.classList.remove('open');
     }
   });
 });
+(function(){
+  const bd = document.getElementById('sidebarBackdrop');
+  if (bd) bd.addEventListener('click', () => {
+    document.getElementById('sidebar').classList.remove('open');
+    bd.classList.remove('open');
+  });
+})();
+
+// ============ SCROLL PROGRESS BAR ============
+(function() {
+  const fill = document.getElementById('scrollProgressFill');
+  if (!fill) return;
+  let raf = null;
+  function update() {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    const pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+    fill.style.width = pct + '%';
+    raf = null;
+  }
+  window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(update); }, { passive: true });
+  update();
+})();
+
+// ============ BACK TO TOP ============
+(function() {
+  const btn = document.getElementById('backToTop');
+  if (!btn) return;
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 600) btn.classList.add('visible');
+    else btn.classList.remove('visible');
+  }, { passive: true });
+  btn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+})();
+
+// ============ ACTIVE SECTION HIGHLIGHT (sidebar + dock) ============
+(function() {
+  const links = Array.from(document.querySelectorAll('.sidebar a[href^="#"]'));
+  if (!links.length || !('IntersectionObserver' in window)) return;
+  const sections = links
+    .map(a => { try { return document.querySelector(a.getAttribute('href')); } catch(e) { return null; } })
+    .filter(Boolean);
+  const visible = new Map();
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) visible.set(e.target.id, e.intersectionRatio);
+      else visible.delete(e.target.id);
+    });
+    if (visible.size === 0) return;
+    const topId = Array.from(visible.entries()).sort((a,b) => b[1] - a[1])[0][0];
+    links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + topId));
+    document.querySelectorAll('.quick-dock-dot').forEach(d => {
+      d.classList.toggle('active', d.dataset.target === topId);
+    });
+  }, { rootMargin: '-100px 0px -55% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] });
+  sections.forEach(s => obs.observe(s));
+})();
+
+// ============ COMMAND PALETTE (⌘K / Ctrl+K) ============
+(function() {
+  const overlay = document.getElementById('cmdkOverlay');
+  const input = document.getElementById('cmdkInput');
+  const list = document.getElementById('cmdkList');
+  if (!overlay || !input || !list) return;
+
+  function buildIndex() {
+    return Array.from(document.querySelectorAll('.sidebar-section')).flatMap(sec => {
+      const labelEl = sec.querySelector('.sidebar-label');
+      const cat = labelEl ? labelEl.textContent.trim() : '';
+      return Array.from(sec.querySelectorAll('a[href^="#"]')).map(a => ({
+        label: a.textContent.trim().replace(/\s+/g, ' '),
+        href: a.getAttribute('href'),
+        cat
+      }));
+    });
+  }
+  const items = buildIndex();
+  let selectedIdx = 0;
+  let filtered = items.slice();
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function render(q) {
+    const ql = q.trim().toLowerCase();
+    filtered = ql ? items.filter(it =>
+      it.label.toLowerCase().includes(ql) || it.cat.toLowerCase().includes(ql)
+    ) : items.slice();
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="cmdk-empty">Aucun résultat pour « ' + escapeHtml(q) + ' »</div>';
+      return;
+    }
+    if (selectedIdx >= filtered.length) selectedIdx = filtered.length - 1;
+    if (selectedIdx < 0) selectedIdx = 0;
+    list.innerHTML = filtered.map((it, i) =>
+      '<div class="cmdk-item' + (i === selectedIdx ? ' selected' : '') + '" data-href="' + escapeHtml(it.href) + '" data-idx="' + i + '">' +
+        '<span class="cmdk-item-dot"></span>' +
+        '<span class="cmdk-item-label">' + escapeHtml(it.label) + '</span>' +
+        '<span class="cmdk-item-cat">' + escapeHtml(it.cat) + '</span>' +
+      '</div>'
+    ).join('');
+    list.querySelectorAll('.cmdk-item').forEach(el => {
+      el.addEventListener('click', () => go(el.dataset.href));
+      el.addEventListener('mouseenter', () => {
+        selectedIdx = parseInt(el.dataset.idx, 10) || 0;
+        list.querySelectorAll('.cmdk-item').forEach(x => x.classList.toggle('selected', x === el));
+      });
+    });
+    const sel = list.querySelector('.cmdk-item.selected');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+  }
+  function go(href) {
+    closeCmdk();
+    if (!href) return;
+    let target = null;
+    try { target = document.querySelector(href); } catch(e) {}
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      history.replaceState(null, '', href);
+    }
+  }
+  function openCmdk() {
+    overlay.classList.add('open');
+    input.value = '';
+    selectedIdx = 0;
+    render('');
+    setTimeout(() => input.focus(), 50);
+  }
+  function closeCmdk() {
+    overlay.classList.remove('open');
+  }
+  window.openCmdk = openCmdk;
+  window.closeCmdk = closeCmdk;
+
+  input.addEventListener('input', () => { selectedIdx = 0; render(input.value); });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeCmdk(); e.preventDefault(); return; }
+    if (e.key === 'ArrowDown') { selectedIdx = Math.min(selectedIdx + 1, filtered.length - 1); render(input.value); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { selectedIdx = Math.max(selectedIdx - 1, 0); render(input.value); e.preventDefault(); }
+    else if (e.key === 'Enter') { if (filtered[selectedIdx]) go(filtered[selectedIdx].href); e.preventDefault(); }
+  });
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      if (overlay.classList.contains('open')) closeCmdk();
+      else openCmdk();
+    } else if (e.key === 'Escape' && overlay.classList.contains('open')) {
+      closeCmdk();
+    }
+  });
+})();
+
+// ============ MINI-DOCK DE NAVIGATION (à droite) ============
+(function() {
+  const dock = document.getElementById('quickDock');
+  if (!dock) return;
+  const sectionIds = [
+    'territoire','cartes','chiffres','evenements','groupes','mailbox',
+    'restitution','dialogue1972','cas1','cas2','cas3','climateVoices','cas4','carnet','axes','telechargements','lexique'
+  ];
+  const html = sectionIds.map(id => {
+    const target = document.getElementById(id);
+    if (!target) return '';
+    const titleEl = target.querySelector('.section-title, h2');
+    let label = titleEl ? titleEl.textContent.trim() : id;
+    label = label.replace(/\s+/g, ' ').slice(0, 50);
+    return '<button class="quick-dock-dot" data-target="' + id + '" data-label="' + label.replace(/"/g, '&quot;') + '" aria-label="' + label.replace(/"/g, '&quot;') + '"></button>';
+  }).join('');
+  dock.innerHTML = html;
+  dock.querySelectorAll('.quick-dock-dot').forEach(d => {
+    d.addEventListener('click', () => {
+      const t = document.getElementById(d.dataset.target);
+      if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) dock.classList.add('visible');
+    else dock.classList.remove('visible');
+  }, { passive: true });
+})();
 
 // ============ ENJEUX (fiches au clic sur la carte) ============
 const ENJEUX = {
