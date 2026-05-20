@@ -1,0 +1,3187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LITTUS · Atlas dynamique du trait de côte</title>
+<meta name="description" content="Plateforme de visualisation et de simulation du recul du trait de côte et des submersions marines, à destination des collectivités et des entreprises littorales.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root {
+  --ink: #0B1B2B;
+  --ink-2: #18324A;
+  --paper: #F6F1E7;
+  --paper-2: #EFE7D6;
+  --sand: #E9D9B7;
+  --teal: #2A8C8C;
+  --teal-deep: #14545A;
+  --teal-light: #BFE3E3;
+  --coral: #E86E55;
+  --coral-deep: #B84028;
+  --amber: #F4B400;
+  --algae: #5C8A4F;
+  --abyss: #061726;
+  --foam: #FAFCFC;
+  --line: rgba(11, 27, 43, 0.12);
+  --line-2: rgba(11, 27, 43, 0.06);
+  --shadow-sm: 0 1px 2px rgba(11, 27, 43, 0.06), 0 2px 6px rgba(11, 27, 43, 0.04);
+  --shadow-md: 0 4px 12px rgba(11, 27, 43, 0.08), 0 12px 32px rgba(11, 27, 43, 0.08);
+  --shadow-lg: 0 12px 32px rgba(11, 27, 43, 0.18), 0 32px 80px rgba(11, 27, 43, 0.16);
+  --serif: "Fraunces", Georgia, serif;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: "JetBrains Mono", monospace;
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.55;
+  font-size: 15px;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+img { display: block; max-width: 100%; }
+::selection { background: var(--coral); color: var(--paper); }
+
+/* =========================================================
+   TOPBAR
+========================================================= */
+.topbar {
+  position: sticky; top: 0; z-index: 1000;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 28px;
+  padding: 14px 28px;
+  background: rgba(246, 241, 231, 0.92);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-logo {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--teal-light), var(--teal) 60%, var(--teal-deep));
+  position: relative; overflow: hidden; flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(11,27,43,0.1);
+}
+.brand-logo::before, .brand-logo::after {
+  content: ""; position: absolute; left: -10%; width: 120%; height: 60%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0));
+}
+.brand-logo::before { top: 30%; transform: rotate(-6deg); opacity: 0.7; }
+.brand-logo::after { top: 55%; transform: rotate(4deg); opacity: 0.4; }
+.brand-name {
+  font-family: var(--serif); font-weight: 700; font-size: 22px;
+  letter-spacing: -0.01em; line-height: 1;
+}
+.brand-name em { font-style: italic; color: var(--teal); font-weight: 400; }
+.brand-sub {
+  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--ink-2); opacity: 0.65;
+}
+.nav-main {
+  display: flex; gap: 4px; justify-self: center;
+  background: rgba(11,27,43,0.04); border-radius: 999px; padding: 4px;
+}
+.nav-link {
+  font-size: 13px; font-weight: 500;
+  padding: 8px 16px; border-radius: 999px;
+  transition: all 0.2s;
+  color: var(--ink); opacity: 0.7;
+}
+.nav-link:hover { opacity: 1; }
+.nav-link.active { background: var(--ink); color: var(--paper); opacity: 1; }
+.nav-actions { display: flex; gap: 8px; align-items: center; }
+.btn {
+  font-size: 13px; font-weight: 500;
+  padding: 10px 18px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: all 0.2s;
+  border: 1px solid var(--line);
+}
+.btn:hover { background: rgba(11,27,43,0.04); }
+.btn.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.btn.primary:hover { background: var(--ink-2); }
+.btn.coral { background: var(--coral); color: var(--paper); border-color: var(--coral); }
+.btn.coral:hover { background: var(--coral-deep); border-color: var(--coral-deep); }
+
+/* =========================================================
+   HERO
+========================================================= */
+.hero {
+  position: relative;
+  padding: 88px 28px 64px;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(42,140,140,0.20), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(232,110,85,0.16), transparent 60%),
+    var(--paper);
+}
+.hero-grid {
+  display: grid; grid-template-columns: 1.1fr 1fr; gap: 64px;
+  max-width: 1400px; margin: 0 auto;
+  align-items: center;
+  position: relative; z-index: 2;
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--teal-deep);
+  padding: 8px 12px; border-radius: 999px;
+  background: rgba(42,140,140,0.10);
+  margin-bottom: 24px;
+}
+.hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); animation: pulse 2s infinite; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.4); }
+}
+.hero-title {
+  font-family: var(--serif); font-weight: 600;
+  font-size: clamp(40px, 5.6vw, 72px);
+  line-height: 1.02; letter-spacing: -0.025em;
+  margin-bottom: 24px;
+}
+.hero-title em { font-style: italic; color: var(--teal-deep); font-weight: 400; }
+.hero-title .underline {
+  position: relative; display: inline-block;
+}
+.hero-title .underline::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0.08em;
+  height: 0.22em; background: var(--coral); opacity: 0.35; z-index: -1;
+  border-radius: 4px;
+}
+.hero-lead {
+  font-size: 18px; color: var(--ink-2); max-width: 540px;
+  margin-bottom: 32px;
+}
+.hero-ctas { display: flex; gap: 12px; margin-bottom: 48px; flex-wrap: wrap; }
+.btn-large {
+  padding: 14px 22px; font-size: 14px;
+  border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.hero-kpis {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 24px; max-width: 540px;
+}
+.kpi-card {
+  border-left: 2px solid var(--ink);
+  padding-left: 14px;
+}
+.kpi-num {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 32px; line-height: 1; letter-spacing: -0.02em;
+}
+.kpi-num small { font-size: 18px; color: var(--ink-2); margin-left: 2px; }
+.kpi-label {
+  font-size: 12px; color: var(--ink-2);
+  margin-top: 6px;
+}
+
+/* Hero canvas (animated coast) */
+.hero-canvas-wrap {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  max-height: 620px;
+  border-radius: 24px; overflow: hidden;
+  background: linear-gradient(180deg, #FAE9CF 0%, #F4D29C 30%, #94C8C5 56%, #2D6F7A 100%);
+  box-shadow: var(--shadow-lg);
+}
+#heroCanvas { width: 100%; height: 100%; display: block; }
+.hero-canvas-overlay {
+  position: absolute; left: 18px; right: 18px; bottom: 18px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  pointer-events: none;
+}
+.hero-tag {
+  background: rgba(6, 23, 38, 0.5);
+  backdrop-filter: blur(12px);
+  color: var(--paper);
+  padding: 8px 14px; border-radius: 999px;
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  font-weight: 500;
+}
+.hero-year-display {
+  font-family: var(--serif); font-weight: 600; color: var(--paper);
+  font-size: 48px; line-height: 1;
+  text-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  font-variant-numeric: tabular-nums;
+}
+.hero-year-display small {
+  display: block; font-family: var(--sans); font-weight: 500;
+  font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  margin-bottom: 4px; opacity: 0.85;
+}
+
+/* =========================================================
+   SECTION COMMON
+========================================================= */
+.section {
+  padding: 80px 28px;
+  max-width: 1400px; margin: 0 auto;
+}
+.section-narrow { max-width: 1200px; }
+.section-head { margin-bottom: 40px; }
+.section-eyebrow {
+  display: inline-block;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--teal-deep); margin-bottom: 14px;
+}
+.section-title {
+  font-family: var(--serif); font-weight: 600;
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1.05; letter-spacing: -0.02em;
+  max-width: 800px;
+}
+.section-title em { font-style: italic; color: var(--teal-deep); font-weight: 400; }
+.section-lead {
+  font-size: 17px; color: var(--ink-2); max-width: 680px;
+  margin-top: 16px;
+}
+
+/* =========================================================
+   ATLAS / MAP MODULE
+========================================================= */
+.atlas {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0;
+  margin: 0;
+  max-width: none;
+}
+.atlas-inner {
+  max-width: 1500px; margin: 0 auto;
+  padding: 64px 28px;
+}
+.atlas .section-eyebrow { color: var(--teal-light); }
+.atlas .section-title { color: var(--paper); }
+.atlas .section-lead { color: rgba(246,241,231,0.7); }
+
+.atlas-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+  margin-top: 32px;
+}
+.map-shell {
+  position: relative;
+  height: 680px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(246,241,231,0.08);
+  background: #0F2538;
+}
+#leafletMap { width: 100%; height: 100%; }
+.map-shell .leaflet-tile-pane { filter: hue-rotate(-10deg) saturate(0.65) brightness(0.85); }
+.map-shell .leaflet-container { background: #0a1c2e; font-family: var(--sans); }
+
+/* Map overlay controls */
+.map-overlay-top {
+  position: absolute; top: 16px; left: 16px; right: 16px;
+  display: flex; justify-content: space-between; gap: 12px;
+  pointer-events: none; z-index: 500;
+}
+.map-search {
+  pointer-events: auto;
+  background: rgba(6, 23, 38, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(246,241,231,0.12);
+  border-radius: 999px;
+  padding: 10px 16px;
+  display: flex; align-items: center; gap: 10px;
+  min-width: 280px;
+}
+.map-search input {
+  flex: 1; background: transparent; border: 0; outline: 0;
+  color: var(--paper); font-family: var(--sans); font-size: 13px;
+}
+.map-search input::placeholder { color: rgba(246,241,231,0.4); }
+.map-search svg { stroke: rgba(246,241,231,0.5); width: 16px; height: 16px; flex-shrink: 0; }
+
+.map-legend {
+  pointer-events: auto;
+  background: rgba(6, 23, 38, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(246,241,231,0.12);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 11px;
+}
+.legend-title {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  opacity: 0.6; margin-bottom: 8px;
+}
+.legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+.legend-row:last-child { margin-bottom: 0; }
+
+.map-controls {
+  position: absolute; bottom: 16px; left: 16px; right: 16px;
+  pointer-events: none; z-index: 500;
+  display: flex; justify-content: space-between; gap: 12px; align-items: flex-end;
+}
+.layer-toggles {
+  pointer-events: auto;
+  background: rgba(6, 23, 38, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(246,241,231,0.12);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.layer-toggle {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  transition: background 0.15s;
+}
+.layer-toggle:hover { background: rgba(246,241,231,0.06); }
+.layer-toggle input[type="checkbox"] {
+  -webkit-appearance: none; appearance: none;
+  width: 28px; height: 16px; background: rgba(246,241,231,0.15);
+  border-radius: 999px; position: relative;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.layer-toggle input[type="checkbox"]:checked { background: var(--teal); }
+.layer-toggle input[type="checkbox"]::before {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 12px; height: 12px; border-radius: 50%; background: var(--paper);
+  transition: transform 0.2s;
+}
+.layer-toggle input[type="checkbox"]:checked::before { transform: translateX(12px); }
+
+.map-zoom-info {
+  pointer-events: none;
+  font-family: var(--mono); font-size: 10px;
+  color: rgba(246,241,231,0.5);
+  letter-spacing: 0.14em;
+}
+
+/* Side panel (commune list / detail) */
+.atlas-side {
+  background: rgba(246,241,231,0.04);
+  border: 1px solid rgba(246,241,231,0.08);
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  height: 680px;
+}
+.side-tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(246,241,231,0.08);
+}
+.side-tab {
+  flex: 1;
+  padding: 14px 12px;
+  font-size: 12px; font-weight: 500;
+  text-align: center;
+  color: rgba(246,241,231,0.5);
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.side-tab.active {
+  color: var(--paper);
+  border-bottom-color: var(--coral);
+}
+.side-tab:hover { color: var(--paper); }
+.side-body { flex: 1; overflow-y: auto; padding: 12px; }
+.side-body::-webkit-scrollbar { width: 6px; }
+.side-body::-webkit-scrollbar-thumb { background: rgba(246,241,231,0.15); border-radius: 3px; }
+
+.commune-list { display: flex; flex-direction: column; gap: 6px; }
+.commune-item {
+  background: rgba(246,241,231,0.04);
+  border: 1px solid rgba(246,241,231,0.06);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px;
+  align-items: center;
+}
+.commune-item:hover { background: rgba(246,241,231,0.08); transform: translateX(2px); }
+.commune-item.active {
+  background: rgba(232,110,85,0.18);
+  border-color: var(--coral);
+}
+.commune-flag {
+  width: 4px; align-self: stretch; border-radius: 2px;
+}
+.commune-meta {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.10em; opacity: 0.5; text-transform: uppercase;
+}
+.commune-name {
+  font-weight: 500; font-size: 14px; margin-top: 2px;
+}
+.commune-stat {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--coral); font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Commune detail */
+.commune-detail { display: none; }
+.commune-detail.visible { display: block; }
+.cd-back {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; padding: 6px 10px;
+  background: rgba(246,241,231,0.06); border-radius: 999px;
+  margin-bottom: 16px;
+}
+.cd-header { margin-bottom: 20px; }
+.cd-type {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  opacity: 0.6;
+}
+.cd-name {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 28px; line-height: 1.1;
+  margin: 4px 0;
+}
+.cd-region {
+  font-size: 13px; opacity: 0.7;
+}
+.cd-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin-bottom: 20px;
+}
+.cd-stat {
+  background: rgba(246,241,231,0.04);
+  border-radius: 10px;
+  padding: 12px;
+}
+.cd-stat-label {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  opacity: 0.55; margin-bottom: 6px;
+}
+.cd-stat-value {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 22px; line-height: 1;
+}
+.cd-stat-value small { font-family: var(--sans); font-weight: 400; font-size: 12px; opacity: 0.6; margin-left: 3px; }
+
+.cd-projection {
+  background: rgba(246,241,231,0.04);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.cd-projection-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.cd-projection-title {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.10em; text-transform: uppercase;
+  opacity: 0.7;
+}
+.cd-year-pill {
+  font-family: var(--mono); font-size: 11px;
+  background: var(--coral); color: var(--paper);
+  padding: 4px 10px; border-radius: 999px;
+}
+.cd-projection-bar {
+  height: 6px; background: rgba(246,241,231,0.1);
+  border-radius: 3px; overflow: hidden; position: relative;
+  margin-bottom: 10px;
+}
+.cd-projection-bar-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: linear-gradient(90deg, var(--amber), var(--coral));
+  border-radius: 3px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.cd-projection-text {
+  font-size: 12px; opacity: 0.85;
+}
+.cd-projection-text strong { color: var(--coral); font-weight: 600; }
+
+.cd-actions {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin-top: 16px;
+}
+.cd-actions .btn {
+  padding: 10px 12px;
+  font-size: 12px;
+  justify-content: center;
+  background: rgba(246,241,231,0.06);
+  border-color: rgba(246,241,231,0.12);
+  color: var(--paper);
+}
+.cd-actions .btn:hover { background: rgba(246,241,231,0.12); }
+.cd-actions .btn.primary { background: var(--coral); border-color: var(--coral); }
+.cd-actions .btn.primary:hover { background: var(--coral-deep); }
+
+/* Custom Leaflet markers */
+.commune-marker {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--paper);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s;
+}
+.commune-marker:hover { transform: scale(1.15); }
+.commune-marker.pulse::before {
+  content: ""; position: absolute; inset: -6px;
+  border-radius: 50%; border: 2px solid currentColor;
+  animation: markerPulse 2s ease-out infinite;
+}
+@keyframes markerPulse {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* =========================================================
+   SIMULATION TIMELINE
+========================================================= */
+.simulator {
+  background: var(--paper);
+  padding-top: 80px; padding-bottom: 80px;
+}
+.sim-stage {
+  background: var(--foam);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  box-shadow: var(--shadow-md);
+}
+.sim-stage-canvas {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background:
+    linear-gradient(180deg, #FAE9CF 0%, #F4D29C 24%, #DDB67A 42%);
+  overflow: hidden;
+}
+#sceneCanvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sim-stage-canvas .sim-year-overlay {
+  position: absolute; top: 24px; left: 24px;
+  font-family: var(--serif); font-weight: 600;
+  font-size: 56px; line-height: 1; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 4px 24px rgba(255,255,255,0.6);
+}
+.sim-stage-canvas .sim-year-overlay small {
+  display: block; font-family: var(--mono); font-weight: 500;
+  font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  opacity: 0.65; margin-bottom: 4px;
+}
+.sim-stage-canvas .sim-meta {
+  position: absolute; top: 24px; right: 24px;
+  text-align: right;
+}
+.sim-meta-item {
+  background: rgba(6, 23, 38, 0.7);
+  backdrop-filter: blur(12px);
+  color: var(--paper);
+  padding: 8px 14px; border-radius: 999px;
+  font-size: 11px; letter-spacing: 0.10em; text-transform: uppercase;
+  font-weight: 500;
+  margin-bottom: 6px;
+  display: inline-block;
+}
+.sim-meta-stats {
+  display: flex; gap: 10px; justify-content: flex-end;
+  margin-top: 12px;
+}
+.sim-meta-stat {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 11px;
+  text-align: left;
+}
+.sim-meta-stat strong {
+  display: block;
+  font-family: var(--serif); font-weight: 600;
+  font-size: 22px; line-height: 1;
+  color: var(--ink); margin-top: 2px;
+}
+
+/* Sim controls */
+.sim-controls {
+  padding: 24px;
+  display: flex; flex-direction: column;
+  gap: 20px;
+}
+.sim-block-label {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-2); opacity: 0.6; margin-bottom: 10px;
+}
+.sim-block h4 {
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* Timeline slider */
+.sim-timeline { position: relative; padding: 0 2px; }
+.sim-track {
+  position: relative; height: 36px;
+  background: linear-gradient(90deg, #E8DEC5 0%, #DCC795 50%, #B59758 100%);
+  border-radius: 999px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.sim-track::after {
+  content: ""; position: absolute; inset: 0;
+  background: repeating-linear-gradient(90deg, transparent 0, transparent 9.99%, rgba(11,27,43,0.15) 10%, rgba(11,27,43,0.15) 10.1%);
+  pointer-events: none;
+}
+.sim-thumb {
+  position: absolute; top: 50%; left: 0;
+  transform: translate(-50%, -50%);
+  width: 28px; height: 28px;
+  background: var(--ink); border: 3px solid var(--paper);
+  border-radius: 50%;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  transition: left 0.15s;
+}
+.sim-thumb::before {
+  content: attr(data-year);
+  position: absolute; left: 50%; bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  font-family: var(--mono); font-size: 11px;
+  background: var(--ink); color: var(--paper);
+  padding: 3px 8px; border-radius: 6px;
+  white-space: nowrap;
+}
+.sim-ticks {
+  display: flex; justify-content: space-between;
+  margin-top: 8px;
+  font-family: var(--mono); font-size: 10px;
+  color: var(--ink-2); opacity: 0.55;
+}
+.sim-play {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 14px;
+}
+.btn-play {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--ink); color: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.btn-play:hover { background: var(--coral); transform: scale(1.05); }
+.btn-play svg { width: 14px; height: 14px; }
+.sim-play-speed {
+  display: flex; gap: 4px;
+}
+.speed-btn {
+  font-size: 11px; font-weight: 600;
+  padding: 6px 10px; border-radius: 8px;
+  background: rgba(11,27,43,0.04);
+  color: var(--ink-2);
+  font-family: var(--mono);
+}
+.speed-btn.active { background: var(--ink); color: var(--paper); }
+
+/* Scenario selector */
+.scenario-group { display: flex; flex-direction: column; gap: 6px; }
+.scenario-option {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.scenario-option:hover { border-color: var(--ink); }
+.scenario-option input { display: none; }
+.scenario-option.selected {
+  border-color: var(--coral);
+  background: rgba(232,110,85,0.06);
+}
+.scenario-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--line);
+  flex-shrink: 0; position: relative;
+}
+.scenario-option.selected .scenario-dot {
+  border-color: var(--coral);
+}
+.scenario-option.selected .scenario-dot::after {
+  content: ""; position: absolute; inset: 2px;
+  background: var(--coral); border-radius: 50%;
+}
+.scenario-name {
+  font-weight: 500; font-size: 13px;
+}
+.scenario-name small { display: block; font-weight: 400; font-size: 11px; opacity: 0.6; margin-top: 2px; }
+.scenario-temp {
+  font-family: var(--mono); font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-2);
+  padding: 4px 8px; border-radius: 6px;
+  background: rgba(11,27,43,0.04);
+}
+
+/* =========================================================
+   3D IMMERSION
+========================================================= */
+.immersion {
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+  padding: 80px 28px;
+}
+.imm-stage {
+  position: relative;
+  max-width: 1400px; margin: 32px auto 0;
+  aspect-ratio: 16 / 9;
+  background: var(--abyss);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+#threeCanvas { width: 100%; height: 100%; display: block; }
+.imm-ui {
+  position: absolute; inset: 0;
+  pointer-events: none;
+}
+.imm-ui > * { pointer-events: auto; }
+.imm-title {
+  position: absolute; top: 24px; left: 24px;
+  color: var(--paper);
+}
+.imm-title-eyebrow {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  opacity: 0.6;
+}
+.imm-title-main {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 24px; line-height: 1.1; margin-top: 4px;
+  letter-spacing: -0.01em;
+}
+.imm-controls {
+  position: absolute; right: 24px; top: 24px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.imm-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  background: rgba(6, 23, 38, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(246,241,231,0.12);
+  border-radius: 999px;
+  color: var(--paper);
+  font-size: 12px;
+}
+.imm-btn:hover { background: rgba(6, 23, 38, 0.85); }
+.imm-btn.active { background: var(--coral); border-color: var(--coral); }
+
+.imm-readout {
+  position: absolute; bottom: 24px; left: 24px;
+  color: var(--paper);
+  display: flex; gap: 20px;
+}
+.imm-readout-item {
+  background: rgba(6, 23, 38, 0.55);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(246,241,231,0.12);
+  border-radius: 12px;
+  padding: 10px 16px;
+}
+.imm-readout-label {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  opacity: 0.6; margin-bottom: 4px;
+}
+.imm-readout-value {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 20px; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.imm-readout-value small { font-family: var(--sans); font-weight: 400; font-size: 12px; opacity: 0.7; margin-left: 4px; }
+
+.imm-slider-wrap {
+  position: absolute; right: 24px; bottom: 24px;
+  width: 280px;
+  background: rgba(6, 23, 38, 0.55);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(246,241,231,0.12);
+  border-radius: 14px;
+  padding: 14px 18px;
+  color: var(--paper);
+}
+.imm-slider-label {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  opacity: 0.7; margin-bottom: 10px;
+  display: flex; justify-content: space-between;
+}
+.imm-slider-label strong { font-family: var(--serif); font-weight: 600; font-size: 16px; opacity: 1; text-transform: none; letter-spacing: 0; }
+input.imm-range {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 6px;
+  background: rgba(246,241,231,0.18);
+  border-radius: 999px; outline: 0;
+  cursor: pointer;
+}
+input.imm-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--coral);
+  border: 2px solid var(--paper);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+input.imm-range::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--coral);
+  border: 2px solid var(--paper);
+  cursor: pointer;
+}
+
+/* =========================================================
+   FLOOD MODULE
+========================================================= */
+.flood {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 80px 28px;
+  max-width: none;
+}
+.flood-inner { max-width: 1400px; margin: 0 auto; }
+.flood .section-eyebrow { color: var(--teal-light); }
+.flood .section-title { color: var(--paper); }
+.flood .section-lead { color: rgba(246,241,231,0.7); }
+
+.flood-layout {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 28px;
+  margin-top: 36px;
+}
+.flood-vis {
+  position: relative;
+  border-radius: 18px; overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(180deg, #1a3a5a 0%, #0e2236 60%);
+  border: 1px solid rgba(246,241,231,0.08);
+}
+#floodCanvas { width: 100%; height: 100%; display: block; }
+.flood-vis-ui {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  padding: 20px;
+}
+.flood-vis-ui > * { pointer-events: auto; }
+.flood-storm-label {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  opacity: 0.7;
+}
+.flood-storm-name {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 28px; margin-top: 4px;
+  line-height: 1.05;
+}
+.flood-storm-readouts {
+  position: absolute; bottom: 20px; left: 20px;
+  display: flex; gap: 8px;
+}
+.flood-readout {
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(12px);
+  border-radius: 10px;
+  padding: 10px 14px;
+  border: 1px solid rgba(246,241,231,0.1);
+}
+.flood-readout-label {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  opacity: 0.65; margin-bottom: 4px;
+}
+.flood-readout-value {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 18px; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.flood-controls {
+  display: flex; flex-direction: column; gap: 20px;
+}
+.flood-scenario-cards {
+  display: grid; gap: 8px;
+}
+.flood-card {
+  background: rgba(246,241,231,0.04);
+  border: 1px solid rgba(246,241,231,0.08);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: grid; grid-template-columns: auto 1fr auto; gap: 14px;
+  align-items: center;
+}
+.flood-card:hover { background: rgba(246,241,231,0.06); }
+.flood-card.active {
+  background: rgba(42,140,140,0.16);
+  border-color: var(--teal);
+}
+.flood-card-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: rgba(42,140,140,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-weight: 600; font-size: 14px;
+  color: var(--teal-light);
+}
+.flood-card-title { font-weight: 500; font-size: 14px; }
+.flood-card-meta {
+  font-family: var(--mono); font-size: 10px;
+  opacity: 0.6; margin-top: 3px;
+  letter-spacing: 0.08em;
+}
+.flood-card-prob {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--coral); font-weight: 600;
+}
+
+.flood-effects {
+  background: rgba(246,241,231,0.04);
+  border: 1px solid rgba(246,241,231,0.08);
+  border-radius: 12px;
+  padding: 16px;
+}
+.flood-effects h4 {
+  font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  font-weight: 600; opacity: 0.7; margin-bottom: 12px;
+}
+.effect-row {
+  display: grid; grid-template-columns: 1fr auto; gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px dashed rgba(246,241,231,0.08);
+  font-size: 13px;
+}
+.effect-row:last-child { border-bottom: 0; }
+.effect-label { display: flex; align-items: center; gap: 8px; }
+.effect-label .dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--coral);
+}
+.effect-value {
+  font-family: var(--mono); font-weight: 600; font-size: 12px;
+}
+
+/* =========================================================
+   DASHBOARD : ESPACE COMMUNE / ENTREPRISE
+========================================================= */
+.dashboard { padding: 80px 28px; }
+.dash-tabs {
+  display: flex;
+  background: var(--foam);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px;
+  width: fit-content;
+  margin-bottom: 24px;
+}
+.dash-tab {
+  font-size: 13px; font-weight: 500;
+  padding: 10px 22px;
+  border-radius: 999px;
+  color: var(--ink-2);
+  transition: all 0.2s;
+}
+.dash-tab.active { background: var(--ink); color: var(--paper); }
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+}
+.card {
+  background: var(--foam);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+}
+.card-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 14px;
+}
+.card-eyebrow {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-2); opacity: 0.6;
+}
+.card-title {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 22px; line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin-top: 4px;
+}
+.card-chip {
+  font-family: var(--mono); font-size: 10px;
+  font-weight: 500; letter-spacing: 0.06em;
+  padding: 4px 10px; border-radius: 999px;
+  background: rgba(42,140,140,0.14); color: var(--teal-deep);
+}
+.card-chip.warn { background: rgba(244,180,0,0.16); color: #8A6500; }
+.card-chip.crit { background: rgba(232,110,85,0.16); color: var(--coral-deep); }
+
+.card-kpi { grid-column: span 3; }
+.card-kpi .num {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 44px; line-height: 1; letter-spacing: -0.02em;
+}
+.card-kpi .num small {
+  font-size: 18px; font-weight: 400; color: var(--ink-2);
+  margin-left: 4px;
+}
+.card-kpi .trend {
+  margin-top: 8px;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--algae);
+}
+.card-kpi .trend.down { color: var(--coral); }
+.card-kpi .sparkline {
+  margin-top: 12px;
+  width: 100%;
+  height: 36px;
+}
+
+.card-chart-wide { grid-column: span 8; }
+.card-chart-narrow { grid-column: span 4; }
+.card-recommendations { grid-column: span 12; }
+.card-budget { grid-column: span 6; }
+.card-stake { grid-column: span 6; }
+
+.chart-canvas { position: relative; height: 280px; }
+.chart-canvas canvas { width: 100% !important; height: 100% !important; }
+
+/* Recommendations */
+.reco-list {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  margin-top: 12px;
+}
+.reco-item {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex; flex-direction: column;
+  gap: 10px;
+}
+.reco-head { display: flex; justify-content: space-between; align-items: flex-start; }
+.reco-icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: var(--ink); color: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-weight: 600; font-size: 16px;
+}
+.reco-priority {
+  font-family: var(--mono); font-size: 10px;
+  font-weight: 600; letter-spacing: 0.08em;
+  padding: 4px 8px; border-radius: 999px;
+}
+.reco-priority.high { background: rgba(232,110,85,0.16); color: var(--coral-deep); }
+.reco-priority.med { background: rgba(244,180,0,0.16); color: #8A6500; }
+.reco-priority.low { background: rgba(92,138,79,0.16); color: var(--algae); }
+.reco-title {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 18px; line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.reco-desc {
+  font-size: 13px; color: var(--ink-2);
+  line-height: 1.5;
+}
+.reco-foot {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: auto; padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  font-size: 12px;
+}
+.reco-cost {
+  font-family: var(--mono); font-weight: 600; color: var(--ink);
+}
+.reco-horizon {
+  font-size: 11px; color: var(--ink-2); opacity: 0.7;
+}
+
+/* Stakeholders */
+.stake-list { display: flex; flex-direction: column; gap: 10px; }
+.stake-row {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--line);
+}
+.stake-row:last-child { border-bottom: 0; }
+.stake-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--teal), var(--teal-deep));
+  color: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 13px;
+}
+.stake-avatar.entreprise { background: linear-gradient(135deg, var(--coral), var(--coral-deep)); }
+.stake-avatar.commune { background: linear-gradient(135deg, var(--ink-2), var(--ink)); }
+.stake-avatar.assoc { background: linear-gradient(135deg, var(--algae), #3D5E33); }
+.stake-name { font-weight: 500; font-size: 14px; }
+.stake-role { font-size: 12px; color: var(--ink-2); }
+.stake-action {
+  font-family: var(--mono); font-size: 11px;
+  background: rgba(11,27,43,0.04);
+  padding: 6px 10px; border-radius: 6px;
+}
+
+/* Budget bars */
+.budget-list { display: flex; flex-direction: column; gap: 14px; }
+.budget-row { font-size: 13px; }
+.budget-row-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.budget-amount { font-family: var(--mono); font-weight: 600; }
+.budget-bar {
+  height: 8px;
+  background: rgba(11,27,43,0.06);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.budget-bar-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  border-radius: 999px;
+  background: var(--teal);
+  transition: width 0.5s ease-out;
+}
+
+/* =========================================================
+   FOOTER / METHODOLOGIE
+========================================================= */
+.method {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 60px 28px;
+  max-width: none;
+}
+.method-inner { max-width: 1400px; margin: 0 auto; }
+.method-grid {
+  display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 36px;
+  margin-top: 28px;
+}
+.method-col h4 {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--teal-light); opacity: 0.7;
+  margin-bottom: 14px;
+}
+.method-col p { color: rgba(246,241,231,0.7); font-size: 13px; line-height: 1.7; }
+.method-col ul { list-style: none; }
+.method-col li {
+  padding: 6px 0;
+  font-size: 13px;
+  color: rgba(246,241,231,0.75);
+  display: flex; align-items: center; gap: 10px;
+}
+.method-col li::before {
+  content: "→"; color: var(--coral); font-family: var(--mono);
+}
+.footer {
+  padding: 24px 28px;
+  background: var(--abyss);
+  color: rgba(246,241,231,0.6);
+  font-size: 12px;
+  text-align: center;
+  border-top: 1px solid rgba(246,241,231,0.06);
+}
+.footer strong { color: var(--paper); }
+
+/* Mobile */
+@media (max-width: 1100px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .atlas-layout { grid-template-columns: 1fr; }
+  .atlas-side { height: 480px; }
+  .sim-stage { grid-template-columns: 1fr; }
+  .flood-layout { grid-template-columns: 1fr; }
+  .card-kpi { grid-column: span 6; }
+  .card-chart-wide, .card-chart-narrow, .card-budget, .card-stake { grid-column: span 12; }
+  .reco-list { grid-template-columns: 1fr; }
+  .method-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .nav-main { display: none; }
+  .section { padding: 56px 20px; }
+  .atlas-inner, .flood-inner, .method-inner { padding: 48px 20px; }
+  .hero { padding: 56px 20px 40px; }
+  .hero-kpis { grid-template-columns: 1fr 1fr; }
+  .card-kpi { grid-column: span 12; }
+  .sim-stage-canvas .sim-year-overlay { font-size: 36px; }
+  .sim-stage-canvas .sim-meta { display: none; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ===========================================================
+     TOPBAR
+=========================================================== -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-logo" aria-hidden="true"></div>
+    <div>
+      <div class="brand-name">LITT<em>us</em></div>
+      <div class="brand-sub">Atlas du trait de côte</div>
+    </div>
+  </div>
+  <nav class="nav-main" aria-label="Navigation principale">
+    <a href="#atlas" class="nav-link active">Atlas</a>
+    <a href="#simulation" class="nav-link">Simulation</a>
+    <a href="#immersion" class="nav-link">Immersion 3D</a>
+    <a href="#inondation" class="nav-link">Inondation</a>
+    <a href="#dashboard" class="nav-link">Tableau de bord</a>
+  </nav>
+  <div class="nav-actions">
+    <button class="btn">Se connecter</button>
+    <button class="btn coral">Espace commune</button>
+  </div>
+</header>
+
+<!-- ===========================================================
+     HERO
+=========================================================== -->
+<section class="hero">
+  <div class="hero-grid">
+    <div>
+      <div class="hero-eyebrow"><span class="dot"></span>Plateforme bêta · v0.9 · mai 2026</div>
+      <h1 class="hero-title">
+        Anticiper le <em>trait de côte</em>,<br>
+        <span class="underline">protéger</span> nos territoires.
+      </h1>
+      <p class="hero-lead">
+        L'outil de référence des collectivités et entreprises littorales pour
+        visualiser, simuler et piloter le recul du trait de côte et les submersions
+        marines à l'horizon&nbsp;2100. Données IGN, BRGM, Cerema, GIEC consolidées
+        en un seul tableau de bord.
+      </p>
+      <div class="hero-ctas">
+        <a href="#simulation" class="btn coral btn-large">
+          Lancer la simulation
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+        <a href="#atlas" class="btn btn-large">
+          Explorer l'atlas
+        </a>
+      </div>
+      <div class="hero-kpis">
+        <div class="kpi-card">
+          <div class="kpi-num">864</div>
+          <div class="kpi-label">communes littorales métropolitaines suivies</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-num">1,1<small>m</small></div>
+          <div class="kpi-label">élévation médiane du niveau marin · scénario SSP3-7.0 (2100)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-num">50<small>k</small></div>
+          <div class="kpi-label">logements directement menacés d'ici 2100</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-canvas-wrap">
+      <canvas id="heroCanvas"></canvas>
+      <div class="hero-canvas-overlay">
+        <div class="hero-tag" id="heroTag">Vue projective · côte sableuse</div>
+        <div class="hero-year-display"><small>Horizon</small><span id="heroYear">2055</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================================
+     ATLAS / MAP
+=========================================================== -->
+<section id="atlas" class="atlas">
+  <div class="atlas-inner">
+    <div class="section-head">
+      <div class="section-eyebrow">01 · Atlas dynamique</div>
+      <h2 class="section-title">Toute la donnée littorale,<br><em>cartographiée et fraîche.</em></h2>
+      <p class="section-lead">
+        Recul du trait de côte, zones basses, ouvrages de protection, PPRL, biens
+        exposés&nbsp;: 12 couches officielles superposables, mises à jour
+        trimestriellement. Cliquez sur une commune pour ouvrir sa fiche complète.
+      </p>
+    </div>
+
+    <div class="atlas-layout">
+      <!-- MAP -->
+      <div class="map-shell">
+        <div id="leafletMap" role="application" aria-label="Carte interactive du littoral français"></div>
+
+        <div class="map-overlay-top">
+          <div class="map-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input type="text" id="mapSearch" placeholder="Rechercher une commune, un département…">
+          </div>
+          <div class="map-legend">
+            <div class="legend-title">Niveau d'exposition</div>
+            <div class="legend-row"><span class="legend-dot" style="background:#5C8A4F"></span>Faible</div>
+            <div class="legend-row"><span class="legend-dot" style="background:#F4B400"></span>Modéré</div>
+            <div class="legend-row"><span class="legend-dot" style="background:#E86E55"></span>Élevé</div>
+            <div class="legend-row"><span class="legend-dot" style="background:#B84028"></span>Critique</div>
+          </div>
+        </div>
+
+        <div class="map-controls">
+          <div class="layer-toggles">
+            <label class="layer-toggle">
+              <input type="checkbox" id="lyrCommunes" checked>
+              <span>Communes suivies</span>
+            </label>
+            <label class="layer-toggle">
+              <input type="checkbox" id="lyrCote">
+              <span>Trait de côte 2025 (Cerema)</span>
+            </label>
+            <label class="layer-toggle">
+              <input type="checkbox" id="lyrErosion">
+              <span>Recul historique 1960-2020</span>
+            </label>
+            <label class="layer-toggle">
+              <input type="checkbox" id="lyrSubmersion">
+              <span>Zones basses submersibles</span>
+            </label>
+          </div>
+          <div class="map-zoom-info" id="mapZoomInfo">ÉCHELLE&nbsp;: ~1:1 200 000</div>
+        </div>
+      </div>
+
+      <!-- SIDE PANEL -->
+      <aside class="atlas-side">
+        <div class="side-tabs">
+          <button class="side-tab active" data-tab="list">Communes</button>
+          <button class="side-tab" data-tab="detail">Fiche</button>
+        </div>
+        <div class="side-body">
+          <div class="commune-list" id="communeList"><!-- injected --></div>
+          <div class="commune-detail" id="communeDetail"><!-- injected --></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================================
+     SIMULATION TIMELINE
+=========================================================== -->
+<section id="simulation" class="section simulator">
+  <div class="section-head">
+    <div class="section-eyebrow">02 · Simulateur d'évolution</div>
+    <h2 class="section-title">Faites <em>défiler le temps</em>,<br>jusqu'en 2100.</h2>
+    <p class="section-lead">
+      Une scène vivante qui s'anime au rythme de votre curseur&nbsp;: élévation
+      du niveau marin, recul du trait de côte, perte de plage, biens menacés.
+      Quatre scénarios climatiques du GIEC, comparables d'un clic.
+    </p>
+  </div>
+
+  <div class="sim-stage">
+    <div class="sim-stage-canvas">
+      <canvas id="sceneCanvas"></canvas>
+      <div class="sim-year-overlay"><small>Année</small><span id="simYear">2025</span></div>
+      <div class="sim-meta">
+        <div class="sim-meta-item" id="simScenarioName">SSP2-4.5 · trajectoire intermédiaire</div>
+        <div class="sim-meta-stats">
+          <div class="sim-meta-stat">Niveau marin <strong id="simSeaLevel">+0,00 m</strong></div>
+          <div class="sim-meta-stat">Recul cumulé <strong id="simRetreat">0 m</strong></div>
+          <div class="sim-meta-stat">Plage perdue <strong id="simBeach">0%</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sim-controls">
+      <div class="sim-block">
+        <div class="sim-block-label">Horizon temporel</div>
+        <div class="sim-timeline">
+          <div class="sim-track" id="simTrack">
+            <div class="sim-thumb" id="simThumb" data-year="2025"></div>
+          </div>
+          <div class="sim-ticks">
+            <span>2025</span><span>2040</span><span>2055</span><span>2070</span><span>2085</span><span>2100</span>
+          </div>
+        </div>
+        <div class="sim-play">
+          <button class="btn-play" id="btnPlay" aria-label="Lancer la lecture">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <div class="sim-play-speed">
+            <button class="speed-btn" data-speed="0.5">0.5×</button>
+            <button class="speed-btn active" data-speed="1">1×</button>
+            <button class="speed-btn" data-speed="2">2×</button>
+            <button class="speed-btn" data-speed="4">4×</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sim-block">
+        <div class="sim-block-label">Scénario climatique GIEC</div>
+        <div class="scenario-group" id="scenarioGroup">
+          <label class="scenario-option" data-key="ssp126">
+            <span class="scenario-dot"></span>
+            <span class="scenario-name">SSP1-2.6<small>Accord de Paris respecté</small></span>
+            <span class="scenario-temp">+1,5°C</span>
+          </label>
+          <label class="scenario-option selected" data-key="ssp245">
+            <span class="scenario-dot"></span>
+            <span class="scenario-name">SSP2-4.5<small>Trajectoire intermédiaire</small></span>
+            <span class="scenario-temp">+2,7°C</span>
+          </label>
+          <label class="scenario-option" data-key="ssp370">
+            <span class="scenario-dot"></span>
+            <span class="scenario-name">SSP3-7.0<small>Politiques actuelles</small></span>
+            <span class="scenario-temp">+3,6°C</span>
+          </label>
+          <label class="scenario-option" data-key="ssp585">
+            <span class="scenario-dot"></span>
+            <span class="scenario-name">SSP5-8.5<small>Extrême · haute émission</small></span>
+            <span class="scenario-temp">+4,4°C</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="sim-block">
+        <div class="sim-block-label">Type de littoral simulé</div>
+        <div class="scenario-group" id="coastTypeGroup">
+          <label class="scenario-option selected" data-key="sandy">
+            <span class="scenario-dot"></span>
+            <span class="scenario-name">Côte sableuse<small>plage, dune, cordon</small></span>
+            <span class="scenario-temp">35%</span>
+          </label>
+          <label class="scenario-option" data-key="cliff">
+            <span class="scenario-dot"></span>
+            <span class="scenario-name">Falaise<small>craie, calcaire, schiste</small></span>
+            <span class="scenario-temp">23%</span>
+          </label>
+          <label class="scenario-option" data-key="marsh">
+            <span class="scenario-dot"></span>
+            <span class="scenario-name">Marais &amp; estuaire<small>vasières, polders</small></span>
+            <span class="scenario-temp">19%</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================================
+     IMMERSION 3D
+=========================================================== -->
+<section id="immersion" class="immersion">
+  <div class="section-head" style="max-width:1400px;margin-left:auto;margin-right:auto;">
+    <div class="section-eyebrow">03 · Immersion volumétrique</div>
+    <h2 class="section-title">Voyez le territoire <em>en relief</em>,<br>tournez-le, plongez-le.</h2>
+    <p class="section-lead">
+      Une maquette 3D temps réel de votre secteur, accessible sans logiciel.
+      Faites monter la mer mètre par mètre, observez les bâtiments concernés,
+      partagez la vue à vos administrés en un lien.
+    </p>
+  </div>
+
+  <div class="imm-stage">
+    <canvas id="threeCanvas"></canvas>
+    <div class="imm-ui">
+      <div class="imm-title">
+        <div class="imm-title-eyebrow">Maquette · Secteur démonstrateur</div>
+        <div class="imm-title-main">Anse du Phare · Vue oblique sud</div>
+      </div>
+      <div class="imm-controls">
+        <button class="imm-btn active" id="immRotate">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+          Rotation auto
+        </button>
+        <button class="imm-btn" id="immTide">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12c3-3 6 3 9 0s6-3 9 0"/><path d="M3 18c3-3 6 3 9 0s6-3 9 0"/></svg>
+          Marées
+        </button>
+        <button class="imm-btn active" id="immBuildingsBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="6" height="10"/><rect x="14" y="6" width="6" height="14"/></svg>
+          Bâti exposé
+        </button>
+      </div>
+
+      <div class="imm-readout">
+        <div class="imm-readout-item">
+          <div class="imm-readout-label">Niveau marin</div>
+          <div class="imm-readout-value" id="immSeaLevel">+0,40<small>m</small></div>
+        </div>
+        <div class="imm-readout-item">
+          <div class="imm-readout-label">Bâtiments inondés</div>
+          <div class="imm-readout-value" id="immBuildingsReadout">3<small>/ 28</small></div>
+        </div>
+        <div class="imm-readout-item">
+          <div class="imm-readout-label">Surface immergée</div>
+          <div class="imm-readout-value" id="immArea">2,4<small>ha</small></div>
+        </div>
+      </div>
+
+      <div class="imm-slider-wrap">
+        <div class="imm-slider-label">
+          <span>Élévation simulée</span>
+          <strong id="immSliderValue">+0,40 m</strong>
+        </div>
+        <input type="range" class="imm-range" id="immRange" min="0" max="300" value="40">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================================
+     FLOOD
+=========================================================== -->
+<section id="inondation" class="flood">
+  <div class="flood-inner">
+    <div class="section-head">
+      <div class="section-eyebrow">04 · Submersion marine</div>
+      <h2 class="section-title" style="color:var(--paper);">Quand <em>la tempête</em> rencontre<br>la marée haute.</h2>
+      <p class="section-lead" style="color:rgba(246,241,231,0.7);">
+        Simulez les événements de référence (Xynthia 2010, Quirin 2010) et les
+        scénarios PPRL à l'horizon 2100. Hauteur d'eau, durée d'immersion,
+        emprises&nbsp;: chaque vague est jouée en temps réel.
+      </p>
+    </div>
+
+    <div class="flood-layout">
+      <div class="flood-vis">
+        <canvas id="floodCanvas"></canvas>
+        <div class="flood-vis-ui">
+          <div>
+            <div class="flood-storm-label">Événement actif</div>
+            <div class="flood-storm-name" id="floodStormName">Tempête Xynthia (référence 2010)</div>
+          </div>
+          <div class="flood-storm-readouts">
+            <div class="flood-readout">
+              <div class="flood-readout-label">Surcote</div>
+              <div class="flood-readout-value" id="floodSurge">+1,50 m</div>
+            </div>
+            <div class="flood-readout">
+              <div class="flood-readout-label">Marée</div>
+              <div class="flood-readout-value" id="floodTide">102 (forte)</div>
+            </div>
+            <div class="flood-readout">
+              <div class="flood-readout-label">Vagues</div>
+              <div class="flood-readout-value" id="floodWaves">6,2 m</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flood-controls">
+        <div class="flood-scenario-cards" id="floodScenarios">
+          <div class="flood-card active" data-key="xynthia">
+            <div class="flood-card-icon">X</div>
+            <div>
+              <div class="flood-card-title">Tempête Xynthia (référence)</div>
+              <div class="flood-card-meta">Surcote 1,50 m · vives-eaux · 28 février 2010</div>
+            </div>
+            <div class="flood-card-prob">retour 50 ans</div>
+          </div>
+          <div class="flood-card" data-key="centennale">
+            <div class="flood-card-icon">100</div>
+            <div>
+              <div class="flood-card-title">Centennale 2025</div>
+              <div class="flood-card-meta">Surcote 2,10 m · niveau marin +0,15 m</div>
+            </div>
+            <div class="flood-card-prob">retour 100 ans</div>
+          </div>
+          <div class="flood-card" data-key="centennale2050">
+            <div class="flood-card-icon">+50</div>
+            <div>
+              <div class="flood-card-title">Centennale 2050 · SSP3-7.0</div>
+              <div class="flood-card-meta">Surcote 2,10 m · niveau marin +0,45 m</div>
+            </div>
+            <div class="flood-card-prob">retour 100 ans</div>
+          </div>
+          <div class="flood-card" data-key="centennale2100">
+            <div class="flood-card-icon">+100</div>
+            <div>
+              <div class="flood-card-title">Centennale 2100 · SSP5-8.5</div>
+              <div class="flood-card-meta">Surcote 2,40 m · niveau marin +1,15 m</div>
+            </div>
+            <div class="flood-card-prob">retour 100 ans</div>
+          </div>
+        </div>
+
+        <div class="flood-effects">
+          <h4>Conséquences simulées (secteur démonstrateur)</h4>
+          <div class="effect-row"><span class="effect-label"><span class="dot"></span>Population exposée</span><span class="effect-value" id="effPop">3 240</span></div>
+          <div class="effect-row"><span class="effect-label"><span class="dot"></span>Logements en zone d'aléa fort</span><span class="effect-value" id="effHomes">1 480</span></div>
+          <div class="effect-row"><span class="effect-label"><span class="dot"></span>Établissements sensibles (EHPAD, écoles)</span><span class="effect-value" id="effSensitive">7</span></div>
+          <div class="effect-row"><span class="effect-label"><span class="dot"></span>Linéaire routier coupé</span><span class="effect-value" id="effRoad">8,4 km</span></div>
+          <div class="effect-row"><span class="effect-label"><span class="dot"></span>Pertes économiques estimées</span><span class="effect-value" id="effLoss">142 M€</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================================
+     DASHBOARD
+=========================================================== -->
+<section id="dashboard" class="section dashboard">
+  <div class="section-head">
+    <div class="section-eyebrow">05 · Tableau de bord</div>
+    <h2 class="section-title">Pilotez votre <em>stratégie locale</em><br>de résilience.</h2>
+    <p class="section-lead">
+      Bascule entre la vue commune et la vue entreprise&nbsp;: indicateurs clés,
+      recommandations d'action, budgets et parties prenantes concernées.
+    </p>
+    <div class="dash-tabs" style="margin-top:18px;">
+      <button class="dash-tab active" data-mode="commune">Espace commune</button>
+      <button class="dash-tab" data-mode="entreprise">Espace entreprise</button>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+    <!-- KPIs row -->
+    <div class="card card-kpi">
+      <div class="card-head">
+        <div>
+          <div class="card-eyebrow">Trait de côte</div>
+          <div class="card-title" style="font-size:14px;letter-spacing:0;line-height:1.4;margin-top:2px;">Recul cumulé d'ici 2050</div>
+        </div>
+      </div>
+      <div class="num" id="kpi1">42<small> m</small></div>
+      <div class="trend down">↗ +18% vs scénario SSP1-2.6</div>
+      <svg class="sparkline" id="spark1" viewBox="0 0 200 36" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="card card-kpi">
+      <div class="card-head">
+        <div>
+          <div class="card-eyebrow">Logements</div>
+          <div class="card-title" style="font-size:14px;letter-spacing:0;line-height:1.4;margin-top:2px;">Biens directement exposés</div>
+        </div>
+      </div>
+      <div class="num" id="kpi2">312</div>
+      <div class="trend down">↗ +47 à horizon 2050</div>
+      <svg class="sparkline" id="spark2" viewBox="0 0 200 36" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="card card-kpi">
+      <div class="card-head">
+        <div>
+          <div class="card-eyebrow">Population</div>
+          <div class="card-title" style="font-size:14px;letter-spacing:0;line-height:1.4;margin-top:2px;">Habitants en zone d'aléa</div>
+        </div>
+      </div>
+      <div class="num" id="kpi3">1 824</div>
+      <div class="trend">↘ -12% si mesures grises</div>
+      <svg class="sparkline" id="spark3" viewBox="0 0 200 36" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="card card-kpi">
+      <div class="card-head">
+        <div>
+          <div class="card-eyebrow">Coût estimé</div>
+          <div class="card-title" style="font-size:14px;letter-spacing:0;line-height:1.4;margin-top:2px;">Inaction · cumul 25 ans</div>
+        </div>
+      </div>
+      <div class="num" id="kpi4">87<small> M€</small></div>
+      <div class="trend down">↗ +210% vs adaptation</div>
+      <svg class="sparkline" id="spark4" viewBox="0 0 200 36" preserveAspectRatio="none"></svg>
+    </div>
+
+    <!-- Chart wide : trajectoires -->
+    <div class="card card-chart-wide">
+      <div class="card-head">
+        <div>
+          <div class="card-eyebrow">Trajectoires comparées</div>
+          <div class="card-title">Recul du trait de côte selon le scénario</div>
+        </div>
+        <span class="card-chip">2025-2100 · projection</span>
+      </div>
+      <div class="chart-canvas"><canvas id="chartTrajectories"></canvas></div>
+    </div>
+
+    <!-- Chart narrow : doughnut composition aléas -->
+    <div class="card card-chart-narrow">
+      <div class="card-head">
+        <div>
+          <div class="card-eyebrow">Décomposition</div>
+          <div class="card-title">Aléas locaux</div>
+        </div>
+      </div>
+      <div class="chart-canvas"><canvas id="chartAleas"></canvas></div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="card card-recommendations">
+      <div class="card-head">
+        <div>
+          <div class="card-eyebrow">Plan d'action</div>
+          <div class="card-title">Recommandations <em>prioritaires</em></div>
+        </div>
+        <span class="card-chip">généré · GEMAPI &amp; SLGITC</span>
+      </div>
+      <div class="reco-list" id="recoList"><!-- injected --></div>
+    </div>
+
+    <!-- Budget -->
+    <div class="card card-budget">
+      <div class="card-head">
+        <div>
+          <div class="card-eyebrow">Financement</div>
+          <div class="card-title">Mobilisation budgétaire</div>
+        </div>
+        <span class="card-chip">12,4 M€ identifiés</span>
+      </div>
+      <div class="budget-list" id="budgetList"></div>
+    </div>
+
+    <!-- Stakeholders -->
+    <div class="card card-stake">
+      <div class="card-head">
+        <div>
+          <div class="card-eyebrow">Gouvernance</div>
+          <div class="card-title">Parties prenantes à mobiliser</div>
+        </div>
+        <span class="card-chip">11 contacts</span>
+      </div>
+      <div class="stake-list" id="stakeList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================================
+     METHODOLOGIE
+=========================================================== -->
+<section class="method">
+  <div class="method-inner">
+    <div class="section-head">
+      <div class="section-eyebrow" style="color:var(--teal-light);">06 · Méthodologie &amp; sources</div>
+      <h2 class="section-title" style="color:var(--paper);">Une donnée <em style="color:var(--coral)">tracée</em>, des modèles ouverts.</h2>
+    </div>
+    <div class="method-grid">
+      <div class="method-col">
+        <h4>Modèles &amp; références</h4>
+        <p>
+          Projections de niveau marin tirées du 6<sup>e</sup> rapport AR6 du GIEC
+          (Box 9.1, scénarios SSP). Recul morphologique calé sur l'indicateur
+          national Cerema (méthode «&nbsp;TCMOY&nbsp;») et la BD Histolitt SHOM.
+          Aléas de submersion croisés avec les Plans de Prévention des Risques
+          Littoraux (PPRL) approuvés.
+        </p>
+      </div>
+      <div class="method-col">
+        <h4>Sources de données</h4>
+        <ul>
+          <li>IGN · BD ORTHO &amp; BD ALTI 1m</li>
+          <li>Cerema · Trait de côte national</li>
+          <li>BRGM · BDLittoral, érosion</li>
+          <li>SHOM · MNT bathymétrique</li>
+          <li>SDES · Enquêtes biens exposés</li>
+          <li>Météo-France · vagues / surcotes</li>
+        </ul>
+      </div>
+      <div class="method-col">
+        <h4>Pour aller plus loin</h4>
+        <ul>
+          <li>Recommandation locale ROL 2025</li>
+          <li>Stratégie nationale GITC 2023-2027</li>
+          <li>Loi Climat &amp; Résilience (art.&nbsp;239 à 247)</li>
+          <li>Fonds Vert · volet «&nbsp;recul&nbsp;»</li>
+          <li>Doctrine ANEL · biens sinistrés</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    <strong>LITTUS</strong> · prototype démonstrateur · données illustratives, à
+    ne pas confondre avec un avis officiel. Inspiré de la stratégie nationale de
+    gestion intégrée du trait de côte.
+  </div>
+</section>
+
+<!-- ===========================================================
+     SCRIPTS
+=========================================================== -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+
+<script>
+/* =========================================================
+   DATA · communes littorales démonstrateur
+========================================================= */
+const COMMUNES = [
+  { id:'lacanau',   name:'Lacanau',          dept:'33', region:'Nouvelle-Aquitaine', lat:45.0010, lng:-1.1985, pop:5170,  type:'Côte sableuse',  retreat:2.3, risk:'critical', protection:'Cordon dunaire renforcé', exposed:182, beach:'Aquitaine' },
+  { id:'soulac',    name:'Soulac-sur-Mer',   dept:'33', region:'Nouvelle-Aquitaine', lat:45.5128, lng:-1.1262, pop:2620,  type:'Côte sableuse',  retreat:4.5, risk:'critical', protection:'Enrochement Le Signal', exposed:78,  beach:'Aquitaine' },
+  { id:'biscarrosse',name:'Biscarrosse',     dept:'40', region:'Nouvelle-Aquitaine', lat:44.4322, lng:-1.2530, pop:14210, type:'Côte sableuse',  retreat:3.1, risk:'high',     protection:'Cordon dunaire', exposed:230, beach:'Aquitaine' },
+  { id:'arcachon',  name:'Arcachon',         dept:'33', region:'Nouvelle-Aquitaine', lat:44.6580, lng:-1.1670, pop:10260, type:'Bassin estuarien', retreat:1.2, risk:'high',    protection:'Digues maritimes', exposed:412, beach:'Bassin' },
+  { id:'quiberon',  name:'Quiberon',         dept:'56', region:'Bretagne',           lat:47.4830, lng:-3.1190, pop:5060,  type:'Côte mixte',     retreat:0.9, risk:'medium',   protection:'Perré + plage', exposed:96,  beach:'Atlantique' },
+  { id:'sablesdolonne',name:'Les Sables-d\'Olonne', dept:'85', region:'Pays de la Loire', lat:46.4974, lng:-1.7833, pop:44300, type:'Côte mixte', retreat:1.4, risk:'high', protection:'Digue + perré', exposed:520, beach:'Atlantique' },
+  { id:'noirmoutier',name:'Noirmoutier-en-l\'Île', dept:'85', region:'Pays de la Loire', lat:46.9994, lng:-2.2487, pop:4480, type:'Île polder', retreat:0.6, risk:'critical', protection:'Digues Vauban', exposed:380, beach:'Atlantique' },
+  { id:'pornic',    name:'Pornic',           dept:'44', region:'Pays de la Loire',   lat:47.1129, lng:-2.1059, pop:15470, type:'Falaise basse',  retreat:0.7, risk:'medium',   protection:'Naturel', exposed:64,  beach:'Atlantique' },
+  { id:'saintmalo', name:'Saint-Malo',       dept:'35', region:'Bretagne',           lat:48.6493, lng:-2.0257, pop:46720, type:'Côte rocheuse',  retreat:0.4, risk:'high',     protection:'Digues historiques', exposed:840, beach:'Manche' },
+  { id:'cancale',   name:'Cancale',          dept:'35', region:'Bretagne',           lat:48.6770, lng:-1.8530, pop:5160,  type:'Côte rocheuse',  retreat:0.3, risk:'low',      protection:'Naturel', exposed:24,  beach:'Manche' },
+  { id:'lehavre',   name:'Le Havre',         dept:'76', region:'Normandie',          lat:49.4944, lng:0.1079,  pop:170150,type:'Estuaire',       retreat:0.5, risk:'high',     protection:'Digues portuaires', exposed:2100,beach:'Manche' },
+  { id:'etretat',   name:'Étretat',          dept:'76', region:'Normandie',          lat:49.7079, lng:0.2046,  pop:1290,  type:'Falaise craie',  retreat:0.25,risk:'high',     protection:'Aucun', exposed:18,  beach:'Manche' },
+  { id:'criel',     name:'Criel-sur-Mer',    dept:'76', region:'Normandie',          lat:50.0117, lng:1.3140,  pop:2620,  type:'Falaise craie',  retreat:0.40,risk:'critical', protection:'Aucun · recul libre', exposed:42, beach:'Manche' },
+  { id:'ault',      name:'Ault',             dept:'80', region:'Hauts-de-France',    lat:50.1010, lng:1.4500,  pop:1390,  type:'Falaise craie',  retreat:0.50,risk:'critical', protection:'Aucun', exposed:38,  beach:'Manche' },
+  { id:'wissant',   name:'Wissant',          dept:'62', region:'Hauts-de-France',    lat:50.8861, lng:1.6604,  pop:980,   type:'Côte sableuse',  retreat:2.1, risk:'critical', protection:'Cordon dunaire fragile', exposed:64, beach:'Manche' },
+  { id:'malo',      name:'Malo-les-Bains',   dept:'59', region:'Hauts-de-France',    lat:51.0500, lng:2.4000,  pop:18000, type:'Côte sableuse',  retreat:1.0, risk:'high',     protection:'Digue + plage', exposed:280, beach:'Manche' },
+  { id:'arles',     name:'Arles · Camargue', dept:'13', region:'PACA',               lat:43.4636, lng:4.4910,  pop:51100, type:'Delta · marais', retreat:6.0, risk:'critical', protection:'Digues poldérisées', exposed:880, beach:'Méditerranée' },
+  { id:'lagrandemotte',name:'La Grande-Motte',dept:'34', region:'Occitanie',         lat:43.5630, lng:4.0810,  pop:8950,  type:'Lido sableux',   retreat:1.8, risk:'high',     protection:'Brises-lames + rechargement', exposed:340, beach:'Méditerranée' },
+  { id:'sete',      name:'Sète',             dept:'34', region:'Occitanie',          lat:43.4030, lng:3.6970,  pop:44550, type:'Lido sableux',   retreat:1.5, risk:'high',     protection:'Atténuateurs immergés', exposed:610, beach:'Méditerranée' },
+  { id:'nice',      name:'Nice',             dept:'06', region:'PACA',               lat:43.7030, lng:7.2680,  pop:340000,type:'Côte urbaine',   retreat:0.2, risk:'medium',   protection:'Promenade + perré', exposed:520, beach:'Méditerranée' },
+  { id:'frejus',    name:'Fréjus',           dept:'83', region:'PACA',               lat:43.4330, lng:6.7370,  pop:54450, type:'Côte mixte',     retreat:0.9, risk:'high',     protection:'Épis + rechargement', exposed:380, beach:'Méditerranée' },
+];
+
+const RISK_COLOR = {
+  low: '#5C8A4F',
+  medium: '#F4B400',
+  high: '#E86E55',
+  critical: '#B84028'
+};
+const RISK_LABEL = {
+  low: 'Faible', medium: 'Modéré', high: 'Élevé', critical: 'Critique'
+};
+
+const SCENARIOS = {
+  ssp126: { name: 'SSP1-2.6 · Accord de Paris respecté', tempLabel: '+1,5°C', sea2100: 0.45, factor: 0.7 },
+  ssp245: { name: 'SSP2-4.5 · trajectoire intermédiaire', tempLabel: '+2,7°C', sea2100: 0.70, factor: 1.0 },
+  ssp370: { name: 'SSP3-7.0 · politiques actuelles', tempLabel: '+3,6°C', sea2100: 0.95, factor: 1.4 },
+  ssp585: { name: 'SSP5-8.5 · trajectoire extrême', tempLabel: '+4,4°C', sea2100: 1.25, factor: 1.9 }
+};
+
+/* =========================================================
+   STATE
+========================================================= */
+const state = {
+  year: 2025,
+  scenario: 'ssp245',
+  coastType: 'sandy',
+  selectedCommune: null,
+  playing: false,
+  speed: 1,
+  dashMode: 'commune',
+  flood: 'xynthia',
+  immSeaLevel: 0.40,
+  immRotate: true,
+  immTide: false,
+  immBuildings: true,
+};
+
+function seaLevelAtYear(year, scenarioKey) {
+  const s = SCENARIOS[scenarioKey];
+  const t = Math.max(0, (year - 2025) / 75);
+  return s.sea2100 * (t * t * 0.85 + t * 0.15);
+}
+function retreatAtYear(year, scenarioKey, baseRate) {
+  const s = SCENARIOS[scenarioKey];
+  const yrs = year - 2025;
+  const linear = baseRate * yrs;
+  const accel = baseRate * yrs * yrs * 0.012 * s.factor;
+  return linear + accel;
+}
+
+/* =========================================================
+   1 · HERO CANVAS — vagues + ligne de côte recule
+========================================================= */
+const heroCanvas = document.getElementById('heroCanvas');
+const heroCtx = heroCanvas.getContext('2d');
+let heroT = 0;
+let heroYear = 2025;
+
+function sizeCanvas(canvas) {
+  const r = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = r.width * dpr;
+  canvas.height = r.height * dpr;
+  return { w: r.width, h: r.height, dpr };
+}
+
+function drawHero() {
+  const { w, h, dpr } = sizeCanvas(heroCanvas);
+  heroCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  heroCtx.clearRect(0, 0, w, h);
+
+  // Sky / atmosphere
+  const sky = heroCtx.createLinearGradient(0, 0, 0, h * 0.5);
+  sky.addColorStop(0, '#FAE9CF');
+  sky.addColorStop(1, '#F4D29C');
+  heroCtx.fillStyle = sky;
+  heroCtx.fillRect(0, 0, w, h * 0.5);
+
+  // Sun
+  heroCtx.fillStyle = '#F4B400';
+  heroCtx.globalAlpha = 0.45;
+  heroCtx.beginPath();
+  heroCtx.arc(w * 0.78, h * 0.20, h * 0.07, 0, Math.PI * 2);
+  heroCtx.fill();
+  heroCtx.globalAlpha = 1;
+
+  // Mountains in distance
+  heroCtx.fillStyle = '#9DB6BA';
+  heroCtx.globalAlpha = 0.5;
+  heroCtx.beginPath();
+  heroCtx.moveTo(0, h * 0.50);
+  for (let x = 0; x <= w; x += 8) {
+    const y = h * 0.50 - 8 * Math.sin(x * 0.012) - 12 * Math.sin(x * 0.04 + 1.2);
+    heroCtx.lineTo(x, y);
+  }
+  heroCtx.lineTo(w, h * 0.55); heroCtx.lineTo(0, h * 0.55);
+  heroCtx.closePath(); heroCtx.fill();
+  heroCtx.globalAlpha = 1;
+
+  // Sea
+  const seaProgress = (heroYear - 2025) / 75; // 0..1
+  const seaTop = h * 0.50 - seaProgress * h * 0.10; // sea climbs up
+  const sea = heroCtx.createLinearGradient(0, seaTop, 0, h);
+  sea.addColorStop(0, '#7BB8B5');
+  sea.addColorStop(0.5, '#3A8487');
+  sea.addColorStop(1, '#1A4A52');
+  heroCtx.fillStyle = sea;
+  heroCtx.fillRect(0, seaTop, w, h - seaTop);
+
+  // Waves
+  heroCtx.strokeStyle = 'rgba(255,255,255,0.4)';
+  heroCtx.lineWidth = 1.2;
+  for (let i = 0; i < 6; i++) {
+    heroCtx.beginPath();
+    const wy = seaTop + (h - seaTop) * (0.06 + i * 0.12);
+    const amp = 4 + i * 1.4;
+    for (let x = 0; x <= w; x += 4) {
+      const y = wy + Math.sin(x * 0.025 + heroT * 0.015 + i) * amp;
+      if (x === 0) heroCtx.moveTo(x, y); else heroCtx.lineTo(x, y);
+    }
+    heroCtx.globalAlpha = 0.55 - i * 0.07;
+    heroCtx.stroke();
+  }
+  heroCtx.globalAlpha = 1;
+
+  // Beach (sand)
+  const beachRetreat = seaProgress * h * 0.05;
+  heroCtx.fillStyle = '#E8D7A4';
+  heroCtx.beginPath();
+  heroCtx.moveTo(0, seaTop);
+  heroCtx.bezierCurveTo(w * 0.25, seaTop - 6, w * 0.55, seaTop + 12, w, seaTop + 4);
+  heroCtx.lineTo(w, h * 0.72 - beachRetreat); heroCtx.lineTo(0, h * 0.72 - beachRetreat);
+  heroCtx.closePath();
+  heroCtx.fill();
+
+  // Dune
+  heroCtx.fillStyle = '#C9B47D';
+  heroCtx.beginPath();
+  heroCtx.moveTo(0, h * 0.72 - beachRetreat);
+  for (let x = 0; x <= w; x += 4) {
+    const y = h * 0.72 - beachRetreat - 8 * Math.sin(x * 0.015) - 22 * Math.sin(x * 0.005 + 0.6);
+    heroCtx.lineTo(x, y);
+  }
+  heroCtx.lineTo(w, h); heroCtx.lineTo(0, h);
+  heroCtx.closePath();
+  heroCtx.fill();
+
+  // Vegetation marks
+  heroCtx.fillStyle = 'rgba(92,138,79,0.6)';
+  for (let i = 0; i < 30; i++) {
+    const px = (i / 30) * w + Math.sin(i) * 30;
+    const py = h * 0.72 - beachRetreat - 8 * Math.sin(px * 0.015) - 22 * Math.sin(px * 0.005 + 0.6);
+    heroCtx.beginPath();
+    heroCtx.arc(px, py + 4, 2 + Math.random() * 2, 0, Math.PI * 2);
+    heroCtx.fill();
+  }
+
+  // House silhouette (rear)
+  heroCtx.fillStyle = '#0B1B2B';
+  const houseX = w * 0.12, houseY = h * 0.78;
+  heroCtx.fillRect(houseX, houseY, 26, 24);
+  heroCtx.beginPath();
+  heroCtx.moveTo(houseX - 4, houseY); heroCtx.lineTo(houseX + 13, houseY - 12);
+  heroCtx.lineTo(houseX + 30, houseY); heroCtx.closePath(); heroCtx.fill();
+  // Lighthouse
+  heroCtx.fillStyle = '#E86E55';
+  heroCtx.fillRect(w * 0.85, h * 0.62, 6, 26);
+  heroCtx.fillStyle = '#F6F1E7';
+  heroCtx.fillRect(w * 0.85, h * 0.62, 6, 6);
+
+  // Foreground shimmer
+  heroCtx.fillStyle = 'rgba(255,255,255,0.20)';
+  for (let i = 0; i < 30; i++) {
+    const x = Math.random() * w;
+    const y = seaTop + Math.random() * (h - seaTop);
+    heroCtx.fillRect(x, y, 2, 1);
+  }
+
+  heroT += 1;
+  requestAnimationFrame(drawHero);
+}
+
+// Animate horizon year displayed
+setInterval(() => {
+  heroYear = heroYear >= 2100 ? 2025 : heroYear + 5;
+  document.getElementById('heroYear').textContent = heroYear;
+}, 1400);
+
+drawHero();
+window.addEventListener('resize', () => {});
+
+/* =========================================================
+   2 · LEAFLET MAP
+========================================================= */
+const map = L.map('leafletMap', {
+  zoomControl: false,
+  attributionControl: false,
+}).setView([46.5, 2.0], 5.6);
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+  subdomains: 'abcd',
+  maxZoom: 18,
+}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
+  subdomains: 'abcd',
+  maxZoom: 18, opacity: 0.6,
+}).addTo(map);
+
+const markers = {};
+COMMUNES.forEach(c => {
+  const html = `<div class="commune-marker ${c.risk === 'critical' ? 'pulse' : ''}" style="background:${RISK_COLOR[c.risk]};color:${RISK_COLOR[c.risk]}"></div>`;
+  const icon = L.divIcon({
+    html, className: '', iconSize: [28, 28], iconAnchor: [14, 14]
+  });
+  const m = L.marker([c.lat, c.lng], { icon, riseOnHover: true }).addTo(map);
+  m.on('click', () => selectCommune(c.id));
+  markers[c.id] = m;
+});
+
+// Submersion layer (mock zones)
+const submersionLayer = L.layerGroup();
+COMMUNES.forEach(c => {
+  const radius = (c.exposed / 4) * 1000 + 4000;
+  L.circle([c.lat, c.lng], {
+    radius, color: '#3CA3C3', weight: 0,
+    fillColor: '#3CA3C3', fillOpacity: 0.25
+  }).addTo(submersionLayer);
+});
+
+document.getElementById('lyrSubmersion').addEventListener('change', e => {
+  if (e.target.checked) submersionLayer.addTo(map); else submersionLayer.remove();
+});
+document.getElementById('lyrCommunes').addEventListener('change', e => {
+  Object.values(markers).forEach(m => e.target.checked ? m.addTo(map) : m.remove());
+});
+
+// Trait de côte indicator
+const coteLayer = L.layerGroup();
+const coteLine = COMMUNES.map(c => [c.lat, c.lng]);
+L.polyline(coteLine, { color: '#E86E55', weight: 2, opacity: 0.5, dashArray: '4,4' }).addTo(coteLayer);
+document.getElementById('lyrCote').addEventListener('change', e => {
+  if (e.target.checked) coteLayer.addTo(map); else coteLayer.remove();
+});
+
+// Erosion historical
+const erosionLayer = L.layerGroup();
+COMMUNES.filter(c => c.retreat > 1.5).forEach(c => {
+  L.circle([c.lat, c.lng], {
+    radius: c.retreat * 3000, color: '#B84028',
+    weight: 1, fillColor: '#E86E55', fillOpacity: 0.18
+  }).addTo(erosionLayer);
+});
+document.getElementById('lyrErosion').addEventListener('change', e => {
+  if (e.target.checked) erosionLayer.addTo(map); else erosionLayer.remove();
+});
+
+map.on('zoom', () => {
+  const z = map.getZoom();
+  const scale = Math.round(150000000 / Math.pow(2, z));
+  document.getElementById('mapZoomInfo').textContent = `ÉCHELLE · ~1:${scale.toLocaleString('fr-FR')}`;
+});
+
+/* =========================================================
+   3 · SIDE LIST + DETAIL
+========================================================= */
+const communeListEl = document.getElementById('communeList');
+function renderCommuneList(filter = '') {
+  const term = filter.toLowerCase().trim();
+  const list = COMMUNES.filter(c =>
+    !term || c.name.toLowerCase().includes(term) ||
+    c.region.toLowerCase().includes(term) ||
+    c.dept.includes(term)
+  );
+  communeListEl.innerHTML = list.map(c => `
+    <div class="commune-item ${state.selectedCommune === c.id ? 'active' : ''}" data-id="${c.id}">
+      <span class="commune-flag" style="background:${RISK_COLOR[c.risk]}"></span>
+      <div>
+        <div class="commune-meta">${c.dept} · ${c.region}</div>
+        <div class="commune-name">${c.name}</div>
+      </div>
+      <div class="commune-stat">${c.retreat.toFixed(1)} m/an</div>
+    </div>
+  `).join('');
+  communeListEl.querySelectorAll('.commune-item').forEach(el => {
+    el.addEventListener('click', () => selectCommune(el.dataset.id));
+  });
+}
+
+function selectCommune(id) {
+  state.selectedCommune = id;
+  const c = COMMUNES.find(x => x.id === id);
+  if (!c) return;
+  map.flyTo([c.lat, c.lng], 9, { duration: 1.2 });
+  showCommuneDetail(c);
+  document.querySelectorAll('.side-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'detail'));
+  document.getElementById('communeList').style.display = 'none';
+  document.getElementById('communeDetail').classList.add('visible');
+  renderCommuneList();
+}
+
+function showCommuneDetail(c) {
+  const sea2100 = (SCENARIOS[state.scenario].sea2100 * 100).toFixed(0);
+  const retreat2050 = retreatAtYear(2050, state.scenario, c.retreat).toFixed(0);
+  const retreat2100 = retreatAtYear(2100, state.scenario, c.retreat).toFixed(0);
+  const pct = Math.min(100, (retreat2100 / 220) * 100);
+
+  document.getElementById('communeDetail').innerHTML = `
+    <button class="cd-back" id="cdBack">← retour à la liste</button>
+    <div class="cd-header">
+      <div class="cd-type">${c.type} · ${c.beach}</div>
+      <div class="cd-name">${c.name}</div>
+      <div class="cd-region">${c.dept} · ${c.region} · ${c.pop.toLocaleString('fr-FR')} habitants</div>
+    </div>
+    <div class="cd-stats">
+      <div class="cd-stat">
+        <div class="cd-stat-label">Recul observé</div>
+        <div class="cd-stat-value">${c.retreat.toFixed(1)}<small>m/an</small></div>
+      </div>
+      <div class="cd-stat">
+        <div class="cd-stat-label">Niveau d'aléa</div>
+        <div class="cd-stat-value" style="color:${RISK_COLOR[c.risk]};">${RISK_LABEL[c.risk]}</div>
+      </div>
+      <div class="cd-stat">
+        <div class="cd-stat-label">Biens exposés</div>
+        <div class="cd-stat-value">${c.exposed.toLocaleString('fr-FR')}</div>
+      </div>
+      <div class="cd-stat">
+        <div class="cd-stat-label">Protection</div>
+        <div class="cd-stat-value" style="font-size:13px;font-family:var(--sans);line-height:1.3;">${c.protection}</div>
+      </div>
+    </div>
+    <div class="cd-projection">
+      <div class="cd-projection-head">
+        <div class="cd-projection-title">Projection — ${SCENARIOS[state.scenario].tempLabel}</div>
+        <div class="cd-year-pill">2100</div>
+      </div>
+      <div class="cd-projection-bar"><div class="cd-projection-bar-fill" style="width:${pct}%"></div></div>
+      <div class="cd-projection-text">
+        Recul cumulé estimé&nbsp;: <strong>${retreat2050}&nbsp;m en 2050</strong> ·
+        <strong>${retreat2100}&nbsp;m en 2100</strong>.
+        Élévation marine projetée&nbsp;: <strong>+${sea2100}&nbsp;cm</strong>.
+      </div>
+    </div>
+    <div class="cd-actions">
+      <button class="btn">Télécharger PDF</button>
+      <button class="btn primary">Voir simulation 3D</button>
+    </div>
+  `;
+  document.getElementById('cdBack').addEventListener('click', () => {
+    document.getElementById('communeList').style.display = '';
+    document.getElementById('communeDetail').classList.remove('visible');
+    document.querySelectorAll('.side-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'list'));
+    state.selectedCommune = null;
+    renderCommuneList();
+  });
+  document.querySelector('.cd-actions .primary').addEventListener('click', () => {
+    document.getElementById('immersion').scrollIntoView({ behavior: 'smooth' });
+  });
+}
+
+document.getElementById('mapSearch').addEventListener('input', e => renderCommuneList(e.target.value));
+document.querySelectorAll('.side-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.side-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    if (t.dataset.tab === 'list') {
+      document.getElementById('communeList').style.display = '';
+      document.getElementById('communeDetail').classList.remove('visible');
+    } else {
+      const c = COMMUNES.find(x => x.id === state.selectedCommune) || COMMUNES[0];
+      state.selectedCommune = c.id;
+      document.getElementById('communeList').style.display = 'none';
+      document.getElementById('communeDetail').classList.add('visible');
+      showCommuneDetail(c);
+    }
+  });
+});
+
+renderCommuneList();
+
+/* =========================================================
+   4 · SIMULATION SCENE (2D canvas, year slider driven)
+========================================================= */
+const sceneCanvas = document.getElementById('sceneCanvas');
+const sceneCtx = sceneCanvas.getContext('2d');
+let sceneT = 0;
+
+function drawScene() {
+  const { w, h, dpr } = sizeCanvas(sceneCanvas);
+  sceneCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  sceneCtx.clearRect(0, 0, w, h);
+
+  const yearProgress = (state.year - 2025) / 75;
+  const sea = SCENARIOS[state.scenario];
+  const seaRise = seaLevelAtYear(state.year, state.scenario); // metres
+  const seaRiseNorm = Math.min(1, seaRise / 1.5);
+
+  // Sky
+  const sky = sceneCtx.createLinearGradient(0, 0, 0, h * 0.6);
+  sky.addColorStop(0, '#F8E6CC');
+  sky.addColorStop(1, '#EFD09E');
+  sceneCtx.fillStyle = sky;
+  sceneCtx.fillRect(0, 0, w, h);
+
+  // Choose drawing by coast type
+  if (state.coastType === 'cliff') drawCliff(w, h, seaRiseNorm);
+  else if (state.coastType === 'marsh') drawMarsh(w, h, seaRiseNorm);
+  else drawSandyCoast(w, h, seaRiseNorm);
+
+  sceneT += 1;
+  requestAnimationFrame(drawScene);
+}
+
+function waterGradient(seaTop, h) {
+  const sea = sceneCtx.createLinearGradient(0, seaTop, 0, h);
+  sea.addColorStop(0, '#7DBABA');
+  sea.addColorStop(0.6, '#2A8C8C');
+  sea.addColorStop(1, '#0F4045');
+  return sea;
+}
+
+function drawWaves(seaTop, w, h, intensity = 1) {
+  sceneCtx.strokeStyle = 'rgba(255,255,255,0.45)';
+  sceneCtx.lineWidth = 1.1;
+  for (let i = 0; i < 8; i++) {
+    sceneCtx.beginPath();
+    const wy = seaTop + (h - seaTop) * (0.04 + i * 0.10);
+    const amp = (3 + i * 0.9) * intensity;
+    for (let x = 0; x <= w; x += 4) {
+      const y = wy + Math.sin(x * 0.022 + sceneT * 0.012 + i) * amp;
+      if (x === 0) sceneCtx.moveTo(x, y); else sceneCtx.lineTo(x, y);
+    }
+    sceneCtx.globalAlpha = (0.5 - i * 0.05) * intensity;
+    sceneCtx.stroke();
+  }
+  sceneCtx.globalAlpha = 1;
+}
+
+function drawSandyCoast(w, h, seaRiseNorm) {
+  const baseSeaTop = h * 0.62;
+  const seaTop = baseSeaTop - seaRiseNorm * h * 0.16;
+  const baseBeachStart = w * 0.42;
+  const beachStart = baseBeachStart + seaRiseNorm * w * 0.22;
+
+  // Sun
+  sceneCtx.fillStyle = '#F4B400'; sceneCtx.globalAlpha = 0.4;
+  sceneCtx.beginPath(); sceneCtx.arc(w * 0.18, h * 0.18, h * 0.05, 0, Math.PI * 2); sceneCtx.fill();
+  sceneCtx.globalAlpha = 1;
+
+  // Distant land
+  sceneCtx.fillStyle = '#A9B8AB';
+  sceneCtx.globalAlpha = 0.5;
+  sceneCtx.beginPath();
+  sceneCtx.moveTo(0, seaTop);
+  for (let x = 0; x <= w; x += 6) {
+    sceneCtx.lineTo(x, seaTop - 6 - 8 * Math.sin(x * 0.01 + 1.2));
+  }
+  sceneCtx.lineTo(w, seaTop); sceneCtx.closePath(); sceneCtx.fill();
+  sceneCtx.globalAlpha = 1;
+
+  // Sea
+  sceneCtx.fillStyle = waterGradient(seaTop, h);
+  sceneCtx.beginPath();
+  sceneCtx.moveTo(0, seaTop);
+  // shore curve advancing inland with seaRiseNorm
+  for (let x = 0; x <= beachStart; x += 6) {
+    const t = x / beachStart;
+    const yy = seaTop + Math.sin(t * Math.PI * 2 + sceneT * 0.01) * 3;
+    sceneCtx.lineTo(x, yy);
+  }
+  // wet sand line down
+  sceneCtx.bezierCurveTo(beachStart + 24, seaTop + 18, beachStart + 40, seaTop + 22, beachStart + 60, seaTop + 4);
+  sceneCtx.lineTo(beachStart + 60, h);
+  sceneCtx.lineTo(0, h);
+  sceneCtx.closePath();
+  sceneCtx.fill();
+
+  drawWaves(seaTop, w, h, 1);
+
+  // Beach + dune
+  sceneCtx.fillStyle = '#E8D7A4';
+  sceneCtx.beginPath();
+  sceneCtx.moveTo(beachStart, seaTop);
+  sceneCtx.bezierCurveTo(beachStart + 60, seaTop + 8, beachStart + 120, seaTop + 4, w, seaTop - 18);
+  sceneCtx.lineTo(w, h); sceneCtx.lineTo(beachStart, h);
+  sceneCtx.closePath(); sceneCtx.fill();
+
+  // Sand dune
+  sceneCtx.fillStyle = '#CFB680';
+  sceneCtx.beginPath();
+  const duneBase = seaTop - 10;
+  sceneCtx.moveTo(beachStart + 60, duneBase);
+  for (let x = beachStart + 60; x <= w; x += 4) {
+    const y = duneBase - 35 - 25 * Math.sin((x - beachStart) * 0.012);
+    sceneCtx.lineTo(x, y);
+  }
+  sceneCtx.lineTo(w, h); sceneCtx.lineTo(beachStart + 60, h);
+  sceneCtx.closePath(); sceneCtx.fill();
+
+  // Vegetation
+  sceneCtx.fillStyle = 'rgba(92,138,79,0.85)';
+  for (let i = 0; i < 18; i++) {
+    const px = beachStart + 80 + i * 35;
+    if (px > w) break;
+    const py = duneBase - 35 - 25 * Math.sin((px - beachStart) * 0.012);
+    sceneCtx.beginPath(); sceneCtx.ellipse(px, py + 2, 3, 6, 0, 0, Math.PI * 2); sceneCtx.fill();
+  }
+
+  // Buildings (some flooded if seaTop reaches them)
+  const buildings = [
+    { x: 0.72, w: 18, h: 28 },
+    { x: 0.80, w: 14, h: 22 },
+    { x: 0.88, w: 22, h: 36 },
+    { x: 0.95, w: 16, h: 24 },
+  ];
+  buildings.forEach(b => {
+    const bx = b.x * w, by = h * 0.78;
+    const flooded = seaTop > by + 8;
+    sceneCtx.fillStyle = flooded ? 'rgba(11,27,43,0.45)' : '#0B1B2B';
+    sceneCtx.fillRect(bx, by - b.h, b.w, b.h);
+    sceneCtx.beginPath();
+    sceneCtx.moveTo(bx - 3, by - b.h);
+    sceneCtx.lineTo(bx + b.w / 2, by - b.h - 12);
+    sceneCtx.lineTo(bx + b.w + 3, by - b.h);
+    sceneCtx.closePath(); sceneCtx.fill();
+  });
+
+  // Submerged building indicator
+  if (seaRiseNorm > 0.5) {
+    sceneCtx.fillStyle = 'rgba(232,110,85,0.95)';
+    sceneCtx.font = '600 11px JetBrains Mono';
+    sceneCtx.fillText('⚠ ZONE D\'EXPOSITION', w * 0.70, h * 0.42);
+  }
+}
+
+function drawCliff(w, h, seaRiseNorm) {
+  const seaTop = h * 0.55 - seaRiseNorm * h * 0.12;
+  // Sea
+  sceneCtx.fillStyle = waterGradient(seaTop, h);
+  sceneCtx.fillRect(0, seaTop, w * 0.55, h - seaTop);
+  drawWaves(seaTop, w * 0.55, h, 1.3);
+
+  // Cliff
+  const cliffEdge = w * 0.45 + seaRiseNorm * w * 0.10; // recule
+  sceneCtx.fillStyle = '#E8DCBE';
+  sceneCtx.beginPath();
+  sceneCtx.moveTo(cliffEdge, h);
+  sceneCtx.lineTo(cliffEdge, h * 0.30);
+  // top of cliff
+  for (let x = cliffEdge; x <= w; x += 4) {
+    const y = h * 0.30 - 8 * Math.sin(x * 0.012);
+    sceneCtx.lineTo(x, y);
+  }
+  sceneCtx.lineTo(w, h); sceneCtx.closePath(); sceneCtx.fill();
+
+  // Cliff vertical strata
+  sceneCtx.strokeStyle = 'rgba(11,27,43,0.18)';
+  sceneCtx.lineWidth = 1;
+  for (let i = 0; i < 6; i++) {
+    sceneCtx.beginPath();
+    const y = seaTop + i * 16;
+    sceneCtx.moveTo(cliffEdge, y); sceneCtx.lineTo(w, y - i * 2);
+    sceneCtx.stroke();
+  }
+  // Top grass
+  sceneCtx.fillStyle = '#5C8A4F';
+  sceneCtx.beginPath();
+  sceneCtx.moveTo(cliffEdge, h * 0.30);
+  for (let x = cliffEdge; x <= w; x += 4) {
+    const y = h * 0.30 - 8 * Math.sin(x * 0.012);
+    sceneCtx.lineTo(x, y);
+  }
+  sceneCtx.lineTo(w, h * 0.32); sceneCtx.lineTo(cliffEdge, h * 0.32);
+  sceneCtx.closePath(); sceneCtx.fill();
+
+  // Houses on cliff
+  const houseDistance = w * 0.16 - seaRiseNorm * w * 0.12; // moves closer to edge
+  const houses = [
+    { offX: 30, w: 22, h: 34, hashed: seaRiseNorm > 0.6 },
+    { offX: 80, w: 18, h: 26, hashed: seaRiseNorm > 0.85 },
+    { offX: 140, w: 26, h: 38, hashed: false },
+  ];
+  houses.forEach((b, i) => {
+    const bx = cliffEdge + b.offX;
+    const by = h * 0.30 - 4;
+    sceneCtx.fillStyle = b.hashed ? 'rgba(232,110,85,0.85)' : '#0B1B2B';
+    sceneCtx.fillRect(bx, by - b.h, b.w, b.h);
+    sceneCtx.beginPath();
+    sceneCtx.moveTo(bx - 3, by - b.h);
+    sceneCtx.lineTo(bx + b.w / 2, by - b.h - 12);
+    sceneCtx.lineTo(bx + b.w + 3, by - b.h);
+    sceneCtx.closePath(); sceneCtx.fill();
+    if (b.hashed) {
+      sceneCtx.strokeStyle = '#fff'; sceneCtx.lineWidth = 1.5;
+      sceneCtx.beginPath(); sceneCtx.moveTo(bx, by - b.h); sceneCtx.lineTo(bx + b.w, by); sceneCtx.stroke();
+      sceneCtx.beginPath(); sceneCtx.moveTo(bx + b.w, by - b.h); sceneCtx.lineTo(bx, by); sceneCtx.stroke();
+    }
+  });
+
+  // Edge warning
+  if (seaRiseNorm > 0.5) {
+    sceneCtx.fillStyle = 'rgba(232,110,85,0.95)';
+    sceneCtx.font = '600 11px JetBrains Mono';
+    sceneCtx.fillText('Recul actif', cliffEdge + 4, h * 0.28);
+  }
+}
+
+function drawMarsh(w, h, seaRiseNorm) {
+  const seaTop = h * 0.40 - seaRiseNorm * h * 0.08;
+  // Sea + flooded marsh
+  sceneCtx.fillStyle = waterGradient(seaTop, h);
+  sceneCtx.fillRect(0, seaTop, w, h - seaTop);
+  drawWaves(seaTop, w, h, 0.7);
+
+  // Reed clumps
+  sceneCtx.fillStyle = 'rgba(92,138,79,0.8)';
+  for (let i = 0; i < 80; i++) {
+    const px = Math.random() * w;
+    const py = seaTop + Math.random() * (h - seaTop) * 0.4 + 20;
+    const above = py < seaTop + (h - seaTop) * (0.2 + seaRiseNorm * 0.2);
+    if (!above) continue;
+    sceneCtx.fillRect(px, py, 1, 8);
+    sceneCtx.fillRect(px + 2, py - 2, 1, 10);
+  }
+
+  // Dyke
+  sceneCtx.fillStyle = '#8E7E5A';
+  sceneCtx.beginPath();
+  sceneCtx.moveTo(0, seaTop - 6);
+  sceneCtx.bezierCurveTo(w * 0.3, seaTop - 30, w * 0.6, seaTop - 22, w, seaTop - 10);
+  sceneCtx.lineTo(w, seaTop + 4); sceneCtx.lineTo(0, seaTop + 4);
+  sceneCtx.closePath(); sceneCtx.fill();
+
+  if (seaRiseNorm > 0.7) {
+    // Dyke overtopped
+    sceneCtx.fillStyle = 'rgba(232,110,85,0.85)';
+    sceneCtx.font = '600 11px JetBrains Mono';
+    sceneCtx.fillText('⚠ digue submergée', w * 0.4, seaTop - 14);
+  }
+
+  // Polders behind
+  sceneCtx.fillStyle = '#A8B687';
+  sceneCtx.fillRect(0, seaTop + 4, w, h - seaTop - 4);
+  // grid lines
+  sceneCtx.strokeStyle = 'rgba(11,27,43,0.15)'; sceneCtx.lineWidth = 1;
+  for (let i = 0; i < 6; i++) {
+    sceneCtx.beginPath();
+    sceneCtx.moveTo(0, seaTop + 30 + i * 30); sceneCtx.lineTo(w, seaTop + 30 + i * 30);
+    sceneCtx.stroke();
+  }
+  for (let i = 0; i < 8; i++) {
+    sceneCtx.beginPath();
+    sceneCtx.moveTo((i / 8) * w, seaTop + 4); sceneCtx.lineTo((i / 8) * w, h);
+    sceneCtx.stroke();
+  }
+}
+
+drawScene();
+
+/* =========================================================
+   5 · SIM CONTROLS (timeline, scenarios)
+========================================================= */
+const simTrack = document.getElementById('simTrack');
+const simThumb = document.getElementById('simThumb');
+function setYear(y, animate = true) {
+  state.year = Math.max(2025, Math.min(2100, Math.round(y)));
+  const ratio = (state.year - 2025) / 75;
+  simThumb.style.left = (ratio * 100) + '%';
+  simThumb.setAttribute('data-year', state.year);
+  document.getElementById('simYear').textContent = state.year;
+  updateSimReadouts();
+}
+function updateSimReadouts() {
+  const sea = seaLevelAtYear(state.year, state.scenario);
+  document.getElementById('simSeaLevel').textContent = `+${sea.toFixed(2).replace('.', ',')} m`;
+  const ret = retreatAtYear(state.year, state.scenario, 1.8);
+  document.getElementById('simRetreat').textContent = `${ret.toFixed(0)} m`;
+  const beach = Math.min(100, ret * 1.6);
+  document.getElementById('simBeach').textContent = `${beach.toFixed(0)}%`;
+  document.getElementById('simScenarioName').textContent = SCENARIOS[state.scenario].name;
+}
+function trackPointer(ev) {
+  const rect = simTrack.getBoundingClientRect();
+  const x = (ev.touches ? ev.touches[0].clientX : ev.clientX) - rect.left;
+  const r = Math.max(0, Math.min(1, x / rect.width));
+  setYear(2025 + r * 75);
+}
+let dragging = false;
+simTrack.addEventListener('mousedown', e => { dragging = true; trackPointer(e); });
+window.addEventListener('mousemove', e => { if (dragging) trackPointer(e); });
+window.addEventListener('mouseup', () => dragging = false);
+simTrack.addEventListener('touchstart', e => { dragging = true; trackPointer(e); });
+window.addEventListener('touchmove', e => { if (dragging) trackPointer(e); });
+window.addEventListener('touchend', () => dragging = false);
+
+document.getElementById('btnPlay').addEventListener('click', () => {
+  state.playing = !state.playing;
+  const btn = document.getElementById('btnPlay');
+  btn.innerHTML = state.playing
+    ? '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+});
+let lastTick = performance.now();
+function playLoop(now) {
+  if (state.playing) {
+    const dt = (now - lastTick) / 1000;
+    setYear(state.year + dt * 4 * state.speed);
+    if (state.year >= 2100) state.playing = false;
+  }
+  lastTick = now;
+  requestAnimationFrame(playLoop);
+}
+requestAnimationFrame(playLoop);
+
+document.querySelectorAll('.speed-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.speed-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.speed = parseFloat(b.dataset.speed);
+  });
+});
+
+document.querySelectorAll('#scenarioGroup .scenario-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('#scenarioGroup .scenario-option').forEach(x => x.classList.remove('selected'));
+    opt.classList.add('selected');
+    state.scenario = opt.dataset.key;
+    updateSimReadouts();
+    if (state.selectedCommune) showCommuneDetail(COMMUNES.find(c => c.id === state.selectedCommune));
+    updateDashboardKpis();
+  });
+});
+document.querySelectorAll('#coastTypeGroup .scenario-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('#coastTypeGroup .scenario-option').forEach(x => x.classList.remove('selected'));
+    opt.classList.add('selected');
+    state.coastType = opt.dataset.key;
+  });
+});
+
+setYear(2025);
+
+/* =========================================================
+   6 · 3D IMMERSION (Three.js)
+========================================================= */
+const threeCanvas = document.getElementById('threeCanvas');
+const threeContainer = threeCanvas.parentElement;
+const renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+function resizeThree() {
+  const r = threeContainer.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false);
+  camera.aspect = r.width / r.height;
+  camera.updateProjectionMatrix();
+}
+const scene3 = new THREE.Scene();
+scene3.fog = new THREE.Fog(0x061726, 60, 220);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 500);
+camera.position.set(60, 38, 80);
+camera.lookAt(0, 0, 0);
+
+// Lights
+scene3.add(new THREE.AmbientLight(0xffffff, 0.45));
+const sun = new THREE.DirectionalLight(0xfff0d8, 1.0);
+sun.position.set(40, 60, 30);
+scene3.add(sun);
+const fill = new THREE.DirectionalLight(0x6a99c2, 0.4);
+fill.position.set(-30, 20, -30);
+scene3.add(fill);
+
+// Ground / terrain (procedural)
+const terrainGeo = new THREE.PlaneGeometry(160, 160, 80, 80);
+terrainGeo.rotateX(-Math.PI / 2);
+const pos = terrainGeo.attributes.position;
+for (let i = 0; i < pos.count; i++) {
+  const x = pos.getX(i), z = pos.getZ(i);
+  // Headland rises in north (negative z), dips to water in south
+  const dist = Math.sqrt(x * x + z * z);
+  let y = 0;
+  const beachZ = 0;
+  if (z < beachZ) {
+    // land
+    const inland = Math.max(0, -z) / 80;
+    y = inland * 10 + 2;
+    y += Math.sin(x * 0.13 + z * 0.07) * 1.6;
+    y += Math.cos(x * 0.09 - z * 0.11) * 1.2;
+    // promontoires
+    const headland = Math.exp(-Math.pow((x + 50) / 30, 2)) * 14;
+    y += headland;
+    const headland2 = Math.exp(-Math.pow((x - 35) / 22, 2)) * 8;
+    y += headland2;
+  } else {
+    // sea floor descending
+    y = -z * 0.18 - Math.random() * 0.4;
+  }
+  pos.setY(i, y);
+}
+terrainGeo.computeVertexNormals();
+
+// Vertex coloring by height
+const colors = [];
+for (let i = 0; i < pos.count; i++) {
+  const y = pos.getY(i);
+  const c = new THREE.Color();
+  if (y < -2) c.setHex(0x1f4a5a);
+  else if (y < 0) c.setHex(0x3a738a);
+  else if (y < 1.5) c.setHex(0xe8d7a4);
+  else if (y < 5) c.setHex(0xc9b478);
+  else if (y < 10) c.setHex(0x8a9d6a);
+  else c.setHex(0x5c8a4f);
+  colors.push(c.r, c.g, c.b);
+}
+terrainGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+const terrain = new THREE.Mesh(
+  terrainGeo,
+  new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })
+);
+scene3.add(terrain);
+
+// Water plane
+const waterGeo = new THREE.PlaneGeometry(220, 220, 50, 50);
+waterGeo.rotateX(-Math.PI / 2);
+const waterMat = new THREE.MeshPhongMaterial({
+  color: 0x2a8c8c, transparent: true, opacity: 0.78,
+  shininess: 90, specular: 0xffffff,
+});
+const water = new THREE.Mesh(waterGeo, waterMat);
+water.position.y = 0.4;
+scene3.add(water);
+
+// Buildings group
+const buildingsGroup = new THREE.Group();
+scene3.add(buildingsGroup);
+
+function makeBuilding(x, z, w = 3, h = 4, d = 3, color = 0xf0e8d2) {
+  const g = new THREE.BoxGeometry(w, h, d);
+  const m = new THREE.MeshLambertMaterial({ color });
+  const mesh = new THREE.Mesh(g, m);
+  // sample terrain height
+  const terY = sampleTerrainHeight(x, z);
+  mesh.position.set(x, terY + h / 2, z);
+  mesh.userData = { baseY: terY };
+  buildingsGroup.add(mesh);
+  // roof
+  const rg = new THREE.ConeGeometry(Math.max(w, d) * 0.78, 1.6, 4);
+  const rm = new THREE.MeshLambertMaterial({ color: 0xb84028 });
+  const roof = new THREE.Mesh(rg, rm);
+  roof.position.set(x, terY + h + 0.7, z);
+  roof.rotation.y = Math.PI / 4;
+  buildingsGroup.add(roof);
+  return mesh;
+}
+
+function sampleTerrainHeight(x, z) {
+  // ray cast onto terrain
+  const raycaster = new THREE.Raycaster();
+  raycaster.set(new THREE.Vector3(x, 50, z), new THREE.Vector3(0, -1, 0));
+  const hits = raycaster.intersectObject(terrain);
+  return hits.length ? hits[0].point.y : 0;
+}
+
+// Plant buildings on land
+const buildingPositions = [
+  [-30, -22, 4, 5], [-26, -18, 3, 4], [-22, -14, 5, 7],
+  [-18, -22, 3, 5], [-14, -16, 4, 4], [-10, -22, 3, 5],
+  [-6, -12, 4, 6], [-2, -18, 3, 4], [2, -10, 5, 6],
+  [6, -22, 4, 5], [10, -16, 3, 5], [14, -22, 5, 6],
+  [18, -10, 3, 4], [22, -18, 4, 5], [26, -14, 3, 5],
+  [30, -22, 5, 7], [34, -18, 4, 5], [-32, -34, 3, 4],
+  [-12, -36, 5, 6], [10, -34, 4, 5], [28, -32, 3, 5],
+  [-26, -8, 3, 4], [-4, -8, 3, 4], [14, -6, 3, 4],
+  [-40, -28, 6, 8], [38, -28, 4, 5], [-44, -38, 5, 6], [44, -38, 4, 6],
+];
+buildingPositions.forEach(([x, z, w, h]) => {
+  makeBuilding(x, z, w, h, w * 0.9, [0xeee2c2, 0xe8d7a4, 0xddc6a0][Math.floor(Math.random() * 3)]);
+});
+
+// Trees (cones)
+for (let i = 0; i < 80; i++) {
+  const x = (Math.random() - 0.5) * 130;
+  const z = -Math.random() * 70;
+  if (Math.abs(x) > 70 || z > -2) continue;
+  const terY = sampleTerrainHeight(x, z);
+  if (terY < 1.2) continue;
+  const tg = new THREE.ConeGeometry(0.8, 2.8, 6);
+  const tm = new THREE.MeshLambertMaterial({ color: 0x4a7d40 });
+  const tree = new THREE.Mesh(tg, tm);
+  tree.position.set(x, terY + 1.4, z);
+  scene3.add(tree);
+}
+
+// Lighthouse
+{
+  const lhg = new THREE.CylinderGeometry(0.8, 1.0, 8, 16);
+  const lhm = new THREE.MeshLambertMaterial({ color: 0xf6f1e7 });
+  const lh = new THREE.Mesh(lhg, lhm);
+  const terY = sampleTerrainHeight(-50, -10);
+  lh.position.set(-50, terY + 4, -10);
+  scene3.add(lh);
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(1.2, 2, 16), new THREE.MeshLambertMaterial({ color: 0xb84028 }));
+  cap.position.set(-50, terY + 9, -10);
+  scene3.add(cap);
+}
+
+resizeThree();
+window.addEventListener('resize', resizeThree);
+
+function updateThreeReadouts() {
+  const y = water.position.y;
+  document.getElementById('immSeaLevel').textContent = `+${(y - 0.4).toFixed(2).replace('.', ',')}`;
+  document.getElementById('immSeaLevel').innerHTML = `+${(y - 0.4).toFixed(2).replace('.', ',')}<small>m</small>`;
+  let flooded = 0;
+  buildingsGroup.children.forEach(m => {
+    if (m.userData && m.userData.baseY !== undefined) {
+      if (m.userData.baseY < y - 0.3) flooded++;
+    }
+  });
+  document.getElementById('immBuildingsReadout').innerHTML = `${flooded}<small>/ ${buildingPositions.length}</small>`;
+  const area = (y - 0.4) * 4.2;
+  document.getElementById('immArea').innerHTML = `${area.toFixed(1).replace('.', ',')}<small>ha</small>`;
+}
+
+const immRange = document.getElementById('immRange');
+immRange.addEventListener('input', () => {
+  const v = parseFloat(immRange.value) / 100;
+  water.position.y = 0.4 + v;
+  document.getElementById('immSliderValue').textContent = `+${v.toFixed(2).replace('.', ',')} m`;
+  updateThreeReadouts();
+});
+
+document.getElementById('immRotate').addEventListener('click', e => {
+  state.immRotate = !state.immRotate;
+  e.currentTarget.classList.toggle('active', state.immRotate);
+});
+document.getElementById('immTide').addEventListener('click', e => {
+  state.immTide = !state.immTide;
+  e.currentTarget.classList.toggle('active', state.immTide);
+});
+document.getElementById('immBuildingsBtn').addEventListener('click', e => {
+  state.immBuildings = !state.immBuildings;
+  buildingsGroup.visible = state.immBuildings;
+  e.currentTarget.classList.toggle('active', state.immBuildings);
+});
+
+let camAngle = 0;
+function animateThree(t) {
+  if (state.immRotate) {
+    camAngle += 0.002;
+    camera.position.x = Math.cos(camAngle) * 95;
+    camera.position.z = Math.sin(camAngle) * 95;
+    camera.position.y = 38;
+    camera.lookAt(0, 0, -15);
+  }
+  // water ripple
+  const wp = waterGeo.attributes.position;
+  for (let i = 0; i < wp.count; i++) {
+    const x = wp.getX(i), z = wp.getZ(i);
+    wp.setY(i, Math.sin(t * 0.0008 + x * 0.05) * 0.12 + Math.cos(t * 0.001 + z * 0.04) * 0.12);
+  }
+  wp.needsUpdate = true;
+
+  // tide animation
+  if (state.immTide) {
+    const base = parseFloat(immRange.value) / 100;
+    water.position.y = 0.4 + base + Math.sin(t * 0.0008) * 0.25;
+    updateThreeReadouts();
+  }
+
+  renderer.render(scene3, camera);
+  requestAnimationFrame(animateThree);
+}
+requestAnimationFrame(animateThree);
+updateThreeReadouts();
+
+/* =========================================================
+   7 · FLOOD SCENARIO 2D
+========================================================= */
+const FLOOD_SCENARIOS = {
+  xynthia: { surge: 1.50, tide: '102 (forte)', waves: 6.2, name: 'Tempête Xynthia (référence 2010)', pop: 3240, homes: 1480, sens: 7, road: 8.4, loss: 142 },
+  centennale: { surge: 2.10, tide: '105 (très forte)', waves: 7.0, name: 'Tempête centennale 2025', pop: 4180, homes: 2050, sens: 9, road: 11.2, loss: 230 },
+  centennale2050: { surge: 2.10, tide: '105 (très forte)', waves: 7.5, name: 'Centennale 2050 · SSP3-7.0', pop: 6200, homes: 3120, sens: 12, road: 15.8, loss: 380 },
+  centennale2100: { surge: 2.40, tide: '108 (exceptionnel)', waves: 8.4, name: 'Centennale 2100 · SSP5-8.5', pop: 9800, homes: 4860, sens: 18, road: 22.4, loss: 720 },
+};
+
+const floodCanvas = document.getElementById('floodCanvas');
+const floodCtx = floodCanvas.getContext('2d');
+let floodT = 0;
+
+function drawFlood() {
+  const { w, h, dpr } = sizeCanvas(floodCanvas);
+  floodCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  floodCtx.clearRect(0, 0, w, h);
+
+  const sc = FLOOD_SCENARIOS[state.flood];
+  const intensity = (sc.surge - 1.0) / 1.5; // 0..1
+
+  // Storm sky
+  const sky = floodCtx.createLinearGradient(0, 0, 0, h * 0.55);
+  sky.addColorStop(0, '#1a2333');
+  sky.addColorStop(1, '#3a4858');
+  floodCtx.fillStyle = sky;
+  floodCtx.fillRect(0, 0, w, h);
+
+  // Rain
+  floodCtx.strokeStyle = 'rgba(255,255,255,0.35)';
+  floodCtx.lineWidth = 1;
+  for (let i = 0; i < 80; i++) {
+    const x = (i * 23 + floodT * 2) % w;
+    const y = (i * 31 + floodT * 8) % h;
+    floodCtx.beginPath();
+    floodCtx.moveTo(x, y); floodCtx.lineTo(x - 4, y + 10);
+    floodCtx.stroke();
+  }
+
+  // Clouds
+  floodCtx.fillStyle = 'rgba(100,114,128,0.55)';
+  for (let i = 0; i < 4; i++) {
+    const cx = (i * 200 + floodT * 0.3) % (w + 200) - 100;
+    floodCtx.beginPath();
+    floodCtx.ellipse(cx, h * 0.10 + Math.sin(i) * 12, 80, 18, 0, 0, Math.PI * 2);
+    floodCtx.fill();
+  }
+
+  // Reference sea level
+  const baseSea = h * 0.62;
+  const surgeRise = intensity * h * 0.18;
+  const seaTop = baseSea - surgeRise;
+
+  // Waves with foam
+  const waveAmp = 8 + intensity * 14;
+  // Sea body
+  const sea = floodCtx.createLinearGradient(0, seaTop, 0, h);
+  sea.addColorStop(0, '#456c7a');
+  sea.addColorStop(0.5, '#1f4754');
+  sea.addColorStop(1, '#0a2330');
+  floodCtx.fillStyle = sea;
+  floodCtx.beginPath();
+  floodCtx.moveTo(0, seaTop);
+  for (let x = 0; x <= w; x += 4) {
+    const y = seaTop + Math.sin(x * 0.02 + floodT * 0.04) * waveAmp * 0.6
+                     + Math.sin(x * 0.012 + floodT * 0.02 + 1) * waveAmp * 0.4;
+    floodCtx.lineTo(x, y);
+  }
+  floodCtx.lineTo(w, h); floodCtx.lineTo(0, h); floodCtx.closePath(); floodCtx.fill();
+
+  // Foam crest
+  floodCtx.strokeStyle = 'rgba(255,255,255,0.85)';
+  floodCtx.lineWidth = 2;
+  floodCtx.beginPath();
+  for (let x = 0; x <= w; x += 3) {
+    const y = seaTop + Math.sin(x * 0.02 + floodT * 0.04) * waveAmp * 0.6
+                     + Math.sin(x * 0.012 + floodT * 0.02 + 1) * waveAmp * 0.4;
+    if (x === 0) floodCtx.moveTo(x, y); else floodCtx.lineTo(x, y);
+  }
+  floodCtx.stroke();
+
+  // Splashes
+  floodCtx.fillStyle = 'rgba(255,255,255,0.7)';
+  for (let i = 0; i < 30; i++) {
+    const x = (i * 73 + floodT * 4) % w;
+    const y = seaTop - Math.random() * 28 - 4;
+    floodCtx.beginPath(); floodCtx.arc(x, y, Math.random() * 2 + 0.5, 0, Math.PI * 2); floodCtx.fill();
+  }
+
+  // Reference line normal high tide
+  floodCtx.strokeStyle = 'rgba(244,180,0,0.7)';
+  floodCtx.setLineDash([5, 4]); floodCtx.lineWidth = 1.2;
+  floodCtx.beginPath(); floodCtx.moveTo(0, baseSea); floodCtx.lineTo(w, baseSea); floodCtx.stroke();
+  floodCtx.setLineDash([]);
+  floodCtx.fillStyle = 'rgba(244,180,0,0.9)';
+  floodCtx.font = '600 10px JetBrains Mono';
+  floodCtx.fillText('PHMA (plus haute marée astronomique)', 12, baseSea - 6);
+
+  // Buildings along coast
+  const coast = h * 0.74;
+  for (let i = 0; i < 12; i++) {
+    const bx = 40 + i * (w / 12);
+    const bw = 22 + (i % 3) * 6;
+    const bh = 30 + (i % 4) * 8;
+    const flooded = seaTop > coast - bh * 0.4;
+    floodCtx.fillStyle = flooded ? '#0a1c2e' : '#f6f1e7';
+    floodCtx.fillRect(bx, coast - bh, bw, bh);
+    floodCtx.fillStyle = '#b84028';
+    floodCtx.beginPath();
+    floodCtx.moveTo(bx - 3, coast - bh);
+    floodCtx.lineTo(bx + bw / 2, coast - bh - 8);
+    floodCtx.lineTo(bx + bw + 3, coast - bh);
+    floodCtx.closePath(); floodCtx.fill();
+    if (flooded) {
+      floodCtx.fillStyle = 'rgba(232,110,85,0.7)';
+      floodCtx.fillRect(bx, coast - bh, bw, bh);
+    }
+  }
+
+  // Surge readouts
+  floodCtx.fillStyle = 'rgba(232,110,85,0.95)';
+  floodCtx.fillRect(w - 130, baseSea - surgeRise, 110, 2);
+  floodCtx.fillStyle = '#E86E55';
+  floodCtx.font = '600 12px JetBrains Mono';
+  floodCtx.fillText(`SURCOTE +${sc.surge.toFixed(2)} m`, w - 130, baseSea - surgeRise - 6);
+
+  floodT += 1;
+  requestAnimationFrame(drawFlood);
+}
+drawFlood();
+
+document.querySelectorAll('.flood-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.flood-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    state.flood = card.dataset.key;
+    const sc = FLOOD_SCENARIOS[state.flood];
+    document.getElementById('floodStormName').textContent = sc.name;
+    document.getElementById('floodSurge').textContent = `+${sc.surge.toFixed(2).replace('.', ',')} m`;
+    document.getElementById('floodTide').textContent = sc.tide;
+    document.getElementById('floodWaves').textContent = `${sc.waves.toFixed(1).replace('.', ',')} m`;
+    document.getElementById('effPop').textContent = sc.pop.toLocaleString('fr-FR');
+    document.getElementById('effHomes').textContent = sc.homes.toLocaleString('fr-FR');
+    document.getElementById('effSensitive').textContent = sc.sens;
+    document.getElementById('effRoad').textContent = `${sc.road.toFixed(1).replace('.', ',')} km`;
+    document.getElementById('effLoss').textContent = `${sc.loss} M€`;
+  });
+});
+
+/* =========================================================
+   8 · DASHBOARD
+========================================================= */
+const COMMUNE_RECOS = [
+  { icon: '01', priority: 'high', label: 'Élevée', title: 'Cartographier la bande de précaution', desc: 'Délimiter la zone exposée au recul à 30 et 100 ans selon l\'art. L. 121-22-2 (loi Climat & Résilience).', cost: '45 k€', horizon: '0-12 mois' },
+  { icon: '02', priority: 'high', label: 'Élevée', title: 'Étude SLGITC locale', desc: 'Lancer la Stratégie Locale de Gestion Intégrée du Trait de Côte avec un bureau d\'études agréé.', cost: '120 k€', horizon: '0-18 mois' },
+  { icon: '03', priority: 'med', label: 'Moyenne', title: 'Rechargement de plage expérimental', desc: 'Apport de 80 000 m³ de sable issu du clapage portuaire, sur 1,2 km de plage centrale.', cost: '2,4 M€', horizon: '18-36 mois' },
+  { icon: '04', priority: 'med', label: 'Moyenne', title: 'Restauration de cordon dunaire', desc: 'Pose de ganivelles + plantation d\'oyats sur 600 m, fermeture progressive aux accès véhicules.', cost: '380 k€', horizon: '6-24 mois' },
+  { icon: '05', priority: 'low', label: 'Souple', title: 'Programme de relogement résilient', desc: 'Identifier 25 logements en bande de précaution, négociation amiable et fonds Barnier.', cost: '8,2 M€', horizon: '5-25 ans' },
+  { icon: '06', priority: 'low', label: 'Souple', title: 'Sentier d\'interprétation littoral', desc: 'Signalétique pédagogique + observatoire participatif sur 4 km, valorisation des paysages.', cost: '180 k€', horizon: '12-24 mois' },
+];
+const ENTREPRISE_RECOS = [
+  { icon: '01', priority: 'high', label: 'Critique', title: 'Audit d\'exposition des actifs', desc: 'Cartographier les sites, stocks et équipements en zone d\'aléa fort. Hiérarchiser par valeur immobilisée.', cost: '32 k€', horizon: '0-6 mois' },
+  { icon: '02', priority: 'high', label: 'Critique', title: 'Plan de Continuité d\'Activité littoral', desc: 'Scénarios Xynthia + centennale 2050, redondance électrique/informatique, sites de repli.', cost: '85 k€', horizon: '0-12 mois' },
+  { icon: '03', priority: 'med', label: 'Élevée', title: 'Reporting CSRD aléa physique', desc: 'Intégrer les indicateurs de risque climatique côtier (E1-9) aux états de durabilité ESRS.', cost: '60 k€', horizon: '6-18 mois' },
+  { icon: '04', priority: 'med', label: 'Élevée', title: 'Couverture catastrophes naturelles', desc: 'Renégocier la prime CatNat et la franchise par site, étudier un fonds de mutualisation sectoriel.', cost: '—', horizon: '6-12 mois' },
+  { icon: '05', priority: 'low', label: 'Modérée', title: 'Adaptation des sites de production', desc: 'Surélévation des installations électriques sensibles, étanchéité, batardeaux gonflables.', cost: '210 k€', horizon: '12-36 mois' },
+  { icon: '06', priority: 'low', label: 'Modérée', title: 'Engagement territorial', desc: 'Mécénat local pour la restauration d\'écosystèmes tampons (mangroves d\'eau salée, dunes).', cost: '50 k€/an', horizon: 'continu' },
+];
+
+const COMMUNE_BUDGET = [
+  { label: 'Fonds Vert · volet recul (État)', amount: '4,8 M€', pct: 78 },
+  { label: 'Région · contractualisation', amount: '2,4 M€', pct: 45 },
+  { label: 'Département · solidarité littoral', amount: '1,6 M€', pct: 32 },
+  { label: 'Intercommunalité · GEMAPI (taxe)', amount: '2,1 M€', pct: 56 },
+  { label: 'Auto-financement commune', amount: '0,9 M€', pct: 18 },
+  { label: 'Fonds Barnier (PPRL)', amount: '0,6 M€', pct: 12 },
+];
+const ENTREPRISE_BUDGET = [
+  { label: 'CAPEX adaptation (sur 5 ans)', amount: '3,2 M€', pct: 64 },
+  { label: 'Assurance · prime CatNat', amount: '480 k€/an', pct: 38 },
+  { label: 'France 2030 · résilience industries', amount: '1,1 M€', pct: 28 },
+  { label: 'ADEME · diagnostic risque', amount: '60 k€', pct: 15 },
+  { label: 'Mécénat / fondation', amount: '120 k€', pct: 8 },
+  { label: 'Cofinancement intercommunalité', amount: '300 k€', pct: 12 },
+];
+
+const COMMUNE_STAKES = [
+  { ini: 'P', cls: 'commune', name: 'Préfet · DDTM', role: 'Validation SLGITC, PPRL', action: 'Réunion 12/06' },
+  { ini: 'I', cls: 'commune', name: 'Intercommunalité', role: 'Compétence GEMAPI', action: 'Convention' },
+  { ini: 'C', cls: 'assoc', name: 'Conservatoire du Littoral', role: 'Acquisition foncière', action: 'En cours' },
+  { ini: 'O', cls: 'entreprise', name: 'Office français Biodiversité', role: 'Restauration écologique', action: 'Programmé' },
+  { ini: 'A', cls: 'assoc', name: 'Associations riverains', role: 'Concertation publique', action: 'Atelier 22/06' },
+  { ini: 'B', cls: 'entreprise', name: 'Bureau d\'études côtier', role: 'Études techniques', action: 'AO ouvert' },
+];
+const ENTREPRISE_STAKES = [
+  { ini: 'C', cls: 'commune', name: 'Commune & EPCI', role: 'Cohérence PLU/PCS', action: 'Coordination' },
+  { ini: 'A', cls: 'entreprise', name: 'Assureurs', role: 'Couverture CatNat', action: 'Renégociation' },
+  { ini: 'D', cls: 'commune', name: 'DDTM · DREAL', role: 'ICPE, autorisations', action: 'Suivi' },
+  { ini: 'C', cls: 'commune', name: 'CCI', role: 'Réseau adaptation', action: 'Adhésion' },
+  { ini: 'B', cls: 'entreprise', name: 'Banques · ESG', role: 'Conditions de prêt', action: 'Reporting' },
+  { ini: 'C', cls: 'assoc', name: 'Clients & fournisseurs', role: 'Continuité chaîne', action: 'Audit amont' },
+];
+
+function renderReco(arr) {
+  document.getElementById('recoList').innerHTML = arr.map(r => `
+    <div class="reco-item">
+      <div class="reco-head">
+        <div class="reco-icon">${r.icon}</div>
+        <div class="reco-priority ${r.priority}">${r.label}</div>
+      </div>
+      <div class="reco-title">${r.title}</div>
+      <div class="reco-desc">${r.desc}</div>
+      <div class="reco-foot">
+        <span class="reco-cost">${r.cost}</span>
+        <span class="reco-horizon">${r.horizon}</span>
+      </div>
+    </div>
+  `).join('');
+}
+function renderBudget(arr) {
+  document.getElementById('budgetList').innerHTML = arr.map(b => `
+    <div class="budget-row">
+      <div class="budget-row-head"><span>${b.label}</span><span class="budget-amount">${b.amount}</span></div>
+      <div class="budget-bar"><div class="budget-bar-fill" style="width:${b.pct}%"></div></div>
+    </div>
+  `).join('');
+}
+function renderStakes(arr) {
+  document.getElementById('stakeList').innerHTML = arr.map(s => `
+    <div class="stake-row">
+      <div class="stake-avatar ${s.cls}">${s.ini}</div>
+      <div>
+        <div class="stake-name">${s.name}</div>
+        <div class="stake-role">${s.role}</div>
+      </div>
+      <div class="stake-action">${s.action}</div>
+    </div>
+  `).join('');
+}
+
+function renderDashboard() {
+  if (state.dashMode === 'commune') {
+    renderReco(COMMUNE_RECOS);
+    renderBudget(COMMUNE_BUDGET);
+    renderStakes(COMMUNE_STAKES);
+  } else {
+    renderReco(ENTREPRISE_RECOS);
+    renderBudget(ENTREPRISE_BUDGET);
+    renderStakes(ENTREPRISE_STAKES);
+  }
+  updateDashboardKpis();
+}
+function updateDashboardKpis() {
+  const f = SCENARIOS[state.scenario].factor;
+  document.getElementById('kpi1').innerHTML = `${Math.round(36 * f)}<small> m</small>`;
+  document.getElementById('kpi2').textContent = Math.round(220 * f).toLocaleString('fr-FR');
+  document.getElementById('kpi3').textContent = Math.round(1300 * f).toLocaleString('fr-FR');
+  document.getElementById('kpi4').innerHTML = `${Math.round(58 * f)}<small> M€</small>`;
+}
+document.querySelectorAll('.dash-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.dash-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    state.dashMode = t.dataset.mode;
+    renderDashboard();
+  });
+});
+renderDashboard();
+
+/* =========================================================
+   9 · SPARKLINES + CHARTS
+========================================================= */
+function drawSparkline(svgId, data, color) {
+  const svg = document.getElementById(svgId);
+  const W = 200, H = 36;
+  const min = Math.min(...data), max = Math.max(...data);
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * W;
+    const y = H - ((v - min) / (max - min || 1)) * (H - 4) - 2;
+    return `${x},${y}`;
+  }).join(' ');
+  svg.innerHTML = `
+    <polyline fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" points="${pts}"/>
+    <polyline fill="${color}" fill-opacity="0.12" stroke="none" points="0,${H} ${pts} ${W},${H}"/>
+  `;
+}
+drawSparkline('spark1', [10, 14, 16, 22, 26, 30, 38, 42], '#E86E55');
+drawSparkline('spark2', [200, 220, 240, 248, 260, 280, 300, 312], '#E86E55');
+drawSparkline('spark3', [1500, 1620, 1720, 1780, 1800, 1810, 1820, 1824], '#2A8C8C');
+drawSparkline('spark4', [20, 26, 32, 42, 52, 64, 78, 87], '#B84028');
+
+// Chart.js trajectories
+const ctx1 = document.getElementById('chartTrajectories').getContext('2d');
+const labels = [];
+for (let y = 2025; y <= 2100; y += 5) labels.push(y);
+function trajData(key, base = 1.8) {
+  return labels.map(y => retreatAtYear(y, key, base).toFixed(0));
+}
+const palette = { ssp126: '#5C8A4F', ssp245: '#F4B400', ssp370: '#E86E55', ssp585: '#B84028' };
+new Chart(ctx1, {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [
+      { label: 'SSP1-2.6 (+1,5°C)', borderColor: palette.ssp126, backgroundColor: 'rgba(92,138,79,0.12)', data: trajData('ssp126'), fill: true, borderWidth: 2.4, tension: 0.4, pointRadius: 0 },
+      { label: 'SSP2-4.5 (+2,7°C)', borderColor: palette.ssp245, backgroundColor: 'rgba(244,180,0,0.12)', data: trajData('ssp245'), fill: true, borderWidth: 2.4, tension: 0.4, pointRadius: 0 },
+      { label: 'SSP3-7.0 (+3,6°C)', borderColor: palette.ssp370, backgroundColor: 'rgba(232,110,85,0.12)', data: trajData('ssp370'), fill: true, borderWidth: 2.4, tension: 0.4, pointRadius: 0 },
+      { label: 'SSP5-8.5 (+4,4°C)', borderColor: palette.ssp585, backgroundColor: 'rgba(184,64,40,0.12)', data: trajData('ssp585'), fill: true, borderWidth: 2.4, tension: 0.4, pointRadius: 0 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top', align: 'end', labels: { boxWidth: 10, boxHeight: 10, font: { family: 'Inter', size: 11 } } },
+      tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y} m` } }
+    },
+    scales: {
+      x: { grid: { color: 'rgba(11,27,43,0.06)' }, ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: '#5C5852' } },
+      y: { grid: { color: 'rgba(11,27,43,0.06)' }, ticks: { font: { family: 'JetBrains Mono', size: 10 }, color: '#5C5852', callback: v => v + ' m' }, title: { display: true, text: 'Recul cumulé', font: { family: 'Inter', size: 11 } } }
+    }
+  }
+});
+
+const ctx2 = document.getElementById('chartAleas').getContext('2d');
+new Chart(ctx2, {
+  type: 'doughnut',
+  data: {
+    labels: ['Recul du trait de côte', 'Submersion marine', 'Salinisation des nappes', 'Tempête / vagues'],
+    datasets: [{
+      data: [38, 32, 14, 16],
+      backgroundColor: ['#E86E55', '#2A8C8C', '#F4B400', '#8E5BA8'],
+      borderWidth: 0,
+      hoverOffset: 8,
+    }]
+  },
+  options: {
+    cutout: '62%',
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, font: { family: 'Inter', size: 11 }, padding: 12 } },
+      tooltip: { callbacks: { label: c => `${c.label}: ${c.parsed}%` } }
+    }
+  }
+});
+
+/* =========================================================
+   10 · NAV active state
+========================================================= */
+const navLinks = document.querySelectorAll('.nav-link');
+const sections = ['#atlas', '#simulation', '#immersion', '#inondation', '#dashboard'].map(s => document.querySelector(s));
+window.addEventListener('scroll', () => {
+  const y = window.scrollY + 120;
+  let curr = sections[0];
+  sections.forEach(s => { if (s && s.offsetTop <= y) curr = s; });
+  if (!curr) return;
+  navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + curr.id));
+}, { passive: true });
+
+</script>
+</body>
+</html>
