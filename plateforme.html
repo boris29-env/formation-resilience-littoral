@@ -3312,8 +3312,7 @@ async function loadCommune3D(c) {
                      6;
         const h = Math.max(3, Math.min(80, hRaw)) * VSCALE;
         const eg = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false });
-        eg.rotateX(Math.PI / 2);
-        eg.translate(0, 0, 0);
+        eg.rotateX(-Math.PI / 2);
         // compute baseAlt
         let baseAlt = f.properties.altitude_minimale_sol;
         if (baseAlt == null || isNaN(baseAlt)) {
@@ -3941,22 +3940,22 @@ function compSetView(c) {
 }
 
 function rebuildOrthoLayer(side, key) {
+  // Always rebuild both, in order, to keep DOM order consistent (left first, right second)
   if (side === 'left') {
+    lblLeft.textContent = ORTHO_LAYERS[key].name;
     compMap.removeLayer(compLeftLayer);
     compLeftLayer = makeOrthoTileLayer(key);
-    compLeftLayer.addTo(compMap);
-    // ensure left is rendered first
-    lblLeft.textContent = ORTHO_LAYERS[key].name;
   } else {
+    lblRight.textContent = ORTHO_LAYERS[key].name;
     compMap.removeLayer(compRightLayer);
     compRightLayer = makeOrthoTileLayer(key);
-    compRightLayer.addTo(compMap);
-    lblRight.textContent = ORTHO_LAYERS[key].name;
   }
-  // re-apply layer order : left must be first, right second
-  // Leaflet doesn't natively support reordering tile layers, but since both are tile layers,
-  // we rely on z-index of layer panes. Easier: just always rebuild both.
-  applyClipPaths(parseFloat(divider.style.left) || 50);
+  // Remove and re-add both in proper order
+  if (compLeftLayer && compMap.hasLayer(compLeftLayer)) compMap.removeLayer(compLeftLayer);
+  if (compRightLayer && compMap.hasLayer(compRightLayer)) compMap.removeLayer(compRightLayer);
+  compLeftLayer.addTo(compMap);
+  compRightLayer.addTo(compMap);
+  setTimeout(() => applyClipPaths(parseFloat(divider.style.left) || 50), 50);
 }
 
 document.getElementById('compLeft').addEventListener('change', e => rebuildOrthoLayer('left', e.target.value));
