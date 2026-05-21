@@ -1573,6 +1573,7 @@ input.imm-range::-moz-range-thumb {
             <div class="legend-row"><span class="legend-dot" style="background:#F4B400"></span>Modéré</div>
             <div class="legend-row"><span class="legend-dot" style="background:#E86E55"></span>Élevé</div>
             <div class="legend-row"><span class="legend-dot" style="background:#B84028"></span>Critique</div>
+            <div class="legend-row" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(246,241,231,0.1);font-size:9px;opacity:.6;letter-spacing:.04em;">zoom ≥ 9 pour charger trait de côte / ouvrages BDTOPO</div>
           </div>
         </div>
 
@@ -2605,7 +2606,12 @@ async function refreshDynamicLayers() {
     }
   }
 }
-map.on('moveend', refreshDynamicLayers);
+let _refreshTimer = null;
+function debouncedRefresh() {
+  if (_refreshTimer) clearTimeout(_refreshTimer);
+  _refreshTimer = setTimeout(refreshDynamicLayers, 350);
+}
+map.on('moveend', debouncedRefresh);
 
 const markers = {};
 COMMUNES.forEach(c => {
