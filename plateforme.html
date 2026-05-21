@@ -1079,11 +1079,13 @@ input.imm-range::-moz-range-thumb {
   box-shadow: var(--shadow-md);
   background: #0a1c2e;
 }
-#compMapL, #compMapR {
-  position: absolute; inset: 0;
+#compMap.leaflet-container, #compMap .leaflet-container { background: #0a1c2e; }
+/* Style du séparateur du plugin leaflet-side-by-side */
+.leaflet-sbs-range { position: absolute; top: 50%; width: 100%; z-index: 999; }
+.leaflet-sbs-divider {
+  position: absolute; top: 0; bottom: 0; width: 4px;
+  background-color: #fff; pointer-events: none; z-index: 999;
 }
-#compMapR { z-index: 2; }
-.leaflet-container { background: #0a1c2e; }
 .comp-divider {
   position: absolute;
   top: 0; bottom: 0;
@@ -1944,10 +1946,7 @@ input.imm-range::-moz-range-thumb {
   </div>
 
   <div class="comp-stage">
-    <div id="compMap" role="application">
-      <div id="compMapL"></div>
-      <div id="compMapR"></div>
-    </div>
+    <div id="compMap" role="application"></div>
     <div class="comp-controls">
       <div class="comp-side">
         <span class="comp-label">Gauche</span>
@@ -2271,6 +2270,7 @@ input.imm-range::-moz-range-thumb {
      SCRIPTS
 =========================================================== -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/digidem/leaflet-side-by-side/leaflet-side-by-side.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 
@@ -4581,34 +4581,20 @@ function makeOrthoTileLayer(key) {
 document.getElementById('compCommunePicker').innerHTML = COMMUNES
   .map(c => `<option value="${c.insee}" ${c.insee==='33514'?'selected':''}>${c.nom} (${c.dept}) · ${c.retreat.toFixed(1)} m/an</option>`).join('');
 
-/* === Deux Leaflet maps stackés, synchronisés, avec clip CSS sur celui du dessus.
-   Approche éprouvée — deux instances séparées, chacune avec son DOM, donc on
-   peut clip-path l'une sans toucher à l'autre. Sync via setView mutuel. */
-const compMapL = L.map('compMapL', { zoomControl: false, attributionControl: false });
-const compMapR = L.map('compMapR', { zoomControl: true, attributionControl: true });
-compMapR.attributionControl.setPrefix('');
+/* === Plugin L.control.sideBySide (digidem/leaflet-side-by-side)
+   Un seul Leaflet map, deux tileLayers, le plugin gère le clip-path
+   sur chaque container de layer + le séparateur draggable. Approche
+   éprouvée et largement utilisée. */
+const compMap = L.map('compMap', { zoomControl: true, attributionControl: true });
+compMap.attributionControl.setPrefix('');
 
-let compLeftLayer  = makeOrthoTileLayer('1950-1965').addTo(compMapL);
-let compRightLayer = makeOrthoTileLayer('current').addTo(compMapR);
+let compLeftLayer  = makeOrthoTileLayer('1950-1965').addTo(compMap);
+let compRightLayer = makeOrthoTileLayer('current').addTo(compMap);
 
-// Sync : tout mouvement sur l'un est répliqué sur l'autre
-let _syncing = false;
-function syncMaps(from, to) {
-  if (_syncing) return;
-  _syncing = true;
-  to.setView(from.getCenter(), from.getZoom(), { animate: false, reset: false });
-  _syncing = false;
-}
-compMapL.on('move zoom', () => syncMaps(compMapL, compMapR));
-compMapR.on('move zoom', () => syncMaps(compMapR, compMapL));
+const sbsCtrl = L.control.sideBySide(compLeftLayer, compRightLayer).addTo(compMap);
 
-// Divider + labels (insérés dans #compMap qui contient les 2 maps)
+// Labels overlay
 const compShell = document.getElementById('compMap');
-const divider = document.createElement('div');
-divider.className = 'comp-divider';
-divider.style.left = '50%';
-compShell.appendChild(divider);
-
 const lblLeft = document.createElement('div');
 lblLeft.className = 'comp-label-overlay';
 lblLeft.style.left = '20px';
@@ -4621,47 +4607,21 @@ lblRight.style.right = '20px';
 lblRight.textContent = ORTHO_LAYERS.current.name;
 compShell.appendChild(lblRight);
 
-const elMapR = document.getElementById('compMapR');
-function applyClipPaths(pct) {
-  // Seul le map de droite est clippé (il est par dessus le gauche)
-  elMapR.style.clipPath = `inset(0 0 0 ${pct}%)`;
-  divider.style.left = pct + '%';
-  lblLeft.style.display  = pct > 10 ? '' : 'none';
-  lblRight.style.display = pct < 90 ? '' : 'none';
-}
-
-let compDragging = false;
-divider.addEventListener('mousedown', e => { compDragging = true; e.preventDefault(); });
-window.addEventListener('mouseup', () => compDragging = false);
-window.addEventListener('mousemove', e => {
-  if (!compDragging) return;
-  const rect = compShell.getBoundingClientRect();
-  const pct = Math.max(2, Math.min(98, ((e.clientX - rect.left) / rect.width) * 100));
-  applyClipPaths(pct);
-});
-divider.addEventListener('touchstart', e => { compDragging = true; e.preventDefault(); }, { passive: false });
-window.addEventListener('touchmove', e => {
-  if (!compDragging) return;
-  const rect = compShell.getBoundingClientRect();
-  const pct = Math.max(2, Math.min(98, ((e.touches[0].clientX - rect.left) / rect.width) * 100));
-  applyClipPaths(pct);
-});
-window.addEventListener('touchend', () => compDragging = false);
-
 function compSetView(c) {
-  compMapL.setView([c.lat, c.lng], 15);
-  compMapR.setView([c.lat, c.lng], 15);
+  compMap.setView([c.lat, c.lng], 15);
 }
 
 function rebuildOrthoLayer(side, key) {
   if (side === 'left') {
     lblLeft.textContent = ORTHO_LAYERS[key].name;
-    if (compLeftLayer) compMapL.removeLayer(compLeftLayer);
-    compLeftLayer = makeOrthoTileLayer(key).addTo(compMapL);
+    if (compLeftLayer) compMap.removeLayer(compLeftLayer);
+    compLeftLayer = makeOrthoTileLayer(key).addTo(compMap);
+    sbsCtrl.setLeftLayers(compLeftLayer);
   } else {
     lblRight.textContent = ORTHO_LAYERS[key].name;
-    if (compRightLayer) compMapR.removeLayer(compRightLayer);
-    compRightLayer = makeOrthoTileLayer(key).addTo(compMapR);
+    if (compRightLayer) compMap.removeLayer(compRightLayer);
+    compRightLayer = makeOrthoTileLayer(key).addTo(compMap);
+    sbsCtrl.setRightLayers(compRightLayer);
   }
 }
 
@@ -4672,17 +4632,11 @@ document.getElementById('compCommunePicker').addEventListener('change', e => {
   if (c) compSetView(c);
 });
 
-// Initial view + clip + invalidateSize
 compSetView(COMMUNES.find(c => c.insee === '33514'));
-applyClipPaths(50);
-function refreshComparator() {
-  compMapL.invalidateSize();
-  compMapR.invalidateSize();
-}
-setTimeout(refreshComparator, 300);
-window.addEventListener('resize', refreshComparator);
+setTimeout(() => compMap.invalidateSize(), 300);
+window.addEventListener('resize', () => compMap.invalidateSize());
 const compObserver = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) refreshComparator(); });
+  entries.forEach(e => { if (e.isIntersecting) compMap.invalidateSize(); });
 }, { threshold: 0.05 });
 compObserver.observe(document.getElementById('compMap'));
 
