@@ -1739,7 +1739,9 @@ input.imm-range::-moz-range-thumb {
       Choisissez une commune littorale et la plateforme construit en quelques
       secondes une maquette 3D&nbsp;: MNT IGN&nbsp;RGE&nbsp;ALTI® (5&nbsp;m),
       bâtiments extrudés depuis la BD&nbsp;TOPO® (avec hauteur réelle),
-      orthophoto IGN drapée comme texture. Faites monter la mer en NGF-IGN69.
+      orthophoto IGN drapée comme texture. Faites monter la mer en NGF-IGN69,
+      activez le mode <strong>Bruun</strong> pour simuler le recul morphologique
+      du profil de plage sous élévation du niveau marin (Bruun, 1962).
     </p>
   </div>
 
@@ -1771,6 +1773,10 @@ input.imm-range::-moz-range-thumb {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18M6 3v18M12 3v18M18 3v18"/></svg>
           Filaire
         </button>
+        <button class="imm-btn" id="immBruun" title="Modélise le recul morphologique du trait de côte sous élévation marine (Bruun 1962)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 16h18M3 12c2 0 3-2 6-2s4 2 6 2 3-2 6-2"/><path d="M6 18l-3 3M9 18l-3 3M12 18l-3 3M15 18l-3 3M18 18l-3 3"/></svg>
+          Bruun
+        </button>
       </div>
 
       <div class="imm-readout">
@@ -1789,6 +1795,10 @@ input.imm-range::-moz-range-thumb {
         <div class="imm-readout-item">
           <div class="imm-readout-label">Altitude min/max</div>
           <div class="imm-readout-value" id="immAlti">— / —<small>m</small></div>
+        </div>
+        <div class="imm-readout-item" id="immBruunReadout" style="display:none;">
+          <div class="imm-readout-label">Recul du trait de côte · Bruun</div>
+          <div class="imm-readout-value" id="immRetreat">— <small>m</small></div>
         </div>
       </div>
 
@@ -2101,10 +2111,19 @@ input.imm-range::-moz-range-thumb {
         <p>
           Projections du niveau marin tirées du 6<sup>e</sup> rapport
           <strong>IPCC AR6</strong> (WG1, Box 9.1 et Table 9.9, médianes 2100
-          relatives à 1995-2014). Recul morphologique calé sur l'<strong>indicateur
+          relatives à 1995-2014). Recul observé calé sur l'<strong>indicateur
           national d'érosion côtière Cerema</strong> (étude 2016, méthode TCMOY,
           mise à jour 2022). Aléas de submersion croisés avec les
           <strong>PPRL approuvés</strong> et la base Géorisques.
+        </p>
+        <p style="margin-top:12px">
+          Le recul prospectif sous élévation marine simulé dans la maquette 3D
+          applique la <strong>règle de Bruun (1962)</strong>&nbsp;:
+          <em>R&nbsp;=&nbsp;S&nbsp;·&nbsp;L/h*</em>, avec un facteur calibré par type
+          de côte&nbsp;: 70 pour le sableux atlantique, 55 pour le lido méditerranéen,
+          90 pour les delta/marais, 5 pour le rocheux, 0 pour les falaises
+          (résistance gouvernée par le substrat, non Bruun). Réf.&nbsp;: Bruun, P.
+          (1962) <em>J. Waterways &amp; Harbors Div., ASCE</em>&nbsp;88(WW1)&nbsp;:&nbsp;117.
         </p>
         <p style="margin-top:12px">
           La liste des communes affichées suit le <strong>décret n°&nbsp;2022-750</strong>
@@ -3146,11 +3165,34 @@ const t3d = {
   tide: false,
   wireframe: false,
   showBuildings: true,
-  elev: null,            // Float32Array du DEM
+  elev: null,            // Float32Array du DEM (modifié si Bruun actif)
+  origElev: null,        // Float32Array du DEM original
   waterArea: 0,
   controls: null,        // OrbitControls
   cam: { angle: -0.6, dist: 1700, height: 600 },
+  // Bruun (1962) — règle simplifiée du recul morphologique
+  bruunActive: false,
+  bruunFactor: 60,       // R = S × bruunFactor (50-100 sableux Atlantique, 40-80 Méditerranée)
+  bruunSource: 'auto',
+  seawardX: 0, seawardZ: 1, // vecteur unitaire pointant vers la mer (rempli à loadCommune3D)
+  shorelineOk: false,
 };
+
+// Facteurs Bruun par type de côte (R = recul horizontal / S = élévation marine)
+// Valeurs basées sur Cerema 2018 + Stive 2004 + études Aquitaine/Vendée
+function bruunFactorForCoast(c) {
+  const t = (c.type || '').toLowerCase();
+  const fac = (c.facade || '').toLowerCase();
+  if (t.includes('falaise')) return 0;          // Bruun ne s'applique pas aux falaises
+  if (t.includes('lido') || t.includes('delta') || t.includes('marais')) return 90;
+  if (t.includes('cordon de galet')) return 25;
+  if (t.includes('rocheuse')) return 5;
+  if (t.includes('estuarien') || t.includes('bassin')) return 35;
+  // Côtes sableuses : Atlantique ≈ 70, Méditerranée ≈ 55, Manche ≈ 50
+  if (fac.includes('aquitaine') || fac.includes('atlantique')) return 70;
+  if (fac.includes('méditerranée') || fac.includes('mediterranee')) return 55;
+  return 50;
+}
 
 let terrainMesh = null;
 const buildingsGroup = new THREE.Group(); scene3.add(buildingsGroup);
@@ -3226,6 +3268,7 @@ async function loadCommune3D(c) {
       showLoader(`MNT IGN · ${done}/${batches.length} blocs…`);
     }));
     t3d.elev = elev;
+    t3d.origElev = new Float32Array(elev); // copie immuable pour le recul Bruun
     // stats
     let minZ = Infinity, maxZ = -Infinity, sum = 0;
     for (const z of elev) {
@@ -3234,6 +3277,40 @@ async function loadCommune3D(c) {
       sum += z;
     }
     t3d.altMin = minZ; t3d.altMax = maxZ; t3d.altMean = sum / elev.length;
+
+    // -- Calcul direction de la mer : centroïde pondéré des cellules basses --
+    let sumWX = 0, sumWZ = 0, sumW = 0;
+    for (let zi = 0; zi < NZ; zi++) {
+      for (let xi = 0; xi < NX; xi++) {
+        const e = elev[zi * NX + xi];
+        if (e < 2) {
+          const w = Math.max(0.05, 2 - e); // plus c'est bas, plus le poids est fort
+          const sx = (xi / (NX - 1) - 0.5) * SIZE;
+          const sz = (zi / (NZ - 1) - 0.5) * SIZE;
+          sumWX += w * sx; sumWZ += w * sz; sumW += w;
+        }
+      }
+    }
+    if (sumW > 0) {
+      const cx = sumWX / sumW, cz = sumWZ / sumW;
+      const len = Math.hypot(cx, cz);
+      if (len > 50) {
+        t3d.seawardX = cx / len;
+        t3d.seawardZ = cz / len;
+        t3d.shorelineOk = true;
+      } else {
+        t3d.shorelineOk = false; // pas de mer franche dans le bbox
+      }
+    } else {
+      t3d.shorelineOk = false;
+    }
+    t3d.bruunFactor = bruunFactorForCoast(c);
+    // Si la commune ne supporte pas Bruun, désactive et masque l'indicateur
+    if (t3d.bruunFactor === 0 || !t3d.shorelineOk) {
+      t3d.bruunActive = false;
+      document.getElementById('immBruun').classList.remove('active');
+      document.getElementById('immBruunReadout').style.display = 'none';
+    }
 
     // -- 2. Fetch orthophoto texture --
     showLoader('BD ORTHO® IGN…');
@@ -3360,33 +3437,98 @@ function polygonArea(ring) {
   return Math.abs(a) * 0.5;
 }
 
+/* Bilinear sample d'un raster NX×NZ à coord normalisées [0..1] */
+function sampleElev(buf, gx, gz) {
+  // gx, gz en indices flottants 0..NX-1 / 0..NZ-1
+  if (gx < 0 || gx >= NX - 1 || gz < 0 || gz >= NZ - 1) return -2.5; // hors bbox = mer profonde
+  const x0 = Math.floor(gx), z0 = Math.floor(gz);
+  const fx = gx - x0, fz = gz - z0;
+  const v00 = buf[z0 * NX + x0];
+  const v10 = buf[z0 * NX + x0 + 1];
+  const v01 = buf[(z0 + 1) * NX + x0];
+  const v11 = buf[(z0 + 1) * NX + x0 + 1];
+  return (1 - fx) * (1 - fz) * v00 + fx * (1 - fz) * v10 +
+         (1 - fx) * fz * v01 + fx * fz * v11;
+}
+
 function applyWaterLevel() {
-  if (!waterMesh || !t3d.elev) return;
+  if (!waterMesh || !t3d.origElev) return;
   const v = parseFloat(immRange.value) / 100;
   waterMesh.position.y = v * VSCALE;
-  // Compte bâtiments inondés
-  let flooded = 0;
+
+  /* === Recul Bruun (recession horizontale du profil actif) =================
+     R = S × (L / h*)   avec L/h* le facteur Bruun (configuré selon type côte).
+     Conséquence visuelle : on translate le profil de terrain LANDWARD de R,
+     soit, pour chaque cellule (x,z), on échantillonne la cote originale au
+     point (x + R·seawardDir) – la "tranche" qui était plus au large remplit
+     la position actuelle. Référence : Bruun, P. (1962) "Sea-level rise as a
+     cause of shore erosion", J. Waterways & Harbors Div., ASCE, 88(WW1):117. */
+  const R = (t3d.bruunActive && t3d.shorelineOk) ? v * t3d.bruunFactor : 0;
+  if (terrainMesh && terrainMesh.geometry) {
+    const pos = terrainMesh.geometry.attributes.position;
+    if (R > 0) {
+      for (let zi = 0; zi < NZ; zi++) {
+        for (let xi = 0; xi < NX; xi++) {
+          const x = (xi / (NX - 1) - 0.5) * SIZE;
+          const z = (zi / (NZ - 1) - 0.5) * SIZE;
+          // Echantillonne au point SEAWARD (translation landward → le terrain "vient" de seaward)
+          const sx = x + R * t3d.seawardX;
+          const sz = z + R * t3d.seawardZ;
+          const gxi = (sx / SIZE + 0.5) * (NX - 1);
+          const gzi = (sz / SIZE + 0.5) * (NZ - 1);
+          const ne = sampleElev(t3d.origElev, gxi, gzi);
+          t3d.elev[zi * NX + xi] = ne;
+          pos.setY(zi * NX + xi, ne * VSCALE);
+        }
+      }
+    } else {
+      // Réinitialise au terrain original
+      for (let i = 0; i < t3d.origElev.length; i++) {
+        t3d.elev[i] = t3d.origElev[i];
+        pos.setY(i, t3d.origElev[i] * VSCALE);
+      }
+    }
+    pos.needsUpdate = true;
+    terrainMesh.geometry.computeVertexNormals();
+  }
+
+  // Bâtiments : inondé OU érodé (sol passé sous l'eau après recul Bruun)
+  let flooded = 0, eroded = 0;
   t3d.buildings.forEach(b => {
-    if (b.userData.baseAlt < v) {
+    const bx = b.position.x, bz = b.position.z;
+    const sx = bx + R * t3d.seawardX;
+    const sz = bz + R * t3d.seawardZ;
+    const gxi = (sx / SIZE + 0.5) * (NX - 1);
+    const gzi = (sz / SIZE + 0.5) * (NZ - 1);
+    const newGroundAlt = sampleElev(t3d.origElev, gxi, gzi);
+    const lost = newGroundAlt < v - 0.1;
+    if (lost) {
       flooded++;
+      if (R > 0 && b.userData.baseAlt > v) eroded++;
       if (b.material !== buildingsGroup.userData.floodedMat) b.material = buildingsGroup.userData.floodedMat;
     } else {
       if (b.material !== buildingsGroup.userData.normalMat) b.material = buildingsGroup.userData.normalMat;
     }
   });
   t3d.flooded = flooded;
-  // Surface immergée : compte cellules DEM < waterLevel
+
+  // Surface (érodée + immergée) — compte cellules dont la cote actuelle est < v
   let cellsInWater = 0;
-  for (const z of t3d.elev) if (z < v) cellsInWater++;
+  for (const e of t3d.elev) if (e < v) cellsInWater++;
   t3d.waterArea = cellsInWater * t3d.cellArea / 10000; // ha
+
   // UI
   document.getElementById('immSeaLevel').innerHTML = `+${v.toFixed(2).replace('.', ',')}<small>m NGF</small>`;
   document.getElementById('immBuildingsReadout').innerHTML =
-    `${flooded}<small>/ ${t3d.buildings.length}</small>`;
+    `${flooded}<small>/ ${t3d.buildings.length}${eroded > 0 ? ' · ' + eroded + ' érodés' : ''}</small>`;
   document.getElementById('immArea').innerHTML =
     `${t3d.waterArea.toFixed(1).replace('.', ',')}<small>ha</small>`;
   document.getElementById('immSliderValue').textContent =
     `+${v.toFixed(2).replace('.', ',')} m`;
+  if (t3d.bruunActive) {
+    document.getElementById('immRetreat').innerHTML =
+      `${R.toFixed(0)}<small>m (×${t3d.bruunFactor})</small>`;
+  }
 }
 
 immRange.addEventListener('input', applyWaterLevel);
@@ -3435,6 +3577,24 @@ document.getElementById('immWires').addEventListener('click', e => {
   t3d.wireframe = !t3d.wireframe;
   if (terrainMesh) terrainMesh.material.wireframe = t3d.wireframe;
   e.currentTarget.classList.toggle('active', t3d.wireframe);
+});
+document.getElementById('immBruun').addEventListener('click', e => {
+  if (!t3d.shorelineOk) {
+    immLoaderText.innerHTML = `Bruun non applicable : ce bbox ne contient pas de trait de côte exploitable.`;
+    immLoader.style.display = '';
+    setTimeout(hideLoader, 2200);
+    return;
+  }
+  if (t3d.bruunFactor === 0) {
+    immLoaderText.innerHTML = `Type de côte « falaise » : la règle de Bruun ne s'applique pas (recul gouverné par la résistance du substrat).`;
+    immLoader.style.display = '';
+    setTimeout(hideLoader, 3000);
+    return;
+  }
+  t3d.bruunActive = !t3d.bruunActive;
+  e.currentTarget.classList.toggle('active', t3d.bruunActive);
+  document.getElementById('immBruunReadout').style.display = t3d.bruunActive ? '' : 'none';
+  applyWaterLevel();
 });
 
 /* === Picker === */
