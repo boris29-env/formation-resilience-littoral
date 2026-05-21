@@ -2472,31 +2472,140 @@ const conservatoireLayer = L.tileLayer.wms('https://data.geopf.fr/wms-v/ows?', {
   format: 'image/png', transparent: true, version: '1.3.0',
   opacity: 0.65, attribution: '© Conservatoire du littoral'
 });
-// Trait de côte Histolitt SHOM/IGN (via Géolittoral)
-const geolittoralBase = 'https://www.geolittoral.developpement-durable.gouv.fr/wms-c/?';
-const traitCoteLayer = L.tileLayer.wms(geolittoralBase, {
-  layers: 'trait_cote_histolitt_metro',
-  format: 'image/png', transparent: true, version: '1.3.0',
-  attribution: '© Géolittoral / DGALN / SHOM'
+/* === Trait de côte BDTOPO® limite_terre_mer (IGN Lidar 3m) === */
+const traitCoteLayer = L.geoJSON(null, {
+  style: f => ({
+    color: typeToColor(f.properties.type_de_limite),
+    weight: 2.5, opacity: 0.95
+  }),
+  onEachFeature: (f, layer) => {
+    layer.bindTooltip(f.properties.type_de_limite || 'Trait de côte', { sticky: true });
+  },
 });
-// Indicateur national d'érosion Cerema (Géolittoral)
-const erosionWmsLayer = L.tileLayer.wms(geolittoralBase, {
-  layers: 'indicateur_national_erosion_metro',
-  format: 'image/png', transparent: true, version: '1.3.0',
-  opacity: 0.75, attribution: '© Cerema / Géolittoral'
+traitCoteLayer.options.attribution = '© IGN-F · BDTOPO® limite_terre_mer (Lidar)';
+function typeToColor(t) {
+  t = t || '';
+  if (t.includes('Limite des affaires')) return '#1B7BCB';
+  if (t.includes('transversale')) return '#E86E55';
+  if (t.includes('salure')) return '#5C8A4F';
+  return '#F4B400';
+}
+
+/* === Érosion par commune : trait de côte coloré par recul Cerema ===
+   Données Cerema (Indicateur national 2016, mise à jour 2022) appliquées
+   au segment de trait de côte le plus proche de chaque commune affichée. */
+const erosionLayer = L.geoJSON(null, {
+  style: f => {
+    const r = f.properties._reculCerema || 0;
+    return { color: erosionColor(r), weight: 4, opacity: 0.85 };
+  },
+  onEachFeature: (f, layer) => {
+    layer.bindTooltip(
+      `<strong>${f.properties._commune || '?'}</strong><br>Recul Cerema : ${(f.properties._reculCerema || 0).toFixed(1)} m/an`,
+      { sticky: true }
+    );
+  }
 });
-// Submersion Xynthia (Géolittoral)
-const submersionWmsLayer = L.tileLayer.wms(geolittoralBase, {
-  layers: 'submersion_xynthia_obs',
-  format: 'image/png', transparent: true, version: '1.3.0',
-  opacity: 0.6, attribution: '© Géolittoral'
+function erosionColor(r) {
+  if (r >= 3) return '#7B0000';
+  if (r >= 2) return '#B84028';
+  if (r >= 1) return '#E86E55';
+  if (r >= 0.5) return '#F4B400';
+  return '#5C8A4F';
+}
+
+/* === Ouvrages côtiers : BDTOPO construction_lineaire (Digue, Quai) === */
+const ouvragesLayer = L.geoJSON(null, {
+  style: f => ({
+    color: '#1F1F1F', weight: 4, opacity: 0.92, lineCap: 'butt'
+  }),
+  onEachFeature: (f, layer) => {
+    const p = f.properties;
+    const label = (p.nature_detaillee || p.nature || 'Ouvrage') + (p.toponyme ? ' · ' + p.toponyme : '');
+    layer.bindTooltip(label, { sticky: true });
+  }
 });
-// Ouvrages côtiers (DGALN/Cerema, via Géolittoral)
-const ouvragesWmsLayer = L.tileLayer.wms(geolittoralBase, {
-  layers: 'ouvrages_de_protection_du_littoral',
-  format: 'image/png', transparent: true, version: '1.3.0',
-  attribution: '© DGALN / Cerema · Base ouvrages'
+ouvragesLayer.options.attribution = '© IGN-F · BDTOPO® construction_lineaire';
+
+/* === Submersion : tentative via APIcarto GPU prescription (en commune-by-commune) === */
+const submersionLayer = L.geoJSON(null, {
+  style: { color: '#3CA3C3', weight: 1, fillColor: '#3CA3C3', fillOpacity: 0.35 }
 });
+
+/* === Helpers WFS dynamiques (chargement par bbox) === */
+async function fetchWfsFeatures(typename, bbox, count = 600, properties = null) {
+  const bboxStr = `${bbox.south},${bbox.west},${bbox.north},${bbox.east},EPSG:4326`;
+  const propStr = properties ? `&PROPERTYNAME=${properties.join(',')}` : '';
+  const url = `https://data.geopf.fr/wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=${typename}&BBOX=${bboxStr}&OUTPUTFORMAT=application/json&COUNT=${count}&SRSNAME=EPSG:4326${propStr}`;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) { return null; }
+}
+
+function nearestCommuneRetreat(lat, lng) {
+  let best = null, bestD = Infinity;
+  COMMUNES.forEach(c => {
+    const dx = (c.lng - lng) * 80, dy = (c.lat - lat) * 110;
+    const d = dx*dx + dy*dy;
+    if (d < bestD) { bestD = d; best = c; }
+  });
+  return best;
+}
+
+async function refreshDynamicLayers() {
+  const b = map.getBounds();
+  // skip si trop dézoomé (chargement énorme)
+  if (map.getZoom() < 9) {
+    traitCoteLayer.clearLayers();
+    erosionLayer.clearLayers();
+    ouvragesLayer.clearLayers();
+    return;
+  }
+  const bbox = { south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() };
+
+  // Trait de côte
+  if (map.hasLayer(traitCoteLayer) || map.hasLayer(erosionLayer)) {
+    const ltm = await fetchWfsFeatures('BDTOPO_V3:limite_terre_mer', bbox, 800);
+    if (ltm && ltm.features) {
+      traitCoteLayer.clearLayers();
+      traitCoteLayer.addData(ltm);
+      // Coloration érosion : annote chaque feature avec recul de la commune la plus proche
+      const erosionData = { type: 'FeatureCollection', features: [] };
+      ltm.features.forEach(f => {
+        const g = f.geometry;
+        if (!g) return;
+        // Prend le premier point de la ligne
+        const c = (g.type === 'LineString' ? g.coordinates[0] : g.coordinates[0][0]);
+        const com = nearestCommuneRetreat(c[1], c[0]);
+        f.properties._reculCerema = com ? com.retreat : 0;
+        f.properties._commune = com ? com.nom : '';
+        erosionData.features.push(f);
+      });
+      erosionLayer.clearLayers();
+      erosionLayer.addData(erosionData);
+    }
+  }
+
+  // Ouvrages côtiers
+  if (map.hasLayer(ouvragesLayer)) {
+    const cl = await fetchWfsFeatures('BDTOPO_V3:construction_lineaire', bbox, 600, ['nature','nature_detaillee','toponyme','geometrie']);
+    if (cl && cl.features) {
+      const filtered = {
+        type: 'FeatureCollection',
+        features: cl.features.filter(f => {
+          const n = (f.properties.nature || '').toLowerCase();
+          const nd = (f.properties.nature_detaillee || '').toLowerCase();
+          return n === 'quai' || nd.includes('digue') || nd.includes('jetée') || nd.includes('perré');
+        })
+      };
+      ouvragesLayer.clearLayers();
+      ouvragesLayer.addData(filtered);
+    }
+  }
+}
+map.on('moveend', refreshDynamicLayers);
 
 const markers = {};
 COMMUNES.forEach(c => {
@@ -2512,41 +2621,21 @@ COMMUNES.forEach(c => {
 document.getElementById('lyrCommunes').addEventListener('change', e => {
   Object.values(markers).forEach(m => e.target.checked ? m.addTo(map) : m.remove());
 });
-// Lyr "Trait de côte" : essaie Géolittoral WMS, fallback ligne mockée si bloqué
-const coteFallback = L.layerGroup();
-L.polyline(COMMUNES.map(c => [c.lat, c.lng]), {
-  color:'#E86E55', weight:2, opacity:0.5, dashArray:'4,4'
-}).addTo(coteFallback);
 document.getElementById('lyrCote').addEventListener('change', e => {
-  if (e.target.checked) { traitCoteLayer.addTo(map); coteFallback.addTo(map); }
-  else { traitCoteLayer.remove(); coteFallback.remove(); }
-});
-// Lyr "Recul historique" : couche Cerema érosion + bulles de fallback
-const erosionFallback = L.layerGroup();
-COMMUNES.filter(c => c.retreat > 1.5).forEach(c => {
-  L.circle([c.lat, c.lng], {
-    radius: c.retreat * 3000, color: '#B84028',
-    weight: 1, fillColor: '#E86E55', fillOpacity: 0.18
-  }).addTo(erosionFallback);
+  if (e.target.checked) { traitCoteLayer.addTo(map); refreshDynamicLayers(); }
+  else { traitCoteLayer.remove(); }
 });
 document.getElementById('lyrErosion').addEventListener('change', e => {
-  if (e.target.checked) { erosionWmsLayer.addTo(map); erosionFallback.addTo(map); }
-  else { erosionWmsLayer.remove(); erosionFallback.remove(); }
-});
-// Lyr "Submersion" : WMS Géolittoral + halos
-const submersionFallback = L.layerGroup();
-COMMUNES.forEach(c => {
-  const radius = (c.exposed / 4) * 1000 + 4000;
-  L.circle([c.lat, c.lng], {
-    radius, color:'#3CA3C3', weight:0, fillColor:'#3CA3C3', fillOpacity:0.2
-  }).addTo(submersionFallback);
+  if (e.target.checked) { erosionLayer.addTo(map); refreshDynamicLayers(); }
+  else { erosionLayer.remove(); }
 });
 document.getElementById('lyrSubmersion').addEventListener('change', e => {
-  if (e.target.checked) { submersionWmsLayer.addTo(map); submersionFallback.addTo(map); }
-  else { submersionWmsLayer.remove(); submersionFallback.remove(); }
+  if (e.target.checked) { submersionLayer.addTo(map); }
+  else { submersionLayer.remove(); }
 });
 document.getElementById('lyrOuvrages').addEventListener('change', e => {
-  if (e.target.checked) ouvragesWmsLayer.addTo(map); else ouvragesWmsLayer.remove();
+  if (e.target.checked) { ouvragesLayer.addTo(map); refreshDynamicLayers(); }
+  else { ouvragesLayer.remove(); }
 });
 document.getElementById('lyrConservatoire').addEventListener('change', e => {
   if (e.target.checked) conservatoireLayer.addTo(map); else conservatoireLayer.remove();
@@ -3168,31 +3257,49 @@ const t3d = {
   elev: null,            // Float32Array du DEM (modifié si Bruun actif)
   origElev: null,        // Float32Array du DEM original
   waterArea: 0,
-  controls: null,        // OrbitControls
+  controls: null,
   cam: { angle: -0.6, dist: 1700, height: 600 },
-  // Bruun (1962) — règle simplifiée du recul morphologique
+  // Bruun (1962) — règle morphologique
   bruunActive: false,
-  bruunFactor: 60,       // R = S × bruunFactor (50-100 sableux Atlantique, 40-80 Méditerranée)
-  bruunSource: 'auto',
-  seawardX: 0, seawardZ: 1, // vecteur unitaire pointant vers la mer (rempli à loadCommune3D)
+  bruunFactor: 60,                    // facteur global moyen (utilisé si per-cell échoue)
+  bruunFactorCell: null,              // Float32Array per-cell
+  bruunFactorMean: 60,                // moyenne pour affichage
+  closureDepth: 8,                    // h* en m (8 Atlantique, 6 Med, 7 Manche)
+  duneRefHeight: 5,                   // B référence
+  seawardX: 0, seawardZ: 1,
   shorelineOk: false,
+  // Ouvrages côtiers BDTOPO
+  ouvragesActive: true,
+  ouvragesMask: null,                 // Uint8Array : 1 = cellule contient un ouvrage
+  protectionMask: null,               // Uint8Array : 1 = cellule protégée par ouvrage en aval
+  ouvragesGroup: null,
+  protectedCells: 0,
 };
 
-// Facteurs Bruun par type de côte (R = recul horizontal / S = élévation marine)
-// Valeurs basées sur Cerema 2018 + Stive 2004 + études Aquitaine/Vendée
-function bruunFactorForCoast(c) {
+/* === Bruun (1962/Stive 2004) — paramètres calibrés par type de côte ===
+   Valeurs basées sur :
+   - Stive M.J.F. (2004) "How important is global warming for coastal erosion?"
+   - Cerema (2018) "Méthode de cartographie du recul du trait de côte"
+   - Idier D. et al. (2013) "Vulnérabilité du littoral aquitain"
+*/
+function bruunDefaultsForCoast(c) {
   const t = (c.type || '').toLowerCase();
   const fac = (c.facade || '').toLowerCase();
-  if (t.includes('falaise')) return 0;          // Bruun ne s'applique pas aux falaises
-  if (t.includes('lido') || t.includes('delta') || t.includes('marais')) return 90;
-  if (t.includes('cordon de galet')) return 25;
-  if (t.includes('rocheuse')) return 5;
-  if (t.includes('estuarien') || t.includes('bassin')) return 35;
-  // Côtes sableuses : Atlantique ≈ 70, Méditerranée ≈ 55, Manche ≈ 50
-  if (fac.includes('aquitaine') || fac.includes('atlantique')) return 70;
-  if (fac.includes('méditerranée') || fac.includes('mediterranee')) return 55;
-  return 50;
+  // [facteur global médian, profondeur de fermeture h*, dune ref B]
+  if (t.includes('falaise')) return { factor: 0, hStar: 10, B: 25 }; // Bruun non applicable
+  if (t.includes('lido') || t.includes('delta') || t.includes('marais')) return { factor: 90, hStar: 5, B: 2 };
+  if (t.includes('cordon de galet')) return { factor: 25, hStar: 7, B: 6 };
+  if (t.includes('rocheuse')) return { factor: 5, hStar: 8, B: 12 };
+  if (t.includes('estuarien') || t.includes('bassin')) return { factor: 35, hStar: 4, B: 4 };
+  // Sableux : Atlantique 70 / Med 55 / Manche 50
+  if (fac.includes('aquitaine') || fac.includes('atlantique')) return { factor: 70, hStar: 8, B: 8 };
+  if (fac.includes('méditerranée') || fac.includes('mediterranee')) return { factor: 55, hStar: 5, B: 3 };
+  return { factor: 50, hStar: 7, B: 5 };
 }
+function bruunFactorForCoast(c) { return bruunDefaultsForCoast(c).factor; }
+
+/* === Helper pour sampler l'élévation original par bilinéaire === */
+// (défini plus bas avant applyWaterLevel)
 
 let terrainMesh = null;
 const buildingsGroup = new THREE.Group(); scene3.add(buildingsGroup);
@@ -3304,13 +3411,169 @@ async function loadCommune3D(c) {
     } else {
       t3d.shorelineOk = false;
     }
-    t3d.bruunFactor = bruunFactorForCoast(c);
-    // Si la commune ne supporte pas Bruun, désactive et masque l'indicateur
+    const bd = bruunDefaultsForCoast(c);
+    t3d.bruunFactor = bd.factor;
+    t3d.closureDepth = bd.hStar;
+    t3d.duneRefHeight = bd.B;
     if (t3d.bruunFactor === 0 || !t3d.shorelineOk) {
       t3d.bruunActive = false;
       document.getElementById('immBruun').classList.remove('active');
       document.getElementById('immBruunReadout').style.display = 'none';
     }
+
+    // -- Bruun PER CELL : analyse du profil de plage par cellule --
+    showLoader('Bruun par cellule (profils DEM)…');
+    if (t3d.bruunFactor > 0 && t3d.shorelineOk) {
+      t3d.bruunFactorCell = new Float32Array(NX * NZ);
+      const profileLenLandward = 150;   // m vers l'intérieur (recherche dune crest)
+      const profileLenSeaward  = 600;   // m vers la mer (recherche profondeur de fermeture)
+      const step = SIZE / NX;
+      const stepsLand = Math.ceil(profileLenLandward / step);
+      const stepsSea  = Math.ceil(profileLenSeaward  / step);
+      const hS = t3d.closureDepth;
+      let sumF = 0, nF = 0;
+      for (let zi = 0; zi < NZ; zi++) {
+        for (let xi = 0; xi < NX; xi++) {
+          const x0 = (xi/(NX-1) - 0.5) * SIZE;
+          const z0 = (zi/(NZ-1) - 0.5) * SIZE;
+          // 1. Cherche dune crest à l'intérieur (direction -seaward)
+          let dune = -Infinity, duneD = 0;
+          for (let s = 0; s <= stepsLand; s++) {
+            const d = s * step;
+            const sx = x0 - d * t3d.seawardX;
+            const sz = z0 - d * t3d.seawardZ;
+            const e = sampleElev(elev, (sx/SIZE+0.5)*(NX-1), (sz/SIZE+0.5)*(NZ-1));
+            if (e > dune) { dune = e; duneD = d; }
+          }
+          // 2. Cherche profondeur -h* en allant vers la mer
+          let closureD = -1;
+          for (let s = 1; s <= stepsSea; s++) {
+            const d = s * step;
+            const sx = x0 + d * t3d.seawardX;
+            const sz = z0 + d * t3d.seawardZ;
+            const e = sampleElev(elev, (sx/SIZE+0.5)*(NX-1), (sz/SIZE+0.5)*(NZ-1));
+            if (e <= -hS * 0.4) { closureD = d; break; } // -h*·0.4 car le DEM RGE ALTI plafonne souvent en mer
+          }
+          if (closureD < 0) closureD = profileLenSeaward; // fallback
+          const B = Math.max(1.0, Math.min(20, dune));
+          const L = duneD + closureD;
+          const factor = Math.max(5, Math.min(150, L / (B + hS)));
+          t3d.bruunFactorCell[zi*NX + xi] = factor;
+          sumF += factor; nF++;
+        }
+      }
+      t3d.bruunFactorMean = nF > 0 ? sumF / nF : t3d.bruunFactor;
+    } else {
+      t3d.bruunFactorCell = null;
+      t3d.bruunFactorMean = t3d.bruunFactor;
+    }
+
+    // -- Fetch ouvrages BDTOPO (digues, perrés, quais) --
+    showLoader('Ouvrages BDTOPO® (digues, perrés)…');
+    let ouvragesFeatures = [];
+    try {
+      const oUrl = `https://data.geopf.fr/wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=BDTOPO_V3:construction_lineaire&BBOX=${minLng},${minLat},${maxLng},${maxLat},EPSG:4326&OUTPUTFORMAT=application/json&COUNT=400&SRSNAME=EPSG:4326&PROPERTYNAME=nature,nature_detaillee,toponyme,geometrie`;
+      const oR = await fetch(oUrl);
+      if (oR.ok) {
+        const oJ = await oR.json();
+        ouvragesFeatures = (oJ.features || []).filter(f => {
+          const n = (f.properties.nature || '').toLowerCase();
+          const nd = (f.properties.nature_detaillee || '').toLowerCase();
+          return n === 'quai' || nd.includes('digue') || nd.includes('jetée') || nd.includes('perré');
+        });
+      }
+    } catch (e) { /* ignore */ }
+
+    // -- Calcul ouvragesMask + protectionMask --
+    const ouvragesMask = new Uint8Array(NX * NZ);
+    ouvragesFeatures.forEach(f => {
+      const g = f.geometry;
+      if (!g) return;
+      const lines = g.type === 'MultiLineString' ? g.coordinates : [g.coordinates];
+      lines.forEach(line => {
+        for (let k = 0; k < line.length - 1; k++) {
+          const [x1, z1] = lonLatToXZ(line[k][0], line[k][1]);
+          const [x2, z2] = lonLatToXZ(line[k+1][0], line[k+1][1]);
+          const dx = x2 - x1, dz = z2 - z1;
+          const len = Math.hypot(dx, dz);
+          const steps = Math.max(2, Math.ceil(len / ((SIZE/NX) * 0.4)));
+          for (let s = 0; s <= steps; s++) {
+            const px = x1 + dx * s / steps;
+            const pz = z1 + dz * s / steps;
+            const sxi = Math.round((px/SIZE + 0.5) * (NX-1));
+            const szi = Math.round((pz/SIZE + 0.5) * (NZ-1));
+            if (sxi >= 0 && sxi < NX && szi >= 0 && szi < NZ) {
+              ouvragesMask[szi * NX + sxi] = 1;
+            }
+          }
+        }
+      });
+    });
+    t3d.ouvragesMask = ouvragesMask;
+
+    // protectionMask : cellule protégée si en marchant vers la mer
+    // on rencontre un ouvrage dans les 250 m
+    const protectionMask = new Uint8Array(NX * NZ);
+    let protectedCount = 0;
+    const PROTECT_M = 250;
+    const stepsMaxProt = Math.ceil(PROTECT_M / (SIZE/NX));
+    if (ouvragesFeatures.length && t3d.shorelineOk) {
+      for (let zi = 0; zi < NZ; zi++) {
+        for (let xi = 0; xi < NX; xi++) {
+          if (ouvragesMask[zi*NX + xi]) continue; // l'ouvrage lui-même n'est pas "protégé"
+          for (let s = 1; s <= stepsMaxProt; s++) {
+            const sxRel = s * (SIZE/NX);
+            const sx = (xi/(NX-1) - 0.5) * SIZE + sxRel * t3d.seawardX;
+            const sz = (zi/(NZ-1) - 0.5) * SIZE + sxRel * t3d.seawardZ;
+            const sxi = Math.round((sx/SIZE + 0.5) * (NX-1));
+            const szi = Math.round((sz/SIZE + 0.5) * (NZ-1));
+            if (sxi < 0 || sxi >= NX || szi < 0 || szi >= NZ) break;
+            if (ouvragesMask[szi*NX + sxi]) {
+              protectionMask[zi*NX + xi] = 1;
+              protectedCount++;
+              break;
+            }
+          }
+        }
+      }
+    }
+    t3d.protectionMask = protectionMask;
+    t3d.protectedCells = protectedCount;
+
+    // -- Rendu 3D des ouvrages : ligne noire surélevée sur le terrain --
+    if (t3d.ouvragesGroup) {
+      scene3.remove(t3d.ouvragesGroup);
+      t3d.ouvragesGroup.traverse(o => { o.geometry?.dispose(); o.material?.dispose(); });
+    }
+    t3d.ouvragesGroup = new THREE.Group();
+    const ouvragesMat = new THREE.MeshStandardMaterial({ color: 0x1A1A1A, roughness: 0.7, metalness: 0.1 });
+    ouvragesFeatures.forEach(f => {
+      const g = f.geometry;
+      if (!g) return;
+      const lines = g.type === 'MultiLineString' ? g.coordinates : [g.coordinates];
+      lines.forEach(line => {
+        for (let k = 0; k < line.length - 1; k++) {
+          const [x1, z1] = lonLatToXZ(line[k][0], line[k][1]);
+          const [x2, z2] = lonLatToXZ(line[k+1][0], line[k+1][1]);
+          const dx = x2 - x1, dz = z2 - z1;
+          const length = Math.hypot(dx, dz);
+          if (length < 1) continue;
+          const cx = (x1 + x2) / 2, cz = (z1 + z2) / 2;
+          // sample altitude
+          const alt = sampleElev(elev,
+            (cx/SIZE + 0.5) * (NX-1),
+            (cz/SIZE + 0.5) * (NZ-1));
+          const wallH = 4;  // hauteur de digue typique au-dessus du sol
+          const wallW = 3;
+          const geom = new THREE.BoxGeometry(length, wallH * VSCALE, wallW);
+          const mesh = new THREE.Mesh(geom, ouvragesMat);
+          mesh.position.set(cx, alt * VSCALE + wallH * VSCALE / 2, cz);
+          mesh.rotation.y = -Math.atan2(dz, dx);
+          t3d.ouvragesGroup.add(mesh);
+        }
+      });
+    });
+    scene3.add(t3d.ouvragesGroup);
 
     // -- 2. Fetch orthophoto texture --
     showLoader('BD ORTHO® IGN…');
@@ -3456,33 +3719,37 @@ function applyWaterLevel() {
   const v = parseFloat(immRange.value) / 100;
   waterMesh.position.y = v * VSCALE;
 
-  /* === Recul Bruun (recession horizontale du profil actif) =================
-     R = S × (L / h*)   avec L/h* le facteur Bruun (configuré selon type côte).
-     Conséquence visuelle : on translate le profil de terrain LANDWARD de R,
-     soit, pour chaque cellule (x,z), on échantillonne la cote originale au
-     point (x + R·seawardDir) – la "tranche" qui était plus au large remplit
-     la position actuelle. Référence : Bruun, P. (1962) "Sea-level rise as a
-     cause of shore erosion", J. Waterways & Harbors Div., ASCE, 88(WW1):117. */
-  const R = (t3d.bruunActive && t3d.shorelineOk) ? v * t3d.bruunFactor : 0;
+  /* === Recul morphologique (Bruun 1962 + protection ouvrages BDTOPO) =======
+     R_cell = S × factor_cell × (1 − protection_cell)
+     - factor_cell = L_local / (B_local + h*_régional), L et B mesurés sur le
+       MNT 5 m par profil seaward (analyse per-cell).
+     - protection_cell = 1 si un ouvrage BDTOPO (digue, perré, quai) se trouve
+       en aval (vers la mer) dans les 250 m → recul bloqué.
+     - Réf. : Bruun (1962) JWH-ASCE; Stive (2004); Cerema (2018) Méthode TCMOY. */
+  const useBruun = t3d.bruunActive && t3d.shorelineOk;
   if (terrainMesh && terrainMesh.geometry) {
     const pos = terrainMesh.geometry.attributes.position;
-    if (R > 0) {
+    if (useBruun) {
       for (let zi = 0; zi < NZ; zi++) {
         for (let xi = 0; xi < NX; xi++) {
+          const i = zi * NX + xi;
+          if (t3d.protectionMask && t3d.protectionMask[i]) {
+            t3d.elev[i] = t3d.origElev[i];
+            pos.setY(i, t3d.origElev[i] * VSCALE);
+            continue;
+          }
+          const fc = t3d.bruunFactorCell ? t3d.bruunFactorCell[i] : t3d.bruunFactor;
+          const Rcell = v * fc;
           const x = (xi / (NX - 1) - 0.5) * SIZE;
           const z = (zi / (NZ - 1) - 0.5) * SIZE;
-          // Echantillonne au point SEAWARD (translation landward → le terrain "vient" de seaward)
-          const sx = x + R * t3d.seawardX;
-          const sz = z + R * t3d.seawardZ;
-          const gxi = (sx / SIZE + 0.5) * (NX - 1);
-          const gzi = (sz / SIZE + 0.5) * (NZ - 1);
-          const ne = sampleElev(t3d.origElev, gxi, gzi);
-          t3d.elev[zi * NX + xi] = ne;
-          pos.setY(zi * NX + xi, ne * VSCALE);
+          const sx = x + Rcell * t3d.seawardX;
+          const sz = z + Rcell * t3d.seawardZ;
+          const ne = sampleElev(t3d.origElev, (sx/SIZE + 0.5)*(NX-1), (sz/SIZE + 0.5)*(NZ-1));
+          t3d.elev[i] = ne;
+          pos.setY(i, ne * VSCALE);
         }
       }
     } else {
-      // Réinitialise au terrain original
       for (let i = 0; i < t3d.origElev.length; i++) {
         t3d.elev[i] = t3d.origElev[i];
         pos.setY(i, t3d.origElev[i] * VSCALE);
@@ -3492,42 +3759,63 @@ function applyWaterLevel() {
     terrainMesh.geometry.computeVertexNormals();
   }
 
-  // Bâtiments : inondé OU érodé (sol passé sous l'eau après recul Bruun)
-  let flooded = 0, eroded = 0;
+  // Bâtiments : inondé / érodé / protégé
+  let flooded = 0, eroded = 0, protectedBldg = 0;
   t3d.buildings.forEach(b => {
     const bx = b.position.x, bz = b.position.z;
-    const sx = bx + R * t3d.seawardX;
-    const sz = bz + R * t3d.seawardZ;
-    const gxi = (sx / SIZE + 0.5) * (NX - 1);
-    const gzi = (sz / SIZE + 0.5) * (NZ - 1);
-    const newGroundAlt = sampleElev(t3d.origElev, gxi, gzi);
+    const cxi = Math.max(0, Math.min(NX-1, Math.round((bx/SIZE + 0.5)*(NX-1))));
+    const czi = Math.max(0, Math.min(NZ-1, Math.round((bz/SIZE + 0.5)*(NZ-1))));
+    const cellIdx = czi * NX + cxi;
+    const isProtected = useBruun && t3d.protectionMask && t3d.protectionMask[cellIdx];
+    let newGroundAlt;
+    if (useBruun && !isProtected) {
+      const fc = t3d.bruunFactorCell ? t3d.bruunFactorCell[cellIdx] : t3d.bruunFactor;
+      const Rcell = v * fc;
+      const sx = bx + Rcell * t3d.seawardX;
+      const sz = bz + Rcell * t3d.seawardZ;
+      newGroundAlt = sampleElev(t3d.origElev, (sx/SIZE + 0.5)*(NX-1), (sz/SIZE + 0.5)*(NZ-1));
+    } else {
+      newGroundAlt = b.userData.baseAlt;
+    }
     const lost = newGroundAlt < v - 0.1;
-    if (lost) {
+    if (lost && !isProtected) {
       flooded++;
-      if (R > 0 && b.userData.baseAlt > v) eroded++;
+      if (useBruun && b.userData.baseAlt > v) eroded++;
       if (b.material !== buildingsGroup.userData.floodedMat) b.material = buildingsGroup.userData.floodedMat;
     } else {
+      if (isProtected && b.userData.baseAlt < v + 2) protectedBldg++;
       if (b.material !== buildingsGroup.userData.normalMat) b.material = buildingsGroup.userData.normalMat;
     }
   });
   t3d.flooded = flooded;
 
-  // Surface (érodée + immergée) — compte cellules dont la cote actuelle est < v
   let cellsInWater = 0;
   for (const e of t3d.elev) if (e < v) cellsInWater++;
-  t3d.waterArea = cellsInWater * t3d.cellArea / 10000; // ha
+  t3d.waterArea = cellsInWater * t3d.cellArea / 10000;
 
-  // UI
+  // Recul moyen pour affichage (cellules non protégées)
+  let sumR = 0, nR = 0;
+  if (useBruun && t3d.bruunFactorCell) {
+    for (let i = 0; i < t3d.bruunFactorCell.length; i++) {
+      if (t3d.protectionMask && t3d.protectionMask[i]) continue;
+      sumR += v * t3d.bruunFactorCell[i]; nR++;
+    }
+  }
+  const Rmean = nR > 0 ? sumR / nR : v * t3d.bruunFactor;
+
   document.getElementById('immSeaLevel').innerHTML = `+${v.toFixed(2).replace('.', ',')}<small>m NGF</small>`;
+  const erodedStr   = eroded > 0 ? ' · ' + eroded + ' érodés' : '';
+  const protStr     = protectedBldg > 0 ? ' · ' + protectedBldg + ' protégés' : '';
   document.getElementById('immBuildingsReadout').innerHTML =
-    `${flooded}<small>/ ${t3d.buildings.length}${eroded > 0 ? ' · ' + eroded + ' érodés' : ''}</small>`;
+    `${flooded}<small>/ ${t3d.buildings.length}${erodedStr}${protStr}</small>`;
   document.getElementById('immArea').innerHTML =
     `${t3d.waterArea.toFixed(1).replace('.', ',')}<small>ha</small>`;
   document.getElementById('immSliderValue').textContent =
     `+${v.toFixed(2).replace('.', ',')} m`;
   if (t3d.bruunActive) {
+    const factorTxt = t3d.bruunFactorCell ? `per-cell ø${t3d.bruunFactorMean.toFixed(0)}` : `×${t3d.bruunFactor}`;
     document.getElementById('immRetreat').innerHTML =
-      `${R.toFixed(0)}<small>m (×${t3d.bruunFactor})</small>`;
+      `${Rmean.toFixed(0)}<small>m moy. · ${factorTxt}</small>`;
   }
 }
 
