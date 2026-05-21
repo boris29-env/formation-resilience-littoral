@@ -3536,17 +3536,37 @@ async function loadCommune3D(c) {
     const batches = [];
     for (let i = 0; i < points.length; i += BATCH) batches.push([i, points.slice(i, i + BATCH)]);
     let done = 0;
-    await Promise.all(batches.map(async ([offset, batch]) => {
+
+    // Limite de concurrence : IGN altimétrie renvoie 429 au-delà de ~4 requêtes
+    // simultanées. On utilise un pool de workers + retry exponentiel sur 429.
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    async function fetchBatch([offset, batch], attempt = 0) {
       const lons = batch.map(p => p[0].toFixed(6)).join('|');
       const lats = batch.map(p => p[1].toFixed(6)).join('|');
       const url = `https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json?lon=${lons}&lat=${lats}&zonly=true&resource=ign_rge_alti_wld`;
       const r = await fetch(url);
+      if (r.status === 429 || r.status === 503) {
+        if (attempt >= 5) throw new Error(`IGN altimétrie ${r.status} après ${attempt+1} tentatives`);
+        await sleep(700 * Math.pow(1.7, attempt) + Math.random() * 400);
+        return fetchBatch([offset, batch], attempt + 1);
+      }
       if (!r.ok) throw new Error('IGN altimétrie ' + r.status);
       const j = await r.json();
       j.elevations.forEach((z, k) => { elev[offset + k] = (z === undefined || z === null) ? 0 : z; });
       done++;
       showLoader(`MNT IGN · ${done}/${batches.length} blocs…`);
-    }));
+    }
+
+    const CONCURRENCY = 4;
+    const queue = batches.slice();
+    async function worker() {
+      while (queue.length) {
+        const b = queue.shift();
+        if (!b) return;
+        await fetchBatch(b);
+      }
+    }
+    await Promise.all(Array.from({ length: CONCURRENCY }, worker));
     t3d.elev = elev;
     t3d.origElev = new Float32Array(elev); // copie immuable pour le recul Bruun
     // stats
