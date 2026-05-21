@@ -950,6 +950,22 @@ input.imm-range::-moz-range-thumb {
   text-transform: none; letter-spacing: 0;
   margin-left: 6px;
 }
+.imm-presets {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  margin-top: 8px;
+}
+.imm-preset {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  padding: 6px 8px; border-radius: 999px;
+  background: rgba(246,241,231,0.08);
+  border: 1px solid rgba(246,241,231,0.12);
+  color: var(--paper);
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.imm-preset:hover { background: rgba(246,241,231,0.15); }
+.imm-preset.active { background: var(--coral); border-color: var(--coral); }
 
 /* === Immersion loader & attribution === */
 .imm-loader {
@@ -1877,6 +1893,13 @@ input.imm-range::-moz-range-thumb {
         <div class="imm-total">
           Niveau total simulé · <strong id="immTotalH">+0,00 m</strong>
         </div>
+        <div class="imm-presets">
+          <button class="imm-preset" data-rslr="0"    data-surge="0"   title="Niveau actuel, hors tempête">Référence</button>
+          <button class="imm-preset" data-rslr="0"    data-surge="150" title="28 février 2010, surcote 1,50 m">Xynthia</button>
+          <button class="imm-preset" data-rslr="56"   data-surge="0"   title="IPCC AR6 SSP2-4.5 médiane 2100">2100 médian</button>
+          <button class="imm-preset" data-rslr="56"   data-surge="210" title="Centennale couplée au RSLR médian">100ans 2100</button>
+          <button class="imm-preset" data-rslr="77"   data-surge="240" title="SSP5-8.5 + centennale forte">Pire cas</button>
+        </div>
       </div>
 
       <div class="imm-loader" id="immLoader" style="display:none;">
@@ -2181,13 +2204,22 @@ input.imm-range::-moz-range-thumb {
           <strong>PPRL approuvés</strong> et la base Géorisques.
         </p>
         <p style="margin-top:12px">
-          Le recul prospectif sous élévation marine simulé dans la maquette 3D
-          applique la <strong>règle de Bruun (1962)</strong>&nbsp;:
-          <em>R&nbsp;=&nbsp;S&nbsp;·&nbsp;L/h*</em>, avec un facteur calibré par type
-          de côte&nbsp;: 70 pour le sableux atlantique, 55 pour le lido méditerranéen,
-          90 pour les delta/marais, 5 pour le rocheux, 0 pour les falaises
-          (résistance gouvernée par le substrat, non Bruun). Réf.&nbsp;: Bruun, P.
-          (1962) <em>J. Waterways &amp; Harbors Div., ASCE</em>&nbsp;88(WW1)&nbsp;:&nbsp;117.
+          Le recul prospectif simulé dans la maquette 3D applique la
+          <strong>règle de Bruun (1962)</strong> en mode <strong>per-cell</strong>&nbsp;:
+          pour chaque maille du MNT 5&nbsp;m, analyse du profil seaward/landward,
+          mesure de la largeur active <em>L</em> entre dune-crest <em>B</em> et
+          profondeur de fermeture <em>h*</em>, puis
+          <em>R_cell&nbsp;=&nbsp;S_RSLR&nbsp;×&nbsp;L/(B+h*)</em>. <em>h*</em>
+          régional&nbsp;: 8&nbsp;m Atlantique, 5&nbsp;m Méditerranée, 7&nbsp;m Manche
+          (Hallermeier 1981 simplifié).
+          <strong>Surcote tempête</strong> ajoutée au niveau marin total mais
+          exclue du recul morphologique (Bruun s'applique aux variations
+          pérennes du niveau d'équilibre, non aux événements épisodiques).
+          <strong>Protection ouvrages</strong>&nbsp;: les digues BDTOPO (nature
+          Quai/Digue/Perré/Jetée) annulent le recul sur les mailles en aval.
+          Réf.&nbsp;: Bruun (1962) <em>JWH-ASCE</em>&nbsp;88(WW1):117&nbsp;;
+          Stive (2004) <em>Climatic Change</em>&nbsp;64:27&nbsp;;
+          Cerema (2018) <em>Méthode TCMOY</em>.
         </p>
         <p style="margin-top:12px">
           La liste des communes affichées suit le <strong>décret n°&nbsp;2022-750</strong>
@@ -2201,9 +2233,9 @@ input.imm-range::-moz-range-thumb {
         <ul>
           <li><a href="https://data.geopf.fr/" target="_blank">IGN Géoplateforme</a> · WMTS Plan IGN, Orthophoto 2024 + historiques 1950-1965/65-80/80-95</li>
           <li><a href="https://data.geopf.fr/altimetrie" target="_blank">RGE ALTI® API</a> · MNT 5 m utilisé en direct dans la 3D</li>
-          <li><a href="https://data.geopf.fr/wfs" target="_blank">WFS Géoplateforme</a> · BD TOPO® bâtiment (hauteur, altitude), AdminExpress</li>
+          <li><a href="https://data.geopf.fr/wfs" target="_blank">WFS Géoplateforme</a> · BD TOPO® bâtiment (hauteur, altitude), limite_terre_mer, construction_lineaire, AdminExpress</li>
           <li><a href="https://apicarto.ign.fr/api/doc/" target="_blank">APIcarto IGN</a> · cadastre commune, PLU prescriptions risques</li>
-          <li><a href="https://www.geolittoral.developpement-durable.gouv.fr/" target="_blank">Géolittoral DGALN</a> · trait de côte Histolitt, submersion, ouvrages côtiers</li>
+          <li><a href="https://apidf-preprod.cerema.fr/dvf_opendata/" target="_blank">DVF Cerema</a> · mutations foncières 2020-2024 (prix, surface, type bien)</li>
           <li><a href="https://www.cerema.fr/fr/actualites/indicateur-national-erosion-cotiere" target="_blank">Cerema</a> · indicateur d'érosion 2016/2022</li>
           <li><a href="https://www.georisques.gouv.fr/" target="_blank">Géorisques</a> · PPRN, Cat'Nat, PPRNN</li>
           <li><a href="https://www.ipcc.ch/report/ar6/wg1/" target="_blank">IPCC AR6 WG1</a> · scénarios SSP de niveau marin</li>
@@ -3999,6 +4031,19 @@ function applyWaterLevel() {
 
 immRange.addEventListener('input', applyWaterLevel);
 document.getElementById('immSurge').addEventListener('input', applyWaterLevel);
+
+document.querySelectorAll('.imm-preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    immRange.value = btn.dataset.rslr;
+    document.getElementById('immSurge').value = btn.dataset.surge;
+    document.querySelectorAll('.imm-preset').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyWaterLevel();
+  });
+});
+[immRange, document.getElementById('immSurge')].forEach(s => {
+  s.addEventListener('input', () => document.querySelectorAll('.imm-preset').forEach(b => b.classList.remove('active')));
+});
 
 function updateCamera() {
   const a = t3d.cam.angle;
