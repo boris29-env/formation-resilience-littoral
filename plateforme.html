@@ -3385,9 +3385,9 @@ renderer.outputColorSpace = THREE.SRGBColorSpace || 3001;
 
 const scene3 = new THREE.Scene();
 scene3.background = new THREE.Color(0x0a1c2e);
-scene3.fog = new THREE.Fog(0x0a1c2e, 2500, 6000);
+scene3.fog = new THREE.Fog(0x0a1c2e, 4500, 11000);
 
-const camera = new THREE.PerspectiveCamera(38, 1, 1, 12000);
+const camera = new THREE.PerspectiveCamera(38, 1, 1, 18000);
 camera.position.set(900, 600, 900);
 camera.lookAt(0, 0, 0);
 
@@ -3409,9 +3409,9 @@ resizeThree();
 window.addEventListener('resize', resizeThree);
 
 /* === Three.js scene state === */
-const NX = 60, NZ = 60;          // DEM grid (60x60 = 3600 points, 18 requêtes IGN)
-const SIZE = 2000;                // bbox 2 km × 2 km
-const VSCALE = 2.0;               // exagération verticale
+const NX = 75, NZ = 75;          // DEM grid 75×75 = 5625 points → 32 batches IGN
+const SIZE = 4000;                // bbox 4 km × 4 km (zone élargie pour bien voir le trait de côte)
+const VSCALE = 1.5;               // exagération verticale modérée (compense l'agrandissement bbox)
 const METER_PER_DEG_LAT = 111320;
 function meterPerDegLng(lat) { return METER_PER_DEG_LAT * Math.cos(lat * Math.PI / 180); }
 
@@ -3645,7 +3645,7 @@ async function loadCommune3D(c) {
     showLoader('Ouvrages BDTOPO® (digues, perrés)…');
     let ouvragesFeatures = [];
     try {
-      const oUrl = `https://data.geopf.fr/wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=BDTOPO_V3:construction_lineaire&BBOX=${minLng},${minLat},${maxLng},${maxLat},EPSG:4326&OUTPUTFORMAT=application/json&COUNT=400&SRSNAME=EPSG:4326&PROPERTYNAME=nature,nature_detaillee,toponyme,geometrie`;
+      const oUrl = `https://data.geopf.fr/wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=BDTOPO_V3:construction_lineaire&BBOX=${minLng},${minLat},${maxLng},${maxLat},EPSG:4326&OUTPUTFORMAT=application/json&COUNT=1000&SRSNAME=EPSG:4326&PROPERTYNAME=nature,nature_detaillee,toponyme,geometrie`;
       const oR = await fetch(oUrl);
       if (oR.ok) {
         const oJ = await oR.json();
@@ -3755,7 +3755,7 @@ async function loadCommune3D(c) {
       const y = Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180);
       return y * 20037508.34 / 180;
     }
-    const orthoUrl = `https://data.geopf.fr/wms-r/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=ORTHOIMAGERY.ORTHOPHOTOS&WIDTH=1024&HEIGHT=1024&CRS=EPSG:3857&BBOX=${lonToMercX(minLng)},${latToMercY(minLat)},${lonToMercX(maxLng)},${latToMercY(maxLat)}&FORMAT=image/jpeg&STYLES=`;
+    const orthoUrl = `https://data.geopf.fr/wms-r/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=ORTHOIMAGERY.ORTHOPHOTOS&WIDTH=2048&HEIGHT=2048&CRS=EPSG:3857&BBOX=${lonToMercX(minLng)},${latToMercY(minLat)},${lonToMercX(maxLng)},${latToMercY(maxLat)}&FORMAT=image/jpeg&STYLES=`;
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin('anonymous');
     const orthoTex = await new Promise((res, rej) => loader.load(orthoUrl, res, undefined, rej));
@@ -3765,7 +3765,7 @@ async function loadCommune3D(c) {
     // -- 3. Fetch BDTOPO buildings (cap ~600) --
     showLoader('BD TOPO® bâtiments…');
     const bbox = `${minLng},${minLat},${maxLng},${maxLat},EPSG:4326`;
-    const bUrl = `https://data.geopf.fr/wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=BDTOPO_V3:batiment&BBOX=${bbox}&OUTPUTFORMAT=application/json&COUNT=800&PROPERTYNAME=nature,hauteur,altitude_minimale_sol,altitude_maximale_toit,nombre_d_etages,geometrie&SRSNAME=EPSG:4326`;
+    const bUrl = `https://data.geopf.fr/wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=BDTOPO_V3:batiment&BBOX=${bbox}&OUTPUTFORMAT=application/json&COUNT=2000&PROPERTYNAME=nature,hauteur,altitude_minimale_sol,altitude_maximale_toit,nombre_d_etages,geometrie&SRSNAME=EPSG:4326`;
     const bResp = await fetch(bUrl);
     if (!bResp.ok) throw new Error('BDTOPO ' + bResp.status);
     const bJson = await bResp.json();
@@ -3844,11 +3844,15 @@ async function loadCommune3D(c) {
     buildingsGroup.userData.normalMat = buildingMat;
     buildingsGroup.userData.floodedMat = floodedMat;
 
-    // -- 6. Set camera --
-    const ax = t3d.altMean * VSCALE;
-    t3d.cam.angle = -0.6;
-    t3d.cam.dist = SIZE * 0.9;
-    t3d.cam.height = Math.max(400, (t3d.altMax - t3d.altMin) * VSCALE + 350);
+    // -- 6. Set camera : vue oblique depuis la TERRE, regard vers la MER --
+    // Angle initial = direction opposée à seaward (donc côté terre)
+    if (t3d.shorelineOk) {
+      t3d.cam.angle = Math.atan2(-t3d.seawardZ, -t3d.seawardX);
+    } else {
+      t3d.cam.angle = -Math.PI / 4;
+    }
+    t3d.cam.dist = SIZE * 0.55;                     // 2200 m pour SIZE=4000
+    t3d.cam.height = Math.max(450, SIZE * 0.18);    // 720 m → angle d'incidence ~20°
     updateCamera();
 
     t3d.loaded = true;
@@ -4047,10 +4051,16 @@ document.querySelectorAll('.imm-preset').forEach(btn => {
 
 function updateCamera() {
   const a = t3d.cam.angle;
-  camera.position.x = Math.cos(a) * t3d.cam.dist;
-  camera.position.z = Math.sin(a) * t3d.cam.dist;
+  // La caméra orbite autour d'un point de visée décalé vers la mer
+  // (déterminé à partir de seawardX/Z), pour que le trait de côte reste
+  // au centre du cadre quel que soit l'angle.
+  const lookOff = SIZE * 0.25;
+  const lx = (t3d.shorelineOk ? t3d.seawardX : 0) * lookOff;
+  const lz = (t3d.shorelineOk ? t3d.seawardZ : 0) * lookOff;
+  camera.position.x = lx + Math.cos(a) * t3d.cam.dist;
+  camera.position.z = lz + Math.sin(a) * t3d.cam.dist;
   camera.position.y = t3d.cam.height;
-  camera.lookAt(0, t3d.altMean * VSCALE, 0);
+  camera.lookAt(lx, t3d.altMean * VSCALE * 0.4, lz);
 }
 
 // Mouse / touch orbit (no OrbitControls dep)
@@ -4068,7 +4078,7 @@ window.addEventListener('mousemove', e => {
 });
 threeCanvas.addEventListener('wheel', e => {
   e.preventDefault();
-  t3d.cam.dist = Math.max(400, Math.min(5000, t3d.cam.dist + e.deltaY * 1.5));
+  t3d.cam.dist = Math.max(500, Math.min(9000, t3d.cam.dist + e.deltaY * 3));
   updateCamera();
 }, { passive: false });
 
@@ -4533,11 +4543,13 @@ const ORTHO_LAYERS = {
   '1980-1995':{ name:'1980-1995 historique', layer:'ORTHOIMAGERY.ORTHOPHOTOS.1980-1995', fmt:'image/png'  },
   '2000':     { name:'BD ORTHO COAST 2000',   layer:'ORTHOIMAGERY.ORTHOPHOTOS.COAST2000', fmt:'image/jpeg' },
 };
-function makeOrthoTileLayer(key) {
+function makeOrthoTileLayer(key, paneName) {
   const o = ORTHO_LAYERS[key];
+  const opts = { attribution: '© IGN-F · BD ORTHO®', minZoom: 0, maxZoom: 19, tileSize: 256 };
+  if (paneName) opts.pane = paneName;
   return L.tileLayer(
     `https://data.geopf.fr/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=${o.layer}&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&STYLE=normal&TILEMATRIXSET=PM&FORMAT=${o.fmt}`,
-    { attribution: '© IGN-F · BD ORTHO®', minZoom: 0, maxZoom: 19, tileSize: 256 }
+    opts
   );
 }
 
@@ -4550,8 +4562,14 @@ const compMap = L.map('compMap', { zoomControl: false, attributionControl: true 
 compMap.attributionControl.setPrefix('');
 L.control.zoom({ position: 'bottomright' }).addTo(compMap);
 
-let compLeftLayer = makeOrthoTileLayer('1950-1965').addTo(compMap);
-let compRightLayer = makeOrthoTileLayer('current').addTo(compMap);
+// Deux panes séparés : la couche "gauche" et la couche "droite" se clip-pathent indépendamment.
+compMap.createPane('paneLeft');
+compMap.createPane('paneRight');
+compMap.getPane('paneLeft').style.zIndex  = 220;
+compMap.getPane('paneRight').style.zIndex = 221;
+
+let compLeftLayer = makeOrthoTileLayer('1950-1965', 'paneLeft').addTo(compMap);
+let compRightLayer = makeOrthoTileLayer('current',    'paneRight').addTo(compMap);
 
 // Implement side-by-side clip via leaflet container layout
 const compShell = document.querySelector('#avant-apres .comp-stage');
@@ -4572,15 +4590,12 @@ lblRight.style.right = '20px';
 lblRight.textContent = ORTHO_LAYERS.current.name;
 compShell.appendChild(lblRight);
 
-// Implement clip via clip-path on Leaflet tile-pane
+// Clip via clip-path sur les panes nommés (méthode robuste, indépendante du DOM)
 function applyClipPaths(pct) {
-  const compMapEl = document.getElementById('compMap');
-  const panes = compMapEl.querySelectorAll('.leaflet-tile-pane > .leaflet-layer');
-  // First child = left layer (1950s), second = right (current)
-  if (panes.length >= 2) {
-    panes[0].style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
-    panes[1].style.clipPath = `inset(0 0 0 ${pct}%)`;
-  }
+  const pl = compMap.getPane('paneLeft');
+  const pr = compMap.getPane('paneRight');
+  if (pl) pl.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
+  if (pr) pr.style.clipPath = `inset(0 0 0 ${pct}%)`;
   divider.style.left = pct + '%';
   lblLeft.style.display  = pct > 10 ? '' : 'none';
   lblRight.style.display = pct < 90 ? '' : 'none';
@@ -4612,21 +4627,17 @@ function compSetView(c) {
 }
 
 function rebuildOrthoLayer(side, key) {
-  // Always rebuild both, in order, to keep DOM order consistent (left first, right second)
   if (side === 'left') {
     lblLeft.textContent = ORTHO_LAYERS[key].name;
-    compMap.removeLayer(compLeftLayer);
-    compLeftLayer = makeOrthoTileLayer(key);
+    if (compLeftLayer) compMap.removeLayer(compLeftLayer);
+    compLeftLayer = makeOrthoTileLayer(key, 'paneLeft');
+    compLeftLayer.addTo(compMap);
   } else {
     lblRight.textContent = ORTHO_LAYERS[key].name;
-    compMap.removeLayer(compRightLayer);
-    compRightLayer = makeOrthoTileLayer(key);
+    if (compRightLayer) compMap.removeLayer(compRightLayer);
+    compRightLayer = makeOrthoTileLayer(key, 'paneRight');
+    compRightLayer.addTo(compMap);
   }
-  // Remove and re-add both in proper order
-  if (compLeftLayer && compMap.hasLayer(compLeftLayer)) compMap.removeLayer(compLeftLayer);
-  if (compRightLayer && compMap.hasLayer(compRightLayer)) compMap.removeLayer(compRightLayer);
-  compLeftLayer.addTo(compMap);
-  compRightLayer.addTo(compMap);
   setTimeout(() => applyClipPaths(parseFloat(divider.style.left) || 50), 50);
 }
 
@@ -4639,7 +4650,18 @@ document.getElementById('compCommunePicker').addEventListener('change', e => {
 
 // initial view
 compSetView(COMMUNES.find(c => c.insee === '33514'));
-setTimeout(() => applyClipPaths(50), 250);
+// Leaflet a besoin d'un invalidateSize si le conteneur est rendu invisible au boot
+function refreshComparator() {
+  compMap.invalidateSize();
+  applyClipPaths(parseFloat(divider.style.left) || 50);
+}
+setTimeout(refreshComparator, 400);
+window.addEventListener('resize', () => { compMap.invalidateSize(); });
+// Re-invalidate quand la section entre dans le viewport (premier scroll user)
+const compObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) refreshComparator(); });
+}, { threshold: 0.1 });
+compObserver.observe(document.getElementById('compMap'));
 
 /* =========================================================
    11 · NAV active state
