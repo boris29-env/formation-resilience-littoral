@@ -520,6 +520,37 @@ img { display: block; max-width: 100%; }
 }
 .cd-projection-text strong { color: var(--coral); font-weight: 600; }
 
+.cd-dvf {
+  background: rgba(246,241,231,0.05);
+  border: 1px solid rgba(246,241,231,0.08);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+  margin-top: 0;
+}
+.cd-dvf-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.cd-dvf-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.cd-dvf-grid > div {
+  font-size: 11px; opacity: 0.75; line-height: 1.4;
+}
+.cd-dvf-grid span {
+  display: block;
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  opacity: 0.6; margin-bottom: 4px;
+}
+.cd-dvf-grid strong {
+  display: block;
+  font-family: var(--serif); font-weight: 600;
+  font-size: 18px; line-height: 1;
+  opacity: 1; color: var(--paper);
+}
+
 .cd-actions {
   display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
   margin-top: 16px;
@@ -903,6 +934,21 @@ input.imm-range::-moz-range-thumb {
 .imm-slider-hint span:nth-child(2) {
   color: var(--coral); font-weight: 600; opacity: 1;
   text-transform: uppercase;
+}
+.imm-total {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-top: 1px dashed rgba(246,241,231,0.18);
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.10em; text-transform: uppercase;
+  opacity: 0.8;
+}
+.imm-total strong {
+  display: inline-block;
+  font-family: var(--serif); font-weight: 700;
+  font-size: 18px; color: var(--coral);
+  text-transform: none; letter-spacing: 0;
+  margin-left: 6px;
 }
 
 /* === Immersion loader & attribution === */
@@ -1801,11 +1847,15 @@ input.imm-range::-moz-range-thumb {
           <div class="imm-readout-label">Recul du trait de côte · Bruun</div>
           <div class="imm-readout-value" id="immRetreat">— <small>m</small></div>
         </div>
+        <div class="imm-readout-item" id="immValueReadout" style="display:none;">
+          <div class="imm-readout-label">Valeur immobilière exposée · DVF</div>
+          <div class="imm-readout-value" id="immValue">— <small>M€</small></div>
+        </div>
       </div>
 
       <div class="imm-slider-wrap">
         <div class="imm-slider-label">
-          <span>Niveau marin simulé</span>
+          <span>Niveau marin moyen · RSLR</span>
           <strong id="immSliderValue">+0,00 m</strong>
         </div>
         <input type="range" class="imm-range" id="immRange" min="0" max="600" value="0" step="5">
@@ -1813,6 +1863,19 @@ input.imm-range::-moz-range-thumb {
           <span>0 m</span>
           <span id="immScenarioHint">SSP2-4.5 · 2100 : +0,56 m</span>
           <span>+6 m</span>
+        </div>
+        <div class="imm-slider-label" style="margin-top:14px;">
+          <span>Surcote tempête</span>
+          <strong id="immSurgeValue">+0,00 m</strong>
+        </div>
+        <input type="range" class="imm-range" id="immSurge" min="0" max="300" value="0" step="5">
+        <div class="imm-slider-hint">
+          <span>0 m</span>
+          <span>Xynthia 2010 : +1,50 m</span>
+          <span>+3 m</span>
+        </div>
+        <div class="imm-total">
+          Niveau total simulé · <strong id="immTotalH">+0,00 m</strong>
         </div>
       </div>
 
@@ -2762,6 +2825,45 @@ async function selectCommune(id) {
   } catch (e) { /* ignore */ }
 }
 
+/* === DVF · valeurs foncières via API Cerema (CORS *) ====================
+   Endpoint : /dvf_opendata/mutations/?code_insee=XXX&anneemut__gte=2020
+   On agrège : nb ventes, prix médian total, prix médian €/m² bâti. */
+const dvfCache = {};
+async function fetchDvfStats(insee) {
+  if (dvfCache[insee] !== undefined) return dvfCache[insee];
+  try {
+    const url = `https://apidf-preprod.cerema.fr/dvf_opendata/mutations/?code_insee=${insee}&anneemut__gte=2020&libnatmut=Vente&page_size=500`;
+    const r = await fetch(url);
+    if (!r.ok) { dvfCache[insee] = null; return null; }
+    const j = await r.json();
+    const sales = (j.results || []).filter(m =>
+      m.valeurfonc > 5000 && m.sbati > 5 &&
+      // appartement / maison / mixte
+      [121,151,152,161,162,163,164].includes(m.codtypbien)
+    );
+    if (!sales.length) { dvfCache[insee] = null; return null; }
+    const med = arr => {
+      const a = [...arr].sort((x, y) => x - y);
+      return a[Math.floor(a.length / 2)];
+    };
+    const prices = sales.map(m => parseFloat(m.valeurfonc));
+    const pricesM2 = sales.map(m => parseFloat(m.valeurfonc) / parseFloat(m.sbati));
+    const stats = {
+      total: j.count,
+      sampled: sales.length,
+      medianPrice: med(prices),
+      medianPm2: med(pricesM2),
+      maxPm2: Math.max(...pricesM2),
+      yearSpan: '2020-2024',
+    };
+    dvfCache[insee] = stats;
+    return stats;
+  } catch (e) {
+    dvfCache[insee] = null;
+    return null;
+  }
+}
+
 function showCommuneDetail(c) {
   const sea2100 = (SCENARIOS[state.scenario].sea2100 * 100).toFixed(0);
   const retreat2050 = retreatAtYear(2050, state.scenario, c.retreat).toFixed(0);
@@ -2773,11 +2875,11 @@ function showCommuneDetail(c) {
     <div class="cd-header">
       <div class="cd-type">${c.type} · ${c.beach}</div>
       <div class="cd-name">${c.name}</div>
-      <div class="cd-region">${c.dept} · ${c.region} · ${c.pop.toLocaleString('fr-FR')} habitants</div>
+      <div class="cd-region">${c.dept} · ${c.region} · ${c.pop.toLocaleString('fr-FR')} habitants · INSEE ${c.insee}</div>
     </div>
     <div class="cd-stats">
       <div class="cd-stat">
-        <div class="cd-stat-label">Recul observé</div>
+        <div class="cd-stat-label">Recul observé · Cerema</div>
         <div class="cd-stat-value">${c.retreat.toFixed(1)}<small>m/an</small></div>
       </div>
       <div class="cd-stat">
@@ -2805,11 +2907,44 @@ function showCommuneDetail(c) {
         Élévation marine projetée&nbsp;: <strong>+${sea2100}&nbsp;cm</strong>.
       </div>
     </div>
+
+    <div class="cd-dvf" id="cdDvf">
+      <div class="cd-dvf-head">
+        <span class="cd-projection-title">Marché immobilier · DVF Cerema</span>
+        <span class="cd-year-pill" style="background:rgba(42,140,140,.20);color:var(--teal-light);">chargement…</span>
+      </div>
+      <div class="cd-dvf-body" id="cdDvfBody">Récupération des mutations 2020-2024…</div>
+    </div>
+
     <div class="cd-actions">
       <button class="btn">Télécharger PDF</button>
       <button class="btn primary">Voir simulation 3D</button>
     </div>
   `;
+  // Fetch DVF stats asynchronously
+  fetchDvfStats(c.insee).then(stats => {
+    const el = document.getElementById('cdDvfBody');
+    const head = document.querySelector('#cdDvf .cd-year-pill');
+    if (!el) return;
+    if (!stats) {
+      el.innerHTML = '<span style="opacity:.6;">Données indisponibles.</span>';
+      if (head) head.textContent = '—';
+      return;
+    }
+    const fmt = (n, suff='') => n.toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + suff;
+    // Estimation valeur exposée : biens en zone d'aléa fort × prix médian
+    const expValue = Math.round(c.exposed * stats.medianPrice / 1000) / 1000;
+    el.innerHTML = `
+      <div class="cd-dvf-grid">
+        <div><span>Ventes 2020-2024</span><strong>${stats.total.toLocaleString('fr-FR')}</strong></div>
+        <div><span>Prix médian</span><strong>${fmt(stats.medianPrice, ' €')}</strong></div>
+        <div><span>Prix m² bâti</span><strong>${fmt(stats.medianPm2, ' €')}</strong></div>
+        <div><span>Valeur exposée<br><em style="opacity:.6;font-style:normal;font-size:9px">${c.exposed} biens × prix médian</em></span><strong style="color:var(--coral);">${fmt(expValue, ' M€')}</strong></div>
+      </div>
+    `;
+    if (head) head.textContent = stats.yearSpan;
+  });
+
   document.getElementById('cdBack').addEventListener('click', () => {
     document.getElementById('communeList').style.display = '';
     document.getElementById('communeDetail').classList.remove('visible');
@@ -3690,6 +3825,12 @@ async function loadCommune3D(c) {
     document.getElementById('immAlti').innerHTML =
       `${t3d.altMin.toFixed(1)} / ${t3d.altMax.toFixed(1)}<small>m</small>`;
     applyWaterLevel();
+
+    // Charge la statistique DVF en arrière-plan (la valeur exposée
+    // s'affichera dès le retour de l'API)
+    if (typeof fetchDvfStats === 'function') {
+      fetchDvfStats(c.insee).then(stats => { t3d.dvfStats = stats; applyWaterLevel(); });
+    }
   } catch (err) {
     console.error(err);
     immLoaderText.innerHTML = `Échec : ${err.message}<br><span style="opacity:.6;text-transform:none;letter-spacing:0;">Vérifiez votre connexion. Les API IGN peuvent être momentanément indisponibles.</span>`;
@@ -3722,8 +3863,19 @@ function sampleElev(buf, gx, gz) {
 
 function applyWaterLevel() {
   if (!waterMesh || !t3d.origElev) return;
-  const v = parseFloat(immRange.value) / 100;
+  /* Niveau marin total = RSLR (moyen) + surcote tempête.
+     - Le recul Bruun ne dépend que du RSLR pérenne (la surcote est ponctuelle
+       et ne déplace pas le profil d'équilibre, mais elle augmente l'aléa de
+       submersion immédiate). */
+  const rslr  = parseFloat(immRange.value) / 100;
+  const surge = parseFloat(document.getElementById('immSurge').value) / 100;
+  const v     = rslr + surge;             // niveau d'eau total
+  const vBruun = rslr;                    // seule la RSLR drive le recul morpho
   waterMesh.position.y = v * VSCALE;
+  document.getElementById('immSurgeValue').textContent = `+${surge.toFixed(2).replace('.', ',')} m`;
+  document.getElementById('immTotalH').textContent =
+    `+${v.toFixed(2).replace('.', ',')} m` +
+    (surge > 0 ? ` (RSLR ${rslr.toFixed(2).replace('.', ',')} + surcote ${surge.toFixed(2).replace('.', ',')})` : '');
 
   /* === Recul morphologique (Bruun 1962 + protection ouvrages BDTOPO) =======
      R_cell = S × factor_cell × (1 − protection_cell)
@@ -3745,7 +3897,7 @@ function applyWaterLevel() {
             continue;
           }
           const fc = t3d.bruunFactorCell ? t3d.bruunFactorCell[i] : t3d.bruunFactor;
-          const Rcell = v * fc;
+          const Rcell = vBruun * fc;       // recul piloté par la RSLR pérenne uniquement
           const x = (xi / (NX - 1) - 0.5) * SIZE;
           const z = (zi / (NZ - 1) - 0.5) * SIZE;
           const sx = x + Rcell * t3d.seawardX;
@@ -3776,7 +3928,7 @@ function applyWaterLevel() {
     let newGroundAlt;
     if (useBruun && !isProtected) {
       const fc = t3d.bruunFactorCell ? t3d.bruunFactorCell[cellIdx] : t3d.bruunFactor;
-      const Rcell = v * fc;
+      const Rcell = vBruun * fc;       // recul lié à la RSLR
       const sx = bx + Rcell * t3d.seawardX;
       const sz = bz + Rcell * t3d.seawardZ;
       newGroundAlt = sampleElev(t3d.origElev, (sx/SIZE + 0.5)*(NX-1), (sz/SIZE + 0.5)*(NZ-1));
@@ -3804,10 +3956,10 @@ function applyWaterLevel() {
   if (useBruun && t3d.bruunFactorCell) {
     for (let i = 0; i < t3d.bruunFactorCell.length; i++) {
       if (t3d.protectionMask && t3d.protectionMask[i]) continue;
-      sumR += v * t3d.bruunFactorCell[i]; nR++;
+      sumR += vBruun * t3d.bruunFactorCell[i]; nR++;
     }
   }
-  const Rmean = nR > 0 ? sumR / nR : v * t3d.bruunFactor;
+  const Rmean = nR > 0 ? sumR / nR : vBruun * t3d.bruunFactor;
 
   document.getElementById('immSeaLevel').innerHTML = `+${v.toFixed(2).replace('.', ',')}<small>m NGF</small>`;
   const erodedStr   = eroded > 0 ? ' · ' + eroded + ' érodés' : '';
@@ -3823,9 +3975,30 @@ function applyWaterLevel() {
     document.getElementById('immRetreat').innerHTML =
       `${Rmean.toFixed(0)}<small>m moy. · ${factorTxt}</small>`;
   }
+
+  // Valeur immobilière à risque (DVF) — appliquée aux bâtiments inondés/érodés
+  if (t3d.dvfStats && (flooded > 0 || eroded > 0)) {
+    let lostFootprint = 0;
+    t3d.buildings.forEach(b => {
+      if (b.material === buildingsGroup.userData.floodedMat) {
+        lostFootprint += (b.userData.footprintArea || 80); // m² emprise au sol
+      }
+    });
+    // hyp : surface utile ≈ emprise × étages moyens (1,5) — conservateur
+    const surfaceUtile = lostFootprint * 1.5;
+    const valueAtRisk = surfaceUtile * t3d.dvfStats.medianPm2;
+    const meuros = valueAtRisk / 1e6;
+    document.getElementById('immValueReadout').style.display = '';
+    document.getElementById('immValue').innerHTML =
+      `${meuros.toFixed(1).replace('.', ',')}<small>M€ · ${t3d.dvfStats.medianPm2.toFixed(0)} €/m²</small>`;
+  } else {
+    const vr = document.getElementById('immValueReadout');
+    if (vr) vr.style.display = 'none';
+  }
 }
 
 immRange.addEventListener('input', applyWaterLevel);
+document.getElementById('immSurge').addEventListener('input', applyWaterLevel);
 
 function updateCamera() {
   const a = t3d.cam.angle;
