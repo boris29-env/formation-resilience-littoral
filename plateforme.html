@@ -1070,17 +1070,20 @@ input.imm-range::-moz-range-thumb {
   padding: 80px 28px;
   max-width: none;
 }
-.comp-stage {
-  max-width: 1400px; margin: 28px auto 0;
-}
+.comp-stage { max-width: 1400px; margin: 28px auto 0; position: relative; }
 #compMap {
+  position: relative;
   height: 600px;
   border-radius: 18px;
   overflow: hidden;
   box-shadow: var(--shadow-md);
   background: #0a1c2e;
 }
-#compMap .leaflet-container { background: #0a1c2e; }
+#compMapL, #compMapR {
+  position: absolute; inset: 0;
+}
+#compMapR { z-index: 2; }
+.leaflet-container { background: #0a1c2e; }
 .comp-divider {
   position: absolute;
   top: 0; bottom: 0;
@@ -1941,7 +1944,10 @@ input.imm-range::-moz-range-thumb {
   </div>
 
   <div class="comp-stage">
-    <div id="compMap" role="application"></div>
+    <div id="compMap" role="application">
+      <div id="compMapL"></div>
+      <div id="compMapR"></div>
+    </div>
     <div class="comp-controls">
       <div class="comp-side">
         <span class="comp-label">Gauche</span>
@@ -4563,36 +4569,41 @@ const ORTHO_LAYERS = {
   '1980-1995':{ name:'1980-1995 historique', layer:'ORTHOIMAGERY.ORTHOPHOTOS.1980-1995', fmt:'image/png'  },
   '2000':     { name:'BD ORTHO COAST 2000',   layer:'ORTHOIMAGERY.ORTHOPHOTOS.COAST2000', fmt:'image/jpeg' },
 };
-function makeOrthoTileLayer(key, paneName) {
+function makeOrthoTileLayer(key) {
   const o = ORTHO_LAYERS[key];
-  const opts = { attribution: '© IGN-F · BD ORTHO®', minZoom: 0, maxZoom: 19, tileSize: 256 };
-  if (paneName) opts.pane = paneName;
   return L.tileLayer(
     `https://data.geopf.fr/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=${o.layer}&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&STYLE=normal&TILEMATRIXSET=PM&FORMAT=${o.fmt}`,
-    opts
+    { attribution: '© IGN-F · BD ORTHO®', minZoom: 0, maxZoom: 19, tileSize: 256 }
   );
 }
 
 // Populate commune picker
-const compCommunes = COMMUNES.filter(c => c.facade !== 'inland');
-document.getElementById('compCommunePicker').innerHTML = compCommunes
+document.getElementById('compCommunePicker').innerHTML = COMMUNES
   .map(c => `<option value="${c.insee}" ${c.insee==='33514'?'selected':''}>${c.nom} (${c.dept}) · ${c.retreat.toFixed(1)} m/an</option>`).join('');
 
-const compMap = L.map('compMap', { zoomControl: false, attributionControl: true });
-compMap.attributionControl.setPrefix('');
-L.control.zoom({ position: 'bottomright' }).addTo(compMap);
+/* === Deux Leaflet maps stackés, synchronisés, avec clip CSS sur celui du dessus.
+   Approche éprouvée — deux instances séparées, chacune avec son DOM, donc on
+   peut clip-path l'une sans toucher à l'autre. Sync via setView mutuel. */
+const compMapL = L.map('compMapL', { zoomControl: false, attributionControl: false });
+const compMapR = L.map('compMapR', { zoomControl: true, attributionControl: true });
+compMapR.attributionControl.setPrefix('');
 
-// Deux panes séparés : la couche "gauche" et la couche "droite" se clip-pathent indépendamment.
-compMap.createPane('paneLeft');
-compMap.createPane('paneRight');
-compMap.getPane('paneLeft').style.zIndex  = 220;
-compMap.getPane('paneRight').style.zIndex = 221;
+let compLeftLayer  = makeOrthoTileLayer('1950-1965').addTo(compMapL);
+let compRightLayer = makeOrthoTileLayer('current').addTo(compMapR);
 
-let compLeftLayer = makeOrthoTileLayer('1950-1965', 'paneLeft').addTo(compMap);
-let compRightLayer = makeOrthoTileLayer('current',    'paneRight').addTo(compMap);
+// Sync : tout mouvement sur l'un est répliqué sur l'autre
+let _syncing = false;
+function syncMaps(from, to) {
+  if (_syncing) return;
+  _syncing = true;
+  to.setView(from.getCenter(), from.getZoom(), { animate: false, reset: false });
+  _syncing = false;
+}
+compMapL.on('move zoom', () => syncMaps(compMapL, compMapR));
+compMapR.on('move zoom', () => syncMaps(compMapR, compMapL));
 
-// Implement side-by-side clip via leaflet container layout
-const compShell = document.querySelector('#avant-apres .comp-stage');
+// Divider + labels (insérés dans #compMap qui contient les 2 maps)
+const compShell = document.getElementById('compMap');
 const divider = document.createElement('div');
 divider.className = 'comp-divider';
 divider.style.left = '50%';
@@ -4610,55 +4621,48 @@ lblRight.style.right = '20px';
 lblRight.textContent = ORTHO_LAYERS.current.name;
 compShell.appendChild(lblRight);
 
-// Clip via clip-path sur les panes nommés (méthode robuste, indépendante du DOM)
+const elMapR = document.getElementById('compMapR');
 function applyClipPaths(pct) {
-  const pl = compMap.getPane('paneLeft');
-  const pr = compMap.getPane('paneRight');
-  if (pl) pl.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
-  if (pr) pr.style.clipPath = `inset(0 0 0 ${pct}%)`;
+  // Seul le map de droite est clippé (il est par dessus le gauche)
+  elMapR.style.clipPath = `inset(0 0 0 ${pct}%)`;
   divider.style.left = pct + '%';
   lblLeft.style.display  = pct > 10 ? '' : 'none';
   lblRight.style.display = pct < 90 ? '' : 'none';
 }
 
 let compDragging = false;
-divider.addEventListener('mousedown', () => { compDragging = true; });
+divider.addEventListener('mousedown', e => { compDragging = true; e.preventDefault(); });
 window.addEventListener('mouseup', () => compDragging = false);
 window.addEventListener('mousemove', e => {
   if (!compDragging) return;
   const rect = compShell.getBoundingClientRect();
-  let pct = ((e.clientX - rect.left) / rect.width) * 100;
-  pct = Math.max(2, Math.min(98, pct));
+  const pct = Math.max(2, Math.min(98, ((e.clientX - rect.left) / rect.width) * 100));
   applyClipPaths(pct);
 });
 divider.addEventListener('touchstart', e => { compDragging = true; e.preventDefault(); }, { passive: false });
 window.addEventListener('touchmove', e => {
   if (!compDragging) return;
   const rect = compShell.getBoundingClientRect();
-  const t = e.touches[0];
-  let pct = ((t.clientX - rect.left) / rect.width) * 100;
-  pct = Math.max(2, Math.min(98, pct));
+  const pct = Math.max(2, Math.min(98, ((e.touches[0].clientX - rect.left) / rect.width) * 100));
   applyClipPaths(pct);
 });
 window.addEventListener('touchend', () => compDragging = false);
 
 function compSetView(c) {
-  compMap.setView([c.lat, c.lng], 15);
+  compMapL.setView([c.lat, c.lng], 15);
+  compMapR.setView([c.lat, c.lng], 15);
 }
 
 function rebuildOrthoLayer(side, key) {
   if (side === 'left') {
     lblLeft.textContent = ORTHO_LAYERS[key].name;
-    if (compLeftLayer) compMap.removeLayer(compLeftLayer);
-    compLeftLayer = makeOrthoTileLayer(key, 'paneLeft');
-    compLeftLayer.addTo(compMap);
+    if (compLeftLayer) compMapL.removeLayer(compLeftLayer);
+    compLeftLayer = makeOrthoTileLayer(key).addTo(compMapL);
   } else {
     lblRight.textContent = ORTHO_LAYERS[key].name;
-    if (compRightLayer) compMap.removeLayer(compRightLayer);
-    compRightLayer = makeOrthoTileLayer(key, 'paneRight');
-    compRightLayer.addTo(compMap);
+    if (compRightLayer) compMapR.removeLayer(compRightLayer);
+    compRightLayer = makeOrthoTileLayer(key).addTo(compMapR);
   }
-  setTimeout(() => applyClipPaths(parseFloat(divider.style.left) || 50), 50);
 }
 
 document.getElementById('compLeft').addEventListener('change', e => rebuildOrthoLayer('left', e.target.value));
@@ -4668,19 +4672,18 @@ document.getElementById('compCommunePicker').addEventListener('change', e => {
   if (c) compSetView(c);
 });
 
-// initial view
+// Initial view + clip + invalidateSize
 compSetView(COMMUNES.find(c => c.insee === '33514'));
-// Leaflet a besoin d'un invalidateSize si le conteneur est rendu invisible au boot
+applyClipPaths(50);
 function refreshComparator() {
-  compMap.invalidateSize();
-  applyClipPaths(parseFloat(divider.style.left) || 50);
+  compMapL.invalidateSize();
+  compMapR.invalidateSize();
 }
-setTimeout(refreshComparator, 400);
-window.addEventListener('resize', () => { compMap.invalidateSize(); });
-// Re-invalidate quand la section entre dans le viewport (premier scroll user)
+setTimeout(refreshComparator, 300);
+window.addEventListener('resize', refreshComparator);
 const compObserver = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) refreshComparator(); });
-}, { threshold: 0.1 });
+}, { threshold: 0.05 });
 compObserver.observe(document.getElementById('compMap'));
 
 /* =========================================================
