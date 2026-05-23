@@ -1079,37 +1079,76 @@ input.imm-range::-moz-range-thumb {
   box-shadow: var(--shadow-md);
   background: #0a1c2e;
 }
-#compMap.leaflet-container, #compMap .leaflet-container { background: #0a1c2e; }
+#compMap .leaflet-container { background: #0a1c2e; }
 
-/* === Split-screen custom — la barre + sa poignée sont des vrais divs,
-   pas des pseudo-éléments, pour que pointer-events fonctionne sans surprise. */
+#compMapBg, #compMapFg {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+}
+#compMapFg {
+  z-index: 2;
+  clip-path: inset(0 0 0 50%);
+}
+
+/* === Handle élégant : barre fine + grip stylé === */
 .comp-handle {
   position: absolute;
   top: 0; bottom: 0;
-  width: 4px;
-  background: #fff;
+  width: 2px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.95) 0%,
+    rgba(255,255,255,0.65) 50%,
+    rgba(255,255,255,0.95) 100%);
   z-index: 1000;
   pointer-events: none;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.35), 0 0 24px rgba(0, 0, 0, 0.20);
 }
 .comp-grip {
   position: absolute;
   left: 50%; top: 50%;
   transform: translate(-50%, -50%);
-  width: 52px; height: 52px;
+  width: 56px; height: 56px;
   border-radius: 50%;
-  background: #fff;
-  border: 3px solid var(--coral);
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
+  background: linear-gradient(145deg, #ffffff 0%, #f4f0e8 100%);
+  border: 1px solid rgba(11,27,43,0.10);
+  box-shadow:
+    0 2px 4px rgba(11,27,43,0.10),
+    0 12px 32px rgba(11,27,43,0.25),
+    inset 0 1px 0 rgba(255,255,255,1),
+    inset 0 -1px 0 rgba(0,0,0,0.05);
   pointer-events: auto;
   cursor: ew-resize;
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: 20px; font-weight: 700;
-  color: var(--ink);
   user-select: none;
   touch-action: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.comp-grip:hover { transform: translate(-50%, -50%) scale(1.07); }
+.comp-grip::before,
+.comp-grip::after {
+  content: "";
+  width: 0; height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  display: block;
+}
+.comp-grip::before {
+  border-right: 7px solid var(--ink-2);
+  margin-right: 5px;
+}
+.comp-grip::after {
+  border-left: 7px solid var(--ink-2);
+  margin-left: 5px;
+}
+.comp-grip:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+  box-shadow:
+    0 4px 8px rgba(11,27,43,0.12),
+    0 16px 40px rgba(11,27,43,0.35),
+    inset 0 1px 0 rgba(255,255,255,1);
+}
+.comp-grip:active {
+  transform: translate(-50%, -50%) scale(0.96);
+}
 
 /* === Styles du plugin leaflet-side-by-side (layout.css + range.css)
    intégrés inline car le bundle JS ne les embarque pas. ===*/
@@ -2034,7 +2073,10 @@ input.imm-range::-moz-range-thumb {
   </div>
 
   <div class="comp-stage">
-    <div id="compMap" role="application"></div>
+    <div id="compMap" role="application">
+      <div id="compMapBg"></div>
+      <div id="compMapFg"></div>
+    </div>
     <div class="comp-controls">
       <div class="comp-side">
         <span class="comp-label">Gauche</span>
@@ -4686,39 +4728,49 @@ function makeOrthoTileLayer(key) {
 document.getElementById('compCommunePicker').innerHTML = COMMUNES
   .map(c => `<option value="${c.insee}" ${c.insee==='33514'?'selected':''}>${c.nom} (${c.dept}) · ${c.retreat.toFixed(1)} m/an</option>`).join('');
 
-/* === Split-screen maison ===
-   1 seul L.map, 2 tileLayers ajoutés normalement. On applique un
-   clip-path directement sur les containers DOM de chaque layer via
-   layer.getContainer(). Un handle 100% custom (CSS .comp-handle) est
-   posé dans compMap et géré par mouse/touch events ici. */
-const compMap = L.map('compMap', { zoomControl: true, attributionControl: true });
-compMap.attributionControl.setPrefix('');
+/* === Deux Leaflet maps superposés synchronisés ===
+   compMapBg (en arrière, full visible) montre l'ortho HISTORIQUE.
+   compMapFg (par dessus, clip-path CSS) montre l'ortho ACTUELLE.
+   Le handle déplace le clip-path de compMapFg. Sync setView mutuel. */
+const compMapBg = L.map('compMapBg', { zoomControl: false, attributionControl: false });
+const compMapFg = L.map('compMapFg', { zoomControl: true,  attributionControl: true });
+compMapFg.attributionControl.setPrefix('');
 
-function compSetView(c) { compMap.setView([c.lat, c.lng], 15); }
+let compLeftLayer  = makeOrthoTileLayer('1950-1965').addTo(compMapBg);
+let compRightLayer = makeOrthoTileLayer('current').addTo(compMapFg);
+
+function compSetView(c) {
+  compMapBg.setView([c.lat, c.lng], 15);
+  compMapFg.setView([c.lat, c.lng], 15);
+}
 compSetView(COMMUNES.find(c => c.insee === '33514'));
 
-let compLeftLayer  = makeOrthoTileLayer('1950-1965').addTo(compMap);
-let compRightLayer = makeOrthoTileLayer('current').addTo(compMap);
-// Force z-index : rightLayer doit être au-dessus pour que le clip révèle leftLayer derrière
-compLeftLayer.setZIndex(10);
-compRightLayer.setZIndex(20);
+// Sync : déplacement de l'un répliqué sur l'autre
+let _compSyncing = false;
+function syncFromTo(from, to) {
+  if (_compSyncing) return;
+  const fc = from.getCenter(), fz = from.getZoom();
+  const tc = to.getCenter(), tz = to.getZoom();
+  if (Math.abs(fc.lat - tc.lat) < 1e-7 && Math.abs(fc.lng - tc.lng) < 1e-7 && fz === tz) return;
+  _compSyncing = true;
+  to.setView(fc, fz, { animate: false });
+  _compSyncing = false;
+}
+compMapBg.on('move zoom', () => syncFromTo(compMapBg, compMapFg));
+compMapFg.on('move zoom', () => syncFromTo(compMapFg, compMapBg));
 
-let compPct = 50; // position du handle, en pourcentage de la largeur map
-
-// --- Création des éléments DOM AVANT toute fonction qui les utilise ---
+// --- DOM elements pour le handle et les labels ---
 const compHost = document.getElementById('compMap');
+const elFg = document.getElementById('compMapFg');
 
-// Handle (barre verticale) + poignée (cercle interactif)
 const compHandle = document.createElement('div');
 compHandle.className = 'comp-handle';
 compHandle.style.left = '50%';
 const compGrip = document.createElement('div');
 compGrip.className = 'comp-grip';
-compGrip.textContent = '⟷';
 compHandle.appendChild(compGrip);
 compHost.appendChild(compHandle);
 
-// Labels overlay (créés avant applyCompClip qui les référence)
 const lblLeft = document.createElement('div');
 lblLeft.className = 'comp-label-overlay';
 lblLeft.style.left = '20px';
@@ -4731,29 +4783,22 @@ lblRight.style.right = '20px';
 lblRight.textContent = ORTHO_LAYERS.current.name;
 compHost.appendChild(lblRight);
 
+let compPct = 50;
 function applyCompClip() {
-  // On clippe UNIQUEMENT la couche du dessus (rightLayer, ajoutée en second
-  // donc au-dessus de leftLayer dans le tile-pane). Là où elle est visible
-  // (à droite du handle), on voit l'ortho actuelle. Là où elle est masquée
-  // (à gauche), on voit l'ortho historique en dessous. Si on clippait aussi
-  // leftLayer, on retirerait une couche de fond et le map devenait noir.
-  const rc = compRightLayer && compRightLayer.getContainer && compRightLayer.getContainer();
-  const lc = compLeftLayer  && compLeftLayer.getContainer  && compLeftLayer.getContainer();
-  // S'assure que leftLayer n'a aucun clip (utile après rebuild)
-  if (lc) lc.style.clipPath = 'none';
-  if (rc) rc.style.clipPath = `inset(0 0 0 ${compPct}%)`;
-  compHandle.style.left = `calc(${compPct}% - 2px)`;
+  elFg.style.clipPath = `inset(0 0 0 ${compPct}%)`;
+  compHandle.style.left = `calc(${compPct}% - 1px)`;
   lblLeft.style.display  = compPct > 8  ? '' : 'none';
   lblRight.style.display = compPct < 92 ? '' : 'none';
 }
+applyCompClip();
 
-// Pointer Events API : drag du handle ; setPointerCapture garantit
-// le suivi même si on dérive du cercle
+// Drag handle via Pointer Events
 let compDragging = false;
 compGrip.addEventListener('pointerdown', e => {
   compDragging = true;
   try { compGrip.setPointerCapture(e.pointerId); } catch (_) {}
-  if (compMap.dragging) compMap.dragging.disable();
+  if (compMapBg.dragging) compMapBg.dragging.disable();
+  if (compMapFg.dragging) compMapFg.dragging.disable();
   e.preventDefault();
 });
 compGrip.addEventListener('pointermove', e => {
@@ -4762,36 +4807,38 @@ compGrip.addEventListener('pointermove', e => {
   compPct = Math.max(2, Math.min(98, ((e.clientX - rect.left) / rect.width) * 100));
   applyCompClip();
 });
-function endDrag(e) {
+function endCompDrag(e) {
   if (!compDragging) return;
   compDragging = false;
   try { compGrip.releasePointerCapture(e.pointerId); } catch (_) {}
-  if (compMap.dragging) compMap.dragging.enable();
+  if (compMapBg.dragging) compMapBg.dragging.enable();
+  if (compMapFg.dragging) compMapFg.dragging.enable();
 }
-compGrip.addEventListener('pointerup', endDrag);
-compGrip.addEventListener('pointercancel', endDrag);
+compGrip.addEventListener('pointerup', endCompDrag);
+compGrip.addEventListener('pointercancel', endCompDrag);
 
-// Re-clip à chaque changement Leaflet susceptible de recréer les containers
-compMap.on('move zoom moveend zoomend layeradd', applyCompClip);
-compLeftLayer.on('load', applyCompClip);
-compRightLayer.on('load', applyCompClip);
-setTimeout(applyCompClip, 200);
+// invalidateSize quand la section devient visible (Leaflet pré-rendu)
+function refreshComp() {
+  compMapBg.invalidateSize();
+  compMapFg.invalidateSize();
+}
+setTimeout(refreshComp, 300);
+window.addEventListener('resize', refreshComp);
+const compObserver = new IntersectionObserver(es => {
+  es.forEach(e => { if (e.isIntersecting) refreshComp(); });
+}, { threshold: 0.05 });
+compObserver.observe(document.getElementById('compMap'));
 
 function rebuildOrthoLayer(side, key) {
   if (side === 'left') {
     lblLeft.textContent = ORTHO_LAYERS[key].name;
-    if (compLeftLayer) compMap.removeLayer(compLeftLayer);
-    compLeftLayer = makeOrthoTileLayer(key).addTo(compMap);
-    compLeftLayer.setZIndex(10);
-    compLeftLayer.on('load', applyCompClip);
+    if (compLeftLayer) compMapBg.removeLayer(compLeftLayer);
+    compLeftLayer = makeOrthoTileLayer(key).addTo(compMapBg);
   } else {
     lblRight.textContent = ORTHO_LAYERS[key].name;
-    if (compRightLayer) compMap.removeLayer(compRightLayer);
-    compRightLayer = makeOrthoTileLayer(key).addTo(compMap);
-    compRightLayer.setZIndex(20);
-    compRightLayer.on('load', applyCompClip);
+    if (compRightLayer) compMapFg.removeLayer(compRightLayer);
+    compRightLayer = makeOrthoTileLayer(key).addTo(compMapFg);
   }
-  setTimeout(applyCompClip, 100);
 }
 
 document.getElementById('compLeft').addEventListener('change', e => rebuildOrthoLayer('left', e.target.value));
