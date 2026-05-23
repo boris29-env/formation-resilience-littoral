@@ -1081,25 +1081,20 @@ input.imm-range::-moz-range-thumb {
 }
 #compMap.leaflet-container, #compMap .leaflet-container { background: #0a1c2e; }
 
-/* CRITIQUE : par défaut .leaflet-control-container est en absolute top:0 left:0
-   SANS width explicite → shrink-to-fit ≈ 0. Le plugin sideBySide y pose une
-   barre width:100% qui se retrouve donc à 0px. Force le conteneur à occuper
-   toute la map pour que le slider couvre vraiment toute la largeur. */
-#compMap > .leaflet-control-container,
-#compMap .leaflet-control-container {
+/* Le plugin sideBySide crée un .leaflet-sbs DANS .leaflet-control-container,
+   lequel n'a pas de width explicite côté Leaflet → shrink-to-fit ≈ 0.
+   Solution : on positionne .leaflet-sbs lui-même en absolute full-map.
+   La range (width:100%) s'aligne alors sur la pleine largeur. */
+#compMap .leaflet-sbs {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none; /* pour ne pas bloquer la map en-dehors des controls */
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;            /* la zone ne bloque pas la map */
+  z-index: 999;
 }
-#compMap .leaflet-control,
 #compMap .leaflet-sbs-range,
 #compMap .leaflet-sbs-divider {
-  pointer-events: auto;
+  pointer-events: none;            /* track + divider inactifs */
 }
-#compMap .leaflet-sbs-range { pointer-events: none; } /* track inactif */
-#compMap .leaflet-sbs-divider { pointer-events: none; }
 
 /* === Styles du plugin leaflet-side-by-side (layout.css + range.css)
    intégrés inline car le bundle JS ne les embarque pas. ===*/
