@@ -1064,6 +1064,77 @@ input.imm-range::-moz-range-thumb {
   color: var(--coral); font-weight: 600;
 }
 
+/* === Comparaison multi-scénarios IPCC === */
+.scenarios-cmp {
+  background: var(--paper);
+  padding: 60px 28px 80px;
+  max-width: none;
+}
+.scen-grid {
+  max-width: 1400px;
+  margin: 32px auto 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.scen-vignette {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: #0a1c2e;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+.scen-vignette canvas {
+  width: 100%; height: 100%;
+  display: block;
+}
+.vig-overlay {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  display: flex; flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 18px;
+  color: var(--paper);
+}
+.vig-label {
+  display: flex; flex-direction: column;
+  gap: 2px;
+}
+.vig-label .vig-rslr {
+  font-family: var(--serif); font-weight: 700;
+  font-size: 38px; line-height: 1;
+  text-shadow: 0 4px 14px rgba(0,0,0,0.6);
+  font-variant-numeric: tabular-nums;
+}
+.vig-label .vig-name {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  opacity: 0.85; margin-top: 8px;
+}
+.vig-label .vig-temp {
+  font-size: 11px; opacity: 0.7;
+}
+.vig-stats {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.vig-stats span {
+  background: rgba(6, 23, 38, 0.65);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(246,241,231,0.10);
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.06em;
+}
+.vig-stats span.value {
+  background: rgba(232,110,85,0.65);
+  border-color: var(--coral);
+}
+@media (max-width: 900px) {
+  .scen-grid { grid-template-columns: 1fr; }
+}
+
 /* === Avant/Après comparateur === */
 .comparator {
   background: var(--paper);
@@ -1678,6 +1749,7 @@ input.imm-range::-moz-range-thumb {
     <a href="#atlas" class="nav-link active">Atlas</a>
     <a href="#simulation" class="nav-link">Simulation</a>
     <a href="#immersion" class="nav-link">3D temps réel</a>
+    <a href="#scenarios" class="nav-link">Scénarios IPCC</a>
     <a href="#avant-apres" class="nav-link">Avant/après</a>
     <a href="#inondation" class="nav-link">Inondation</a>
     <a href="#dashboard" class="nav-link">Tableau de bord</a>
@@ -2057,6 +2129,45 @@ input.imm-range::-moz-range-thumb {
       </header>
       <input type="text" id="immPickerSearch" placeholder="Rechercher une commune…">
       <div class="imm-picker-list" id="immPickerList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================================================
+     COMPARAISON MULTI-SCÉNARIOS IPCC
+=========================================================== -->
+<section id="scenarios" class="scenarios-cmp">
+  <div class="section-head" style="max-width:1400px;margin-left:auto;margin-right:auto;">
+    <div class="section-eyebrow">03c · Comparaison scénarios IPCC à 2100</div>
+    <h2 class="section-title">La <em>fourchette d'incertitude</em>,<br>côte à côte.</h2>
+    <p class="section-lead">
+      Trois projections du même secteur à l'horizon 2100 — la trajectoire
+      « Accord de Paris », la médiane et la pire — pour visualiser ce qui se
+      joue selon nos décisions climatiques. Recul Bruun appliqué scénario par
+      scénario, ouvrages protecteurs respectés.
+    </p>
+  </div>
+  <div class="scen-grid" id="scenGrid">
+    <div class="scen-vignette" data-key="ssp126">
+      <canvas id="vig0"></canvas>
+      <div class="vig-overlay">
+        <div class="vig-label" id="vigLabel0"></div>
+        <div class="vig-stats" id="vigStats0"></div>
+      </div>
+    </div>
+    <div class="scen-vignette" data-key="ssp245">
+      <canvas id="vig1"></canvas>
+      <div class="vig-overlay">
+        <div class="vig-label" id="vigLabel1"></div>
+        <div class="vig-stats" id="vigStats1"></div>
+      </div>
+    </div>
+    <div class="scen-vignette" data-key="ssp585">
+      <canvas id="vig2"></canvas>
+      <div class="vig-overlay">
+        <div class="vig-label" id="vigLabel2"></div>
+        <div class="vig-stats" id="vigStats2"></div>
+      </div>
     </div>
   </div>
 </section>
@@ -4038,10 +4149,17 @@ async function loadCommune3D(c) {
       `${t3d.altMin.toFixed(1)} / ${t3d.altMax.toFixed(1)}<small>m</small>`;
     applyWaterLevel();
 
+    // Rebuild des 3 vignettes scénarios IPCC (utilise t3d.origElev déjà chargé)
+    if (typeof rebuildVignettes === 'function') rebuildVignettes(c);
+
     // Charge la statistique DVF en arrière-plan (la valeur exposée
     // s'affichera dès le retour de l'API)
     if (typeof fetchDvfStats === 'function') {
-      fetchDvfStats(c.insee).then(stats => { t3d.dvfStats = stats; applyWaterLevel(); });
+      fetchDvfStats(c.insee).then(stats => {
+        t3d.dvfStats = stats;
+        applyWaterLevel();
+        if (typeof rebuildVignettes === 'function') rebuildVignettes(c);
+      });
     }
   } catch (err) {
     console.error(err);
@@ -4359,6 +4477,178 @@ function animateThree(t) {
 }
 requestAnimationFrame(animateThree);
 updateImmHint();
+
+/* =========================================================
+   6b · VIGNETTES MULTI-SCÉNARIOS IPCC à 2100
+   Réutilise le MNT chargé pour la 3D principale, applique Bruun
+   par scénario, rend 3 mini-scènes Three.js indépendantes.
+========================================================= */
+const SCEN_VIG_KEYS = ['ssp126', 'ssp245', 'ssp585'];
+const sceneVignettes = SCEN_VIG_KEYS.map((scen, i) => {
+  const canvas = document.getElementById('vig' + i);
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a1c2e);
+  scene.fog = new THREE.Fog(0x0a1c2e, 4500, 11000);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  const sun = new THREE.DirectionalLight(0xfff0d8, 1.0);
+  sun.position.set(800, 1200, 400);
+  scene.add(sun);
+  const fill = new THREE.DirectionalLight(0x88aacc, 0.35);
+  fill.position.set(-400, 400, -600);
+  scene.add(fill);
+  const camera = new THREE.PerspectiveCamera(40, 1, 1, 18000);
+  return { scen, canvas, renderer, scene, camera, terrain: null, water: null };
+});
+
+function rebuildVignettes(c) {
+  if (!t3d.origElev || !t3d.loaded) return;
+  sceneVignettes.forEach((v, vi) => {
+    // Resize canvas to its layout size
+    const r = v.canvas.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) {
+      v.renderer.setSize(r.width, r.height, false);
+      v.camera.aspect = r.width / r.height;
+      v.camera.updateProjectionMatrix();
+    }
+    const S = SCENARIOS[v.scen];
+    const sea2100 = S.sea2100;
+
+    // Calcule terrain reculé Bruun pour ce scénario
+    const newElev = new Float32Array(NX * NZ);
+    if (t3d.bruunFactorCell && t3d.shorelineOk) {
+      for (let zi = 0; zi < NZ; zi++) {
+        for (let xi = 0; xi < NX; xi++) {
+          const i = zi * NX + xi;
+          if (t3d.protectionMask && t3d.protectionMask[i]) {
+            newElev[i] = t3d.origElev[i];
+            continue;
+          }
+          const fc = t3d.bruunFactorCell[i] || t3d.bruunFactor;
+          const R = sea2100 * fc;
+          const x0 = (xi/(NX-1) - 0.5) * SIZE;
+          const z0 = (zi/(NZ-1) - 0.5) * SIZE;
+          const sx = x0 + R * t3d.seawardX;
+          const sz = z0 + R * t3d.seawardZ;
+          newElev[i] = sampleElev(t3d.origElev, (sx/SIZE+0.5)*(NX-1), (sz/SIZE+0.5)*(NZ-1));
+        }
+      }
+    } else {
+      newElev.set(t3d.origElev);
+    }
+
+    // Build terrain mesh (colored by altitude — code lisible vs ortho)
+    if (v.terrain) {
+      v.scene.remove(v.terrain);
+      v.terrain.geometry.dispose();
+      v.terrain.material.dispose();
+    }
+    const geo = new THREE.PlaneGeometry(SIZE, SIZE, NX-1, NZ-1);
+    geo.rotateX(-Math.PI/2);
+    const pos = geo.attributes.position;
+    const cols = [];
+    for (let i = 0; i < pos.count; i++) {
+      pos.setY(i, newElev[i] * VSCALE);
+      const y = newElev[i];
+      const col = new THREE.Color();
+      if (y < -1.5) col.setHex(0x18394a);
+      else if (y < 0.3) col.setHex(0x3a738a);
+      else if (y < 2.5) col.setHex(0xe8d7a4);
+      else if (y < 8) col.setHex(0xc9b478);
+      else if (y < 18) col.setHex(0x8a9d6a);
+      else col.setHex(0x4e7541);
+      cols.push(col.r, col.g, col.b);
+    }
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+    geo.computeVertexNormals();
+    v.terrain = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }));
+    v.scene.add(v.terrain);
+
+    // Water plane au niveau RSLR 2100
+    if (v.water) v.scene.remove(v.water);
+    const wg = new THREE.PlaneGeometry(SIZE*1.5, SIZE*1.5);
+    wg.rotateX(-Math.PI/2);
+    const wm = new THREE.MeshStandardMaterial({
+      color: 0x2a6c7c, transparent: true, opacity: 0.82,
+      roughness: 0.1, metalness: 0.7
+    });
+    v.water = new THREE.Mesh(wg, wm);
+    v.water.position.y = sea2100 * VSCALE;
+    v.scene.add(v.water);
+
+    // Caméra : même angle que la 3D principale (côté terre → mer)
+    if (t3d.shorelineOk) {
+      const a = Math.atan2(-t3d.seawardZ, -t3d.seawardX);
+      const dist = SIZE * 0.65;
+      const off = SIZE * 0.18;
+      v.camera.position.set(
+        t3d.seawardX * off + Math.cos(a) * dist,
+        SIZE * 0.22,
+        t3d.seawardZ * off + Math.sin(a) * dist
+      );
+      v.camera.lookAt(t3d.seawardX * off, 0, t3d.seawardZ * off);
+    } else {
+      v.camera.position.set(SIZE*0.6, SIZE*0.25, SIZE*0.6);
+      v.camera.lookAt(0, 0, 0);
+    }
+    v.renderer.render(v.scene, v.camera);
+
+    // Stats: bâtiments perdus + surface inondée + valeur DVF
+    let lost = 0, total = t3d.buildings.length;
+    t3d.buildings.forEach(b => {
+      const bx = b.position.x, bz = b.position.z;
+      const cxi = Math.max(0, Math.min(NX-1, Math.round((bx/SIZE+0.5)*(NX-1))));
+      const czi = Math.max(0, Math.min(NZ-1, Math.round((bz/SIZE+0.5)*(NZ-1))));
+      const idx = czi * NX + cxi;
+      const prot = t3d.protectionMask && t3d.protectionMask[idx];
+      if (prot) return;
+      const fc = t3d.bruunFactorCell ? t3d.bruunFactorCell[idx] : t3d.bruunFactor;
+      const R = sea2100 * fc;
+      const sx = bx + R * t3d.seawardX;
+      const sz = bz + R * t3d.seawardZ;
+      const newG = sampleElev(t3d.origElev, (sx/SIZE+0.5)*(NX-1), (sz/SIZE+0.5)*(NZ-1));
+      if (newG < sea2100 - 0.1) lost++;
+    });
+    let inWater = 0;
+    for (const e of newElev) if (e < sea2100) inWater++;
+    const ha = inWater * t3d.cellArea / 10000;
+
+    // Calcul valeur DVF exposée
+    let valM = null;
+    if (t3d.dvfStats) {
+      const lostArea = t3d.buildings
+        .filter((_, k) => k < lost) // approximation : prend les lost premiers
+        .reduce((s, b) => s + (b.userData.footprintArea || 80), 0);
+      const surfUtile = (lost / Math.max(1, t3d.buildings.length)) *
+                        t3d.buildings.reduce((s, b) => s + (b.userData.footprintArea || 80), 0)
+                        * 1.5;
+      valM = Math.round(surfUtile * t3d.dvfStats.medianPm2 / 1e6);
+    }
+
+    // Met à jour labels
+    const labEl = document.getElementById('vigLabel' + vi);
+    const statEl = document.getElementById('vigStats' + vi);
+    labEl.innerHTML = `
+      <div class="vig-rslr">+${sea2100.toFixed(2).replace('.', ',')} m</div>
+      <div class="vig-name">${S.name.split(' · ')[0]}</div>
+      <div class="vig-temp">${S.tempLabel} · 2100</div>
+    `;
+    statEl.innerHTML = `
+      <span>${lost}/${total} bâtis</span>
+      <span>${ha.toFixed(0)} ha inondés</span>
+      ${valM !== null ? `<span class="value">${valM} M€</span>` : ''}
+    `;
+  });
+}
+
+// Re-render vignettes au resize fenêtre
+window.addEventListener('resize', () => {
+  if (t3d.loaded && state.selectedCommune3D) {
+    const c = COMMUNES.find(x => x.insee === state.selectedCommune3D);
+    if (c) rebuildVignettes(c);
+  }
+});
 
 // Charger Soulac par défaut
 loadCommune3D(COMMUNES.find(c => c.insee === '33514'));
@@ -4856,7 +5146,7 @@ document.getElementById('compCommunePicker').addEventListener('change', e => {
    11 · NAV active state
 ========================================================= */
 const navLinks = document.querySelectorAll('.nav-link');
-const sections = ['#atlas', '#simulation', '#immersion', '#avant-apres', '#inondation', '#dashboard'].map(s => document.querySelector(s));
+const sections = ['#atlas', '#simulation', '#immersion', '#scenarios', '#avant-apres', '#inondation', '#dashboard'].map(s => document.querySelector(s));
 window.addEventListener('scroll', () => {
   const y = window.scrollY + 120;
   let curr = sections[0];
