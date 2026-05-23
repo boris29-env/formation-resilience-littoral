@@ -1084,9 +1084,12 @@ input.imm-range::-moz-range-thumb {
 #compMapBg, #compMapFg {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
+  height: 100%;
+  width: 100%;
 }
+#compMapBg { z-index: 1; }
 #compMapFg {
-  z-index: 2;
+  z-index: 5;
   clip-path: inset(0 0 0 50%);
 }
 
@@ -4710,16 +4713,16 @@ new Chart(ctx2, {
    10 · AVANT / APRÈS · COMPARATEUR ORTHOPHOTO IGN
 ========================================================= */
 const ORTHO_LAYERS = {
-  current:    { name:'BD ORTHO® actuelle',   layer:'ORTHOIMAGERY.ORTHOPHOTOS',           fmt:'image/jpeg' },
-  '1950-1965':{ name:'1950-1965 historique', layer:'ORTHOIMAGERY.ORTHOPHOTOS.1950-1965', fmt:'image/png'  },
-  '1965-1980':{ name:'1965-1980 historique', layer:'ORTHOIMAGERY.ORTHOPHOTOS.1965-1980', fmt:'image/png'  },
-  '1980-1995':{ name:'1980-1995 historique', layer:'ORTHOIMAGERY.ORTHOPHOTOS.1980-1995', fmt:'image/png'  },
-  '2000':     { name:'BD ORTHO COAST 2000',   layer:'ORTHOIMAGERY.ORTHOPHOTOS.COAST2000', fmt:'image/jpeg' },
+  current:    { name:'BD ORTHO® actuelle',   layer:'ORTHOIMAGERY.ORTHOPHOTOS',           fmt:'image/jpeg', style:'normal' },
+  '1950-1965':{ name:'1950-1965 historique', layer:'ORTHOIMAGERY.ORTHOPHOTOS.1950-1965', fmt:'image/png',  style:'BDORTHOHISTORIQUE' },
+  '1965-1980':{ name:'1965-1980 historique', layer:'ORTHOIMAGERY.ORTHOPHOTOS.1965-1980', fmt:'image/png',  style:'BDORTHOHISTORIQUE' },
+  '1980-1995':{ name:'1980-1995 historique', layer:'ORTHOIMAGERY.ORTHOPHOTOS.1980-1995', fmt:'image/png',  style:'BDORTHOHISTORIQUE' },
+  '2000':     { name:'BD ORTHO COAST 2000',   layer:'ORTHOIMAGERY.ORTHOPHOTOS.COAST2000', fmt:'image/png',  style:'normal' },
 };
 function makeOrthoTileLayer(key) {
   const o = ORTHO_LAYERS[key];
   return L.tileLayer(
-    `https://data.geopf.fr/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=${o.layer}&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&STYLE=normal&TILEMATRIXSET=PM&FORMAT=${o.fmt}`,
+    `https://data.geopf.fr/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=${o.layer}&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&STYLE=${o.style}&TILEMATRIXSET=PM&FORMAT=${o.fmt}`,
     { attribution: '© IGN-F · BD ORTHO®', minZoom: 0, maxZoom: 19, tileSize: 256 }
   );
 }
