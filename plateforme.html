@@ -1081,19 +1081,38 @@ input.imm-range::-moz-range-thumb {
 }
 #compMap.leaflet-container, #compMap .leaflet-container { background: #0a1c2e; }
 
-/* Le plugin sideBySide crée un .leaflet-sbs DANS .leaflet-control-container,
-   lequel n'a pas de width explicite côté Leaflet → shrink-to-fit ≈ 0.
-   Solution : on positionne .leaflet-sbs lui-même en absolute full-map.
-   La range (width:100%) s'aligne alors sur la pleine largeur. */
-#compMap .leaflet-sbs {
+/* === Split-screen custom : on dessine notre propre handle + barre,
+   et on applique clip-path directement aux conteneurs des tile layers. */
+.comp-handle {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none;            /* la zone ne bloque pas la map */
-  z-index: 999;
+  top: 0; bottom: 0;
+  width: 4px;
+  background: #fff;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.55);
 }
-#compMap .leaflet-sbs-range,
-#compMap .leaflet-sbs-divider {
-  pointer-events: none;            /* track + divider inactifs */
+.comp-handle::before {
+  content: ""; position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--coral);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+  cursor: ew-resize;
+}
+.comp-handle::after {
+  content: "⟷";
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--mono);
+  font-size: 18px; font-weight: 700;
+  color: var(--ink);
+  pointer-events: none;
 }
 
 /* === Styles du plugin leaflet-side-by-side (layout.css + range.css)
@@ -2343,7 +2362,6 @@ input.imm-range::-moz-range-thumb {
      SCRIPTS
 =========================================================== -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/digidem/leaflet-side-by-side/leaflet-side-by-side.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 
@@ -4672,33 +4690,76 @@ function makeOrthoTileLayer(key) {
 document.getElementById('compCommunePicker').innerHTML = COMMUNES
   .map(c => `<option value="${c.insee}" ${c.insee==='33514'?'selected':''}>${c.nom} (${c.dept}) · ${c.retreat.toFixed(1)} m/an</option>`).join('');
 
-/* === Plugin L.control.sideBySide (digidem/leaflet-side-by-side)
-   Un seul Leaflet map, deux tileLayers, le plugin gère le clip-path
-   sur chaque container de layer + le séparateur draggable. */
+/* === Split-screen maison ===
+   1 seul L.map, 2 tileLayers ajoutés normalement. On applique un
+   clip-path directement sur les containers DOM de chaque layer via
+   layer.getContainer(). Un handle 100% custom (CSS .comp-handle) est
+   posé dans compMap et géré par mouse/touch events ici. */
 const compMap = L.map('compMap', { zoomControl: true, attributionControl: true });
 compMap.attributionControl.setPrefix('');
 
-// ORDRE CRITIQUE : setView D'ABORD, puis layers, puis sideBySide.
-// Si on ajoute sideBySide avant que les layers aient un container rendu,
-// le plugin crashe sur getContainer().style. Un setView force le rendu initial.
-function compSetView(c) {
-  compMap.setView([c.lat, c.lng], 15);
-}
+function compSetView(c) { compMap.setView([c.lat, c.lng], 15); }
 compSetView(COMMUNES.find(c => c.insee === '33514'));
 
 let compLeftLayer  = makeOrthoTileLayer('1950-1965').addTo(compMap);
 let compRightLayer = makeOrthoTileLayer('current').addTo(compMap);
 
-// Légère pause pour laisser Leaflet créer les containers des layers
-// avant d'attacher le contrôle de split (sinon getContainer() = undefined)
-let sbsCtrl = null;
-function attachSideBySide() {
-  if (!compLeftLayer.getContainer() || !compRightLayer.getContainer()) {
-    return setTimeout(attachSideBySide, 100);
-  }
-  sbsCtrl = L.control.sideBySide(compLeftLayer, compRightLayer).addTo(compMap);
+let compPct = 50; // position du handle, en pourcentage de la largeur map
+
+function applyCompClip() {
+  // Containers DOM des layers : un <div> par layer dans .leaflet-tile-pane
+  const lc = compLeftLayer && compLeftLayer.getContainer && compLeftLayer.getContainer();
+  const rc = compRightLayer && compRightLayer.getContainer && compRightLayer.getContainer();
+  if (lc) lc.style.clipPath = `inset(0 ${100 - compPct}% 0 0)`;
+  if (rc) rc.style.clipPath = `inset(0 0 0 ${compPct}%)`;
+  if (compHandle) compHandle.style.left = `calc(${compPct}% - 2px)`;
+  if (lblLeft)  lblLeft.style.display  = compPct > 8  ? '' : 'none';
+  if (lblRight) lblRight.style.display = compPct < 92 ? '' : 'none';
 }
-attachSideBySide();
+
+// Le handle est ajouté à #compMap (parent positionné en relative)
+const compHandle = document.createElement('div');
+compHandle.className = 'comp-handle';
+compHandle.style.left = '50%';
+const compHost = document.getElementById('compMap');
+compHost.appendChild(compHandle);
+
+// Drag handle : on capture sur le pseudo-élément ::before via la zone du handle.
+// On utilise les pointer events pour capturer même si on dérive du thumb.
+let compDragging = false;
+function onDown(e) {
+  compDragging = true;
+  // Désactive le drag de la map pendant le slide
+  if (compMap.dragging) compMap.dragging.disable();
+  e.preventDefault();
+}
+function onMove(e) {
+  if (!compDragging) return;
+  const rect = compHost.getBoundingClientRect();
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  compPct = Math.max(2, Math.min(98, (x / rect.width) * 100));
+  applyCompClip();
+}
+function onUp() {
+  if (!compDragging) return;
+  compDragging = false;
+  if (compMap.dragging) compMap.dragging.enable();
+}
+compHandle.addEventListener('mousedown', onDown);
+compHandle.addEventListener('touchstart', onDown, { passive: false });
+window.addEventListener('mousemove', onMove);
+window.addEventListener('touchmove', onMove, { passive: false });
+window.addEventListener('mouseup', onUp);
+window.addEventListener('touchend', onUp);
+
+// Le clip-path doit être réappliqué chaque fois que les containers des
+// layers sont recréés (pan/zoom de la map, changement de layer, etc.)
+compMap.on('move zoom moveend zoomend layeradd', applyCompClip);
+compLeftLayer.on('load', applyCompClip);
+compRightLayer.on('load', applyCompClip);
+
+// Première application après que Leaflet ait rendu les containers
+setTimeout(applyCompClip, 200);
 
 // Labels overlay
 const compShell = document.getElementById('compMap');
@@ -4719,13 +4780,14 @@ function rebuildOrthoLayer(side, key) {
     lblLeft.textContent = ORTHO_LAYERS[key].name;
     if (compLeftLayer) compMap.removeLayer(compLeftLayer);
     compLeftLayer = makeOrthoTileLayer(key).addTo(compMap);
-    if (sbsCtrl) setTimeout(() => sbsCtrl.setLeftLayers(compLeftLayer), 50);
+    compLeftLayer.on('load', applyCompClip);
   } else {
     lblRight.textContent = ORTHO_LAYERS[key].name;
     if (compRightLayer) compMap.removeLayer(compRightLayer);
     compRightLayer = makeOrthoTileLayer(key).addTo(compMap);
-    if (sbsCtrl) setTimeout(() => sbsCtrl.setRightLayers(compRightLayer), 50);
+    compRightLayer.on('load', applyCompClip);
   }
+  setTimeout(applyCompClip, 100);
 }
 
 document.getElementById('compLeft').addEventListener('change', e => rebuildOrthoLayer('left', e.target.value));
