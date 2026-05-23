@@ -1081,8 +1081,8 @@ input.imm-range::-moz-range-thumb {
 }
 #compMap.leaflet-container, #compMap .leaflet-container { background: #0a1c2e; }
 
-/* === Split-screen custom : on dessine notre propre handle + barre,
-   et on applique clip-path directement aux conteneurs des tile layers. */
+/* === Split-screen custom — la barre + sa poignée sont des vrais divs,
+   pas des pseudo-éléments, pour que pointer-events fonctionne sans surprise. */
 .comp-handle {
   position: absolute;
   top: 0; bottom: 0;
@@ -1092,28 +1092,24 @@ input.imm-range::-moz-range-thumb {
   pointer-events: none;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.55);
 }
-.comp-handle::before {
-  content: ""; position: absolute;
-  left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
-  width: 48px; height: 48px;
-  border-radius: 50%;
-  background: #fff;
-  border: 2px solid var(--coral);
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
-  pointer-events: auto;
-  cursor: ew-resize;
-}
-.comp-handle::after {
-  content: "⟷";
+.comp-grip {
   position: absolute;
   left: 50%; top: 50%;
   transform: translate(-50%, -50%);
-  font-family: var(--mono);
-  font-size: 18px; font-weight: 700;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--coral);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+  cursor: ew-resize;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 20px; font-weight: 700;
   color: var(--ink);
-  pointer-events: none;
+  user-select: none;
+  touch-action: none;
 }
+.comp-grip:hover { transform: translate(-50%, -50%) scale(1.07); }
 
 /* === Styles du plugin leaflet-side-by-side (layout.css + range.css)
    intégrés inline car le bundle JS ne les embarque pas. ===*/
@@ -4717,36 +4713,39 @@ function applyCompClip() {
   if (lblRight) lblRight.style.display = compPct < 92 ? '' : 'none';
 }
 
-// Le handle est ajouté à #compMap (parent positionné en relative)
+// Le handle (barre verticale) + sa poignée (cercle interactif) sont ajoutés à #compMap.
+const compHost = document.getElementById('compMap');
 const compHandle = document.createElement('div');
 compHandle.className = 'comp-handle';
 compHandle.style.left = '50%';
-const compHost = document.getElementById('compMap');
+const compGrip = document.createElement('div');
+compGrip.className = 'comp-grip';
+compGrip.textContent = '⟷';
+compHandle.appendChild(compGrip);
 compHost.appendChild(compHandle);
 
-// Drag handle : on capture sur le pseudo-élément ::before via la zone du handle.
-// On utilise les pointer events pour capturer même si on dérive du thumb.
+// Pointer Events API : un seul handler, gestion native du capture/release
 let compDragging = false;
-function onDown(e) {
+compGrip.addEventListener('pointerdown', e => {
   compDragging = true;
-  // Désactive le drag de la map pendant le slide
+  compGrip.setPointerCapture(e.pointerId);
   if (compMap.dragging) compMap.dragging.disable();
   e.preventDefault();
-}
-function onMove(e) {
+});
+compGrip.addEventListener('pointermove', e => {
   if (!compDragging) return;
   const rect = compHost.getBoundingClientRect();
-  const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-  compPct = Math.max(2, Math.min(98, (x / rect.width) * 100));
+  compPct = Math.max(2, Math.min(98, ((e.clientX - rect.left) / rect.width) * 100));
   applyCompClip();
-}
-function onUp() {
+});
+function endDrag(e) {
   if (!compDragging) return;
   compDragging = false;
+  try { compGrip.releasePointerCapture(e.pointerId); } catch (_) {}
   if (compMap.dragging) compMap.dragging.enable();
 }
-compHandle.addEventListener('mousedown', onDown);
-compHandle.addEventListener('touchstart', onDown, { passive: false });
+compGrip.addEventListener('pointerup', endDrag);
+compGrip.addEventListener('pointercancel', endDrag);
 window.addEventListener('mousemove', onMove);
 window.addEventListener('touchmove', onMove, { passive: false });
 window.addEventListener('mouseup', onUp);
