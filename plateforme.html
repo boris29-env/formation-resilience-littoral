@@ -3871,6 +3871,29 @@ async function loadCommune3D(c) {
     } else {
       t3d.shorelineOk = false;
     }
+
+    // === Centroïde du TRAIT DE CÔTE (cellules à elev ≈ 0) ===
+    // Sert de point de visée caméra. C'est là où on veut concentrer l'œil :
+    // la ligne de transition terre/mer, pas le centre arbitraire du bbox.
+    let shoreSumX = 0, shoreSumZ = 0, shoreN = 0;
+    for (let zi = 0; zi < NZ; zi++) {
+      for (let xi = 0; xi < NX; xi++) {
+        const e = elev[zi * NX + xi];
+        if (e > -0.5 && e < 2.0) {
+          shoreSumX += (xi / (NX - 1) - 0.5) * SIZE;
+          shoreSumZ += (zi / (NZ - 1) - 0.5) * SIZE;
+          shoreN++;
+        }
+      }
+    }
+    if (shoreN > 5) {
+      t3d.shoreCenterX = shoreSumX / shoreN;
+      t3d.shoreCenterZ = shoreSumZ / shoreN;
+    } else {
+      // Pas de trait de côte exploitable : centroïde de la commune (0,0)
+      t3d.shoreCenterX = 0;
+      t3d.shoreCenterZ = 0;
+    }
     const bd = bruunDefaultsForCoast(c);
     t3d.bruunFactor = bd.factor;
     t3d.closureDepth = bd.hStar;
@@ -4345,12 +4368,10 @@ document.querySelectorAll('.imm-preset').forEach(btn => {
 
 function updateCamera() {
   const a = t3d.cam.angle;
-  // La caméra orbite autour d'un point de visée décalé vers la mer
-  // (déterminé à partir de seawardX/Z), pour que le trait de côte reste
-  // au centre du cadre quel que soit l'angle.
-  const lookOff = SIZE * 0.25;
-  const lx = (t3d.shorelineOk ? t3d.seawardX : 0) * lookOff;
-  const lz = (t3d.shorelineOk ? t3d.seawardZ : 0) * lookOff;
+  // LookAt = CENTROÏDE DU TRAIT DE CÔTE (pas le centre du bbox).
+  // Garantit que la ligne terre/mer reste au centre du cadre.
+  const lx = t3d.shoreCenterX != null ? t3d.shoreCenterX : 0;
+  const lz = t3d.shoreCenterZ != null ? t3d.shoreCenterZ : 0;
   camera.position.x = lx + Math.cos(a) * t3d.cam.dist;
   camera.position.z = lz + Math.sin(a) * t3d.cam.dist;
   camera.position.y = t3d.cam.height;
@@ -4577,19 +4598,20 @@ function rebuildVignettes(c) {
     v.water.position.y = sea2100 * VSCALE;
     v.scene.add(v.water);
 
-    // Caméra : même angle que la 3D principale (côté terre → mer)
+    // Caméra : visée sur le CENTROÏDE DU TRAIT DE CÔTE, côté terre
+    const lx = t3d.shoreCenterX != null ? t3d.shoreCenterX : 0;
+    const lz = t3d.shoreCenterZ != null ? t3d.shoreCenterZ : 0;
     if (t3d.shorelineOk) {
       const a = Math.atan2(-t3d.seawardZ, -t3d.seawardX);
-      const dist = SIZE * 0.65;
-      const off = SIZE * 0.18;
+      const dist = SIZE * 0.55;
       v.camera.position.set(
-        t3d.seawardX * off + Math.cos(a) * dist,
+        lx + Math.cos(a) * dist,
         SIZE * 0.22,
-        t3d.seawardZ * off + Math.sin(a) * dist
+        lz + Math.sin(a) * dist
       );
-      v.camera.lookAt(t3d.seawardX * off, 0, t3d.seawardZ * off);
+      v.camera.lookAt(lx, t3d.altMean * VSCALE * 0.3, lz);
     } else {
-      v.camera.position.set(SIZE*0.6, SIZE*0.25, SIZE*0.6);
+      v.camera.position.set(SIZE*0.5, SIZE*0.25, SIZE*0.5);
       v.camera.lookAt(0, 0, 0);
     }
     v.renderer.render(v.scene, v.camera);
