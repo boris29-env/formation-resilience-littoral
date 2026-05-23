@@ -4702,19 +4702,10 @@ let compRightLayer = makeOrthoTileLayer('current').addTo(compMap);
 
 let compPct = 50; // position du handle, en pourcentage de la largeur map
 
-function applyCompClip() {
-  // Containers DOM des layers : un <div> par layer dans .leaflet-tile-pane
-  const lc = compLeftLayer && compLeftLayer.getContainer && compLeftLayer.getContainer();
-  const rc = compRightLayer && compRightLayer.getContainer && compRightLayer.getContainer();
-  if (lc) lc.style.clipPath = `inset(0 ${100 - compPct}% 0 0)`;
-  if (rc) rc.style.clipPath = `inset(0 0 0 ${compPct}%)`;
-  if (compHandle) compHandle.style.left = `calc(${compPct}% - 2px)`;
-  if (lblLeft)  lblLeft.style.display  = compPct > 8  ? '' : 'none';
-  if (lblRight) lblRight.style.display = compPct < 92 ? '' : 'none';
-}
-
-// Le handle (barre verticale) + sa poignée (cercle interactif) sont ajoutés à #compMap.
+// --- Création des éléments DOM AVANT toute fonction qui les utilise ---
 const compHost = document.getElementById('compMap');
+
+// Handle (barre verticale) + poignée (cercle interactif)
 const compHandle = document.createElement('div');
 compHandle.className = 'comp-handle';
 compHandle.style.left = '50%';
@@ -4724,11 +4715,35 @@ compGrip.textContent = '⟷';
 compHandle.appendChild(compGrip);
 compHost.appendChild(compHandle);
 
-// Pointer Events API : un seul handler, gestion native du capture/release
+// Labels overlay (créés avant applyCompClip qui les référence)
+const lblLeft = document.createElement('div');
+lblLeft.className = 'comp-label-overlay';
+lblLeft.style.left = '20px';
+lblLeft.textContent = ORTHO_LAYERS['1950-1965'].name;
+compHost.appendChild(lblLeft);
+
+const lblRight = document.createElement('div');
+lblRight.className = 'comp-label-overlay';
+lblRight.style.right = '20px';
+lblRight.textContent = ORTHO_LAYERS.current.name;
+compHost.appendChild(lblRight);
+
+function applyCompClip() {
+  const lc = compLeftLayer && compLeftLayer.getContainer && compLeftLayer.getContainer();
+  const rc = compRightLayer && compRightLayer.getContainer && compRightLayer.getContainer();
+  if (lc) lc.style.clipPath = `inset(0 ${100 - compPct}% 0 0)`;
+  if (rc) rc.style.clipPath = `inset(0 0 0 ${compPct}%)`;
+  compHandle.style.left = `calc(${compPct}% - 2px)`;
+  lblLeft.style.display  = compPct > 8  ? '' : 'none';
+  lblRight.style.display = compPct < 92 ? '' : 'none';
+}
+
+// Pointer Events API : drag du handle ; setPointerCapture garantit
+// le suivi même si on dérive du cercle
 let compDragging = false;
 compGrip.addEventListener('pointerdown', e => {
   compDragging = true;
-  compGrip.setPointerCapture(e.pointerId);
+  try { compGrip.setPointerCapture(e.pointerId); } catch (_) {}
   if (compMap.dragging) compMap.dragging.disable();
   e.preventDefault();
 });
@@ -4746,33 +4761,12 @@ function endDrag(e) {
 }
 compGrip.addEventListener('pointerup', endDrag);
 compGrip.addEventListener('pointercancel', endDrag);
-window.addEventListener('mousemove', onMove);
-window.addEventListener('touchmove', onMove, { passive: false });
-window.addEventListener('mouseup', onUp);
-window.addEventListener('touchend', onUp);
 
-// Le clip-path doit être réappliqué chaque fois que les containers des
-// layers sont recréés (pan/zoom de la map, changement de layer, etc.)
+// Re-clip à chaque changement Leaflet susceptible de recréer les containers
 compMap.on('move zoom moveend zoomend layeradd', applyCompClip);
 compLeftLayer.on('load', applyCompClip);
 compRightLayer.on('load', applyCompClip);
-
-// Première application après que Leaflet ait rendu les containers
 setTimeout(applyCompClip, 200);
-
-// Labels overlay
-const compShell = document.getElementById('compMap');
-const lblLeft = document.createElement('div');
-lblLeft.className = 'comp-label-overlay';
-lblLeft.style.left = '20px';
-lblLeft.textContent = ORTHO_LAYERS['1950-1965'].name;
-compShell.appendChild(lblLeft);
-
-const lblRight = document.createElement('div');
-lblRight.className = 'comp-label-overlay';
-lblRight.style.right = '20px';
-lblRight.textContent = ORTHO_LAYERS.current.name;
-compShell.appendChild(lblRight);
 
 function rebuildOrthoLayer(side, key) {
   if (side === 'left') {
