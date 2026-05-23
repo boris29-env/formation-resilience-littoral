@@ -2138,13 +2138,17 @@ input.imm-range::-moz-range-thumb {
 =========================================================== -->
 <section id="scenarios" class="scenarios-cmp">
   <div class="section-head" style="max-width:1400px;margin-left:auto;margin-right:auto;">
-    <div class="section-eyebrow">03c · Comparaison scénarios IPCC à 2100</div>
-    <h2 class="section-title">La <em>fourchette d'incertitude</em>,<br>côte à côte.</h2>
+    <div class="section-eyebrow">03c · Cartes prospectives 2100 · 3 scénarios IPCC AR6</div>
+    <h2 class="section-title">Là où la <em>mer reprend</em> le territoire,<br>vu d'avion.</h2>
     <p class="section-lead">
-      Trois projections du même secteur à l'horizon 2100 — la trajectoire
-      « Accord de Paris », la médiane et la pire — pour visualiser ce qui se
-      joue selon nos décisions climatiques. Recul Bruun appliqué scénario par
-      scénario, ouvrages protecteurs respectés.
+      Vue de dessus du même secteur sous trois trajectoires climatiques.
+      <strong style="color:#1f4a5a">Bleu sombre</strong> = mer actuelle,
+      <strong style="color:#b88a4a">beige/vert</strong> = terre actuelle,
+      <strong style="color:#3CA3C3">bleu clair</strong> = zones nouvellement
+      submergées en 2100, <strong style="color:#B84028">rouge</strong> = zones
+      perdues par recul morphologique (Bruun), <strong style="color:#5C8A4F">vert
+      pâle</strong> = zones sauvées par un ouvrage côtier BD TOPO. Trait noir
+      fin = côte d'aujourd'hui, trait coral épais = côte en 2100.
     </p>
   </div>
   <div class="scen-grid" id="scenGrid">
@@ -3729,12 +3733,32 @@ let waterMesh = null;
 const waterGeo = new THREE.PlaneGeometry(SIZE * 1.8, SIZE * 1.8, 64, 64);
 waterGeo.rotateX(-Math.PI / 2);
 const waterMat = new THREE.MeshStandardMaterial({
-  color: 0x2a6c7c, transparent: true, opacity: 0.78,
-  roughness: 0.05, metalness: 0.6,
+  color: 0x3aa6c8,         // teal vif, distinct du fog sombre
+  emissive: 0x0a2a3a,       // glow subtil pour bien marquer la zone d'eau
+  transparent: true, opacity: 0.85,
+  roughness: 0.15, metalness: 0.55,
 });
 waterMesh = new THREE.Mesh(waterGeo, waterMat);
 waterMesh.position.y = 0;
 scene3.add(waterMesh);
+
+/* Marqueur "MER" : grosse balise flottante dans la direction seaward,
+   pour repérer instantanément où est la mer */
+const seaMarker = new THREE.Group();
+const buoyMat = new THREE.MeshStandardMaterial({ color: 0xff4f3a, emissive: 0x441208, emissiveIntensity: 0.5, roughness: 0.4 });
+const buoyBase = new THREE.Mesh(new THREE.CylinderGeometry(15, 18, 8, 12), buoyMat);
+buoyBase.position.y = 4;
+seaMarker.add(buoyBase);
+const buoyPole = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 30, 6),
+  new THREE.MeshStandardMaterial({ color: 0xffffff }));
+buoyPole.position.y = 23;
+seaMarker.add(buoyPole);
+const buoyFlag = new THREE.Mesh(new THREE.BoxGeometry(20, 12, 1),
+  new THREE.MeshStandardMaterial({ color: 0xff4f3a, emissive: 0x441208, emissiveIntensity: 0.5 }));
+buoyFlag.position.set(11, 36, 0);
+seaMarker.add(buoyFlag);
+seaMarker.visible = false;
+scene3.add(seaMarker);
 
 // UI elements
 const immLoader = document.getElementById('immLoader');
@@ -4170,6 +4194,17 @@ async function loadCommune3D(c) {
     hideLoader();
     document.getElementById('immAlti').innerHTML =
       `${t3d.altMin.toFixed(1)} / ${t3d.altMax.toFixed(1)}<small>m</small>`;
+
+    // Place la balise "MER" à mi-distance dans la direction seaward,
+    // à un endroit clairement maritime (au-delà du trait de côte)
+    if (t3d.shorelineOk) {
+      const off = SIZE * 0.45;
+      seaMarker.position.set(t3d.seawardX * off, 0, t3d.seawardZ * off);
+      seaMarker.visible = true;
+    } else {
+      seaMarker.visible = false;
+    }
+
     applyWaterLevel();
 
     // Rebuild des 3 vignettes scénarios IPCC (utilise t3d.origElev déjà chargé)
@@ -4505,38 +4540,54 @@ updateImmHint();
    par scénario, rend 3 mini-scènes Three.js indépendantes.
 ========================================================= */
 const SCEN_VIG_KEYS = ['ssp126', 'ssp245', 'ssp585'];
-const sceneVignettes = SCEN_VIG_KEYS.map((scen, i) => {
-  const canvas = document.getElementById('vig' + i);
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0a1c2e);
-  scene.fog = new THREE.Fog(0x0a1c2e, 4500, 11000);
-  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-  const sun = new THREE.DirectionalLight(0xfff0d8, 1.0);
-  sun.position.set(800, 1200, 400);
-  scene.add(sun);
-  const fill = new THREE.DirectionalLight(0x88aacc, 0.35);
-  fill.position.set(-400, 400, -600);
-  scene.add(fill);
-  const camera = new THREE.PerspectiveCamera(40, 1, 1, 18000);
-  return { scen, canvas, renderer, scene, camera, terrain: null, water: null };
-});
+const sceneVignettes = SCEN_VIG_KEYS.map((scen, i) => ({
+  scen,
+  canvas: document.getElementById('vig' + i),
+}));
 
+/* ====== VIGNETTES : carte de submersion + recul vue de dessus ======
+   Vue 2D Canvas, plus lisible qu'un 3D oblique. Chaque vignette montre :
+   - Cellules à terre AUJOURD'HUI = sable / vert
+   - Cellules à la mer AUJOURD'HUI = bleu foncé
+   - Cellules NOUVELLEMENT inondées en 2100 = bleu clair translucide
+   - Cellules PERDUES par RECUL morphologique = rouge translucide
+   - Trait de côte ACTUEL (elev ≈ 0) = ligne fine noire
+   - Trait de côte 2100 = ligne épaisse coral */
 function rebuildVignettes(c) {
   if (!t3d.origElev || !t3d.loaded) return;
   sceneVignettes.forEach((v, vi) => {
-    // Resize canvas to its layout size
-    const r = v.canvas.getBoundingClientRect();
-    if (r.width > 0 && r.height > 0) {
-      v.renderer.setSize(r.width, r.height, false);
-      v.camera.aspect = r.width / r.height;
-      v.camera.updateProjectionMatrix();
-    }
+    const cv = v.canvas;
+    const rect = cv.getBoundingClientRect();
+    const W = Math.round(rect.width * (window.devicePixelRatio || 1));
+    const H = Math.round(rect.height * (window.devicePixelRatio || 1));
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+
     const S = SCENARIOS[v.scen];
     const sea2100 = S.sea2100;
 
-    // Calcule terrain reculé Bruun pour ce scénario
+    // Pas par cellule en pixels
+    const cellW = W / NX, cellH = H / NZ;
+
+    // 1) Dessine les cellules à leur état ACTUEL
+    for (let zi = 0; zi < NZ; zi++) {
+      for (let xi = 0; xi < NX; xi++) {
+        const e = t3d.origElev[zi * NX + xi];
+        let color;
+        if (e < -1)       color = '#0e2a3a'; // mer profonde
+        else if (e < 0.5) color = '#1f4a5a'; // mer côtière
+        else if (e < 2)   color = '#e8d7a4'; // plage / dune basse
+        else if (e < 8)   color = '#c9b478'; // dune / arrière-plage
+        else if (e < 20)  color = '#8a9d6a'; // colline
+        else              color = '#4e7541'; // forêt / relief
+        ctx.fillStyle = color;
+        ctx.fillRect(xi * cellW, zi * cellH, Math.ceil(cellW) + 1, Math.ceil(cellH) + 1);
+      }
+    }
+
+    // 2) Calcul terrain reculé Bruun pour 2100
     const newElev = new Float32Array(NX * NZ);
     if (t3d.bruunFactorCell && t3d.shorelineOk) {
       for (let zi = 0; zi < NZ; zi++) {
@@ -4559,65 +4610,47 @@ function rebuildVignettes(c) {
       newElev.set(t3d.origElev);
     }
 
-    // Build terrain mesh (colored by altitude — code lisible vs ortho)
-    if (v.terrain) {
-      v.scene.remove(v.terrain);
-      v.terrain.geometry.dispose();
-      v.terrain.material.dispose();
+    // 3) Overlay : zone NOUVELLEMENT inondée + zone PERDUE par RECUL
+    let cellsNewWet = 0, cellsLostErosion = 0, cellsProtected = 0;
+    for (let zi = 0; zi < NZ; zi++) {
+      for (let xi = 0; xi < NX; xi++) {
+        const i = zi * NX + xi;
+        const e0 = t3d.origElev[i];      // état actuel
+        const eN = newElev[i];           // état 2100 après Bruun
+        const wasLand = e0 >= 0;
+        const isInWater = eN < sea2100;
+        if (t3d.protectionMask && t3d.protectionMask[i] && wasLand && isInWater) {
+          // Protégé par ouvrage : reste à terre
+          ctx.fillStyle = 'rgba(92,138,79,0.5)';
+          ctx.fillRect(xi * cellW, zi * cellH, Math.ceil(cellW) + 1, Math.ceil(cellH) + 1);
+          cellsProtected++;
+        } else if (wasLand && isInWater) {
+          // Distinction : si le sol a chuté (Bruun) → érosion, sinon simple submersion
+          if (eN < e0 - 0.5) {
+            // Recul morphologique : zone enlevée par érosion
+            ctx.fillStyle = 'rgba(184,64,40,0.62)';
+            cellsLostErosion++;
+          } else {
+            // Submersion seule : niveau marin a dépassé la cote du sol
+            ctx.fillStyle = 'rgba(60,163,195,0.55)';
+            cellsNewWet++;
+          }
+          ctx.fillRect(xi * cellW, zi * cellH, Math.ceil(cellW) + 1, Math.ceil(cellH) + 1);
+        }
+      }
     }
-    const geo = new THREE.PlaneGeometry(SIZE, SIZE, NX-1, NZ-1);
-    geo.rotateX(-Math.PI/2);
-    const pos = geo.attributes.position;
-    const cols = [];
-    for (let i = 0; i < pos.count; i++) {
-      pos.setY(i, newElev[i] * VSCALE);
-      const y = newElev[i];
-      const col = new THREE.Color();
-      if (y < -1.5) col.setHex(0x18394a);
-      else if (y < 0.3) col.setHex(0x3a738a);
-      else if (y < 2.5) col.setHex(0xe8d7a4);
-      else if (y < 8) col.setHex(0xc9b478);
-      else if (y < 18) col.setHex(0x8a9d6a);
-      else col.setHex(0x4e7541);
-      cols.push(col.r, col.g, col.b);
-    }
-    geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
-    geo.computeVertexNormals();
-    v.terrain = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }));
-    v.scene.add(v.terrain);
 
-    // Water plane au niveau RSLR 2100
-    if (v.water) v.scene.remove(v.water);
-    const wg = new THREE.PlaneGeometry(SIZE*1.5, SIZE*1.5);
-    wg.rotateX(-Math.PI/2);
-    const wm = new THREE.MeshStandardMaterial({
-      color: 0x2a6c7c, transparent: true, opacity: 0.82,
-      roughness: 0.1, metalness: 0.7
-    });
-    v.water = new THREE.Mesh(wg, wm);
-    v.water.position.y = sea2100 * VSCALE;
-    v.scene.add(v.water);
+    // 4) Trait de côte ACTUEL (lieu où orig elev croise 0) — ligne noire fine
+    ctx.strokeStyle = 'rgba(11,27,43,0.9)';
+    ctx.lineWidth = 1.2;
+    drawShoreline(ctx, t3d.origElev, 0, cellW, cellH);
+    // Trait de côte 2100 — ligne coral épaisse
+    ctx.strokeStyle = '#E86E55';
+    ctx.lineWidth = 2.2;
+    drawShoreline(ctx, newElev, sea2100, cellW, cellH);
 
-    // Caméra : visée sur le CENTROÏDE DU TRAIT DE CÔTE, côté terre
-    const lx = t3d.shoreCenterX != null ? t3d.shoreCenterX : 0;
-    const lz = t3d.shoreCenterZ != null ? t3d.shoreCenterZ : 0;
-    if (t3d.shorelineOk) {
-      const a = Math.atan2(-t3d.seawardZ, -t3d.seawardX);
-      const dist = SIZE * 0.55;
-      v.camera.position.set(
-        lx + Math.cos(a) * dist,
-        SIZE * 0.22,
-        lz + Math.sin(a) * dist
-      );
-      v.camera.lookAt(lx, t3d.altMean * VSCALE * 0.3, lz);
-    } else {
-      v.camera.position.set(SIZE*0.5, SIZE*0.25, SIZE*0.5);
-      v.camera.lookAt(0, 0, 0);
-    }
-    v.renderer.render(v.scene, v.camera);
-
-    // Stats: bâtiments perdus + surface inondée + valeur DVF
-    let lost = 0, total = t3d.buildings.length;
+    // 5) Stats : bâtis perdus + surface
+    let lost = 0;
     t3d.buildings.forEach(b => {
       const bx = b.position.x, bz = b.position.z;
       const cxi = Math.max(0, Math.min(NX-1, Math.round((bx/SIZE+0.5)*(NX-1))));
@@ -4632,36 +4665,67 @@ function rebuildVignettes(c) {
       const newG = sampleElev(t3d.origElev, (sx/SIZE+0.5)*(NX-1), (sz/SIZE+0.5)*(NZ-1));
       if (newG < sea2100 - 0.1) lost++;
     });
-    let inWater = 0;
-    for (const e of newElev) if (e < sea2100) inWater++;
-    const ha = inWater * t3d.cellArea / 10000;
-
-    // Calcul valeur DVF exposée
-    let valM = null;
-    if (t3d.dvfStats) {
-      const lostArea = t3d.buildings
-        .filter((_, k) => k < lost) // approximation : prend les lost premiers
-        .reduce((s, b) => s + (b.userData.footprintArea || 80), 0);
-      const surfUtile = (lost / Math.max(1, t3d.buildings.length)) *
-                        t3d.buildings.reduce((s, b) => s + (b.userData.footprintArea || 80), 0)
-                        * 1.5;
-      valM = Math.round(surfUtile * t3d.dvfStats.medianPm2 / 1e6);
-    }
+    const haNew = (cellsNewWet + cellsLostErosion) * t3d.cellArea / 10000;
+    const valM = t3d.dvfStats
+      ? Math.round((lost / Math.max(1, t3d.buildings.length))
+                  * t3d.buildings.reduce((s,b)=>s + (b.userData.footprintArea||80), 0)
+                  * 1.5 * t3d.dvfStats.medianPm2 / 1e6)
+      : null;
 
     // Met à jour labels
-    const labEl = document.getElementById('vigLabel' + vi);
-    const statEl = document.getElementById('vigStats' + vi);
-    labEl.innerHTML = `
+    document.getElementById('vigLabel' + vi).innerHTML = `
       <div class="vig-rslr">+${sea2100.toFixed(2).replace('.', ',')} m</div>
       <div class="vig-name">${S.name.split(' · ')[0]}</div>
       <div class="vig-temp">${S.tempLabel} · 2100</div>
     `;
-    statEl.innerHTML = `
-      <span>${lost}/${total} bâtis</span>
-      <span>${ha.toFixed(0)} ha inondés</span>
+    document.getElementById('vigStats' + vi).innerHTML = `
+      <span>${lost}/${t3d.buildings.length} bâtis</span>
+      <span>${haNew.toFixed(0)} ha perdus</span>
       ${valM !== null ? `<span class="value">${valM} M€</span>` : ''}
     `;
   });
+}
+
+/* Dessine la ligne de niveau (= trait de côte) au seuil donné via marching squares simplifié */
+function drawShoreline(ctx, elevArr, seuil, cellW, cellH) {
+  ctx.beginPath();
+  for (let zi = 0; zi < NZ - 1; zi++) {
+    for (let xi = 0; xi < NX - 1; xi++) {
+      const a = elevArr[zi * NX + xi];
+      const b = elevArr[zi * NX + xi + 1];
+      const c = elevArr[(zi + 1) * NX + xi];
+      const d = elevArr[(zi + 1) * NX + xi + 1];
+      const code = (a > seuil ? 1 : 0) | (b > seuil ? 2 : 0) |
+                   (c > seuil ? 4 : 0) | (d > seuil ? 8 : 0);
+      if (code === 0 || code === 15) continue;
+      const x = xi * cellW, y = zi * cellH;
+      const interp = (v1, v2, p1x, p1y, p2x, p2y) => {
+        const t = (seuil - v1) / (v2 - v1);
+        return [p1x + (p2x - p1x) * t, p1y + (p2y - p1y) * t];
+      };
+      // Approximation : un segment par cellule selon le code
+      const top    = interp(a, b, x, y, x + cellW, y);
+      const right  = interp(b, d, x + cellW, y, x + cellW, y + cellH);
+      const bottom = interp(c, d, x, y + cellH, x + cellW, y + cellH);
+      const left   = interp(a, c, x, y, x, y + cellH);
+      const linesByCode = {
+        1: [left, top], 14: [left, top],
+        2: [top, right], 13: [top, right],
+        3: [left, right], 12: [left, right],
+        4: [left, bottom], 11: [left, bottom],
+        5: [top, bottom], 10: [top, bottom],
+        6: [left, top, right, bottom], 9: [left, bottom, top, right],
+        7: [right, bottom], 8: [right, bottom],
+      };
+      const segs = linesByCode[code];
+      if (!segs) continue;
+      for (let k = 0; k < segs.length; k += 2) {
+        ctx.moveTo(segs[k][0], segs[k][1]);
+        ctx.lineTo(segs[k+1][0], segs[k+1][1]);
+      }
+    }
+  }
+  ctx.stroke();
 }
 
 // Re-render vignettes au resize fenêtre
