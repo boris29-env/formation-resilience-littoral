@@ -2920,7 +2920,9 @@ const conservatoireLayer = L.tileLayer.wms('https://data.geopf.fr/wms-v/ows?', {
 const traitCoteLayer = L.geoJSON(null, {
   style: f => ({
     color: typeToColor(f.properties.type_de_limite),
-    weight: 2.5, opacity: 0.95
+    weight: 2, opacity: 0.95,
+    fill: false,                  // important : sinon le SVG rempli les LineString fermés
+    lineCap: 'butt', lineJoin: 'round'
   }),
   onEachFeature: (f, layer) => {
     layer.bindTooltip(f.properties.type_de_limite || 'Trait de côte', { sticky: true });
@@ -2932,7 +2934,7 @@ function typeToColor(t) {
   if (t.includes('Limite des affaires')) return '#1B7BCB';
   if (t.includes('transversale')) return '#E86E55';
   if (t.includes('salure')) return '#5C8A4F';
-  return '#F4B400';
+  return '#1B7BCB';               // null = côte ouverte sur la mer, même couleur que affaires maritimes
 }
 
 /* === Érosion par commune : trait de côte coloré par recul Cerema ===
@@ -2941,7 +2943,10 @@ function typeToColor(t) {
 const erosionLayer = L.geoJSON(null, {
   style: f => {
     const r = f.properties._reculCerema || 0;
-    return { color: erosionColor(r), weight: 4, opacity: 0.85 };
+    return {
+      color: erosionColor(r), weight: 3, opacity: 0.9,
+      fill: false, lineCap: 'butt', lineJoin: 'round'
+    };
   },
   onEachFeature: (f, layer) => {
     layer.bindTooltip(
