@@ -331,7 +331,11 @@ img { display: block; max-width: 100%; }
   opacity: 0.6; margin-bottom: 8px;
 }
 .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.legend-line { width: 16px; height: 2px; flex-shrink: 0; }
+.legend-line-thick { height: 4px; }
+.legend-line-black { height: 4px; }
+.legend-square { width: 14px; height: 14px; border: 1px solid; border-radius: 2px; flex-shrink: 0; }
 .legend-row:last-child { margin-bottom: 0; }
 
 .map-controls {
@@ -1872,12 +1876,21 @@ input.imm-range::-moz-range-thumb {
             <input type="text" id="mapSearch" placeholder="Rechercher une commune, un département…">
           </div>
           <div class="map-legend">
-            <div class="legend-title">Niveau d'exposition</div>
+            <div class="legend-title">Niveau d'exposition · commune</div>
             <div class="legend-row"><span class="legend-dot" style="background:#5C8A4F"></span>Faible</div>
             <div class="legend-row"><span class="legend-dot" style="background:#F4B400"></span>Modéré</div>
             <div class="legend-row"><span class="legend-dot" style="background:#E86E55"></span>Élevé</div>
             <div class="legend-row"><span class="legend-dot" style="background:#B84028"></span>Critique</div>
-            <div class="legend-row" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(246,241,231,0.1);font-size:9px;opacity:.6;letter-spacing:.04em;">zoom ≥ 9 pour charger trait de côte / ouvrages BDTOPO</div>
+            <div class="legend-title" style="margin-top:10px;">Couches superposées</div>
+            <div class="legend-row"><span class="legend-line" style="background:#1B7BCB"></span>Trait de côte · limite affaires maritimes</div>
+            <div class="legend-row"><span class="legend-line" style="background:#E86E55"></span>Trait de côte · limite transversale mer</div>
+            <div class="legend-row"><span class="legend-line" style="background:#5C8A4F"></span>Trait de côte · limite salure des eaux</div>
+            <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#7B0000"></span>Recul érosion Cerema ≥ 3 m/an</div>
+            <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#E86E55"></span>Recul érosion 1-2 m/an</div>
+            <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#5C8A4F"></span>Recul érosion &lt; 0,5 m/an</div>
+            <div class="legend-row"><span class="legend-line legend-line-black" style="background:#1F1F1F"></span>Ouvrage côtier BDTOPO (digue, perré, quai)</div>
+            <div class="legend-row"><span class="legend-square" style="background:rgba(60,163,195,0.4); border-color:#3CA3C3"></span>Zone basse · submersion (PLU)</div>
+            <div class="legend-row" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(246,241,231,0.1);font-size:9px;opacity:.6;letter-spacing:.04em;">zoom ≥ 9 pour charger les couches BDTOPO</div>
           </div>
         </div>
 
@@ -2938,7 +2951,10 @@ const submersionLayer = L.geoJSON(null, {
 
 /* === Helpers WFS dynamiques (chargement par bbox) === */
 async function fetchWfsFeatures(typename, bbox, count = 600, properties = null) {
-  const bboxStr = `${bbox.south},${bbox.west},${bbox.north},${bbox.east},EPSG:4326`;
+  // WFS IGN attend lon,lat,lon,lat (west,south,east,north) en EPSG:4326,
+  // contre la spec OGC stricte qui prescrit lat,lon. Tester d'autres ordres
+  // renvoie HTTP 200 mais 0 features → la couche reste vide.
+  const bboxStr = `${bbox.west},${bbox.south},${bbox.east},${bbox.north},EPSG:4326`;
   const propStr = properties ? `&PROPERTYNAME=${properties.join(',')}` : '';
   const url = `https://data.geopf.fr/wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=${typename}&BBOX=${bboxStr}&OUTPUTFORMAT=application/json&COUNT=${count}&SRSNAME=EPSG:4326${propStr}`;
   try {
