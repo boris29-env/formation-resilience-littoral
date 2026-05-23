@@ -4729,9 +4729,15 @@ lblRight.textContent = ORTHO_LAYERS.current.name;
 compHost.appendChild(lblRight);
 
 function applyCompClip() {
-  const lc = compLeftLayer && compLeftLayer.getContainer && compLeftLayer.getContainer();
+  // On clippe UNIQUEMENT la couche du dessus (rightLayer, ajoutée en second
+  // donc au-dessus de leftLayer dans le tile-pane). Là où elle est visible
+  // (à droite du handle), on voit l'ortho actuelle. Là où elle est masquée
+  // (à gauche), on voit l'ortho historique en dessous. Si on clippait aussi
+  // leftLayer, on retirerait une couche de fond et le map devenait noir.
   const rc = compRightLayer && compRightLayer.getContainer && compRightLayer.getContainer();
-  if (lc) lc.style.clipPath = `inset(0 ${100 - compPct}% 0 0)`;
+  const lc = compLeftLayer  && compLeftLayer.getContainer  && compLeftLayer.getContainer();
+  // S'assure que leftLayer n'a aucun clip (utile après rebuild)
+  if (lc) lc.style.clipPath = 'none';
   if (rc) rc.style.clipPath = `inset(0 0 0 ${compPct}%)`;
   compHandle.style.left = `calc(${compPct}% - 2px)`;
   lblLeft.style.display  = compPct > 8  ? '' : 'none';
