@@ -4848,12 +4848,6 @@ document.getElementById('compCommunePicker').addEventListener('change', e => {
   if (c) compSetView(c);
 });
 
-setTimeout(() => compMap.invalidateSize(), 300);
-window.addEventListener('resize', () => compMap.invalidateSize());
-const compObserver = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) compMap.invalidateSize(); });
-}, { threshold: 0.05 });
-compObserver.observe(document.getElementById('compMap'));
 
 /* =========================================================
    11 · NAV active state
