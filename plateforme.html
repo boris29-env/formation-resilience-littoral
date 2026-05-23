@@ -337,6 +337,10 @@ img { display: block; max-width: 100%; }
 .legend-line-black { height: 4px; }
 .legend-square { width: 14px; height: 14px; border: 1px solid; border-radius: 2px; flex-shrink: 0; }
 .legend-row:last-child { margin-bottom: 0; }
+/* Légende dynamique : chaque groupe est masqué par défaut, affiché
+   uniquement quand la couche correspondante est active */
+.legend-group { display: none; }
+.legend-group.active { display: block; }
 
 .map-controls {
   position: absolute; bottom: 16px; left: 16px; right: 16px;
@@ -1876,20 +1880,43 @@ input.imm-range::-moz-range-thumb {
             <input type="text" id="mapSearch" placeholder="Rechercher une commune, un département…">
           </div>
           <div class="map-legend">
-            <div class="legend-title">Niveau d'exposition · commune</div>
-            <div class="legend-row"><span class="legend-dot" style="background:#5C8A4F"></span>Faible</div>
-            <div class="legend-row"><span class="legend-dot" style="background:#F4B400"></span>Modéré</div>
-            <div class="legend-row"><span class="legend-dot" style="background:#E86E55"></span>Élevé</div>
-            <div class="legend-row"><span class="legend-dot" style="background:#B84028"></span>Critique</div>
-            <div class="legend-title" style="margin-top:10px;">Couches superposées</div>
-            <div class="legend-row"><span class="legend-line" style="background:#1B7BCB"></span>Trait de côte · limite affaires maritimes</div>
-            <div class="legend-row"><span class="legend-line" style="background:#E86E55"></span>Trait de côte · limite transversale mer</div>
-            <div class="legend-row"><span class="legend-line" style="background:#5C8A4F"></span>Trait de côte · limite salure des eaux</div>
-            <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#7B0000"></span>Recul érosion Cerema ≥ 3 m/an</div>
-            <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#E86E55"></span>Recul érosion 1-2 m/an</div>
-            <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#5C8A4F"></span>Recul érosion &lt; 0,5 m/an</div>
-            <div class="legend-row"><span class="legend-line legend-line-black" style="background:#1F1F1F"></span>Ouvrage côtier BDTOPO (digue, perré, quai)</div>
-            <div class="legend-row"><span class="legend-square" style="background:rgba(60,163,195,0.4); border-color:#3CA3C3"></span>Zone basse · submersion (PLU)</div>
+            <div class="legend-group" data-layer="lyrCommunes">
+              <div class="legend-title">Niveau d'exposition · commune</div>
+              <div class="legend-row"><span class="legend-dot" style="background:#5C8A4F"></span>Faible</div>
+              <div class="legend-row"><span class="legend-dot" style="background:#F4B400"></span>Modéré</div>
+              <div class="legend-row"><span class="legend-dot" style="background:#E86E55"></span>Élevé</div>
+              <div class="legend-row"><span class="legend-dot" style="background:#B84028"></span>Critique</div>
+            </div>
+            <div class="legend-group" data-layer="lyrCote">
+              <div class="legend-title" style="margin-top:10px;">Trait de côte (BDTOPO Lidar)</div>
+              <div class="legend-row"><span class="legend-line" style="background:#1B7BCB"></span>Limite affaires maritimes</div>
+              <div class="legend-row"><span class="legend-line" style="background:#E86E55"></span>Limite transversale mer</div>
+              <div class="legend-row"><span class="legend-line" style="background:#5C8A4F"></span>Limite salure des eaux</div>
+            </div>
+            <div class="legend-group" data-layer="lyrErosion">
+              <div class="legend-title" style="margin-top:10px;">Recul érosion · Cerema</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#7B0000"></span>≥ 3 m/an · critique</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#B84028"></span>2-3 m/an · sévère</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#E86E55"></span>1-2 m/an · marqué</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#F4B400"></span>0,5-1 m/an · modéré</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#5C8A4F"></span>&lt; 0,5 m/an · faible</div>
+            </div>
+            <div class="legend-group" data-layer="lyrOuvrages">
+              <div class="legend-title" style="margin-top:10px;">Ouvrages côtiers · BDTOPO</div>
+              <div class="legend-row"><span class="legend-line legend-line-black" style="background:#1F1F1F"></span>Digue · perré · jetée · quai</div>
+            </div>
+            <div class="legend-group" data-layer="lyrSubmersion">
+              <div class="legend-title" style="margin-top:10px;">Submersion · PLU</div>
+              <div class="legend-row"><span class="legend-square" style="background:rgba(60,163,195,0.4); border-color:#3CA3C3"></span>Zone basse submersible (PLU)</div>
+            </div>
+            <div class="legend-group" data-layer="lyrConservatoire">
+              <div class="legend-title" style="margin-top:10px;">Conservatoire du littoral</div>
+              <div class="legend-row"><span class="legend-square" style="background:rgba(92,138,79,0.4); border-color:#5C8A4F"></span>Périmètre protégé</div>
+            </div>
+            <div class="legend-group" data-layer="lyrPPR">
+              <div class="legend-title" style="margin-top:10px;">PPRN/PPRL · Géorisques</div>
+              <div class="legend-row"><span class="legend-square" style="background:rgba(232,110,85,0.4); border-color:#E86E55"></span>Plan de prévention des risques</div>
+            </div>
             <div class="legend-row" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(246,241,231,0.1);font-size:9px;opacity:.6;letter-spacing:.04em;">zoom ≥ 9 pour charger les couches BDTOPO</div>
           </div>
         </div>
@@ -2992,18 +3019,30 @@ async function refreshDynamicLayers() {
     if (ltm && ltm.features) {
       traitCoteLayer.clearLayers();
       traitCoteLayer.addData(ltm);
-      // Coloration érosion : annote chaque feature avec recul de la commune la plus proche
-      const erosionData = { type: 'FeatureCollection', features: [] };
-      ltm.features.forEach(f => {
-        const g = f.geometry;
-        if (!g) return;
-        // Prend le premier point de la ligne
-        const c = (g.type === 'LineString' ? g.coordinates[0] : g.coordinates[0][0]);
-        const com = nearestCommuneRetreat(c[1], c[0]);
-        f.properties._reculCerema = com ? com.retreat : 0;
-        f.properties._commune = com ? com.nom : '';
-        erosionData.features.push(f);
-      });
+      // Coloration érosion : SEULEMENT le vrai trait de côte
+      // (= "Limite des affaires maritimes"). On exclut les limites de
+      // salure des eaux (estuaires/rivières) et limites transversales
+      // (admin) qui ne sont pas des zones d'évolution du trait de côte.
+      const erosionData = {
+        type: 'FeatureCollection',
+        features: ltm.features
+          .filter(f => (f.properties.type_de_limite || '') === 'Limite des affaires maritimes')
+          .map(f => {
+            const g = f.geometry;
+            if (!g) return null;
+            const c = (g.type === 'LineString' ? g.coordinates[0] : g.coordinates[0][0]);
+            const com = nearestCommuneRetreat(c[1], c[0]);
+            return {
+              ...f,
+              properties: {
+                ...f.properties,
+                _reculCerema: com ? com.retreat : 0,
+                _commune: com ? com.nom : ''
+              }
+            };
+          })
+          .filter(Boolean)
+      };
       erosionLayer.clearLayers();
       erosionLayer.addData(erosionData);
     }
@@ -3074,31 +3113,49 @@ COMMUNES.forEach(c => {
   markers[c.id] = m;
 });
 
+/* Met à jour la légende : chaque groupe .legend-group[data-layer="lyrXxx"]
+   est affiché uniquement si la checkbox lyrXxx est cochée. */
+function updateLegend() {
+  document.querySelectorAll('.legend-group').forEach(g => {
+    const id = g.dataset.layer;
+    const cb = document.getElementById(id);
+    g.classList.toggle('active', cb && cb.checked);
+  });
+}
 document.getElementById('lyrCommunes').addEventListener('change', e => {
   Object.values(markers).forEach(m => e.target.checked ? m.addTo(map) : m.remove());
+  updateLegend();
 });
 document.getElementById('lyrCote').addEventListener('change', e => {
   if (e.target.checked) { traitCoteLayer.addTo(map); refreshDynamicLayers(); }
   else { traitCoteLayer.remove(); }
+  updateLegend();
 });
 document.getElementById('lyrErosion').addEventListener('change', e => {
   if (e.target.checked) { erosionLayer.addTo(map); refreshDynamicLayers(); }
   else { erosionLayer.remove(); }
+  updateLegend();
 });
 document.getElementById('lyrSubmersion').addEventListener('change', e => {
   if (e.target.checked) { submersionLayer.addTo(map); refreshDynamicLayers(); }
   else { submersionLayer.remove(); }
+  updateLegend();
 });
 document.getElementById('lyrOuvrages').addEventListener('change', e => {
   if (e.target.checked) { ouvragesLayer.addTo(map); refreshDynamicLayers(); }
   else { ouvragesLayer.remove(); }
+  updateLegend();
 });
 document.getElementById('lyrConservatoire').addEventListener('change', e => {
   if (e.target.checked) conservatoireLayer.addTo(map); else conservatoireLayer.remove();
+  updateLegend();
 });
 document.getElementById('lyrPPR').addEventListener('change', e => {
   if (e.target.checked) pprLayer.addTo(map); else pprLayer.remove();
+  updateLegend();
 });
+// État initial : reflète la légende selon les cases cochées au load
+updateLegend();
 
 /* Sélecteur de fond carto */
 const baseControl = L.control({ position: 'topleft' });
