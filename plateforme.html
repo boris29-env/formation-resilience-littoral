@@ -1070,6 +1070,41 @@ input.imm-range::-moz-range-thumb {
   padding: 60px 28px 80px;
   max-width: none;
 }
+.scen-legend {
+  display: flex; flex-wrap: wrap; gap: 24px;
+  margin-top: 22px;
+  padding: 14px 18px;
+  background: var(--foam);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 12px;
+}
+.scen-legend .leg-group {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+  flex: 1; min-width: 320px;
+}
+.scen-legend .leg-title {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-2); opacity: 0.7;
+  margin-right: 4px; min-width: 100%;
+}
+.leg-swatch {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--ink-2);
+}
+.leg-swatch i {
+  display: inline-block; width: 14px; height: 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(11,27,43,0.15);
+}
+.vig-compass {
+  position: absolute;
+  right: 14px; bottom: 14px;
+  width: 56px; height: 56px;
+  pointer-events: none;
+}
+.vig-compass svg { display: block; }
 .scen-grid {
   max-width: 1400px;
   margin: 32px auto 0;
@@ -2139,17 +2174,30 @@ input.imm-range::-moz-range-thumb {
 <section id="scenarios" class="scenarios-cmp">
   <div class="section-head" style="max-width:1400px;margin-left:auto;margin-right:auto;">
     <div class="section-eyebrow">03c · Cartes prospectives 2100 · 3 scénarios IPCC AR6</div>
-    <h2 class="section-title">Là où la <em>mer reprend</em> le territoire,<br>vu d'avion.</h2>
+    <h2 class="section-title">Vue d'avion :<br>la <em>mer reprend</em> le territoire.</h2>
     <p class="section-lead">
-      Vue de dessus du même secteur sous trois trajectoires climatiques.
-      <strong style="color:#1f4a5a">Bleu sombre</strong> = mer actuelle,
-      <strong style="color:#b88a4a">beige/vert</strong> = terre actuelle,
-      <strong style="color:#3CA3C3">bleu clair</strong> = zones nouvellement
-      submergées en 2100, <strong style="color:#B84028">rouge</strong> = zones
-      perdues par recul morphologique (Bruun), <strong style="color:#5C8A4F">vert
-      pâle</strong> = zones sauvées par un ouvrage côtier BD TOPO. Trait noir
-      fin = côte d'aujourd'hui, trait coral épais = côte en 2100.
+      Même secteur, trois trajectoires climatiques. Vue cartographique de
+      dessus — pas un rendu 3D. À gauche : l'état actuel en couleurs de fond.
+      En surimpression colorée : ce qui change en 2100 selon le scénario.
     </p>
+    <div class="scen-legend">
+      <div class="leg-group">
+        <span class="leg-title">État actuel (fond)</span>
+        <span class="leg-swatch"><i style="background:#0e2a3a"></i>Mer profonde</span>
+        <span class="leg-swatch"><i style="background:#1f4a5a"></i>Mer côtière</span>
+        <span class="leg-swatch"><i style="background:#e8d7a4"></i>Plage / dune basse</span>
+        <span class="leg-swatch"><i style="background:#c9b478"></i>Arrière-dune</span>
+        <span class="leg-swatch"><i style="background:#8a9d6a"></i>Relief / forêt</span>
+      </div>
+      <div class="leg-group">
+        <span class="leg-title">Projection 2100 (surimpression)</span>
+        <span class="leg-swatch"><i style="background:#3CA3C3"></i>Nouvellement submergé · sea rise</span>
+        <span class="leg-swatch"><i style="background:#B84028"></i>Perdu par recul · Bruun</span>
+        <span class="leg-swatch"><i style="background:#5C8A4F"></i>Sauvé par ouvrage · BDTOPO</span>
+        <span class="leg-swatch"><i style="border:1.5px solid #111;background:transparent;height:0;border-radius:0;width:14px;"></i>Côte aujourd'hui</span>
+        <span class="leg-swatch"><i style="border:2.5px solid #E86E55;background:transparent;height:0;border-radius:0;width:14px;"></i>Côte en 2100</span>
+      </div>
+    </div>
   </div>
   <div class="scen-grid" id="scenGrid">
     <div class="scen-vignette" data-key="ssp126">
@@ -2157,6 +2205,7 @@ input.imm-range::-moz-range-thumb {
       <div class="vig-overlay">
         <div class="vig-label" id="vigLabel0"></div>
         <div class="vig-stats" id="vigStats0"></div>
+        <div class="vig-compass" id="vigCompass0"></div>
       </div>
     </div>
     <div class="scen-vignette" data-key="ssp245">
@@ -2164,6 +2213,7 @@ input.imm-range::-moz-range-thumb {
       <div class="vig-overlay">
         <div class="vig-label" id="vigLabel1"></div>
         <div class="vig-stats" id="vigStats1"></div>
+        <div class="vig-compass" id="vigCompass1"></div>
       </div>
     </div>
     <div class="scen-vignette" data-key="ssp585">
@@ -2171,6 +2221,7 @@ input.imm-range::-moz-range-thumb {
       <div class="vig-overlay">
         <div class="vig-label" id="vigLabel2"></div>
         <div class="vig-stats" id="vigStats2"></div>
+        <div class="vig-compass" id="vigCompass2"></div>
       </div>
     </div>
   </div>
@@ -4682,6 +4733,27 @@ function rebuildVignettes(c) {
       <span>${lost}/${t3d.buildings.length} bâtis</span>
       <span>${haNew.toFixed(0)} ha perdus</span>
       ${valM !== null ? `<span class="value">${valM} M€</span>` : ''}
+    `;
+
+    // Rose des vents : Nord en haut + flèche MER dans la direction seaward.
+    // Dans la grille canvas, x = +est et y = +sud (car Z monte vers le sud
+    // dans le système 3D). Angle dans le SVG (0° = est, 90° = sud) :
+    const seaAngleRad = t3d.shorelineOk
+      ? Math.atan2(t3d.seawardZ, t3d.seawardX) : Math.PI; // défaut ouest
+    const seaAngleDeg = (seaAngleRad * 180 / Math.PI).toFixed(0);
+    document.getElementById('vigCompass' + vi).innerHTML = `
+      <svg viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="28" cy="28" r="25" fill="rgba(6,23,38,0.78)" stroke="rgba(246,241,231,0.4)" stroke-width="1"/>
+        <text x="28" y="11" text-anchor="middle" fill="#f6f1e7" font-size="9" font-weight="700" font-family="JetBrains Mono">N</text>
+        <line x1="28" y1="28" x2="28" y2="13" stroke="#f6f1e7" stroke-width="1.5"/>
+        <g transform="rotate(${seaAngleDeg} 28 28)">
+          <line x1="28" y1="28" x2="48" y2="28" stroke="#ff4f3a" stroke-width="2.5"/>
+          <polygon points="48,28 42,24 42,32" fill="#ff4f3a"/>
+          <text x="50" y="28" fill="#ff4f3a" font-size="8" font-weight="700"
+                font-family="JetBrains Mono" text-anchor="start" dominant-baseline="middle"
+                transform="rotate(${-seaAngleDeg} 50 28)">MER</text>
+        </g>
+      </svg>
     `;
   });
 }
