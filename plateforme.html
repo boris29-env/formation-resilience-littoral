@@ -3019,14 +3019,19 @@ async function refreshDynamicLayers() {
     if (ltm && ltm.features) {
       traitCoteLayer.clearLayers();
       traitCoteLayer.addData(ltm);
-      // Coloration érosion : SEULEMENT le vrai trait de côte
-      // (= "Limite des affaires maritimes"). On exclut les limites de
-      // salure des eaux (estuaires/rivières) et limites transversales
-      // (admin) qui ne sont pas des zones d'évolution du trait de côte.
+      // Coloration érosion : on garde le vrai trait de côte (segments
+      // sans type spécifique = côte ouverte sur la mer, ou explicitement
+      // "Limite des affaires maritimes"). On EXCLUT les "Limite de
+      // salure des eaux" (estuaires/rivières) et "Limite transversale
+      // de la mer" (admin), qui ne sont pas des zones d'évolution.
       const erosionData = {
         type: 'FeatureCollection',
         features: ltm.features
-          .filter(f => (f.properties.type_de_limite || '') === 'Limite des affaires maritimes')
+          .filter(f => {
+            const t = f.properties.type_de_limite;
+            if (t === null || t === undefined || t === '') return true;
+            return t === 'Limite des affaires maritimes';
+          })
           .map(f => {
             const g = f.geometry;
             if (!g) return null;
