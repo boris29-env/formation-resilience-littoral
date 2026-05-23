@@ -4699,6 +4699,9 @@ compSetView(COMMUNES.find(c => c.insee === '33514'));
 
 let compLeftLayer  = makeOrthoTileLayer('1950-1965').addTo(compMap);
 let compRightLayer = makeOrthoTileLayer('current').addTo(compMap);
+// Force z-index : rightLayer doit être au-dessus pour que le clip révèle leftLayer derrière
+compLeftLayer.setZIndex(10);
+compRightLayer.setZIndex(20);
 
 let compPct = 50; // position du handle, en pourcentage de la largeur map
 
@@ -4779,11 +4782,13 @@ function rebuildOrthoLayer(side, key) {
     lblLeft.textContent = ORTHO_LAYERS[key].name;
     if (compLeftLayer) compMap.removeLayer(compLeftLayer);
     compLeftLayer = makeOrthoTileLayer(key).addTo(compMap);
+    compLeftLayer.setZIndex(10);
     compLeftLayer.on('load', applyCompClip);
   } else {
     lblRight.textContent = ORTHO_LAYERS[key].name;
     if (compRightLayer) compMap.removeLayer(compRightLayer);
     compRightLayer = makeOrthoTileLayer(key).addTo(compMap);
+    compRightLayer.setZIndex(20);
     compRightLayer.on('load', applyCompClip);
   }
   setTimeout(applyCompClip, 100);
