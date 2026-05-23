@@ -2859,16 +2859,20 @@ const baseLayers = {
 };
 baseLayers.plan.addTo(map);
 
-/* === COUCHES OFFICIELLES WMS (overlays toggleables) === */
+/* === COUCHES OFFICIELLES WMS (overlays toggleables) ===
+   Note IGN : le serveur WMS-V refuse STYLES vide. Il faut envoyer
+   le nom du style `default-style-<LayerName>` sinon HTTP 403. */
 // PPR risques naturels (Géoplateforme)
 const pprLayer = L.tileLayer.wms('https://data.geopf.fr/wms-v/ows?', {
   layers: 'Patrinat_PPRNN_France',
+  styles: 'default-style-Patrinat_PPRNN_France',
   format: 'image/png', transparent: true, version: '1.3.0',
   opacity: 0.55, attribution: '© DGPR · Géorisques'
 });
 // Conservatoire du littoral
 const conservatoireLayer = L.tileLayer.wms('https://data.geopf.fr/wms-v/ows?', {
   layers: 'CONSERVATOIRE_LITTORAL.PERIMETRES',
+  styles: 'default-style-CONSERVATOIRE_LITTORAL.PERIMETRES',
   format: 'image/png', transparent: true, version: '1.3.0',
   opacity: 0.65, attribution: '© Conservatoire du littoral'
 });
@@ -2961,6 +2965,7 @@ async function refreshDynamicLayers() {
     traitCoteLayer.clearLayers();
     erosionLayer.clearLayers();
     ouvragesLayer.clearLayers();
+    submersionLayer.clearLayers();
     return;
   }
   const bbox = { south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() };
@@ -3004,6 +3009,36 @@ async function refreshDynamicLayers() {
       ouvragesLayer.addData(filtered);
     }
   }
+
+  // Submersion : récupère prescription-surf via APIcarto GPU dans la bbox visible
+  // Filtre sur libellé contenant submersion / inondation / risque
+  if (map.hasLayer(submersionLayer)) {
+    const geom = JSON.stringify({
+      type: 'Polygon',
+      coordinates: [[
+        [bbox.west, bbox.south],
+        [bbox.east, bbox.south],
+        [bbox.east, bbox.north],
+        [bbox.west, bbox.north],
+        [bbox.west, bbox.south]
+      ]]
+    });
+    try {
+      const r = await fetch(`https://apicarto.ign.fr/api/gpu/prescription-surf?geom=${encodeURIComponent(geom)}`);
+      if (r.ok) {
+        const gj = await r.json();
+        const filtered = {
+          type: 'FeatureCollection',
+          features: (gj.features || []).filter(f => {
+            const l = (f.properties.libelle || '').toLowerCase();
+            return l.includes('submersion') || l.includes('inond') || l.includes('aléa') || l.includes('alea');
+          })
+        };
+        submersionLayer.clearLayers();
+        submersionLayer.addData(filtered);
+      }
+    } catch (e) { /* ignore */ }
+  }
 }
 let _refreshTimer = null;
 function debouncedRefresh() {
@@ -3035,7 +3070,7 @@ document.getElementById('lyrErosion').addEventListener('change', e => {
   else { erosionLayer.remove(); }
 });
 document.getElementById('lyrSubmersion').addEventListener('change', e => {
-  if (e.target.checked) { submersionLayer.addTo(map); }
+  if (e.target.checked) { submersionLayer.addTo(map); refreshDynamicLayers(); }
   else { submersionLayer.remove(); }
 });
 document.getElementById('lyrOuvrages').addEventListener('change', e => {
