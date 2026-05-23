@@ -3543,17 +3543,33 @@ async function loadCommune3D(c) {
     for (let i = 0; i < points.length; i += BATCH) batches.push([i, points.slice(i, i + BATCH)]);
     let done = 0;
 
-    // Limite de concurrence : IGN altimétrie renvoie 429 au-delà de ~4 requêtes
-    // simultanées. On utilise un pool de workers + retry exponentiel sur 429.
+    // Rate-limit IGN altimétrie : très strict (au-delà de ~2 connexions simultanées
+    // ou ~3 req/s les requêtes sont rejetées 429). Pool de 2 workers + délai
+    // inter-requête + backoff exponentiel sur 429/503. Un délai global force le
+    // serveur à se rétablir quand on rebondit.
     const sleep = ms => new Promise(r => setTimeout(r, ms));
+    let rateLimitUntil = 0;            // timestamp ms avant lequel on attend
     async function fetchBatch([offset, batch], attempt = 0) {
+      // Respecte le délai global imposé par les 429 récents
+      const waitGlobal = rateLimitUntil - Date.now();
+      if (waitGlobal > 0) await sleep(waitGlobal);
+
       const lons = batch.map(p => p[0].toFixed(6)).join('|');
       const lats = batch.map(p => p[1].toFixed(6)).join('|');
       const url = `https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json?lon=${lons}&lat=${lats}&zonly=true&resource=ign_rge_alti_wld`;
-      const r = await fetch(url);
+      let r;
+      try { r = await fetch(url); }
+      catch (e) {
+        if (attempt >= 6) throw e;
+        await sleep(1000 * Math.pow(1.7, attempt) + Math.random() * 500);
+        return fetchBatch([offset, batch], attempt + 1);
+      }
       if (r.status === 429 || r.status === 503) {
-        if (attempt >= 5) throw new Error(`IGN altimétrie ${r.status} après ${attempt+1} tentatives`);
-        await sleep(700 * Math.pow(1.7, attempt) + Math.random() * 400);
+        if (attempt >= 8) throw new Error(`IGN altimétrie ${r.status} (≥${attempt+1} tentatives)`);
+        const wait = 1500 * Math.pow(1.6, attempt) + Math.random() * 800;
+        rateLimitUntil = Math.max(rateLimitUntil, Date.now() + wait); // tous les workers attendent
+        showLoader(`MNT IGN · rate-limit, pause ${(wait/1000).toFixed(1)}s…`);
+        await sleep(wait);
         return fetchBatch([offset, batch], attempt + 1);
       }
       if (!r.ok) throw new Error('IGN altimétrie ' + r.status);
@@ -3561,9 +3577,11 @@ async function loadCommune3D(c) {
       j.elevations.forEach((z, k) => { elev[offset + k] = (z === undefined || z === null) ? 0 : z; });
       done++;
       showLoader(`MNT IGN · ${done}/${batches.length} blocs…`);
+      // Petit délai entre requêtes du même worker pour soulager le serveur
+      await sleep(120);
     }
 
-    const CONCURRENCY = 4;
+    const CONCURRENCY = 2;
     const queue = batches.slice();
     async function worker() {
       while (queue.length) {
@@ -4583,15 +4601,31 @@ document.getElementById('compCommunePicker').innerHTML = COMMUNES
 
 /* === Plugin L.control.sideBySide (digidem/leaflet-side-by-side)
    Un seul Leaflet map, deux tileLayers, le plugin gère le clip-path
-   sur chaque container de layer + le séparateur draggable. Approche
-   éprouvée et largement utilisée. */
+   sur chaque container de layer + le séparateur draggable. */
 const compMap = L.map('compMap', { zoomControl: true, attributionControl: true });
 compMap.attributionControl.setPrefix('');
+
+// ORDRE CRITIQUE : setView D'ABORD, puis layers, puis sideBySide.
+// Si on ajoute sideBySide avant que les layers aient un container rendu,
+// le plugin crashe sur getContainer().style. Un setView force le rendu initial.
+function compSetView(c) {
+  compMap.setView([c.lat, c.lng], 15);
+}
+compSetView(COMMUNES.find(c => c.insee === '33514'));
 
 let compLeftLayer  = makeOrthoTileLayer('1950-1965').addTo(compMap);
 let compRightLayer = makeOrthoTileLayer('current').addTo(compMap);
 
-const sbsCtrl = L.control.sideBySide(compLeftLayer, compRightLayer).addTo(compMap);
+// Légère pause pour laisser Leaflet créer les containers des layers
+// avant d'attacher le contrôle de split (sinon getContainer() = undefined)
+let sbsCtrl = null;
+function attachSideBySide() {
+  if (!compLeftLayer.getContainer() || !compRightLayer.getContainer()) {
+    return setTimeout(attachSideBySide, 100);
+  }
+  sbsCtrl = L.control.sideBySide(compLeftLayer, compRightLayer).addTo(compMap);
+}
+attachSideBySide();
 
 // Labels overlay
 const compShell = document.getElementById('compMap');
@@ -4607,21 +4641,17 @@ lblRight.style.right = '20px';
 lblRight.textContent = ORTHO_LAYERS.current.name;
 compShell.appendChild(lblRight);
 
-function compSetView(c) {
-  compMap.setView([c.lat, c.lng], 15);
-}
-
 function rebuildOrthoLayer(side, key) {
   if (side === 'left') {
     lblLeft.textContent = ORTHO_LAYERS[key].name;
     if (compLeftLayer) compMap.removeLayer(compLeftLayer);
     compLeftLayer = makeOrthoTileLayer(key).addTo(compMap);
-    sbsCtrl.setLeftLayers(compLeftLayer);
+    if (sbsCtrl) setTimeout(() => sbsCtrl.setLeftLayers(compLeftLayer), 50);
   } else {
     lblRight.textContent = ORTHO_LAYERS[key].name;
     if (compRightLayer) compMap.removeLayer(compRightLayer);
     compRightLayer = makeOrthoTileLayer(key).addTo(compMap);
-    sbsCtrl.setRightLayers(compRightLayer);
+    if (sbsCtrl) setTimeout(() => sbsCtrl.setRightLayers(compRightLayer), 50);
   }
 }
 
@@ -4632,7 +4662,6 @@ document.getElementById('compCommunePicker').addEventListener('change', e => {
   if (c) compSetView(c);
 });
 
-compSetView(COMMUNES.find(c => c.insee === '33514'));
 setTimeout(() => compMap.invalidateSize(), 300);
 window.addEventListener('resize', () => compMap.invalidateSize());
 const compObserver = new IntersectionObserver(entries => {
