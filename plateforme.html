@@ -1894,12 +1894,14 @@ input.imm-range::-moz-range-thumb {
               <div class="legend-row"><span class="legend-line" style="background:#5C8A4F"></span>Limite salure des eaux</div>
             </div>
             <div class="legend-group" data-layer="lyrErosion">
-              <div class="legend-title" style="margin-top:10px;">Recul érosion · Cerema</div>
-              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#7B0000"></span>≥ 3 m/an · critique</div>
-              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#B84028"></span>2-3 m/an · sévère</div>
-              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#E86E55"></span>1-2 m/an · marqué</div>
-              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#F4B400"></span>0,5-1 m/an · modéré</div>
-              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#5C8A4F"></span>&lt; 0,5 m/an · faible</div>
+              <div class="legend-title" style="margin-top:10px;">Indicateur érosion · Cerema (taux)</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#7B0000"></span>Recul ≥ 3 m/an</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#B84028"></span>Recul 1,5-3 m/an</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#E86E55"></span>Recul 0,5-1,5 m/an</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#F4B400"></span>Stable (±0,5 m/an)</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#7FB069"></span>Accrétion 0,5-1,5 m/an</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#2A8C8C"></span>Accrétion ≥ 1,5 m/an</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#9aa0a6"></span>Pas de donnée Cerema</div>
             </div>
             <div class="legend-group" data-layer="lyrOuvrages">
               <div class="legend-title" style="margin-top:10px;">Ouvrages côtiers · BDTOPO</div>
@@ -2580,7 +2582,7 @@ input.imm-range::-moz-range-thumb {
           <li><a href="https://data.geopf.fr/wfs" target="_blank">WFS Géoplateforme</a> · BD TOPO® bâtiment (hauteur, altitude), limite_terre_mer, construction_lineaire, AdminExpress</li>
           <li><a href="https://apicarto.ign.fr/api/doc/" target="_blank">APIcarto IGN</a> · cadastre commune, PLU prescriptions risques</li>
           <li><a href="https://apidf-preprod.cerema.fr/dvf_opendata/" target="_blank">DVF Cerema</a> · mutations foncières 2020-2024 (prix, surface, type bien)</li>
-          <li><a href="https://www.cerema.fr/fr/actualites/indicateur-national-erosion-cotiere" target="_blank">Cerema</a> · indicateur d'érosion 2016/2022</li>
+          <li><a href="https://www.data.gouv.fr/fr/datasets/indicateur-national-de-lerosion-cotiere-1/" target="_blank">Cerema</a> · indicateur national d'érosion (taux m/an, prod. 06/2018) embarqué en statique</li>
           <li><a href="https://www.georisques.gouv.fr/" target="_blank">Géorisques</a> · PPRN, Cat'Nat, PPRNN</li>
           <li><a href="https://www.ipcc.ch/report/ar6/wg1/" target="_blank">IPCC AR6 WG1</a> · scénarios SSP de niveau marin</li>
         </ul>
@@ -2937,30 +2939,57 @@ function typeToColor(t) {
   return '#1B7BCB';               // null = côte ouverte sur la mer, même couleur que affaires maritimes
 }
 
-/* === Érosion par commune : trait de côte coloré par recul Cerema ===
-   Données Cerema (Indicateur national 2016, mise à jour 2022) appliquées
-   au segment de trait de côte le plus proche de chaque commune affichée. */
+/* === Indicateur national d'érosion Cerema porté sur les polylignes ===
+   Le trait de côte BDTOPO (LineString) est coloré par le taux d'évolution
+   Cerema réel (champ `taux`) du point Cerema le plus proche. */
 const erosionLayer = L.geoJSON(null, {
   style: f => {
-    const r = f.properties._reculCerema || 0;
+    const t = f.properties._tauxCerema;
     return {
-      color: erosionColor(r), weight: 3, opacity: 0.9,
+      color: erosionColor(t), weight: 3.5, opacity: 0.95,
       fill: false, lineCap: 'butt', lineJoin: 'round'
     };
   },
   onEachFeature: (f, layer) => {
-    layer.bindTooltip(
-      `<strong>${f.properties._commune || '?'}</strong><br>Recul Cerema : ${(f.properties._reculCerema || 0).toFixed(1)} m/an`,
-      { sticky: true }
-    );
+    const t = f.properties._tauxCerema;
+    const lbl = (t === null || t === undefined)
+      ? 'Donnée Cerema indisponible ici'
+      : (t < 0 ? `Recul ${Math.abs(t).toFixed(2)} m/an` : `Accrétion ${t.toFixed(2)} m/an`);
+    layer.bindTooltip(`<strong>Indicateur Cerema</strong><br>${lbl}`, { sticky: true });
   }
 });
-function erosionColor(r) {
-  if (r >= 3) return '#7B0000';
-  if (r >= 2) return '#B84028';
-  if (r >= 1) return '#E86E55';
-  if (r >= 0.5) return '#F4B400';
-  return '#5C8A4F';
+/* Couleur selon le taux Cerema signé (négatif = recul/érosion, positif = accrétion).
+   Échelle Cerema standard du QML fourni avec la donnée. */
+function erosionColor(t) {
+  if (t === null || t === undefined) return '#9aa0a6'; // gris : pas de donnée
+  if (t <= -3)   return '#7B0000'; // recul extrême
+  if (t <= -1.5) return '#B84028'; // recul fort
+  if (t <= -0.5) return '#E86E55'; // recul modéré
+  if (t <  0.5)  return '#F4B400'; // stable
+  if (t <  1.5)  return '#7FB069'; // accrétion modérée
+  return '#2A8C8C';                // accrétion forte
+}
+
+/* === Données Cerema "Indicateur national d'érosion côtière" ===
+   17 158 points (centroïdes des polygones N_evolution_trait_cote_S,
+   champ `taux` en m/an, production Cerema 06/2018), reprojetés WGS84.
+   Hébergés en statique cerema_erosion.json (402 Ko). */
+let ceremaErosionPts = null;
+fetch('cerema_erosion.json')
+  .then(r => r.ok ? r.json() : null)
+  .then(d => { ceremaErosionPts = d; })
+  .catch(() => { ceremaErosionPts = null; });
+
+function nearestCeremaTaux(lat, lng) {
+  if (!ceremaErosionPts) return null;
+  let best = null, bestD = 0.02 * 0.02; // rayon max ~2 km (en deg²), au-delà = pas de donnée
+  for (let i = 0; i < ceremaErosionPts.length; i++) {
+    const p = ceremaErosionPts[i]; // [lng, lat, taux]
+    const dx = (p[0] - lng) * 0.7, dy = p[1] - lat; // 0.7 ≈ cos(46°)
+    const d = dx*dx + dy*dy;
+    if (d < bestD) { bestD = d; best = p[2]; }
+  }
+  return best;
 }
 
 /* === Ouvrages côtiers : BDTOPO construction_lineaire (Digue, Quai) === */
@@ -3025,34 +3054,32 @@ async function refreshDynamicLayers() {
       traitCoteLayer.clearLayers();
       traitCoteLayer.addData(ltm);
       // Coloration érosion : on garde le vrai trait de côte (segments
-      // sans type spécifique = côte ouverte sur la mer, ou explicitement
-      // "Limite des affaires maritimes"). On EXCLUT les "Limite de
-      // salure des eaux" (estuaires/rivières) et "Limite transversale
-      // de la mer" (admin), qui ne sont pas des zones d'évolution.
-      const erosionData = {
-        type: 'FeatureCollection',
-        features: ltm.features
-          .filter(f => {
-            const t = f.properties.type_de_limite;
-            if (t === null || t === undefined || t === '') return true;
-            return t === 'Limite des affaires maritimes';
-          })
-          .map(f => {
-            const g = f.geometry;
-            if (!g) return null;
-            const c = (g.type === 'LineString' ? g.coordinates[0] : g.coordinates[0][0]);
-            const com = nearestCommuneRetreat(c[1], c[0]);
-            return {
-              ...f,
-              properties: {
-                ...f.properties,
-                _reculCerema: com ? com.retreat : 0,
-                _commune: com ? com.nom : ''
-              }
-            };
-          })
-          .filter(Boolean)
-      };
+      // sans type spécifique = côte ouverte, ou "Limite des affaires
+      // maritimes"). On découpe les longues lignes en tronçons courts,
+      // chacun coloré par le taux Cerema réel le plus proche → la couleur
+      // varie le long de la côte selon l'érosion locale.
+      const erosionData = { type: 'FeatureCollection', features: [] };
+      const CHUNK = 12;
+      ltm.features.forEach(f => {
+        const t = f.properties.type_de_limite;
+        if (t && t !== 'Limite des affaires maritimes') return; // exclut estuaires/admin
+        const g = f.geometry;
+        if (!g) return;
+        const lines = g.type === 'MultiLineString' ? g.coordinates : [g.coordinates];
+        lines.forEach(coords => {
+          for (let i = 0; i < coords.length - 1; i += CHUNK) {
+            const sub = coords.slice(i, Math.min(coords.length, i + CHUNK + 1));
+            if (sub.length < 2) continue;
+            const mid = sub[Math.floor(sub.length / 2)];
+            const taux = nearestCeremaTaux(mid[1], mid[0]);
+            erosionData.features.push({
+              type: 'Feature',
+              geometry: { type: 'LineString', coordinates: sub },
+              properties: { _tauxCerema: taux }
+            });
+          }
+        });
+      });
       erosionLayer.clearLayers();
       erosionLayer.addData(erosionData);
     }
