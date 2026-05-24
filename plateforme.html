@@ -3010,6 +3010,28 @@ const submersionLayer = L.geoJSON(null, {
   style: { color: '#3CA3C3', weight: 1, fillColor: '#3CA3C3', fillOpacity: 0.35 }
 });
 
+/* Découpe une polyligne pour ne garder que les portions dans l'emprise
+   (avec marge). Évite que les longues features BDTOPO qui tracent tout
+   un estuaire (ex. Gironde, 84k points) soient rendues en entier et
+   forment un "polygone" englobant la baie. Retourne un tableau de
+   sous-lignes (≥ 2 points). */
+function clipLineToBounds(coords, m) {
+  const segs = [];
+  let cur = [];
+  for (const c of coords) {
+    const inside = c[0] >= m.west && c[0] <= m.east && c[1] >= m.south && c[1] <= m.north;
+    if (inside) {
+      cur.push(c);
+    } else {
+      if (cur.length) cur.push(c); // garde le point de sortie pour ne pas couper net
+      if (cur.length >= 2) segs.push(cur);
+      cur = [];
+    }
+  }
+  if (cur.length >= 2) segs.push(cur);
+  return segs;
+}
+
 /* === Helpers WFS dynamiques (chargement par bbox) === */
 async function fetchWfsFeatures(typename, bbox, count = 600, properties = null) {
   // WFS IGN attend lon,lat,lon,lat (west,south,east,north) en EPSG:4326,
@@ -3047,39 +3069,51 @@ async function refreshDynamicLayers() {
   }
   const bbox = { south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() };
 
-  // Trait de côte
+  // Trait de côte — découpé à l'emprise visible pour ne pas tracer les
+  // estuaires entiers (effet polygone). Marge ~1 km autour de la vue.
   if (map.hasLayer(traitCoteLayer) || map.hasLayer(erosionLayer)) {
     const ltm = await fetchWfsFeatures('BDTOPO_V3:limite_terre_mer', bbox, 800);
     if (ltm && ltm.features) {
-      traitCoteLayer.clearLayers();
-      traitCoteLayer.addData(ltm);
-      // Coloration érosion : on garde le vrai trait de côte (segments
-      // sans type spécifique = côte ouverte, ou "Limite des affaires
-      // maritimes"). On découpe les longues lignes en tronçons courts,
-      // chacun coloré par le taux Cerema réel le plus proche → la couleur
-      // varie le long de la côte selon l'érosion locale.
+      const margin = {
+        west: bbox.west - 0.012, east: bbox.east + 0.012,
+        south: bbox.south - 0.012, north: bbox.north + 0.012
+      };
+      // --- Couche trait de côte (clippée) ---
+      const coteData = { type: 'FeatureCollection', features: [] };
+      // --- Couche érosion (clippée + tronçonnée + colorée par taux) ---
       const erosionData = { type: 'FeatureCollection', features: [] };
       const CHUNK = 12;
       ltm.features.forEach(f => {
         const t = f.properties.type_de_limite;
-        if (t && t !== 'Limite des affaires maritimes') return; // exclut estuaires/admin
         const g = f.geometry;
         if (!g) return;
         const lines = g.type === 'MultiLineString' ? g.coordinates : [g.coordinates];
         lines.forEach(coords => {
-          for (let i = 0; i < coords.length - 1; i += CHUNK) {
-            const sub = coords.slice(i, Math.min(coords.length, i + CHUNK + 1));
-            if (sub.length < 2) continue;
-            const mid = sub[Math.floor(sub.length / 2)];
-            const taux = nearestCeremaTaux(mid[1], mid[0]);
-            erosionData.features.push({
+          clipLineToBounds(coords, margin).forEach(seg => {
+            // trait de côte : on garde tout (sauf salure/transversale exclus
+            // sur la couche érosion seulement)
+            coteData.features.push({
               type: 'Feature',
-              geometry: { type: 'LineString', coordinates: sub },
-              properties: { _tauxCerema: taux }
+              geometry: { type: 'LineString', coordinates: seg },
+              properties: { type_de_limite: t }
             });
-          }
+            // érosion : exclut estuaires/admin
+            if (t && t !== 'Limite des affaires maritimes') return;
+            for (let i = 0; i < seg.length - 1; i += CHUNK) {
+              const sub = seg.slice(i, Math.min(seg.length, i + CHUNK + 1));
+              if (sub.length < 2) continue;
+              const mid = sub[Math.floor(sub.length / 2)];
+              erosionData.features.push({
+                type: 'Feature',
+                geometry: { type: 'LineString', coordinates: sub },
+                properties: { _tauxCerema: nearestCeremaTaux(mid[1], mid[0]) }
+              });
+            }
+          });
         });
       });
+      traitCoteLayer.clearLayers();
+      traitCoteLayer.addData(coteData);
       erosionLayer.clearLayers();
       erosionLayer.addData(erosionData);
     }
