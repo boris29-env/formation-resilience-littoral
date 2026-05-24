@@ -1889,9 +1889,7 @@ input.imm-range::-moz-range-thumb {
             </div>
             <div class="legend-group" data-layer="lyrCote">
               <div class="legend-title" style="margin-top:10px;">Trait de côte (BDTOPO Lidar)</div>
-              <div class="legend-row"><span class="legend-line" style="background:#1B7BCB"></span>Limite affaires maritimes</div>
-              <div class="legend-row"><span class="legend-line" style="background:#E86E55"></span>Limite transversale mer</div>
-              <div class="legend-row"><span class="legend-line" style="background:#5C8A4F"></span>Limite salure des eaux</div>
+              <div class="legend-row"><span class="legend-line" style="background:#1B7BCB"></span>Laisse de haute mer (plus hautes eaux)</div>
             </div>
             <div class="legend-group" data-layer="lyrErosion">
               <div class="legend-title" style="margin-top:10px;">Indicateur érosion · Cerema (taux)</div>
@@ -2918,26 +2916,19 @@ const conservatoireLayer = L.tileLayer.wms('https://data.geopf.fr/wms-v/ows?', {
   format: 'image/png', transparent: true, version: '1.3.0',
   opacity: 0.65, attribution: '© Conservatoire du littoral'
 });
-/* === Trait de côte BDTOPO® limite_terre_mer (IGN Lidar 3m) === */
+/* === Trait de côte BDTOPO® limite_terre_mer (IGN Lidar 3m) ===
+   Filtré sur niveau = "Plus hautes eaux" → une seule ligne de côte
+   (la laisse de haute mer, référence Cerema). */
 const traitCoteLayer = L.geoJSON(null, {
-  style: f => ({
-    color: typeToColor(f.properties.type_de_limite),
-    weight: 2, opacity: 0.95,
-    fill: false,                  // important : sinon le SVG rempli les LineString fermés
-    lineCap: 'butt', lineJoin: 'round'
+  style: () => ({
+    color: '#1B7BCB', weight: 2.5, opacity: 0.95,
+    fill: false, lineCap: 'round', lineJoin: 'round'
   }),
   onEachFeature: (f, layer) => {
-    layer.bindTooltip(f.properties.type_de_limite || 'Trait de côte', { sticky: true });
+    layer.bindTooltip('Trait de côte · laisse de haute mer (BDTOPO Lidar)', { sticky: true });
   },
 });
 traitCoteLayer.options.attribution = '© IGN-F · BDTOPO® limite_terre_mer (Lidar)';
-function typeToColor(t) {
-  t = t || '';
-  if (t.includes('Limite des affaires')) return '#1B7BCB';
-  if (t.includes('transversale')) return '#E86E55';
-  if (t.includes('salure')) return '#5C8A4F';
-  return '#1B7BCB';               // null = côte ouverte sur la mer, même couleur que affaires maritimes
-}
 
 /* === Indicateur national d'érosion Cerema porté sur les polylignes ===
    Le trait de côte BDTOPO (LineString) est coloré par le taux d'évolution
@@ -3084,21 +3075,22 @@ async function refreshDynamicLayers() {
       const erosionData = { type: 'FeatureCollection', features: [] };
       const CHUNK = 12;
       ltm.features.forEach(f => {
-        const t = f.properties.type_de_limite;
+        // LE TRAIT DE CÔTE DE RÉFÉRENCE = niveau "Plus hautes eaux" (laisse
+        // de haute mer). On EXCLUT "Plus basses eaux" (qui longe en parallèle
+        // → effet bande/polygone) et les limites administratives
+        // (type_de_limite : affaires maritimes, salure, transversale).
+        const niveau = f.properties.niveau;
+        if (niveau !== 'Plus hautes eaux') return;
         const g = f.geometry;
         if (!g) return;
         const lines = g.type === 'MultiLineString' ? g.coordinates : [g.coordinates];
         lines.forEach(coords => {
           clipLineToBounds(coords, margin).forEach(seg => {
-            // trait de côte : on garde tout (sauf salure/transversale exclus
-            // sur la couche érosion seulement)
             coteData.features.push({
               type: 'Feature',
               geometry: { type: 'LineString', coordinates: seg },
-              properties: { type_de_limite: t }
+              properties: { niveau }
             });
-            // érosion : exclut estuaires/admin
-            if (t && t !== 'Limite des affaires maritimes') return;
             for (let i = 0; i < seg.length - 1; i += CHUNK) {
               const sub = seg.slice(i, Math.min(seg.length, i + CHUNK + 1));
               if (sub.length < 2) continue;
