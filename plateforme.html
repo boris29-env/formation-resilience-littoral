@@ -2174,6 +2174,10 @@ input.imm-range::-moz-range-thumb {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 16h18M3 12c2 0 3-2 6-2s4 2 6 2 3-2 6-2"/><path d="M6 18l-3 3M9 18l-3 3M12 18l-3 3M15 18l-3 3M18 18l-3 3"/></svg>
           Bruun
         </button>
+        <button class="imm-btn" id="immStorm" title="Simulation hydraulique 2D dynamique : propagation de la submersion pendant un hydrogramme de tempête (montée, surverse des digues, retrait, eau résiduelle piégée). Cliquer à nouveau pour revenir au modèle statique.">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 14c2 0 3-2 5-2s3 2 5 2 3-2 5-2 3 2 5 2"/><path d="M2 19c2 0 3-2 5-2s3 2 5 2 3-2 5-2 3 2 5 2"/><path d="M12 3v6M9 6l3 3 3-3"/></svg>
+          Tempête ▶
+        </button>
       </div>
 
       <div class="imm-readout">
@@ -2200,6 +2204,10 @@ input.imm-range::-moz-range-thumb {
         <div class="imm-readout-item" id="immValueReadout" style="display:none;">
           <div class="imm-readout-label">Valeur immobilière exposée · DVF</div>
           <div class="imm-readout-value" id="immValue">— <small>M€</small></div>
+        </div>
+        <div class="imm-readout-item" id="immHydroReadout" style="display:none;">
+          <div class="imm-readout-label">Simulation hydraulique · temps</div>
+          <div class="imm-readout-value" id="immHydroVal">T+0,0 <small>h</small></div>
         </div>
       </div>
 
@@ -2242,7 +2250,7 @@ input.imm-range::-moz-range-thumb {
       </div>
 
       <div class="imm-attrib">
-        Niveau = pleine mer de vive-eau (marée réf. par façade) + RSLR + surcote · submersion connectée à la mer (cuvettes isolées non inondées) · ouvrages franchis par surverse · flèches&nbsp;= arrivée de l'eau.<br>
+        Niveau = pleine mer de vive-eau (marée réf. par façade) + RSLR + surcote · submersion connectée à la mer (cuvettes isolées non inondées) · ouvrages franchis par surverse · « Tempête ▶ » = modèle hydraulique 2D dynamique (propagation temporelle, brèche, eau résiduelle) · flèches&nbsp;= flux/arrivée de l'eau.<br>
         Sources : MNT RGE ALTI® · BD TOPO® · BD ORTHO® © IGN-F / Géoplateforme · bathymétrie EMODnet (SHOM/LITTO3D)
       </div>
     </div>
@@ -2624,8 +2632,13 @@ input.imm-range::-moz-range-thumb {
           <em>tant que le niveau reste sous la crête</em>, mais sont
           <strong>franchis par surverse</strong> dès que le niveau d'eau dépasse
           la crête&nbsp;— la zone protégée est alors inondée (un ouvrage ne
-          protège pas indéfiniment&nbsp;; le franchissement par brèche n'est pas
-          modélisé). La <strong>bathymétrie</strong> du fond marin provient
+          protège pas indéfiniment). Le bouton <strong>« Tempête ▶ »</strong> active
+          un <strong>modèle hydraulique 2D dynamique</strong> (automate cellulaire à
+          onde diffusive, vitesse de Manning, mass-conservative&nbsp;; réf. Guidolin
+          et&nbsp;al. 2016 / LISFLOOD-FP) qui propage la submersion dans le temps le
+          long d'un hydrogramme de tempête, avec <strong>croissance de brèche</strong>
+          (érosion de la crête sous surverse soutenue) et <strong>eau résiduelle
+          piégée</strong> après le retrait. La <strong>bathymétrie</strong> du fond marin provient
           d'<strong>EMODnet</strong> (intégrant les levés SHOM/LITTO3D), même
           référentiel vertical que le MNT (niveau marin moyen ≈ NGF-IGN69).
           Réf.&nbsp;: Bruun (1962) <em>JWH-ASCE</em>&nbsp;88(WW1):117&nbsp;;
@@ -4325,6 +4338,10 @@ function lonLatToXZ(lng, lat) {
 async function loadCommune3D(c) {
   if (t3d.loading) return;
   t3d.loading = true;
+  // repart en mode statique pour la nouvelle commune
+  t3d.hydro = false; t3d.stormRunning = false; t3d._floodRaised = false;
+  document.getElementById('immStorm') && document.getElementById('immStorm').classList.remove('active');
+  document.getElementById('immHydroReadout') && (document.getElementById('immHydroReadout').style.display = 'none');
   t3d.centerLat = c.lat; t3d.centerLng = c.lng;
   document.getElementById('immTitle').textContent = `${c.nom} · ${c.dept}`;
   document.getElementById('immEyebrow').textContent = `Maquette · ${c.type} · ${c.facade}`;
@@ -4879,7 +4896,8 @@ const OUVRAGE_CREST_H = 4;  // hauteur de crête typique d'une digue/perré au-d
    à la cote de crête (sol + ~4 m) : ils bloquent l'eau TANT QUE le niveau reste
    sous la crête, et sont FRANCHIS PAR SURVERSE dès que le niveau dépasse la
    crête — la zone protégée est alors inondée (réalisme : un ouvrage ne protège
-   pas indéfiniment). Le franchissement par brèche n'est pas modélisé. */
+   pas indéfiniment). Modèle STATIQUE (équilibre) ici ; la croissance de brèche
+   et la dynamique temporelle sont gérées par le moteur hydraulique (mode Tempête). */
 /* Cœur générique du remplissage hydraulique connecté, réutilisé par la maquette
    3D ET les vignettes 2100. `elevArr` = MNT (éventuellement reculé Bruun) ;
    `lvl` = cote d'eau still-water (NGF) ; amorçage depuis la mer (seaMask) ou le
@@ -4919,6 +4937,13 @@ function computeFloodConnectivity(v) {
 /* Reconstruit les faces de la nappe de submersion : un quad par cellule dont
    les 4 coins sont submergés-connectés. */
 function rebuildFloodMesh(mask) {
+  // si le moteur hydraulique a soulevé les sommets (WSE par maille), les remettre
+  // à plat : en statique la nappe est portée par floodMesh.position.y
+  if (t3d._floodRaised) {
+    const pos = floodGeo.attributes.position;
+    for (let i = 0; i < pos.count; i++) pos.setY(i, 0);
+    pos.needsUpdate = true; t3d._floodRaised = false;
+  }
   const idx = [];
   for (let zi = 0; zi < NZ - 1; zi++) {
     for (let xi = 0; xi < NX - 1; xi++) {
@@ -4978,6 +5003,159 @@ function rebuildFloodArrows(mask, dist, v, waterY) {
   });
 }
 
+/* =====================================================================
+   MOTEUR HYDRAULIQUE 2D DYNAMIQUE (automate cellulaire · onde diffusive)
+   ---------------------------------------------------------------------
+   Propagation explicite, mass-conservative, sur la grille du MNT :
+   - vitesse de Manning u = (1/n)·hf^(2/3)·√I (I = pente de la ligne d'eau,
+     hf = tirant au-dessus du seuil inter-mailles = lit ou crête d'ouvrage),
+   - débit de face Q = u·hf·dx ; volume transféré borné (½ du déséquilibre de
+     ligne d'eau et eau disponible) → schéma stable et positif,
+   - MER = condition de Dirichlet à la cote still-water (hydrogramme de tempête
+     PMVE → pic → retrait),
+   - OUVRAGES = seuils déversants franchis par surverse quand la ligne d'eau
+     dépasse la crête ; l'eau piégée derrière une digue ne peut pas redescendre
+     (submersion résiduelle après le retrait — comportement réel post-Xynthia).
+   Réf. : onde diffusive 2D / automates cellulaires d'inondation (Guidolin et
+   al. 2016 WCA2D ; LISFLOOD-FP), version temps réel navigateur. ===*/
+const HYDRO = { n: 0.045, substeps: 4, dtSub: 16 /*s*/, wet: 0.04, breach: 0.004 };
+function initHydro() {
+  const N = NX * NZ;
+  if (!t3d.h || t3d.h.length !== N) {
+    t3d.h = new Float32Array(N); t3d.vx = new Float32Array(N);
+    t3d.vz = new Float32Array(N); t3d._dV = new Float32Array(N); t3d.crestArr = new Float32Array(N);
+  }
+  t3d.h.fill(0); t3d.vx.fill(0); t3d.vz.fill(0);
+  const base = t3d.marineRef || 0;
+  const crest = (t3d.ouvrageCrestLevel != null) ? t3d.ouvrageCrestLevel : 4;
+  const ouvr = t3d.ouvragesMask;
+  for (let i = 0; i < N; i++) {
+    if (t3d.seaMask && t3d.seaMask[i]) t3d.h[i] = Math.max(0, base - t3d.elev[i]);
+    t3d.crestArr[i] = (ouvr && ouvr[i]) ? Math.max(t3d.elev[i] + 1.0, crest) : -1e9;  // cote de crête érodable
+  }
+  t3d.seaLevel = base;
+}
+function hydroStep(dt) {
+  const z = t3d.elev, h = t3d.h, dV = t3d._dV, sea = t3d.seaMask, ouvr = t3d.ouvragesMask, cr = t3d.crestArr;
+  const dx = SIZE / (NX - 1), A = dx * dx, n = HYDRO.n, BR = HYDRO.breach;
+  // --- Brèche : la crête d'un ouvrage franchi par surverse s'érode vers le sol
+  //     (croissance de brèche), jusqu'à l'ouverture → submersion catastrophique ---
+  if (ouvr && cr) {
+    for (let zi = 0; zi < NZ; zi++) for (let xi = 0; xi < NX; xi++) {
+      const i = zi * NX + xi; if (!ouvr[i]) continue;
+      let mw = -1e9;
+      if (xi > 0)      mw = Math.max(mw, z[i-1]  + h[i-1]);
+      if (xi < NX - 1) mw = Math.max(mw, z[i+1]  + h[i+1]);
+      if (zi > 0)      mw = Math.max(mw, z[i-NX] + h[i-NX]);
+      if (zi < NZ - 1) mw = Math.max(mw, z[i+NX] + h[i+NX]);
+      const over = mw - cr[i];
+      if (over > 0.05) cr[i] = Math.max(z[i], cr[i] - BR * over * dt);
+    }
+  }
+  dV.fill(0); t3d.vx.fill(0); t3d.vz.fill(0);
+  const face = (i, j, ux, uz) => {
+    const wi = z[i] + h[i], wj = z[j] + h[j];
+    let from, to, wf, wt, dxx, dzz;
+    if (wi >= wj) { from = i; to = j; wf = wi; wt = wj; dxx = ux; dzz = uz; }
+    else          { from = j; to = i; wf = wj; wt = wi; dxx = -ux; dzz = -uz; }
+    const head = wf - wt; if (head < 1e-4) return;
+    let sill = Math.max(z[i], z[j]);
+    if (ouvr && ouvr[i]) sill = Math.max(sill, cr[i]);               // digue = seuil déversant (érodable)
+    if (ouvr && ouvr[j]) sill = Math.max(sill, cr[j]);
+    const hf = wf - sill; if (hf <= 1e-3) return;                    // rien au-dessus du seuil → pas d'écoulement
+    const u = (1 / n) * Math.pow(hf, 2 / 3) * Math.sqrt(head / dx);  // Manning
+    let vol = u * hf * dx * dt;
+    const cap = Math.min(0.5 * head * A, h[from] * A * 0.5);         // stabilité + positivité
+    if (vol > cap) vol = cap;
+    if (vol <= 0) return;
+    dV[from] -= vol; dV[to] += vol;
+    t3d.vx[to] += dxx * u; t3d.vz[to] += dzz * u;
+    t3d.vx[from] += dxx * u * 0.5; t3d.vz[from] += dzz * u * 0.5;
+  };
+  for (let zi = 0; zi < NZ; zi++) for (let xi = 0; xi < NX; xi++) {
+    const i = zi * NX + xi;
+    if (xi < NX - 1) face(i, i + 1, 1, 0);
+    if (zi < NZ - 1) face(i, i + NX, 0, 1);
+  }
+  for (let i = 0; i < h.length; i++) { h[i] += dV[i] / A; if (h[i] < 0) h[i] = 0; }
+  const sl = t3d.seaLevel;
+  for (let i = 0; i < h.length; i++) if (sea && sea[i]) h[i] = Math.max(0, sl - z[i]);
+}
+function renderHydroFlood() {
+  const z = t3d.elev, h = t3d.h, pos = floodGeo.attributes.position, W = HYDRO.wet;
+  for (let i = 0; i < h.length; i++) pos.setY(i, (z[i] + h[i]) * VSCALE);
+  pos.needsUpdate = true; t3d._floodRaised = true;
+  const idx = [];
+  for (let zi = 0; zi < NZ - 1; zi++) for (let xi = 0; xi < NX - 1; xi++) {
+    const a = zi * NX + xi, b = a + 1, c = a + NX, d = c + 1;
+    if (h[a] > W && h[b] > W && h[c] > W && h[d] > W) idx.push(a, c, b, b, c, d);
+  }
+  floodGeo.setIndex(idx); floodGeo.computeVertexNormals();
+  floodMesh.position.y = 0;
+}
+function buildHydroArrows() {
+  const z = t3d.elev, h = t3d.h, vx = t3d.vx, vz = t3d.vz, orig = t3d.origElev;
+  const cand = [], STEP = 4;
+  for (let zi = STEP; zi < NZ - STEP; zi += STEP) for (let xi = STEP; xi < NX - STEP; xi += STEP) {
+    const i = zi * NX + xi;
+    if (h[i] < 0.12 || (orig[i] || 0) < SEA_EPS) continue;
+    const sp = Math.hypot(vx[i], vz[i]); if (sp < 0.06) continue;
+    cand.push({ wx: (xi / (NX - 1) - 0.5) * SIZE, wz: (zi / (NZ - 1) - 0.5) * SIZE,
+                y: (z[i] + h[i]) * VSCALE + 3, gx: vx[i] / sp, gz: vz[i] / sp, sp });
+  }
+  cand.sort((a, b) => b.sp - a.sp);
+  const chosen = cand.slice(0, ARROW_POOL.length);
+  t3d.floodArrows = [];
+  ARROW_POOL.forEach((m, k) => {
+    if (k < chosen.length) {
+      const a = chosen[k];
+      m.visible = true; m.position.set(a.wx, a.y, a.wz);
+      m.rotation.y = Math.atan2(-a.gz, a.gx);
+      // vitesse réelle → cadence de dérive du chevron (flux visible)
+      t3d.floodArrows.push({ mesh: m, bx: a.wx, bz: a.wz, dx: a.gx, dz: a.gz, seed: (k * 0.137) % 1, y: a.y });
+    } else m.visible = false;
+  });
+}
+function startStorm() {
+  if (!t3d.loaded) return;
+  t3d.hydro = true; initHydro();
+  const rslr = parseFloat(immRange.value) / 100;
+  const surge = parseFloat(document.getElementById('immSurge').value) / 100;
+  t3d.simBase = t3d.marineRef || 0;
+  t3d.simPeak = t3d.simBase + rslr + surge;
+  t3d.simDur = 12 * 3600;          // 12 h d'hydrogramme
+  t3d.simTime = 0; t3d.stormRunning = true;
+  document.getElementById('immStorm').classList.add('active');
+  const r = document.getElementById('immHydroReadout'); if (r) r.style.display = '';
+}
+function stopHydro() {
+  t3d.hydro = false; t3d.stormRunning = false;
+  document.getElementById('immStorm').classList.remove('active');
+  const r = document.getElementById('immHydroReadout'); if (r) r.style.display = 'none';
+  // remet la nappe à plat pour le modèle statique
+  if (t3d._floodRaised && floodGeo.attributes.position) {
+    const pos = floodGeo.attributes.position;
+    for (let i = 0; i < pos.count; i++) pos.setY(i, 0);
+    pos.needsUpdate = true; t3d._floodRaised = false;
+  }
+  if (typeof applyWaterLevel === 'function') applyWaterLevel();
+}
+function advanceStorm(dtMs) {
+  const D = t3d.simDur;
+  t3d.simTime += dtMs * (D / 14000);            // ~14 s d'animation pour 12 h simulées
+  const T = Math.min(t3d.simTime, D);
+  const frac = Math.max(0, 1 - Math.abs(T - D / 2) / (D / 2));  // pic triangulaire à mi-parcours
+  t3d.seaLevel = t3d.simBase + (t3d.simPeak - t3d.simBase) * frac;
+  if (t3d.simTime >= D) { t3d.stormRunning = false; t3d.seaLevel = t3d.simBase; }
+  // lecture : T+heures, cote mer, submersion
+  const hrs = (T / 3600);
+  let wetHa = 0, A = t3d.cellArea;
+  for (let i = 0; i < t3d.h.length; i++) if (t3d.h[i] > HYDRO.wet && (t3d.origElev[i] || 0) > SEA_EPS) wetHa += A;
+  wetHa /= 10000;
+  const el = document.getElementById('immHydroVal');
+  if (el) el.innerHTML = `T+${hrs.toFixed(1).replace('.', ',')}<small>h · mer ${t3d.seaLevel.toFixed(2).replace('.', ',')} m · ${wetHa.toFixed(0)} ha</small>`;
+}
+
 function applyWaterLevel() {
   if (!waterMesh || !t3d.origElev) return;
   /* Niveau marin STILL WATER (NGF) = marée de référence (PMVE) + RSLR + surcote.
@@ -4992,13 +5170,21 @@ function applyWaterLevel() {
   const vBruun = rslr;                    // seule la RSLR drive le recul morpho
   const waterY = v * VSCALE;
   t3d.waterY = waterY;
-  waterMesh.position.y = waterY - 1.5;    // anneau océan, légèrement sous la nappe
-  floodMesh.position.y = waterY;
   document.getElementById('immSurgeValue').textContent = `+${surge.toFixed(2).replace('.', ',')} m`;
   document.getElementById('immTotalH').textContent =
     `+${v.toFixed(2).replace('.', ',')} m NGF (marée réf ${tideRef.toFixed(1).replace('.', ',')}` +
     `${rslr > 0 ? ' + RSLR ' + rslr.toFixed(2).replace('.', ',') : ''}` +
     `${surge > 0 ? ' + surcote ' + surge.toFixed(2).replace('.', ',') : ''})`;
+  // Mode hydraulique dynamique : le moteur (boucle d'animation) pilote la nappe.
+  // On met juste à jour la cote-cible de la mer (relaxation continue) et on sort.
+  if (t3d.hydro) {
+    if (!t3d.stormRunning) t3d.seaLevel = v;
+    document.getElementById('immSeaLevel').innerHTML = `+${v.toFixed(2).replace('.', ',')}<small>m NGF</small>`;
+    document.getElementById('immSliderValue').textContent = `+${rslr.toFixed(2).replace('.', ',')} m`;
+    return;
+  }
+  waterMesh.position.y = waterY - 1.5;    // anneau océan, légèrement sous la nappe
+  floodMesh.position.y = waterY;
 
   /* === Recul morphologique (Bruun 1962 + protection ouvrages BDTOPO) =======
      R_cell = S × factor_cell × (1 − protection_cell)
@@ -5216,6 +5402,14 @@ document.getElementById('immBruun').addEventListener('click', e => {
   document.getElementById('immBruunReadout').style.display = t3d.bruunActive ? '' : 'none';
   applyWaterLevel();
 });
+document.getElementById('immStorm').addEventListener('click', () => {
+  if (!t3d.loaded) {
+    immLoaderText.innerHTML = `Charge d'abord une commune (bouton « Changer de commune »).`;
+    immLoader.style.display = ''; setTimeout(hideLoader, 2200); return;
+  }
+  if (t3d.hydro) stopHydro();   // re-clic : retour au modèle statique
+  else startStorm();            // lance l'hydrogramme de tempête
+});
 
 /* === Picker === */
 document.getElementById('immChoose').addEventListener('click', () => openImmPicker());
@@ -5271,13 +5465,22 @@ function animateThree(t) {
     wp.setY(i, Math.sin(t * 0.0008 + x * 0.005) * 0.4 + Math.cos(t * 0.001 + z * 0.004) * 0.4);
   }
   wp.needsUpdate = true;
-  // tide
-  if (state.immTide && t3d.loaded) {
+  const dtMs = Math.min(60, t - (t3d._lastT || t)); t3d._lastT = t;
+  // === Moteur hydraulique dynamique ===
+  if (t3d.hydro && t3d.loaded) {
+    if (t3d.stormRunning) advanceStorm(dtMs);
+    for (let s = 0; s < HYDRO.substeps; s++) hydroStep(HYDRO.dtSub);
+    renderHydroFlood();
+    buildHydroArrows();
+    waterMesh.position.y = (t3d.seaLevel || 0) * VSCALE - 1.5;
+    if ((t3d._fc = (t3d._fc || 0) + 1) % 8 === 0) updateHydroBuildings();
+  } else if (state.immTide && t3d.loaded) {
+    // tide (mode statique uniquement)
     const osc = Math.sin(t * 0.0008) * 0.3 * VSCALE;
     floodMesh.position.y = t3d.waterY + osc;
     waterMesh.position.y = t3d.waterY - 1.5 + osc;
   }
-  // flèches « d'où vient l'eau » : flux dérivant vers les terres + fondu
+  // flèches « arrivée de l'eau » : dérive le long du flux + fondu
   if (t3d.floodArrows && t3d.floodArrows.length) {
     const STRIDE = 90;   // mètres parcourus par cycle
     for (const a of t3d.floodArrows) {
@@ -5290,6 +5493,21 @@ function animateThree(t) {
   }
   renderer.render(scene3, camera);
   requestAnimationFrame(animateThree);
+}
+function updateHydroBuildings() {
+  if (!t3d.buildings || !t3d.h) return;
+  let flooded = 0;
+  t3d.buildings.forEach(b => {
+    const cxi = Math.max(0, Math.min(NX-1, Math.round((b.position.x/SIZE + 0.5)*(NX-1))));
+    const czi = Math.max(0, Math.min(NZ-1, Math.round((b.position.z/SIZE + 0.5)*(NZ-1))));
+    const wet = t3d.h[czi * NX + cxi] > 0.15;
+    if (wet) { flooded++; if (b.material !== buildingsGroup.userData.floodedMat) b.material = buildingsGroup.userData.floodedMat; }
+    else if (b.material !== buildingsGroup.userData.normalMat) b.material = buildingsGroup.userData.normalMat;
+  });
+  let wetHa = 0;
+  for (let i = 0; i < t3d.h.length; i++) if (t3d.h[i] > HYDRO.wet && (t3d.origElev[i] || 0) > SEA_EPS) wetHa += t3d.cellArea;
+  document.getElementById('immBuildingsReadout').innerHTML = `${flooded}<small>/ ${t3d.buildings.length}</small>`;
+  document.getElementById('immArea').innerHTML = `${(wetHa/10000).toFixed(1).replace('.', ',')}<small>ha</small>`;
 }
 requestAnimationFrame(animateThree);
 updateImmHint();
