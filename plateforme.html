@@ -2178,7 +2178,7 @@ input.imm-range::-moz-range-thumb {
 
       <div class="imm-readout">
         <div class="imm-readout-item">
-          <div class="imm-readout-label">Niveau marin</div>
+          <div class="imm-readout-label">Niveau marin total · still water</div>
           <div class="imm-readout-value" id="immSeaLevel">+0,00<small>m NGF</small></div>
         </div>
         <div class="imm-readout-item">
@@ -2228,11 +2228,11 @@ input.imm-range::-moz-range-thumb {
           Niveau total simulé · <strong id="immTotalH">+0,00 m</strong>
         </div>
         <div class="imm-presets">
-          <button class="imm-preset" data-rslr="0"    data-surge="0"   title="Niveau actuel, hors tempête">Référence</button>
-          <button class="imm-preset" data-rslr="0"    data-surge="150" title="28 février 2010, surcote 1,50 m">Xynthia</button>
-          <button class="imm-preset" data-rslr="56"   data-surge="0"   title="IPCC AR6 SSP2-4.5 médiane 2100">2100 médian</button>
-          <button class="imm-preset" data-rslr="56"   data-surge="210" title="Centennale couplée au RSLR médian">100ans 2100</button>
-          <button class="imm-preset" data-rslr="77"   data-surge="240" title="SSP5-8.5 + centennale forte">Pire cas</button>
+          <button class="imm-preset" data-rslr="0"    data-surge="0"   title="Pleine mer de vive-eau actuelle (marée de référence, sans surcote)">Marée max</button>
+          <button class="imm-preset" data-rslr="0"    data-surge="150" title="Type Xynthia (28 fév. 2010) : PMVE + surcote ~1,50 m ≈ niveau de référence PPRL">Xynthia</button>
+          <button class="imm-preset" data-rslr="56"   data-surge="0"   title="PMVE + RSLR IPCC AR6 SSP2-4.5 médiane 2100">2100 médian</button>
+          <button class="imm-preset" data-rslr="56"   data-surge="210" title="PMVE + centennale + RSLR médian 2100">100ans 2100</button>
+          <button class="imm-preset" data-rslr="77"   data-surge="240" title="PMVE + SSP5-8.5 + centennale forte">Pire cas</button>
         </div>
       </div>
 
@@ -2242,7 +2242,7 @@ input.imm-range::-moz-range-thumb {
       </div>
 
       <div class="imm-attrib">
-        Submersion connectée à la mer (cuvettes isolées non inondées) · flèches&nbsp;= sens d'arrivée de l'eau · ouvrages franchis par surverse au-delà de leur crête.<br>
+        Niveau = pleine mer de vive-eau (marée réf. par façade) + RSLR + surcote · submersion connectée à la mer (cuvettes isolées non inondées) · ouvrages franchis par surverse · flèches&nbsp;= arrivée de l'eau.<br>
         Sources : MNT RGE ALTI® · BD TOPO® · BD ORTHO® © IGN-F / Géoplateforme · bathymétrie EMODnet (SHOM/LITTO3D)
       </div>
     </div>
@@ -2609,12 +2609,18 @@ input.imm-range::-moz-range-thumb {
           <em>R_cell&nbsp;=&nbsp;S_RSLR&nbsp;×&nbsp;L/(B+h*)</em>. <em>h*</em>
           régional&nbsp;: 8&nbsp;m Atlantique, 5&nbsp;m Méditerranée, 7&nbsp;m Manche
           (Hallermeier 1981 simplifié).
-          <strong>Surcote tempête</strong> ajoutée au niveau marin total mais
-          exclue du recul morphologique (Bruun s'applique aux variations
-          pérennes du niveau d'équilibre, non aux événements épisodiques).
+          <strong>Niveau marin de référence</strong>&nbsp;: la submersion est
+          calculée en <em>still-water level</em> NGF&nbsp;=&nbsp;<strong>pleine
+          mer de vive-eau</strong> (PMVE, socle de marée par façade&nbsp;: ~0,4&nbsp;m
+          Méditerranée, ~2,2&nbsp;m Aquitaine, ~3,0&nbsp;m Atlantique, ~4,5-4,8&nbsp;m
+          Manche)&nbsp;+&nbsp;RSLR&nbsp;+&nbsp;surcote tempête. Sans ce socle de marée
+          l'aléa est massivement sous-estimé (un type Xynthia ≈ PMVE&nbsp;+&nbsp;~1,5&nbsp;m
+          de surcote ≈ 4&nbsp;m&nbsp;NGF dans les Pertuis, niveau de référence des PPRL).
+          La surcote est exclue du recul morphologique (Bruun&nbsp;: variations
+          pérennes du niveau d'équilibre, non les événements épisodiques).
           <strong>Ouvrages de protection</strong> (digues BDTOPO&nbsp;: Quai/Digue/
-          Perré/Jetée)&nbsp;: traités comme des barrières à la cote de crête
-          (sol&nbsp;+&nbsp;~4&nbsp;m) qui bloquent le recul et la submersion
+          Perré/Jetée)&nbsp;: barrières à la cote de crête (≈&nbsp;PMVE&nbsp;+&nbsp;1,3&nbsp;m
+          NGF) qui bloquent le recul et la submersion
           <em>tant que le niveau reste sous la crête</em>, mais sont
           <strong>franchis par surverse</strong> dès que le niveau d'eau dépasse
           la crête&nbsp;— la zone protégée est alors inondée (un ouvrage ne
@@ -4145,6 +4151,22 @@ function bruunDefaultsForCoast(c) {
 }
 function bruunFactorForCoast(c) { return bruunDefaultsForCoast(c).factor; }
 
+/* === Référence marine (marée) par façade ===
+   La submersion ne se calcule pas par rapport au niveau marin MOYEN (0 NGF)
+   mais par rapport à une PLEINE MER DE VIVE-EAU (PMVE), sur laquelle s'ajoutent
+   la surcote tempête et l'élévation long terme (RSLR). Sans ce socle de marée,
+   le modèle sous-estime massivement l'aléa (un Xynthia = ~4 m NGF en eau calme
+   dans les Pertuis = PMVE ~3 m + surcote ~1,5 m, et non +1,5 m seul).
+   Valeurs PMVE indicatives en m NGF-IGN69 par façade (ordre de grandeur). */
+function marineRefForCoast(c) {
+  const f = (c.facade || '').toLowerCase();
+  if (f.includes('méditerranée') || f.includes('mediterranee')) return 0.4;  // microtidal
+  if (f.includes('aquitaine')) return 2.2;
+  if (f.includes('manche/nord') || f.includes('nord')) return 4.5;
+  if (f.includes('manche')) return 4.8;                                       // macrotidal
+  return 3.0;                                                                 // Atlantique (Pertuis, Bretagne sud…)
+}
+
 /* === Helper pour sampler l'élévation original par bilinéaire === */
 // (défini plus bas avant applyWaterLevel)
 
@@ -4466,6 +4488,9 @@ async function loadCommune3D(c) {
     t3d.bruunFactor = bd.factor;
     t3d.closureDepth = bd.hStar;
     t3d.duneRefHeight = bd.B;
+    // Référence marine (PMVE) + cote de crête des ouvrages (PMVE + franc-bord)
+    t3d.marineRef = marineRefForCoast(c);
+    t3d.ouvrageCrestLevel = t3d.marineRef + 1.3;   // crête de digue ≈ PMVE + 1,3 m NGF
     if (t3d.bruunFactor === 0 || !t3d.shorelineOk) {
       t3d.bruunActive = false;
       document.getElementById('immBruun').classList.remove('active');
@@ -4614,7 +4639,10 @@ async function loadCommune3D(c) {
           const alt = sampleElev(elev,
             (cx/SIZE + 0.5) * (NX-1),
             (cz/SIZE + 0.5) * (NZ-1));
-          const wallH = 4;  // hauteur de digue typique au-dessus du sol
+          // crête de l'ouvrage à la cote de référence (PMVE + franc-bord) ;
+          // hauteur visible = crête − sol, pour que la surverse soit cohérente
+          const crest = Math.max(alt + 1.0, t3d.ouvrageCrestLevel || (alt + 2));
+          const wallH = Math.max(1.2, crest - alt);
           const wallW = 3;
           const geom = new THREE.BoxGeometry(length, wallH * VSCALE, wallW);
           const mesh = new THREE.Mesh(geom, ouvragesMat);
@@ -4808,25 +4836,20 @@ const OUVRAGE_CREST_H = 4;  // hauteur de crête typique d'une digue/perré au-d
    sous la crête, et sont FRANCHIS PAR SURVERSE dès que le niveau dépasse la
    crête — la zone protégée est alors inondée (réalisme : un ouvrage ne protège
    pas indéfiniment). Le franchissement par brèche n'est pas modélisé. */
-function computeFloodConnectivity(v) {
-  const lvl = v + SEA_EPS;
+/* Cœur générique du remplissage hydraulique connecté, réutilisé par la maquette
+   3D ET les vignettes 2100. `elevArr` = MNT (éventuellement reculé Bruun) ;
+   `lvl` = cote d'eau still-water (NGF) ; amorçage depuis la mer (seaMask) ou le
+   bord du bbox en repli ; les ouvrages bloquent jusqu'à leur cote de crête. */
+function floodFillMask(elevArr, lvl, sea, ouvr, crestLvl, wantDist) {
   const N = NX * NZ;
   const mask = new Uint8Array(N);
-  const dist = new Int32Array(N); dist.fill(-1);
-  const elev = t3d.elev;
-  const orig = t3d.origElev || elev;
-  const sea = t3d.seaMask;
-  const ouvr = t3d.ouvragesMask;
-  // Altitude effective : une cellule-ouvrage est relevée à sa crête (sol + H)
-  const eff = (i) => (ouvr && ouvr[i]) ? (orig[i] + OUVRAGE_CREST_H) : elev[i];
+  const dist = wantDist ? new Int32Array(N) : null; if (dist) dist.fill(-1);
+  const eff = (i) => (ouvr && ouvr[i]) ? Math.max(elevArr[i] + 1.0, crestLvl) : elevArr[i];
   const qx = new Int32Array(N), qz = new Int32Array(N);
   let head = 0, tail = 0;
-  const enqueue = (i) => { mask[i] = 1; dist[i] = 0; qx[tail] = i % NX; qz[tail] = (i - i % NX) / NX; tail++; };
-  // Amorçage : depuis la mer réelle (NODATA). Repli sur le bord du bbox si aucune.
+  const enqueue = (i) => { mask[i] = 1; if (dist) dist[i] = 0; qx[tail] = i % NX; qz[tail] = (i - i % NX) / NX; tail++; };
   let seeded = 0;
-  if (sea) {
-    for (let i = 0; i < N; i++) if (sea[i] && !mask[i]) { enqueue(i); seeded++; }
-  }
+  if (sea) { for (let i = 0; i < N; i++) if (sea[i] && !mask[i]) { enqueue(i); seeded++; } }
   if (!seeded) {
     const seedB = (xi, zi) => { const i = zi * NX + xi; if (!mask[i] && eff(i) < lvl) enqueue(i); };
     for (let xi = 0; xi < NX; xi++) { seedB(xi, 0); seedB(xi, NZ - 1); }
@@ -4834,15 +4857,19 @@ function computeFloodConnectivity(v) {
   }
   while (head < tail) {
     const xi = qx[head], zi = qz[head]; head++;
-    const d = dist[zi * NX + xi];
+    const d = dist ? dist[zi * NX + xi] : 0;
     const tryN = (nx, nz) => {
       if (nx < 0 || nx >= NX || nz < 0 || nz >= NZ) return;
       const ni = nz * NX + nx;
-      if (!mask[ni] && eff(ni) < lvl) { mask[ni] = 1; dist[ni] = d + 1; qx[tail] = nx; qz[tail] = nz; tail++; }
+      if (!mask[ni] && eff(ni) < lvl) { mask[ni] = 1; if (dist) dist[ni] = d + 1; qx[tail] = nx; qz[tail] = nz; tail++; }
     };
     tryN(xi + 1, zi); tryN(xi - 1, zi); tryN(xi, zi + 1); tryN(xi, zi - 1);
   }
   return { mask, dist };
+}
+function computeFloodConnectivity(v) {
+  const crestLvl = (t3d.ouvrageCrestLevel != null) ? t3d.ouvrageCrestLevel : OUVRAGE_CREST_H;
+  return floodFillMask(t3d.elev, v + SEA_EPS, t3d.seaMask, t3d.ouvragesMask, crestLvl, true);
 }
 
 /* Reconstruit les faces de la nappe de submersion : un quad par cellule dont
@@ -4909,13 +4936,15 @@ function rebuildFloodArrows(mask, dist, v, waterY) {
 
 function applyWaterLevel() {
   if (!waterMesh || !t3d.origElev) return;
-  /* Niveau marin total = RSLR (moyen) + surcote tempête.
-     - Le recul Bruun ne dépend que du RSLR pérenne (la surcote est ponctuelle
-       et ne déplace pas le profil d'équilibre, mais elle augmente l'aléa de
-       submersion immédiate). */
+  /* Niveau marin STILL WATER (NGF) = marée de référence (PMVE) + RSLR + surcote.
+     - La marée (PMVE) est le socle sur lequel la submersion se calcule (sinon
+       on sous-estime massivement l'aléa : Xynthia ≈ PMVE ~3 m + surcote ~1,5 m).
+     - Le recul Bruun ne dépend que du RSLR pérenne (marée et surcote sont
+       épisodiques et ne déplacent pas le profil d'équilibre). */
+  const tideRef = t3d.marineRef || 0;     // PMVE NGF de la façade
   const rslr  = parseFloat(immRange.value) / 100;
   const surge = parseFloat(document.getElementById('immSurge').value) / 100;
-  const v     = rslr + surge;             // niveau d'eau total
+  const v     = tideRef + rslr + surge;   // niveau d'eau total still-water (NGF)
   const vBruun = rslr;                    // seule la RSLR drive le recul morpho
   const waterY = v * VSCALE;
   t3d.waterY = waterY;
@@ -4923,8 +4952,9 @@ function applyWaterLevel() {
   floodMesh.position.y = waterY;
   document.getElementById('immSurgeValue').textContent = `+${surge.toFixed(2).replace('.', ',')} m`;
   document.getElementById('immTotalH').textContent =
-    `+${v.toFixed(2).replace('.', ',')} m` +
-    (surge > 0 ? ` (RSLR ${rslr.toFixed(2).replace('.', ',')} + surcote ${surge.toFixed(2).replace('.', ',')})` : '');
+    `+${v.toFixed(2).replace('.', ',')} m NGF (marée réf ${tideRef.toFixed(1).replace('.', ',')}` +
+    `${rslr > 0 ? ' + RSLR ' + rslr.toFixed(2).replace('.', ',') : ''}` +
+    `${surge > 0 ? ' + surcote ' + surge.toFixed(2).replace('.', ',') : ''})`;
 
   /* === Recul morphologique (Bruun 1962 + protection ouvrages BDTOPO) =======
      R_cell = S × factor_cell × (1 − protection_cell)
@@ -5031,7 +5061,7 @@ function applyWaterLevel() {
   document.getElementById('immArea').innerHTML =
     `${t3d.waterArea.toFixed(1).replace('.', ',')}<small>ha</small>`;
   document.getElementById('immSliderValue').textContent =
-    `+${v.toFixed(2).replace('.', ',')} m`;
+    `+${rslr.toFixed(2).replace('.', ',')} m`;
   if (t3d.bruunActive) {
     const factorTxt = t3d.bruunFactorCell ? `per-cell ø${t3d.bruunFactorMean.toFixed(0)}` : `×${t3d.bruunFactor}`;
     document.getElementById('immRetreat').innerHTML =
@@ -5296,17 +5326,25 @@ function rebuildVignettes(c) {
       newElev.set(t3d.origElev);
     }
 
-    // 3) Overlay : zone NOUVELLEMENT inondée + zone PERDUE par RECUL
+    // 3) Overlay : zone NOUVELLEMENT inondée + zone PERDUE par RECUL.
+    //    Niveau still-water 2100 = marée de référence (PMVE) + RSLR du scénario,
+    //    submersion calculée par CONNECTIVITÉ hydraulique (mêmes règles que la 3D :
+    //    cuvettes isolées non inondées, ouvrages franchis par surverse).
+    const tideRef = t3d.marineRef || 0;
+    const lvl2100 = tideRef + sea2100;
+    const crestLvl = (t3d.ouvrageCrestLevel != null) ? t3d.ouvrageCrestLevel : 4;
+    const vmask = floodFillMask(newElev, lvl2100 + SEA_EPS, t3d.seaMask, t3d.ouvragesMask, crestLvl, false).mask;
     let cellsNewWet = 0, cellsLostErosion = 0, cellsProtected = 0;
     for (let zi = 0; zi < NZ; zi++) {
       for (let xi = 0; xi < NX; xi++) {
         const i = zi * NX + xi;
         const e0 = t3d.origElev[i];      // état actuel
         const eN = newElev[i];           // état 2100 après Bruun
-        const wasLand = e0 >= 0;
-        const isInWater = eN < sea2100;
-        if (t3d.protectionMask && t3d.protectionMask[i] && wasLand && isInWater) {
-          // Protégé par ouvrage : reste à terre
+        const wasLand = e0 >= SEA_EPS;
+        const isInWater = vmask[i] === 1;
+        const wouldFlood = eN < lvl2100;  // bathtub : sous le niveau mais peut-être protégé/isolé
+        if (t3d.protectionMask && t3d.protectionMask[i] && wasLand && wouldFlood && !isInWater) {
+          // Protégé par un ouvrage encore non franchi : reste à terre
           ctx.fillStyle = 'rgba(92,138,79,0.5)';
           ctx.fillRect(xi * cellW, zi * cellH, Math.ceil(cellW) + 1, Math.ceil(cellH) + 1);
           cellsProtected++;
@@ -5329,27 +5367,20 @@ function rebuildVignettes(c) {
     // 4) Trait de côte ACTUEL (lieu où orig elev croise 0) — ligne noire fine
     ctx.strokeStyle = 'rgba(11,27,43,0.9)';
     ctx.lineWidth = 1.2;
-    drawShoreline(ctx, t3d.origElev, 0, cellW, cellH);
-    // Trait de côte 2100 — ligne coral épaisse
+    drawShoreline(ctx, t3d.origElev, tideRef, cellW, cellH);          // laisse de pleine mer actuelle
+    // Trait de côte 2100 — ligne coral épaisse (PMVE + RSLR sur terrain reculé)
     ctx.strokeStyle = '#E86E55';
     ctx.lineWidth = 2.2;
-    drawShoreline(ctx, newElev, sea2100, cellW, cellH);
+    drawShoreline(ctx, newElev, lvl2100, cellW, cellH);
 
-    // 5) Stats : bâtis perdus + surface
+    // 5) Stats : bâtis perdus + surface — submersion connectée (même règle que la 3D)
     let lost = 0;
     t3d.buildings.forEach(b => {
       const bx = b.position.x, bz = b.position.z;
       const cxi = Math.max(0, Math.min(NX-1, Math.round((bx/SIZE+0.5)*(NX-1))));
       const czi = Math.max(0, Math.min(NZ-1, Math.round((bz/SIZE+0.5)*(NZ-1))));
       const idx = czi * NX + cxi;
-      const prot = t3d.protectionMask && t3d.protectionMask[idx];
-      if (prot) return;
-      const fc = t3d.bruunFactorCell ? t3d.bruunFactorCell[idx] : t3d.bruunFactor;
-      const R = sea2100 * fc;
-      const sx = bx + R * t3d.seawardX;
-      const sz = bz + R * t3d.seawardZ;
-      const newG = sampleElev(t3d.origElev, (sx/SIZE+0.5)*(NX-1), (sz/SIZE+0.5)*(NZ-1));
-      if (newG < sea2100 - 0.1) lost++;
+      if (vmask[idx] === 1) lost++;     // bâti dans l'emprise inondée connectée 2100
     });
     const haNew = (cellsNewWet + cellsLostErosion) * t3d.cellArea / 10000;
     const valM = t3d.dvfStats
