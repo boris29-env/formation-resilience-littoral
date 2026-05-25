@@ -912,6 +912,32 @@ img { display: block; max-width: 100%; }
 }
 .imm-readout-value small { font-family: var(--sans); font-weight: 400; font-size: 12px; opacity: 0.7; margin-left: 4px; }
 
+/* Hydrogramme de tempête (panneau dynamique) */
+.imm-hydro {
+  position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
+  width: min(380px, 60%);
+  background: rgba(6, 23, 38, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(246,241,231,0.14);
+  border-radius: 14px; padding: 10px 14px 8px; color: var(--paper);
+}
+.imm-hydro-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+  opacity: 0.75; margin-bottom: 6px;
+}
+.imm-hydro-head strong { font-family: var(--serif); font-size: 14px; letter-spacing: 0; text-transform: none; opacity: 1; font-variant-numeric: tabular-nums; }
+#hydroCanvas { width: 100%; height: 80px; display: block; }
+.imm-hydro-speed { display: flex; align-items: center; gap: 5px; margin-top: 6px; font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.8; }
+.imm-hydro-speed button {
+  font-family: var(--mono); font-size: 11px; color: var(--paper);
+  background: rgba(246,241,231,0.08); border: 1px solid rgba(246,241,231,0.14);
+  border-radius: 7px; padding: 3px 8px; cursor: pointer;
+}
+.imm-hydro-speed button:hover { background: rgba(246,241,231,0.16); }
+.imm-hydro-speed button.active { background: var(--coral); border-color: var(--coral); }
+.imm-hydro-speed #immHydroReplay { margin-left: auto; font-size: 13px; padding: 3px 9px; }
+
 .imm-slider-wrap {
   position: absolute; right: 24px; bottom: 24px;
   width: 280px;
@@ -2205,9 +2231,22 @@ input.imm-range::-moz-range-thumb {
           <div class="imm-readout-label">Valeur immobilière exposée · DVF</div>
           <div class="imm-readout-value" id="immValue">— <small>M€</small></div>
         </div>
-        <div class="imm-readout-item" id="immHydroReadout" style="display:none;">
-          <div class="imm-readout-label">Simulation hydraulique · temps</div>
-          <div class="imm-readout-value" id="immHydroVal">T+0,0 <small>h</small></div>
+      </div>
+
+      <!-- Hydrogramme de tempête animé (modèle hydraulique dynamique) -->
+      <div class="imm-hydro" id="immHydroPanel" style="display:none;">
+        <div class="imm-hydro-head">
+          <span>Hydrogramme · niveau marin</span>
+          <strong id="immHydroT">T+0,0 h · +0,00 m</strong>
+        </div>
+        <canvas id="hydroCanvas"></canvas>
+        <div class="imm-hydro-speed">
+          <span>Vitesse</span>
+          <button data-spd="0.5">0,5×</button>
+          <button data-spd="1" class="active">1×</button>
+          <button data-spd="2">2×</button>
+          <button data-spd="4">4×</button>
+          <button id="immHydroReplay" title="Rejouer la tempête">⟳</button>
         </div>
       </div>
 
@@ -4341,7 +4380,7 @@ async function loadCommune3D(c) {
   // repart en mode statique pour la nouvelle commune
   t3d.hydro = false; t3d.stormRunning = false; t3d._floodRaised = false;
   document.getElementById('immStorm') && document.getElementById('immStorm').classList.remove('active');
-  document.getElementById('immHydroReadout') && (document.getElementById('immHydroReadout').style.display = 'none');
+  document.getElementById('immHydroPanel') && (document.getElementById('immHydroPanel').style.display = 'none');
   t3d.centerLat = c.lat; t3d.centerLng = c.lng;
   document.getElementById('immTitle').textContent = `${c.nom} · ${c.dept}`;
   document.getElementById('immEyebrow').textContent = `Maquette · ${c.type} · ${c.facade}`;
@@ -5116,6 +5155,47 @@ function buildHydroArrows() {
     } else m.visible = false;
   });
 }
+function surgeLevelAt(T) {                       // hydrogramme triangulaire : pic à mi-parcours
+  const D = t3d.simDur || 43200;
+  const frac = Math.max(0, 1 - Math.abs(T - D / 2) / (D / 2));
+  return (t3d.simBase || 0) + ((t3d.simPeak || 0) - (t3d.simBase || 0)) * frac;
+}
+function drawHydrograph() {
+  const cv = document.getElementById('hydroCanvas'); if (!cv) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.clientWidth || 360, H = 80;
+  if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+  const D = t3d.simDur || 43200, base = t3d.simBase || 0, peak = t3d.simPeak || 1;
+  const crest = (t3d.ouvrageCrestLevel != null) ? t3d.ouvrageCrestLevel : null;
+  const x0 = 6, x1 = W - 6, yT = 6, yB = H - 13;
+  const yMin = base - 0.2, yMax = Math.max(peak, crest != null ? crest : peak) + 0.35;
+  const X = T => x0 + (T / D) * (x1 - x0);
+  const Y = L => yT + (1 - (L - yMin) / (yMax - yMin)) * (yB - yT);
+  // ligne de crête de digue (déclencheur de surverse/brèche)
+  if (crest != null && crest <= yMax && crest >= yMin) {
+    ctx.strokeStyle = 'rgba(232,110,85,0.85)'; ctx.setLineDash([4, 3]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x0, Y(crest)); ctx.lineTo(x1, Y(crest)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(232,110,85,0.95)'; ctx.font = '8px monospace'; ctx.fillText('crête digue', x0 + 2, Y(crest) - 2);
+  }
+  const Tc = Math.min(t3d.simTime || 0, D);
+  // remplissage écoulé
+  ctx.beginPath(); ctx.moveTo(X(0), Y(base));
+  for (let p = 0; p <= 80; p++) { const T = D * p / 80; if (T > Tc) break; ctx.lineTo(X(T), Y(surgeLevelAt(T))); }
+  ctx.lineTo(X(Tc), Y(base)); ctx.closePath(); ctx.fillStyle = 'rgba(58,166,200,0.28)'; ctx.fill();
+  // courbe complète
+  ctx.beginPath();
+  for (let p = 0; p <= 80; p++) { const T = D * p / 80; const xy = [X(T), Y(surgeLevelAt(T))]; p ? ctx.lineTo(xy[0], xy[1]) : ctx.moveTo(xy[0], xy[1]); }
+  ctx.strokeStyle = '#3aa6c8'; ctx.lineWidth = 2; ctx.stroke();
+  // curseur temps
+  const cx = X(Tc);
+  ctx.strokeStyle = 'rgba(246,241,231,0.8)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx, yT); ctx.lineTo(cx, yB); ctx.stroke();
+  ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(cx, Y(surgeLevelAt(Tc)), 3.2, 0, 7); ctx.fill();
+  // axe temps
+  ctx.fillStyle = 'rgba(246,241,231,0.45)'; ctx.font = '8px monospace';
+  for (let hh = 0; hh <= 12; hh += 3) { const xx = X(D * hh / 12); ctx.fillText(hh + 'h', xx - 4, H - 2); }
+}
 function startStorm() {
   if (!t3d.loaded) return;
   t3d.hydro = true; initHydro();
@@ -5125,13 +5205,15 @@ function startStorm() {
   t3d.simPeak = t3d.simBase + rslr + surge;
   t3d.simDur = 12 * 3600;          // 12 h d'hydrogramme
   t3d.simTime = 0; t3d.stormRunning = true;
+  if (t3d.simSpeed == null) t3d.simSpeed = 1;
   document.getElementById('immStorm').classList.add('active');
-  const r = document.getElementById('immHydroReadout'); if (r) r.style.display = '';
+  const p = document.getElementById('immHydroPanel'); if (p) p.style.display = '';
+  drawHydrograph();
 }
 function stopHydro() {
   t3d.hydro = false; t3d.stormRunning = false;
   document.getElementById('immStorm').classList.remove('active');
-  const r = document.getElementById('immHydroReadout'); if (r) r.style.display = 'none';
+  const p = document.getElementById('immHydroPanel'); if (p) p.style.display = 'none';
   // remet la nappe à plat pour le modèle statique
   if (t3d._floodRaised && floodGeo.attributes.position) {
     const pos = floodGeo.attributes.position;
@@ -5142,18 +5224,15 @@ function stopHydro() {
 }
 function advanceStorm(dtMs) {
   const D = t3d.simDur;
-  t3d.simTime += dtMs * (D / 14000);            // ~14 s d'animation pour 12 h simulées
+  t3d.simTime += dtMs * (D / 14000) * (t3d.simSpeed || 1);   // ~14 s pour 12 h à 1×
   const T = Math.min(t3d.simTime, D);
-  const frac = Math.max(0, 1 - Math.abs(T - D / 2) / (D / 2));  // pic triangulaire à mi-parcours
-  t3d.seaLevel = t3d.simBase + (t3d.simPeak - t3d.simBase) * frac;
+  t3d.seaLevel = surgeLevelAt(T);
   if (t3d.simTime >= D) { t3d.stormRunning = false; t3d.seaLevel = t3d.simBase; }
-  // lecture : T+heures, cote mer, submersion
-  const hrs = (T / 3600);
   let wetHa = 0, A = t3d.cellArea;
   for (let i = 0; i < t3d.h.length; i++) if (t3d.h[i] > HYDRO.wet && (t3d.origElev[i] || 0) > SEA_EPS) wetHa += A;
-  wetHa /= 10000;
-  const el = document.getElementById('immHydroVal');
-  if (el) el.innerHTML = `T+${hrs.toFixed(1).replace('.', ',')}<small>h · mer ${t3d.seaLevel.toFixed(2).replace('.', ',')} m · ${wetHa.toFixed(0)} ha</small>`;
+  const el = document.getElementById('immHydroT');
+  if (el) el.textContent = `T+${(T/3600).toFixed(1).replace('.', ',')} h · mer +${t3d.seaLevel.toFixed(2).replace('.', ',')} m · ${(wetHa/10000).toFixed(0)} ha`;
+  drawHydrograph();
 }
 
 function applyWaterLevel() {
@@ -5410,6 +5489,14 @@ document.getElementById('immStorm').addEventListener('click', () => {
   if (t3d.hydro) stopHydro();   // re-clic : retour au modèle statique
   else startStorm();            // lance l'hydrogramme de tempête
 });
+document.querySelectorAll('.imm-hydro-speed button[data-spd]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    t3d.simSpeed = parseFloat(btn.dataset.spd);
+    document.querySelectorAll('.imm-hydro-speed button[data-spd]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+document.getElementById('immHydroReplay').addEventListener('click', () => startStorm());
 
 /* === Picker === */
 document.getElementById('immChoose').addEventListener('click', () => openImmPicker());
