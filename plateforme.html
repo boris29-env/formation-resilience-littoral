@@ -2242,8 +2242,8 @@ input.imm-range::-moz-range-thumb {
       </div>
 
       <div class="imm-attrib">
-        Submersion limitée aux zones connectées hydrauliquement à la mer (cuvettes isolées non inondées) · flèches&nbsp;= sens d'arrivée de l'eau.<br>
-        Sources : MNT RGE ALTI® · BD TOPO® · BD ORTHO® — © IGN-F / Géoplateforme
+        Submersion connectée à la mer (cuvettes isolées non inondées) · flèches&nbsp;= sens d'arrivée de l'eau · ouvrages franchis par surverse au-delà de leur crête.<br>
+        Sources : MNT RGE ALTI® · BD TOPO® · BD ORTHO® © IGN-F / Géoplateforme · bathymétrie EMODnet (SHOM/LITTO3D)
       </div>
     </div>
   </div>
@@ -2612,8 +2612,16 @@ input.imm-range::-moz-range-thumb {
           <strong>Surcote tempête</strong> ajoutée au niveau marin total mais
           exclue du recul morphologique (Bruun s'applique aux variations
           pérennes du niveau d'équilibre, non aux événements épisodiques).
-          <strong>Protection ouvrages</strong>&nbsp;: les digues BDTOPO (nature
-          Quai/Digue/Perré/Jetée) annulent le recul sur les mailles en aval.
+          <strong>Ouvrages de protection</strong> (digues BDTOPO&nbsp;: Quai/Digue/
+          Perré/Jetée)&nbsp;: traités comme des barrières à la cote de crête
+          (sol&nbsp;+&nbsp;~4&nbsp;m) qui bloquent le recul et la submersion
+          <em>tant que le niveau reste sous la crête</em>, mais sont
+          <strong>franchis par surverse</strong> dès que le niveau d'eau dépasse
+          la crête&nbsp;— la zone protégée est alors inondée (un ouvrage ne
+          protège pas indéfiniment&nbsp;; le franchissement par brèche n'est pas
+          modélisé). La <strong>bathymétrie</strong> du fond marin provient
+          d'<strong>EMODnet</strong> (intégrant les levés SHOM/LITTO3D), même
+          référentiel vertical que le MNT (niveau marin moyen ≈ NGF-IGN69).
           Réf.&nbsp;: Bruun (1962) <em>JWH-ASCE</em>&nbsp;88(WW1):117&nbsp;;
           Stive (2004) <em>Climatic Change</em>&nbsp;64:27&nbsp;;
           Cerema (2018) <em>Méthode TCMOY</em>.
@@ -4337,10 +4345,10 @@ async function loadCommune3D(c) {
     t3d.elev = elev;
     /* === Mer / NODATA ===
        L'API IGN renvoie -99999 sur la mer (le RGE ALTI est un MNT terrestre).
-       Conservé tel quel, cela : (a) creuse un abîme dans le maillage, (b) fausse
-       les altitudes min/moy, (c) fait amorcer l'inondation depuis tout le bord
-       de la tuile. On marque donc ces cellules comme MER (source hydraulique de
-       la submersion) et on leur donne une altitude de fond plausible. */
+       On marque ces cellules comme MER (source hydraulique de la submersion) et
+       on les comble par la BATHYMÉTRIE EMODnet (qui intègre les levés nationaux
+       SHOM / LITTO3D), profondeurs en m sous le niveau marin moyen — même
+       référentiel que le MNT terrestre. Repli : fond plat si EMODnet indisponible. */
     const SEA_FLOOR = -3.0;
     t3d.seaMask = new Uint8Array(elev.length);
     let seaCount = 0;
@@ -4348,8 +4356,55 @@ async function loadCommune3D(c) {
       if (!isFinite(elev[i]) || elev[i] <= -1000) { t3d.seaMask[i] = 1; elev[i] = SEA_FLOOR; seaCount++; }
     }
     t3d.seaCount = seaCount;
+
+    // -- Bathymétrie EMODnet (SHOM/LITTO3D) sur les cellules mer --
+    if (seaCount > 0) {
+      showLoader('Bathymétrie EMODnet (SHOM/LITTO3D)…');
+      const CGN = 8;                                  // grille bathy grossière 8×8
+      const cg = new Float32Array(CGN * CGN); cg.fill(NaN);
+      const cgPts = [];
+      for (let zi = 0; zi < CGN; zi++) for (let xi = 0; xi < CGN; xi++) {
+        const lat = maxLat - (zi / (CGN - 1)) * (maxLat - minLat);
+        const lng = minLng + (xi / (CGN - 1)) * (maxLng - minLng);
+        cgPts.push([zi * CGN + xi, lng, lat]);
+      }
+      const fetchDepth = async ([idx, lng, lat], attempt = 0) => {
+        try {
+          const r = await fetch(`https://rest.emodnet-bathymetry.eu/depth_sample?geom=POINT(${lng.toFixed(5)}%20${lat.toFixed(5)})`);
+          if (!r.ok) throw 0;
+          const j = await r.json();
+          const d = (j.smoothed != null) ? j.smoothed : j.avg;
+          if (typeof d === 'number') cg[idx] = d;
+        } catch (e) {
+          if (attempt < 2) { await sleep(350 * (attempt + 1)); return fetchDepth([idx, lng, lat], attempt + 1); }
+        }
+      };
+      const bq = cgPts.slice();
+      await Promise.all(Array.from({ length: 6 }, async () => { while (bq.length) { const p = bq.shift(); if (p) await fetchDepth(p); } }));
+      const hasBathy = cg.some(v => !isNaN(v) && v < 0);
+      if (hasBathy) {
+        const cgVal = (zz, xx) => { const val = cg[zz * CGN + xx]; return (isNaN(val) || val > 0) ? 0 : val; }; // terre/NaN → 0 (côte)
+        const sampleCG = (fx, fz) => {
+          const x0 = Math.max(0, Math.min(CGN - 1, Math.floor(fx))), z0 = Math.max(0, Math.min(CGN - 1, Math.floor(fz)));
+          const x1 = Math.min(CGN - 1, x0 + 1), z1 = Math.min(CGN - 1, z0 + 1);
+          const tx = fx - x0, tz = fz - z0;
+          return (1 - tx) * (1 - tz) * cgVal(z0, x0) + tx * (1 - tz) * cgVal(z0, x1)
+               + (1 - tx) * tz * cgVal(z1, x0) + tx * tz * cgVal(z1, x1);
+        };
+        for (let i = 0; i < elev.length; i++) if (t3d.seaMask[i]) {
+          const xi = i % NX, zi = (i - xi) / NX;
+          let d = sampleCG(xi / (NX - 1) * (CGN - 1), zi / (NZ - 1) * (CGN - 1));
+          if (d > -0.3) d = -0.3;                     // une cellule mer reste sous l'eau
+          elev[i] = d;
+        }
+        t3d.bathyLoaded = true;
+      } else {
+        t3d.bathyLoaded = false;                      // repli : fond plat SEA_FLOOR déjà posé
+      }
+    }
+
     t3d.origElev = new Float32Array(elev); // copie immuable pour le recul Bruun
-    // stats (sur les altitudes assainies)
+    // stats (sur les altitudes assainies + bathymétrie)
     let minZ = Infinity, maxZ = -Infinity, sum = 0;
     for (const z of elev) {
       if (z < minZ) minZ = z;
@@ -4741,18 +4796,29 @@ function sampleElev(buf, gx, gz) {
 /* Remplissage hydraulique : cellules sous le niveau v ET reliées à la mer par
    un chemin continu de cellules elles aussi sous l'eau. Graine = bord du bbox
    (l'extérieur étant la mer). BFS 4-voisins → masque + distance à la mer. */
-const SEA_EPS = 0.15;   // marge waterline : la mer (MNT ≈ 0) reste visible au niveau de référence
+const SEA_EPS = 0.15;       // marge waterline : la mer (MNT ≈ 0) reste visible au niveau de référence
+const OUVRAGE_CREST_H = 4;  // hauteur de crête typique d'une digue/perré au-dessus du sol (m)
 /* La submersion part de la MER (cellules NODATA marquées seaMask), pas du bord
    de la tuile, puis se propage de proche en proche vers les cellules dont
    l'altitude passe sous le niveau d'eau. Référentiel unique : NGF-IGN69 pour le
-   MNT comme pour le niveau d'eau (RSLR + surcote ajoutés en mètres NGF). */
+   MNT comme pour le niveau d'eau (RSLR + surcote ajoutés en mètres NGF).
+
+   Les OUVRAGES (digues, perrés, quais BDTOPO) sont traités comme des barrières
+   à la cote de crête (sol + ~4 m) : ils bloquent l'eau TANT QUE le niveau reste
+   sous la crête, et sont FRANCHIS PAR SURVERSE dès que le niveau dépasse la
+   crête — la zone protégée est alors inondée (réalisme : un ouvrage ne protège
+   pas indéfiniment). Le franchissement par brèche n'est pas modélisé. */
 function computeFloodConnectivity(v) {
   const lvl = v + SEA_EPS;
   const N = NX * NZ;
   const mask = new Uint8Array(N);
   const dist = new Int32Array(N); dist.fill(-1);
   const elev = t3d.elev;
+  const orig = t3d.origElev || elev;
   const sea = t3d.seaMask;
+  const ouvr = t3d.ouvragesMask;
+  // Altitude effective : une cellule-ouvrage est relevée à sa crête (sol + H)
+  const eff = (i) => (ouvr && ouvr[i]) ? (orig[i] + OUVRAGE_CREST_H) : elev[i];
   const qx = new Int32Array(N), qz = new Int32Array(N);
   let head = 0, tail = 0;
   const enqueue = (i) => { mask[i] = 1; dist[i] = 0; qx[tail] = i % NX; qz[tail] = (i - i % NX) / NX; tail++; };
@@ -4762,7 +4828,7 @@ function computeFloodConnectivity(v) {
     for (let i = 0; i < N; i++) if (sea[i] && !mask[i]) { enqueue(i); seeded++; }
   }
   if (!seeded) {
-    const seedB = (xi, zi) => { const i = zi * NX + xi; if (!mask[i] && elev[i] < lvl) enqueue(i); };
+    const seedB = (xi, zi) => { const i = zi * NX + xi; if (!mask[i] && eff(i) < lvl) enqueue(i); };
     for (let xi = 0; xi < NX; xi++) { seedB(xi, 0); seedB(xi, NZ - 1); }
     for (let zi = 0; zi < NZ; zi++) { seedB(0, zi); seedB(NX - 1, zi); }
   }
@@ -4772,7 +4838,7 @@ function computeFloodConnectivity(v) {
     const tryN = (nx, nz) => {
       if (nx < 0 || nx >= NX || nz < 0 || nz >= NZ) return;
       const ni = nz * NX + nx;
-      if (!mask[ni] && elev[ni] < lvl) { mask[ni] = 1; dist[ni] = d + 1; qx[tail] = nx; qz[tail] = nz; tail++; }
+      if (!mask[ni] && eff(ni) < lvl) { mask[ni] = 1; dist[ni] = d + 1; qx[tail] = nx; qz[tail] = nz; tail++; }
     };
     tryN(xi + 1, zi); tryN(xi - 1, zi); tryN(xi, zi + 1); tryN(xi, zi - 1);
   }
@@ -4906,18 +4972,21 @@ function applyWaterLevel() {
   rebuildFloodMesh(mask);
   rebuildFloodArrows(mask, dist, v, waterY);
 
-  // Bâtiments : inondé / érodé / protégé (uniquement si la cellule est
-  // hydrauliquement connectée à la mer — sinon cuvette isolée, non inondée)
+  // Bâtiments : inondé / érodé / protégé.
+  // L'inondation découle de la CONNECTIVITÉ (mask) : si l'ouvrage tient, la
+  // cellule derrière n'est pas reliée à la mer → non inondée ; s'il est franchi
+  // par surverse, elle le devient → inondée. Le « protégé » = bâti qui serait
+  // sous l'eau mais qu'un ouvrage encore non franchi met à l'abri.
   let flooded = 0, eroded = 0, protectedBldg = 0;
   t3d.buildings.forEach(b => {
     const bx = b.position.x, bz = b.position.z;
     const cxi = Math.max(0, Math.min(NX-1, Math.round((bx/SIZE + 0.5)*(NX-1))));
     const czi = Math.max(0, Math.min(NZ-1, Math.round((bz/SIZE + 0.5)*(NZ-1))));
     const cellIdx = czi * NX + cxi;
-    const isProtected = useBruun && t3d.protectionMask && t3d.protectionMask[cellIdx];
+    const behindOuvrage = t3d.protectionMask && t3d.protectionMask[cellIdx] === 1;
     const connected = mask[cellIdx] === 1;
     let newGroundAlt;
-    if (useBruun && !isProtected) {
+    if (useBruun && !(behindOuvrage)) {
       const fc = t3d.bruunFactorCell ? t3d.bruunFactorCell[cellIdx] : t3d.bruunFactor;
       const Rcell = vBruun * fc;       // recul lié à la RSLR
       const sx = bx + Rcell * t3d.seawardX;
@@ -4927,12 +4996,13 @@ function applyWaterLevel() {
       newGroundAlt = b.userData.baseAlt;
     }
     const lost = newGroundAlt < v - 0.1 && connected;
-    if (lost && !isProtected) {
+    if (lost) {
       flooded++;
       if (useBruun && b.userData.baseAlt > v) eroded++;
       if (b.material !== buildingsGroup.userData.floodedMat) b.material = buildingsGroup.userData.floodedMat;
     } else {
-      if (isProtected && b.userData.baseAlt < v + 2) protectedBldg++;
+      // bâti à l'abri d'un ouvrage encore non franchi (serait sinon sous l'eau)
+      if (behindOuvrage && !connected && b.userData.baseAlt < v) protectedBldg++;
       if (b.material !== buildingsGroup.userData.normalMat) b.material = buildingsGroup.userData.normalMat;
     }
   });
