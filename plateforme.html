@@ -938,6 +938,20 @@ img { display: block; max-width: 100%; }
 .imm-hydro-speed button.active { background: var(--coral); border-color: var(--coral); }
 .imm-hydro-speed #immHydroReplay { margin-left: auto; font-size: 13px; padding: 3px 9px; }
 
+/* Panneau de réglages SOUS la fenêtre 3D (ne masque plus la visualisation) */
+.imm-panel {
+  max-width: 1400px; margin: 14px auto 0;
+  background: var(--abyss);
+  border: 1px solid rgba(246,241,231,0.10);
+  border-radius: 16px; padding: 18px 20px;
+  display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start;
+  color: var(--paper);
+}
+.imm-panel .imm-controls { position: static; inset: auto; display: flex; flex-wrap: wrap; gap: 8px; flex: 1 1 240px; align-content: flex-start; }
+.imm-panel .imm-slider-wrap { position: static; inset: auto; width: auto; flex: 1 1 290px; background: transparent; border: 0; padding: 0; backdrop-filter: none; }
+.imm-panel .imm-hydro { position: static; inset: auto; transform: none; width: auto; flex: 2 1 340px; background: transparent; border: 0; padding: 0; }
+.imm-panel .imm-hydro #hydroCanvas { height: 96px; }
+
 .imm-slider-wrap {
   position: absolute; right: 24px; bottom: 24px;
   width: 280px;
@@ -2175,6 +2189,48 @@ input.imm-range::-moz-range-thumb {
         <div class="imm-title-eyebrow" id="immEyebrow">Maquette · MNT RGE ALTI® + BD TOPO®</div>
         <div class="imm-title-main" id="immTitle">Soulac-sur-Mer · Le Signal</div>
       </div>
+      <div class="imm-readout">
+        <div class="imm-readout-item">
+          <div class="imm-readout-label">Niveau marin total · still water</div>
+          <div class="imm-readout-value" id="immSeaLevel">+0,00<small>m NGF</small></div>
+        </div>
+        <div class="imm-readout-item">
+          <div class="imm-readout-label">Bâti BD&nbsp;TOPO inondé</div>
+          <div class="imm-readout-value" id="immBuildingsReadout">— <small>/ —</small></div>
+        </div>
+        <div class="imm-readout-item">
+          <div class="imm-readout-label">Surface immergée</div>
+          <div class="imm-readout-value" id="immArea">— <small>ha</small></div>
+        </div>
+        <div class="imm-readout-item">
+          <div class="imm-readout-label">Altitude min/max</div>
+          <div class="imm-readout-value" id="immAlti">— / —<small>m</small></div>
+        </div>
+        <div class="imm-readout-item" id="immBruunReadout" style="display:none;">
+          <div class="imm-readout-label">Recul du trait de côte · Bruun</div>
+          <div class="imm-readout-value" id="immRetreat">— <small>m</small></div>
+        </div>
+        <div class="imm-readout-item" id="immValueReadout" style="display:none;">
+          <div class="imm-readout-label">Valeur immobilière exposée · DVF</div>
+          <div class="imm-readout-value" id="immValue">— <small>M€</small></div>
+        </div>
+      </div>
+
+      <div class="imm-loader" id="immLoader" style="display:none;">
+        <div class="imm-loader-spinner"></div>
+        <div class="imm-loader-text" id="immLoaderText">Chargement…</div>
+      </div>
+
+      <div class="imm-attrib">
+        Niveau = pleine mer de vive-eau (marée réf. par façade) + RSLR + surcote · submersion connectée à la mer (cuvettes isolées non inondées) · ouvrages franchis par surverse · « Tempête ▶ » = modèle hydraulique 2D dynamique sur 2 cycles de marée (marée semi-diurne adaptée à la façade + surcote sur la pleine mer, propagation temporelle, brèche, eau résiduelle) · flèches&nbsp;= flux/arrivée de l'eau.<br>
+        Tempêtes de référence : niveaux de pic observés RONIM/REFMAR-SHOM · crête des ouvrages calée sur le MNT LIDAR/RGE&nbsp;ALTI de l'ouvrage, ajustable.<br>
+        Sources : MNT RGE ALTI® · BD TOPO® · BD ORTHO® © IGN-F / Géoplateforme · bathymétrie EMODnet (SHOM/LITTO3D) · marégraphie REFMAR/SHOM
+      </div>
+    </div>
+  </div>
+
+  <!-- Réglages déplacés SOUS la fenêtre de visualisation -->
+  <div class="imm-panel">
       <div class="imm-controls">
         <button class="imm-btn" id="immChoose">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -2206,50 +2262,6 @@ input.imm-range::-moz-range-thumb {
         </button>
       </div>
 
-      <div class="imm-readout">
-        <div class="imm-readout-item">
-          <div class="imm-readout-label">Niveau marin total · still water</div>
-          <div class="imm-readout-value" id="immSeaLevel">+0,00<small>m NGF</small></div>
-        </div>
-        <div class="imm-readout-item">
-          <div class="imm-readout-label">Bâti BD&nbsp;TOPO inondé</div>
-          <div class="imm-readout-value" id="immBuildingsReadout">— <small>/ —</small></div>
-        </div>
-        <div class="imm-readout-item">
-          <div class="imm-readout-label">Surface immergée</div>
-          <div class="imm-readout-value" id="immArea">— <small>ha</small></div>
-        </div>
-        <div class="imm-readout-item">
-          <div class="imm-readout-label">Altitude min/max</div>
-          <div class="imm-readout-value" id="immAlti">— / —<small>m</small></div>
-        </div>
-        <div class="imm-readout-item" id="immBruunReadout" style="display:none;">
-          <div class="imm-readout-label">Recul du trait de côte · Bruun</div>
-          <div class="imm-readout-value" id="immRetreat">— <small>m</small></div>
-        </div>
-        <div class="imm-readout-item" id="immValueReadout" style="display:none;">
-          <div class="imm-readout-label">Valeur immobilière exposée · DVF</div>
-          <div class="imm-readout-value" id="immValue">— <small>M€</small></div>
-        </div>
-      </div>
-
-      <!-- Hydrogramme de tempête animé (modèle hydraulique dynamique) -->
-      <div class="imm-hydro" id="immHydroPanel" style="display:none;">
-        <div class="imm-hydro-head">
-          <span>Hydrogramme · niveau marin</span>
-          <strong id="immHydroT">T+0,0 h · +0,00 m</strong>
-        </div>
-        <canvas id="hydroCanvas"></canvas>
-        <div class="imm-hydro-speed">
-          <span>Vitesse</span>
-          <button data-spd="0.5">0,5×</button>
-          <button data-spd="1" class="active">1×</button>
-          <button data-spd="2">2×</button>
-          <button data-spd="4">4×</button>
-          <button id="immHydroReplay" title="Rejouer la tempête">⟳</button>
-        </div>
-      </div>
-
       <div class="imm-slider-wrap">
         <div class="imm-slider-label">
           <span>Niveau marin moyen · RSLR</span>
@@ -2272,14 +2284,14 @@ input.imm-range::-moz-range-thumb {
           <span>+3 m</span>
         </div>
         <div class="imm-slider-label" style="margin-top:14px;">
-          <span>Crête des ouvrages · NGF</span>
-          <strong id="immCrestValue">+3,9 m</strong>
+          <span>Réhausse des ouvrages</span>
+          <strong id="immCrestValue">+0,0 m</strong>
         </div>
-        <input type="range" class="imm-range" id="immCrest" min="0" max="800" value="390" step="10">
+        <input type="range" class="imm-range" id="immCrest" min="-200" max="300" value="0" step="10">
         <div class="imm-slider-hint">
-          <span>0</span>
-          <span id="immCrestHint" style="font-size:8px;">cote présumée (non fournie par BDTOPO) · ajustez</span>
-          <span>+8 m</span>
+          <span>−2 m</span>
+          <span id="immCrestHint" style="font-size:8px;">crête = MNT LIDAR de l'ouvrage ± réhausse</span>
+          <span>+3 m</span>
         </div>
         <div class="imm-total">
           Niveau total simulé · <strong id="immTotalH">+0,00 m</strong>
@@ -2293,17 +2305,22 @@ input.imm-range::-moz-range-thumb {
         </div>
       </div>
 
-      <div class="imm-loader" id="immLoader" style="display:none;">
-        <div class="imm-loader-spinner"></div>
-        <div class="imm-loader-text" id="immLoaderText">Chargement…</div>
+      <!-- Hydrogramme de tempête animé (modèle hydraulique dynamique) -->
+      <div class="imm-hydro" id="immHydroPanel" style="display:none;">
+        <div class="imm-hydro-head">
+          <span>Hydrogramme · niveau marin</span>
+          <strong id="immHydroT">T+0,0 h · +0,00 m</strong>
+        </div>
+        <canvas id="hydroCanvas"></canvas>
+        <div class="imm-hydro-speed">
+          <span>Vitesse</span>
+          <button data-spd="0.5">0,5×</button>
+          <button data-spd="1" class="active">1×</button>
+          <button data-spd="2">2×</button>
+          <button data-spd="4">4×</button>
+          <button id="immHydroReplay" title="Rejouer la tempête">⟳</button>
+        </div>
       </div>
-
-      <div class="imm-attrib">
-        Niveau = pleine mer de vive-eau (marée réf. par façade) + RSLR + surcote · submersion connectée à la mer (cuvettes isolées non inondées) · ouvrages franchis par surverse · « Tempête ▶ » = modèle hydraulique 2D dynamique sur 2 cycles de marée (marée semi-diurne adaptée à la façade + surcote sur la pleine mer, propagation temporelle, brèche, eau résiduelle) · flèches&nbsp;= flux/arrivée de l'eau.<br>
-        Tempêtes de référence : niveaux de pic observés RONIM/REFMAR-SHOM · crête des ouvrages présumée (non fournie en open-data), ajustable.<br>
-        Sources : MNT RGE ALTI® · BD TOPO® · BD ORTHO® © IGN-F / Géoplateforme · bathymétrie EMODnet (SHOM/LITTO3D) · marégraphie REFMAR/SHOM
-      </div>
-    </div>
   </div>
 
   <!-- Commune picker overlay -->
@@ -4600,16 +4617,14 @@ async function loadCommune3D(c) {
     t3d.bruunFactor = bd.factor;
     t3d.closureDepth = bd.hStar;
     t3d.duneRefHeight = bd.B;
-    // Références hydrographiques de la façade : marée (PMVE), crête d'ouvrage,
-    // tempête de référence documentée (presets + libellés adaptés)
+    // Références hydrographiques de la façade : marée (PMVE) + tempête documentée.
+    // La crête des ouvrages est calée plus bas sur le MNT LIDAR de l'ouvrage
+    // (cf. ouvrageCrestLidar) ; ici on (ré)initialise la réhausse à 0.
     const fref = facadeRef(c);
     t3d.marineRef = fref.pmve;
-    // Crête d'ouvrage par défaut = pic de l'évènement de référence − 0,6 m (les
-    // défenses, non documentées en cote, sont supposées franchies par l'évènement
-    // de référence). Transparente et ajustable via le curseur « Crête digue ».
-    t3d.ouvrageCrestLevel = Math.max(fref.pmve + 0.3, fref.peakSWL - 0.6);
+    t3d.crestOffset = 0;
     const cr = document.getElementById('immCrest');
-    if (cr) { cr.value = Math.round(t3d.ouvrageCrestLevel * 100); updateCrestLabel(); }
+    if (cr) { cr.value = 0; updateCrestLabel(); }
     adaptPresetsToFacade(fref);
     document.getElementById('immEyebrow').textContent =
       `Maquette · ${c.type} · ${c.facade} · PMVE +${fref.pmve.toFixed(1).replace('.', ',')} m NGF`;
@@ -4738,6 +4753,25 @@ async function loadCommune3D(c) {
     t3d.protectionMask = protectionMask;
     t3d.protectedCells = protectedCount;
 
+    // -- Cote de crête des ouvrages calée sur le MNT LIDAR/RGE ALTI --
+    //    Pour chaque maille-ouvrage, on prend la cote la plus haute du MNT dans un
+    //    petit voisinage (la "crête" relevée par le LIDAR à l'emplacement de
+    //    l'ouvrage). La réhausse utilisateur s'ajoute ensuite (recomputeCrestEff).
+    t3d.ouvrageCrestLidar = new Float32Array(NX * NZ);
+    for (let zi = 0; zi < NZ; zi++) for (let xi = 0; xi < NX; xi++) {
+      const i = zi * NX + xi;
+      if (!ouvragesMask[i]) continue;
+      let mx = elev[i];
+      for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = xi + dx, nz = zi + dz;
+        if (nx < 0 || nx >= NX || nz < 0 || nz >= NZ) continue;
+        const e = elev[nz * NX + nx];
+        if (e > mx) mx = e;            // sommet local = crête de l'ouvrage vue par le MNT
+      }
+      t3d.ouvrageCrestLidar[i] = mx;
+    }
+    recomputeCrestEff();
+
     // -- Rendu 3D des ouvrages : ligne noire surélevée sur le terrain --
     if (t3d.ouvragesGroup) {
       scene3.remove(t3d.ouvragesGroup);
@@ -4761,10 +4795,13 @@ async function loadCommune3D(c) {
           const alt = sampleElev(elev,
             (cx/SIZE + 0.5) * (NX-1),
             (cz/SIZE + 0.5) * (NZ-1));
-          // crête de l'ouvrage à la cote de référence (PMVE + franc-bord) ;
-          // hauteur visible = crête − sol, pour que la surverse soit cohérente
-          const crest = Math.max(alt + 1.0, t3d.ouvrageCrestLevel || (alt + 2));
-          const wallH = Math.max(1.2, crest - alt);
+          // crête de l'ouvrage = cote LIDAR locale + réhausse ; hauteur visible
+          // = crête − sol (cohérente avec la surverse du modèle hydraulique)
+          const oxi = Math.max(0, Math.min(NX-1, Math.round((cx/SIZE + 0.5) * (NX-1))));
+          const ozi = Math.max(0, Math.min(NZ-1, Math.round((cz/SIZE + 0.5) * (NZ-1))));
+          const lid = t3d.ouvrageCrestLidar ? t3d.ouvrageCrestLidar[ozi*NX+oxi] : 0;
+          const crest = Math.max(alt + 0.5, lid + (t3d.crestOffset || 0));
+          const wallH = Math.max(0.6, crest - alt);
           const wallW = 3;
           const geom = new THREE.BoxGeometry(length, wallH * VSCALE, wallW);
           const mesh = new THREE.Mesh(geom, ouvragesMat);
@@ -4963,11 +5000,12 @@ const OUVRAGE_CREST_H = 4;  // hauteur de crête typique d'une digue/perré au-d
    3D ET les vignettes 2100. `elevArr` = MNT (éventuellement reculé Bruun) ;
    `lvl` = cote d'eau still-water (NGF) ; amorçage depuis la mer (seaMask) ou le
    bord du bbox en repli ; les ouvrages bloquent jusqu'à leur cote de crête. */
-function floodFillMask(elevArr, lvl, sea, ouvr, crestLvl, wantDist) {
+function floodFillMask(elevArr, lvl, sea, ouvr, crestArr, wantDist) {
   const N = NX * NZ;
   const mask = new Uint8Array(N);
   const dist = wantDist ? new Int32Array(N) : null; if (dist) dist.fill(-1);
-  const eff = (i) => (ouvr && ouvr[i]) ? Math.max(elevArr[i] + 1.0, crestLvl) : elevArr[i];
+  // crête effective par maille-ouvrage (LIDAR + réhausse) ; sinon altitude MNT
+  const eff = (i) => (ouvr && ouvr[i] && crestArr) ? Math.max(elevArr[i], crestArr[i]) : elevArr[i];
   const qx = new Int32Array(N), qz = new Int32Array(N);
   let head = 0, tail = 0;
   const enqueue = (i) => { mask[i] = 1; if (dist) dist[i] = 0; qx[tail] = i % NX; qz[tail] = (i - i % NX) / NX; tail++; };
@@ -4991,8 +5029,7 @@ function floodFillMask(elevArr, lvl, sea, ouvr, crestLvl, wantDist) {
   return { mask, dist };
 }
 function computeFloodConnectivity(v) {
-  const crestLvl = (t3d.ouvrageCrestLevel != null) ? t3d.ouvrageCrestLevel : OUVRAGE_CREST_H;
-  return floodFillMask(t3d.elev, v + SEA_EPS, t3d.seaMask, t3d.ouvragesMask, crestLvl, true);
+  return floodFillMask(t3d.elev, v + SEA_EPS, t3d.seaMask, t3d.ouvragesMask, t3d.crestEff, true);
 }
 
 /* Reconstruit les faces de la nappe de submersion : un quad par cellule dont
@@ -5088,11 +5125,11 @@ function initHydro() {
   }
   t3d.h.fill(0); t3d.vx.fill(0); t3d.vz.fill(0);
   const base = (t3d.seaLevel != null) ? t3d.seaLevel : (t3d.marineRef || 0);
-  const crest = (t3d.ouvrageCrestLevel != null) ? t3d.ouvrageCrestLevel : 4;
-  const ouvr = t3d.ouvragesMask;
+  const ouvr = t3d.ouvragesMask, ce = t3d.crestEff;
   for (let i = 0; i < N; i++) {
     if (t3d.seaMask && t3d.seaMask[i]) t3d.h[i] = Math.max(0, base - t3d.elev[i]);
-    t3d.crestArr[i] = (ouvr && ouvr[i]) ? Math.max(t3d.elev[i] + 1.0, crest) : -1e9;  // cote de crête érodable
+    // crête érodable = crête LIDAR + réhausse (au moins le sol)
+    t3d.crestArr[i] = (ouvr && ouvr[i]) ? Math.max(t3d.elev[i], ce ? ce[i] : t3d.elev[i] + 4) : -1e9;
   }
   t3d.seaLevel = base;
 }
@@ -5197,7 +5234,7 @@ function drawHydrograph() {
   if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
   const D = t3d.simDur || 43200, base = t3d.simBase || 0, peak = t3d.simPeak || 1;
-  const crest = (t3d.ouvrageCrestLevel != null) ? t3d.ouvrageCrestLevel : null;
+  const crest = (t3d.crestRefDisplay != null) ? t3d.crestRefDisplay : null;
   const x0 = 6, x1 = W - 6, yT = 6, yB = H - 13;
   const yMin = base - 0.2, yMax = Math.max(peak, crest != null ? crest : peak) + 0.35;
   const X = T => x0 + (T / D) * (x1 - x0);
@@ -5542,20 +5579,34 @@ document.querySelectorAll('.imm-hydro-speed button[data-spd]').forEach(btn => {
 });
 document.getElementById('immHydroReplay').addEventListener('click', () => startStorm());
 
-/* Crête des ouvrages (cote présumée, ajustable) — transparence + test "et si la
-   digue était plus haute / plus basse". Affecte modèle statique ET hydraulique. */
+/* Crête EFFECTIVE des ouvrages = crête LIDAR (MNT à l'ouvrage) + réhausse.
+   crestEff[i] (NGF) par maille-ouvrage ; sentinelle très basse ailleurs. */
+function recomputeCrestEff() {
+  const N = NX * NZ, ouvr = t3d.ouvragesMask, lid = t3d.ouvrageCrestLidar;
+  if (!ouvr || !lid) return;
+  if (!t3d.crestEff || t3d.crestEff.length !== N) t3d.crestEff = new Float32Array(N);
+  const off = t3d.crestOffset || 0;
+  let sum = 0, n = 0;
+  for (let i = 0; i < N; i++) {
+    if (ouvr[i]) { t3d.crestEff[i] = lid[i] + off; sum += t3d.crestEff[i]; n++; }
+    else t3d.crestEff[i] = -1e9;
+  }
+  t3d.crestRefDisplay = n ? (sum / n) : null;   // crête moyenne pour l'hydrogramme
+}
+/* Réhausse des ouvrages — transparence + test "et si la digue était renforcée /
+   dégradée". Affecte modèle statique ET hydraulique. */
 function updateCrestLabel() {
-  const cr = document.getElementById('immCrest');
-  const v = parseFloat(cr.value) / 100;
-  document.getElementById('immCrestValue').textContent = `+${v.toFixed(1).replace('.', ',')} m`;
+  const v = parseFloat(document.getElementById('immCrest').value) / 100;
+  const s = v >= 0 ? '+' : '';
+  document.getElementById('immCrestValue').textContent = `${s}${v.toFixed(1).replace('.', ',')} m`;
 }
 document.getElementById('immCrest').addEventListener('input', () => {
-  t3d.ouvrageCrestLevel = parseFloat(document.getElementById('immCrest').value) / 100;
+  t3d.crestOffset = parseFloat(document.getElementById('immCrest').value) / 100;
   updateCrestLabel();
-  if (t3d.hydro && t3d.crestArr && t3d.ouvragesMask) {
-    // réinitialise les crêtes (annule les brèches en cours) à la nouvelle cote
+  recomputeCrestEff();
+  if (t3d.hydro && t3d.crestArr && t3d.ouvragesMask && t3d.crestEff) {
     for (let i = 0; i < t3d.crestArr.length; i++)
-      if (t3d.ouvragesMask[i]) t3d.crestArr[i] = Math.max(t3d.elev[i] + 1.0, t3d.ouvrageCrestLevel);
+      if (t3d.ouvragesMask[i]) t3d.crestArr[i] = t3d.crestEff[i];   // réinitialise les brèches en cours
   } else if (typeof applyWaterLevel === 'function') applyWaterLevel();
 });
 
@@ -5743,8 +5794,7 @@ function rebuildVignettes(c) {
     //    cuvettes isolées non inondées, ouvrages franchis par surverse).
     const tideRef = t3d.marineRef || 0;
     const lvl2100 = tideRef + sea2100;
-    const crestLvl = (t3d.ouvrageCrestLevel != null) ? t3d.ouvrageCrestLevel : 4;
-    const vmask = floodFillMask(newElev, lvl2100 + SEA_EPS, t3d.seaMask, t3d.ouvragesMask, crestLvl, false).mask;
+    const vmask = floodFillMask(newElev, lvl2100 + SEA_EPS, t3d.seaMask, t3d.ouvragesMask, t3d.crestEff, false).mask;
     let cellsNewWet = 0, cellsLostErosion = 0, cellsProtected = 0;
     for (let zi = 0; zi < NZ; zi++) {
       for (let xi = 0; xi < NX; xi++) {
