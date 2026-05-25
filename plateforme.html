@@ -2271,6 +2271,16 @@ input.imm-range::-moz-range-thumb {
           <span id="immSurgeRefHint">Xynthia 2010 : +1,50 m</span>
           <span>+3 m</span>
         </div>
+        <div class="imm-slider-label" style="margin-top:14px;">
+          <span>Crête des ouvrages · NGF</span>
+          <strong id="immCrestValue">+3,9 m</strong>
+        </div>
+        <input type="range" class="imm-range" id="immCrest" min="0" max="800" value="390" step="10">
+        <div class="imm-slider-hint">
+          <span>0</span>
+          <span id="immCrestHint" style="font-size:8px;">cote présumée (non fournie par BDTOPO) · ajustez</span>
+          <span>+8 m</span>
+        </div>
         <div class="imm-total">
           Niveau total simulé · <strong id="immTotalH">+0,00 m</strong>
         </div>
@@ -2290,7 +2300,8 @@ input.imm-range::-moz-range-thumb {
 
       <div class="imm-attrib">
         Niveau = pleine mer de vive-eau (marée réf. par façade) + RSLR + surcote · submersion connectée à la mer (cuvettes isolées non inondées) · ouvrages franchis par surverse · « Tempête ▶ » = modèle hydraulique 2D dynamique sur 2 cycles de marée (marée semi-diurne adaptée à la façade + surcote sur la pleine mer, propagation temporelle, brèche, eau résiduelle) · flèches&nbsp;= flux/arrivée de l'eau.<br>
-        Sources : MNT RGE ALTI® · BD TOPO® · BD ORTHO® © IGN-F / Géoplateforme · bathymétrie EMODnet (SHOM/LITTO3D)
+        Tempêtes de référence : niveaux de pic observés RONIM/REFMAR-SHOM · crête des ouvrages présumée (non fournie en open-data), ajustable.<br>
+        Sources : MNT RGE ALTI® · BD TOPO® · BD ORTHO® © IGN-F / Géoplateforme · bathymétrie EMODnet (SHOM/LITTO3D) · marégraphie REFMAR/SHOM
       </div>
     </div>
   </div>
@@ -2661,24 +2672,31 @@ input.imm-range::-moz-range-thumb {
           mer de vive-eau</strong> (PMVE, socle de marée par façade&nbsp;: ~0,4&nbsp;m
           Méditerranée, ~2,2&nbsp;m Aquitaine, ~3,0&nbsp;m Atlantique, ~4,5-4,8&nbsp;m
           Manche)&nbsp;+&nbsp;RSLR&nbsp;+&nbsp;surcote tempête. Sans ce socle de marée
-          l'aléa est massivement sous-estimé (un type Xynthia ≈ PMVE&nbsp;+&nbsp;~1,5&nbsp;m
-          de surcote ≈ 4&nbsp;m&nbsp;NGF dans les Pertuis, niveau de référence des PPRL).
+          l'aléa est massivement sous-estimé. Les <strong>évènements de référence
+          sont documentés par façade</strong> à partir des niveaux de pic observés aux
+          marégraphes <strong>RONIM / REFMAR-SHOM</strong> (et niveaux de référence
+          PPRL)&nbsp;: <em>Xynthia</em> 28/02/2010 La&nbsp;Rochelle-La&nbsp;Pallice
+          <strong>+4,5&nbsp;m&nbsp;NGF</strong>, <em>Klaus</em> 24/01/2009 Arcachon
+          +3,2&nbsp;m, <em>1953/Xaver</em> Dunkerque +5,8&nbsp;m, <em>Johanna</em>
+          10/03/2008 Saint-Malo +6,4&nbsp;m, tempête déc.&nbsp;1997 Sète +1,2&nbsp;m.
+          L'hydrogramme reconstitué (marée semi-diurne d'amplitude locale + surcote
+          calée pour atteindre ce pic observé) peut être surélevé par les curseurs RSLR.
           La surcote est exclue du recul morphologique (Bruun&nbsp;: variations
-          pérennes du niveau d'équilibre, non les événements épisodiques).
+          pérennes, non les évènements épisodiques).
           <strong>Ouvrages de protection</strong> (digues BDTOPO&nbsp;: Quai/Digue/
-          Perré/Jetée)&nbsp;: barrières à la cote de crête (≈&nbsp;PMVE&nbsp;+&nbsp;1,3&nbsp;m
-          NGF) qui bloquent le recul et la submersion
-          <em>tant que le niveau reste sous la crête</em>, mais sont
-          <strong>franchis par surverse</strong> dès que le niveau d'eau dépasse
-          la crête&nbsp;— la zone protégée est alors inondée (un ouvrage ne
-          protège pas indéfiniment). Le bouton <strong>« Tempête ▶ »</strong> active
-          un <strong>modèle hydraulique 2D dynamique</strong> (automate cellulaire à
-          onde diffusive, vitesse de Manning, mass-conservative&nbsp;; réf. Guidolin
-          et&nbsp;al. 2016 / LISFLOOD-FP) qui propage la submersion dans le temps le
-          long d'un hydrogramme de tempête, avec <strong>croissance de brèche</strong>
-          (érosion de la crête sous surverse soutenue) et <strong>eau résiduelle
-          piégée</strong> après le retrait. La <strong>bathymétrie</strong> du fond marin provient
-          d'<strong>EMODnet</strong> (intégrant les levés SHOM/LITTO3D), même
+          Perré/Jetée)&nbsp;: leur cote de crête réelle n'étant <em>pas fournie en
+          données ouvertes</em>, elle est posée par défaut à
+          <strong>pic de référence&nbsp;−&nbsp;0,6&nbsp;m</strong> (l'évènement de référence
+          franchit donc l'ouvrage) et reste <strong>ajustable</strong> via le curseur
+          « Crête digue ». Les ouvrages bloquent le recul et la submersion
+          <em>sous la crête</em>, sont <strong>franchis par surverse</strong> au-delà.
+          Le bouton <strong>« Tempête ▶ »</strong> active un
+          <strong>modèle hydraulique 2D dynamique</strong> (automate cellulaire à onde
+          diffusive, vitesse de Manning, mass-conservative&nbsp;; réf. Guidolin et&nbsp;al.
+          2016 / LISFLOOD-FP) qui propage la submersion sur <strong>2 cycles de
+          marée</strong>, avec <strong>croissance de brèche</strong> et <strong>eau
+          résiduelle piégée</strong> après le retrait. La <strong>bathymétrie</strong>
+          du fond marin provient d'<strong>EMODnet</strong> (levés SHOM/LITTO3D), même
           référentiel vertical que le MNT (niveau marin moyen ≈ NGF-IGN69).
           Réf.&nbsp;: Bruun (1962) <em>JWH-ASCE</em>&nbsp;88(WW1):117&nbsp;;
           Stive (2004) <em>Climatic Change</em>&nbsp;64:27&nbsp;;
@@ -2701,7 +2719,8 @@ input.imm-range::-moz-range-thumb {
           <li><a href="https://apidf-preprod.cerema.fr/dvf_opendata/" target="_blank">DVF Cerema</a> · mutations foncières 2020-2024 (prix, surface, type bien)</li>
           <li><strong>Cellules hydrosédimentaires</strong> · délinéation nationale data-driven (824 cellules) — stitching du trait de côte morpho-sédimentaire national (DGALN/Cerema, 56 865 segments) + barrières au transit : caps rocheux (rotation convexe), grands ports, et <strong>26 têtes de canyon sous-marin</strong> détectées par anomalie bathymétrique <a href="https://emodnet.ec.europa.eu/en/bathymetry" target="_blank">EMODnet</a> (Gouf de Capbreton, canyon du Var, canyons corses…). Budget net par l'indicateur d'érosion Cerema. <strong>Sens de la dérive littorale</strong> par cellule : transit longshore (formule CERC Q∝H²·sin2θ) projeté sur la tangente du trait de côte à partir du <a href="https://open-meteo.com/en/docs/marine-weather-api" target="_blank">climat de houle réel 2023</a> (archive horaire Hs + direction, ~390 points au large). Validé vs couche officielle Cerema (58 cellules, 2020)</li>
           <li><a href="https://www.data.gouv.fr/fr/datasets/indicateur-national-de-lerosion-cotiere-1/" target="_blank">Cerema</a> · indicateur national d'érosion (taux m/an, prod. 06/2018) embarqué en statique</li>
-          <li><a href="https://www.georisques.gouv.fr/" target="_blank">Géorisques</a> · PPRN, Cat'Nat, PPRNN</li>
+          <li><a href="https://www.georisques.gouv.fr/" target="_blank">Géorisques</a> · PPRN/PPRL (zonage submersion), Cat'Nat</li>
+          <li><a href="https://refmar.shom.fr/" target="_blank">REFMAR / RONIM · SHOM</a> · niveaux de pic observés des tempêtes de référence par façade (Xynthia, Klaus, Johanna, 1953/Xaver…)</li>
           <li><a href="https://www.ipcc.ch/report/ar6/wg1/" target="_blank">IPCC AR6 WG1</a> · scénarios SSP de niveau marin</li>
         </ul>
       </div>
@@ -4203,29 +4222,24 @@ function bruunDefaultsForCoast(c) {
 }
 function bruunFactorForCoast(c) { return bruunDefaultsForCoast(c).factor; }
 
-/* === Référence marine (marée) par façade ===
-   La submersion ne se calcule pas par rapport au niveau marin MOYEN (0 NGF)
-   mais par rapport à une PLEINE MER DE VIVE-EAU (PMVE), sur laquelle s'ajoutent
-   la surcote tempête et l'élévation long terme (RSLR). Sans ce socle de marée,
-   le modèle sous-estime massivement l'aléa (un Xynthia = ~4 m NGF en eau calme
-   dans les Pertuis = PMVE ~3 m + surcote ~1,5 m, et non +1,5 m seul).
-   Valeurs PMVE indicatives en m NGF-IGN69 par façade (ordre de grandeur). */
-/* === Références hydrographiques PAR FAÇADE ===
-   Pour chaque façade : marée de référence PMVE (pleine mer de vive-eau, m NGF),
-   surcote de la tempête de référence locale, surcote centennale, franc-bord de
-   crête des ouvrages, et nom de l'évènement de référence. La submersion se
-   calcule en still-water level NGF = PMVE + RSLR + surcote.
-     - Méditerranée : microtidal (~0,4 m), surcotes faibles mais setup de houle.
-     - Aquitaine    : marnage moyen, tempêtes Martin/Klaus.
-     - Atlantique   : Pertuis/Bretagne sud, évènement de référence Xynthia 2010.
-     - Manche/Nord  : Dunkerque-Calais, grande marée, surcote 1953/Xaver.
-     - Manche       : Normandie/Cotentin/Bretagne nord, marnage très fort. */
+/* === Références hydrographiques PAR FAÇADE — évènements de tempête documentés ===
+   La submersion se calcule en still-water level NGF = marée (PMVE) + surcote + RSLR.
+   Les niveaux de PIC OBSERVÉ (peakSWL, m NGF) sont ceux des marégraphes RONIM /
+   REFMAR-SHOM lors des évènements de référence (et niveaux de référence PPRL) :
+     - Méditerranée : tempête déc. 1997 (Sète), microtidal, surcote-houle.
+     - Aquitaine    : Klaus 24/01/2009 (Arcachon-Eyrac).
+     - Atlantique   : Xynthia 28/02/2010 (La Rochelle-La Pallice) — réf. PPRL Pertuis.
+     - Manche/Nord  : 1953 / Xaver 06/12/2013 (Dunkerque).
+     - Manche       : Johanna 10/03/2008 (Saint-Malo).
+   surcote = peakSWL − PMVE ; la crête d'ouvrage par défaut = peakSWL − 0,6 m
+   (hypothèse : les défenses, non documentées en cote dans les données ouvertes,
+   sont dimensionnées sous l'évènement de référence → franchies). Ajustable. */
 const FACADE_REF = {
-  mediterranee: { pmve: 0.4, surge: 0.7, c100: 1.1, fb: 1.0, event: 'tempête marine', short: 'Tempête' },
-  aquitaine:    { pmve: 2.2, surge: 1.4, c100: 2.0, fb: 1.3, event: 'Martin/Klaus',   short: 'Klaus' },
-  atlantique:   { pmve: 3.0, surge: 1.5, c100: 2.1, fb: 1.3, event: 'Xynthia 2010',   short: 'Xynthia' },
-  manchenord:   { pmve: 3.6, surge: 2.0, c100: 2.6, fb: 1.5, event: 'tempête 1953/Xaver', short: '1953' },
-  manche:       { pmve: 4.8, surge: 1.6, c100: 2.2, fb: 1.5, event: 'tempête de NO',  short: 'Tempête' },
+  mediterranee: { pmve: 0.4, peakSWL: 1.2, c100SWL: 1.5, event: 'tempête déc. 1997', short: '1997',    date: '16/12/1997', gauge: 'Sète',                 src: 'REFMAR/SHOM' },
+  aquitaine:    { pmve: 2.2, peakSWL: 3.2, c100SWL: 3.8, event: 'Klaus 2009',        short: 'Klaus',   date: '24/01/2009', gauge: 'Arcachon-Eyrac',        src: 'REFMAR/SHOM' },
+  atlantique:   { pmve: 3.0, peakSWL: 4.5, c100SWL: 4.8, event: 'Xynthia 2010',      short: 'Xynthia', date: '28/02/2010', gauge: 'La Rochelle-La Pallice', src: 'REFMAR/SHOM · réf. PPRL' },
+  manchenord:   { pmve: 3.6, peakSWL: 5.8, c100SWL: 6.3, event: 'tempête 1953 / Xaver', short: '1953', date: '01/02/1953', gauge: 'Dunkerque',            src: 'SHOM / historique' },
+  manche:       { pmve: 4.8, peakSWL: 6.4, c100SWL: 6.9, event: 'Johanna 2008',      short: 'Johanna', date: '10/03/2008', gauge: 'Saint-Malo',            src: 'REFMAR/SHOM' },
 };
 function facadeRef(c) {
   const f = (c.facade || '').toLowerCase();
@@ -4236,26 +4250,29 @@ function facadeRef(c) {
   return FACADE_REF.atlantique;
 }
 function marineRefForCoast(c) { return facadeRef(c).pmve; }
+function refSurge(fr)  { return Math.max(0, fr.peakSWL - fr.pmve); }   // surcote = pic observé − PMVE
+function refSurge100(fr) { return Math.max(0, fr.c100SWL - fr.pmve); }
 
-/* Adapte les presets de niveau + les libellés à la façade de la commune :
-   la « tempête de référence » et la centennale sont propres à chaque littoral. */
+/* Adapte les presets + libellés à la façade : la tempête de référence (niveau de
+   pic observé) et la centennale sont propres à chaque littoral. */
 function adaptPresetsToFacade(fr) {
+  const surge = refSurge(fr), c100 = refSurge100(fr);
   document.querySelectorAll('.imm-preset').forEach(btn => {
     const k = btn.dataset.kind;
     if (k === 'storm') {
-      btn.dataset.surge = Math.round(fr.surge * 100);
+      btn.dataset.surge = Math.round(surge * 100);
       btn.textContent = fr.short;
-      btn.title = `${fr.event} : PMVE + surcote ${fr.surge.toFixed(2).replace('.', ',')} m`;
+      btn.title = `${fr.event} · ${fr.date} · ${fr.gauge} : pic observé +${fr.peakSWL.toFixed(2).replace('.', ',')} m NGF (${fr.src})`;
     } else if (k === 'storm2100') {
-      btn.dataset.surge = Math.round(fr.surge * 100);
+      btn.dataset.surge = Math.round(surge * 100);
       btn.title = `${fr.event} + RSLR médian SSP2-4.5 2100`;
     } else if (k === 'worst') {
-      btn.dataset.surge = Math.round(fr.c100 * 100);
-      btn.title = `Centennale (${fr.c100.toFixed(1).replace('.', ',')} m) + SSP5-8.5 2100`;
+      btn.dataset.surge = Math.round(c100 * 100);
+      btn.title = `Centennale (pic +${fr.c100SWL.toFixed(1).replace('.', ',')} m NGF) + SSP5-8.5 2100`;
     }
   });
   const h = document.getElementById('immSurgeRefHint');
-  if (h) h.textContent = `${fr.event} : +${fr.surge.toFixed(2).replace('.', ',')} m`;
+  if (h) h.textContent = `${fr.short} ${fr.date} · pic +${fr.peakSWL.toFixed(1).replace('.', ',')} m`;
 }
 
 /* === Helper pour sampler l'élévation original par bilinéaire === */
@@ -4584,10 +4601,15 @@ async function loadCommune3D(c) {
     t3d.closureDepth = bd.hStar;
     t3d.duneRefHeight = bd.B;
     // Références hydrographiques de la façade : marée (PMVE), crête d'ouvrage,
-    // tempête de référence locale (presets + libellés adaptés)
+    // tempête de référence documentée (presets + libellés adaptés)
     const fref = facadeRef(c);
     t3d.marineRef = fref.pmve;
-    t3d.ouvrageCrestLevel = fref.pmve + fref.fb;    // crête ≈ PMVE + franc-bord façade
+    // Crête d'ouvrage par défaut = pic de l'évènement de référence − 0,6 m (les
+    // défenses, non documentées en cote, sont supposées franchies par l'évènement
+    // de référence). Transparente et ajustable via le curseur « Crête digue ».
+    t3d.ouvrageCrestLevel = Math.max(fref.pmve + 0.3, fref.peakSWL - 0.6);
+    const cr = document.getElementById('immCrest');
+    if (cr) { cr.value = Math.round(t3d.ouvrageCrestLevel * 100); updateCrestLabel(); }
     adaptPresetsToFacade(fref);
     document.getElementById('immEyebrow').textContent =
       `Maquette · ${c.type} · ${c.facade} · PMVE +${fref.pmve.toFixed(1).replace('.', ',')} m NGF`;
@@ -5519,6 +5541,23 @@ document.querySelectorAll('.imm-hydro-speed button[data-spd]').forEach(btn => {
   });
 });
 document.getElementById('immHydroReplay').addEventListener('click', () => startStorm());
+
+/* Crête des ouvrages (cote présumée, ajustable) — transparence + test "et si la
+   digue était plus haute / plus basse". Affecte modèle statique ET hydraulique. */
+function updateCrestLabel() {
+  const cr = document.getElementById('immCrest');
+  const v = parseFloat(cr.value) / 100;
+  document.getElementById('immCrestValue').textContent = `+${v.toFixed(1).replace('.', ',')} m`;
+}
+document.getElementById('immCrest').addEventListener('input', () => {
+  t3d.ouvrageCrestLevel = parseFloat(document.getElementById('immCrest').value) / 100;
+  updateCrestLabel();
+  if (t3d.hydro && t3d.crestArr && t3d.ouvragesMask) {
+    // réinitialise les crêtes (annule les brèches en cours) à la nouvelle cote
+    for (let i = 0; i < t3d.crestArr.length; i++)
+      if (t3d.ouvragesMask[i]) t3d.crestArr[i] = Math.max(t3d.elev[i] + 1.0, t3d.ouvrageCrestLevel);
+  } else if (typeof applyWaterLevel === 'function') applyWaterLevel();
+});
 
 /* === Picker === */
 document.getElementById('immChoose').addEventListener('click', () => openImmPicker());
