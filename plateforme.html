@@ -4315,7 +4315,9 @@ async function loadCommune3D(c) {
       }
       if (!r.ok) throw new Error('IGN altimétrie ' + r.status);
       const j = await r.json();
-      j.elevations.forEach((z, k) => { elev[offset + k] = (z === undefined || z === null) ? 0 : z; });
+      // L'API IGN renvoie -99999 sur la MER (RGE ALTI = MNT terrestre, NODATA en mer).
+      // On garde la valeur brute ici ; le marquage mer + assainissement se fait après.
+      j.elevations.forEach((z, k) => { elev[offset + k] = (z === undefined || z === null) ? -99999 : z; });
       done++;
       showLoader(`MNT IGN · ${done}/${batches.length} blocs…`);
       // Petit délai entre requêtes du même worker pour soulager le serveur
@@ -4333,8 +4335,21 @@ async function loadCommune3D(c) {
     }
     await Promise.all(Array.from({ length: CONCURRENCY }, worker));
     t3d.elev = elev;
+    /* === Mer / NODATA ===
+       L'API IGN renvoie -99999 sur la mer (le RGE ALTI est un MNT terrestre).
+       Conservé tel quel, cela : (a) creuse un abîme dans le maillage, (b) fausse
+       les altitudes min/moy, (c) fait amorcer l'inondation depuis tout le bord
+       de la tuile. On marque donc ces cellules comme MER (source hydraulique de
+       la submersion) et on leur donne une altitude de fond plausible. */
+    const SEA_FLOOR = -3.0;
+    t3d.seaMask = new Uint8Array(elev.length);
+    let seaCount = 0;
+    for (let i = 0; i < elev.length; i++) {
+      if (!isFinite(elev[i]) || elev[i] <= -1000) { t3d.seaMask[i] = 1; elev[i] = SEA_FLOOR; seaCount++; }
+    }
+    t3d.seaCount = seaCount;
     t3d.origElev = new Float32Array(elev); // copie immuable pour le recul Bruun
-    // stats
+    // stats (sur les altitudes assainies)
     let minZ = Infinity, maxZ = -Infinity, sum = 0;
     for (const z of elev) {
       if (z < minZ) minZ = z;
@@ -4727,20 +4742,30 @@ function sampleElev(buf, gx, gz) {
    un chemin continu de cellules elles aussi sous l'eau. Graine = bord du bbox
    (l'extérieur étant la mer). BFS 4-voisins → masque + distance à la mer. */
 const SEA_EPS = 0.15;   // marge waterline : la mer (MNT ≈ 0) reste visible au niveau de référence
+/* La submersion part de la MER (cellules NODATA marquées seaMask), pas du bord
+   de la tuile, puis se propage de proche en proche vers les cellules dont
+   l'altitude passe sous le niveau d'eau. Référentiel unique : NGF-IGN69 pour le
+   MNT comme pour le niveau d'eau (RSLR + surcote ajoutés en mètres NGF). */
 function computeFloodConnectivity(v) {
   const lvl = v + SEA_EPS;
   const N = NX * NZ;
   const mask = new Uint8Array(N);
   const dist = new Int32Array(N); dist.fill(-1);
   const elev = t3d.elev;
+  const sea = t3d.seaMask;
   const qx = new Int32Array(N), qz = new Int32Array(N);
   let head = 0, tail = 0;
-  const seed = (xi, zi) => {
-    const i = zi * NX + xi;
-    if (!mask[i] && elev[i] < lvl) { mask[i] = 1; dist[i] = 0; qx[tail] = xi; qz[tail] = zi; tail++; }
-  };
-  for (let xi = 0; xi < NX; xi++) { seed(xi, 0); seed(xi, NZ - 1); }
-  for (let zi = 0; zi < NZ; zi++) { seed(0, zi); seed(NX - 1, zi); }
+  const enqueue = (i) => { mask[i] = 1; dist[i] = 0; qx[tail] = i % NX; qz[tail] = (i - i % NX) / NX; tail++; };
+  // Amorçage : depuis la mer réelle (NODATA). Repli sur le bord du bbox si aucune.
+  let seeded = 0;
+  if (sea) {
+    for (let i = 0; i < N; i++) if (sea[i] && !mask[i]) { enqueue(i); seeded++; }
+  }
+  if (!seeded) {
+    const seedB = (xi, zi) => { const i = zi * NX + xi; if (!mask[i] && elev[i] < lvl) enqueue(i); };
+    for (let xi = 0; xi < NX; xi++) { seedB(xi, 0); seedB(xi, NZ - 1); }
+    for (let zi = 0; zi < NZ; zi++) { seedB(0, zi); seedB(NX - 1, zi); }
+  }
   while (head < tail) {
     const xi = qx[head], zi = qz[head]; head++;
     const d = dist[zi * NX + xi];
