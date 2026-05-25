@@ -2289,7 +2289,7 @@ input.imm-range::-moz-range-thumb {
       </div>
 
       <div class="imm-attrib">
-        Niveau = pleine mer de vive-eau (marée réf. par façade) + RSLR + surcote · submersion connectée à la mer (cuvettes isolées non inondées) · ouvrages franchis par surverse · « Tempête ▶ » = modèle hydraulique 2D dynamique (propagation temporelle, brèche, eau résiduelle) · flèches&nbsp;= flux/arrivée de l'eau.<br>
+        Niveau = pleine mer de vive-eau (marée réf. par façade) + RSLR + surcote · submersion connectée à la mer (cuvettes isolées non inondées) · ouvrages franchis par surverse · « Tempête ▶ » = modèle hydraulique 2D dynamique sur 2 cycles de marée (marée semi-diurne adaptée à la façade + surcote sur la pleine mer, propagation temporelle, brèche, eau résiduelle) · flèches&nbsp;= flux/arrivée de l'eau.<br>
         Sources : MNT RGE ALTI® · BD TOPO® · BD ORTHO® © IGN-F / Géoplateforme · bathymétrie EMODnet (SHOM/LITTO3D)
       </div>
     </div>
@@ -5065,7 +5065,7 @@ function initHydro() {
     t3d.vz = new Float32Array(N); t3d._dV = new Float32Array(N); t3d.crestArr = new Float32Array(N);
   }
   t3d.h.fill(0); t3d.vx.fill(0); t3d.vz.fill(0);
-  const base = t3d.marineRef || 0;
+  const base = (t3d.seaLevel != null) ? t3d.seaLevel : (t3d.marineRef || 0);
   const crest = (t3d.ouvrageCrestLevel != null) ? t3d.ouvrageCrestLevel : 4;
   const ouvr = t3d.ouvragesMask;
   for (let i = 0; i < N; i++) {
@@ -5155,10 +5155,18 @@ function buildHydroArrows() {
     } else m.visible = false;
   });
 }
-function surgeLevelAt(T) {                       // hydrogramme triangulaire : pic à mi-parcours
-  const D = t3d.simDur || 43200;
-  const frac = Math.max(0, 1 - Math.abs(T - D / 2) / (D / 2));
-  return (t3d.simBase || 0) + ((t3d.simPeak || 0) - (t3d.simBase || 0)) * frac;
+/* Niveau marin (NGF) à l'instant T : marée semi-diurne (2 cycles) + surcote
+   gaussienne superposée sur la 2ᵉ pleine mer + RSLR.
+   - amplitude de marée = PMVE de la façade (adaptée localement : forte en
+     Manche, quasi nulle en Méditerranée) → pleine mer ≈ +PMVE, basse mer ≈ −PMVE,
+   - 2 pleines mers (à 0,5·Tc et 1,5·Tc), la 2ᵉ amplifiée par la surcote tempête. */
+function surgeLevelAt(T) {
+  const Tc = t3d.Tcycle || 44712;               // période semi-diurne ≈ 12 h 25
+  const amp = t3d.tideAmp || 0;
+  const tide = amp * Math.cos(2 * Math.PI * (T - 0.5 * Tc) / Tc);   // PM à 0,5·Tc et 1,5·Tc
+  const sp = 1.5 * Tc;                          // surcote calée sur la 2ᵉ pleine mer
+  const surge = (t3d.simSurge || 0) * Math.exp(-Math.pow((T - sp) / (0.45 * Tc), 2));
+  return (t3d.simRSLR || 0) + tide + surge;
 }
 function drawHydrograph() {
   const cv = document.getElementById('hydroCanvas'); if (!cv) return;
@@ -5178,34 +5186,47 @@ function drawHydrograph() {
     ctx.beginPath(); ctx.moveTo(x0, Y(crest)); ctx.lineTo(x1, Y(crest)); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(232,110,85,0.95)'; ctx.font = '8px monospace'; ctx.fillText('crête digue', x0 + 2, Y(crest) - 2);
   }
+  // ligne du niveau marin moyen (0 NGF + RSLR)
+  const msl = t3d.simRSLR || 0;
+  if (msl >= yMin && msl <= yMax) {
+    ctx.strokeStyle = 'rgba(246,241,231,0.18)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x0, Y(msl)); ctx.lineTo(x1, Y(msl)); ctx.stroke();
+  }
   const Tc = Math.min(t3d.simTime || 0, D);
-  // remplissage écoulé
-  ctx.beginPath(); ctx.moveTo(X(0), Y(base));
-  for (let p = 0; p <= 80; p++) { const T = D * p / 80; if (T > Tc) break; ctx.lineTo(X(T), Y(surgeLevelAt(T))); }
-  ctx.lineTo(X(Tc), Y(base)); ctx.closePath(); ctx.fillStyle = 'rgba(58,166,200,0.28)'; ctx.fill();
-  // courbe complète
+  const NS = 160;
+  // remplissage écoulé (sous la courbe)
+  ctx.beginPath(); ctx.moveTo(X(0), Y(msl));
+  for (let p = 0; p <= NS; p++) { const T = D * p / NS; if (T > Tc) break; ctx.lineTo(X(T), Y(surgeLevelAt(T))); }
+  ctx.lineTo(X(Tc), Y(msl)); ctx.closePath(); ctx.fillStyle = 'rgba(58,166,200,0.28)'; ctx.fill();
+  // courbe de marée + surcote (2 cycles)
   ctx.beginPath();
-  for (let p = 0; p <= 80; p++) { const T = D * p / 80; const xy = [X(T), Y(surgeLevelAt(T))]; p ? ctx.lineTo(xy[0], xy[1]) : ctx.moveTo(xy[0], xy[1]); }
+  for (let p = 0; p <= NS; p++) { const T = D * p / NS; const px = X(T), py = Y(surgeLevelAt(T)); p ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
   ctx.strokeStyle = '#3aa6c8'; ctx.lineWidth = 2; ctx.stroke();
   // curseur temps
   const cx = X(Tc);
   ctx.strokeStyle = 'rgba(246,241,231,0.8)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(cx, yT); ctx.lineTo(cx, yB); ctx.stroke();
   ctx.fillStyle = '#ffd166'; ctx.beginPath(); ctx.arc(cx, Y(surgeLevelAt(Tc)), 3.2, 0, 7); ctx.fill();
-  // axe temps
+  // axe temps (heures)
   ctx.fillStyle = 'rgba(246,241,231,0.45)'; ctx.font = '8px monospace';
-  for (let hh = 0; hh <= 12; hh += 3) { const xx = X(D * hh / 12); ctx.fillText(hh + 'h', xx - 4, H - 2); }
+  const Dh = D / 3600;
+  for (let hh = 0; hh <= Dh + 0.1; hh += 6) { const xx = X(hh * 3600); ctx.fillText(hh + 'h', xx - 4, H - 2); }
 }
 function startStorm() {
   if (!t3d.loaded) return;
-  t3d.hydro = true; initHydro();
+  t3d.hydro = true;
   const rslr = parseFloat(immRange.value) / 100;
   const surge = parseFloat(document.getElementById('immSurge').value) / 100;
-  t3d.simBase = t3d.marineRef || 0;
-  t3d.simPeak = t3d.simBase + rslr + surge;
-  t3d.simDur = 12 * 3600;          // 12 h d'hydrogramme
-  t3d.simTime = 0; t3d.stormRunning = true;
+  t3d.Tcycle = 12.42 * 3600;        // marée semi-diurne
+  t3d.simDur = 2 * t3d.Tcycle;      // 2 cycles de marée (~24,8 h)
+  t3d.tideAmp = t3d.marineRef || 0; // amplitude = PMVE de la façade
+  t3d.simRSLR = rslr; t3d.simSurge = surge;
+  t3d.simBase = rslr - t3d.tideAmp - 0.2;            // bornes y du graphe
+  t3d.simPeak = rslr + t3d.tideAmp + surge;
+  t3d.simTime = 0; t3d.seaLevel = surgeLevelAt(0);   // départ : basse mer
+  t3d.stormRunning = true;
   if (t3d.simSpeed == null) t3d.simSpeed = 1;
+  initHydro();
   document.getElementById('immStorm').classList.add('active');
   const p = document.getElementById('immHydroPanel'); if (p) p.style.display = '';
   drawHydrograph();
@@ -5222,16 +5243,17 @@ function stopHydro() {
   }
   if (typeof applyWaterLevel === 'function') applyWaterLevel();
 }
-function advanceStorm(dtMs) {
+function advanceStorm(dtSec) {                  // dtSec = secondes simulées cette frame
   const D = t3d.simDur;
-  t3d.simTime += dtMs * (D / 14000) * (t3d.simSpeed || 1);   // ~14 s pour 12 h à 1×
+  t3d.simTime += dtSec;
   const T = Math.min(t3d.simTime, D);
   t3d.seaLevel = surgeLevelAt(T);
-  if (t3d.simTime >= D) { t3d.stormRunning = false; t3d.seaLevel = t3d.simBase; }
+  if (t3d.simTime >= D) { t3d.stormRunning = false; t3d.seaLevel = surgeLevelAt(D); }
   let wetHa = 0, A = t3d.cellArea;
   for (let i = 0; i < t3d.h.length; i++) if (t3d.h[i] > HYDRO.wet && (t3d.origElev[i] || 0) > SEA_EPS) wetHa += A;
+  const sgn = t3d.seaLevel >= 0 ? '+' : '';
   const el = document.getElementById('immHydroT');
-  if (el) el.textContent = `T+${(T/3600).toFixed(1).replace('.', ',')} h · mer +${t3d.seaLevel.toFixed(2).replace('.', ',')} m · ${(wetHa/10000).toFixed(0)} ha`;
+  if (el) el.textContent = `T+${(T/3600).toFixed(1).replace('.', ',')} h · mer ${sgn}${t3d.seaLevel.toFixed(2).replace('.', ',')} m · ${(wetHa/10000).toFixed(0)} ha`;
   drawHydrograph();
 }
 
@@ -5552,11 +5574,12 @@ function animateThree(t) {
     wp.setY(i, Math.sin(t * 0.0008 + x * 0.005) * 0.4 + Math.cos(t * 0.001 + z * 0.004) * 0.4);
   }
   wp.needsUpdate = true;
-  const dtMs = Math.min(60, t - (t3d._lastT || t)); t3d._lastT = t;
   // === Moteur hydraulique dynamique ===
   if (t3d.hydro && t3d.loaded) {
-    if (t3d.stormRunning) advanceStorm(dtMs);
-    for (let s = 0; s < HYDRO.substeps; s++) hydroStep(HYDRO.dtSub);
+    // temps simulé avancé en phase avec l'hydraulique (vitesse = nb de sous-pas)
+    const subs = Math.max(1, Math.round(HYDRO.substeps * (t3d.simSpeed || 1)));
+    if (t3d.stormRunning) advanceStorm(subs * HYDRO.dtSub);
+    for (let s = 0; s < subs; s++) hydroStep(HYDRO.dtSub);
     renderHydroFlood();
     buildHydroArrows();
     waterMesh.position.y = (t3d.seaLevel || 0) * VSCALE - 1.5;
