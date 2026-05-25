@@ -4239,24 +4239,22 @@ function bruunDefaultsForCoast(c) {
 }
 function bruunFactorForCoast(c) { return bruunDefaultsForCoast(c).factor; }
 
-/* === Références hydrographiques PAR FAÇADE — évènements de tempête documentés ===
-   La submersion se calcule en still-water level NGF = marée (PMVE) + surcote + RSLR.
-   Les niveaux de PIC OBSERVÉ (peakSWL, m NGF) sont ceux des marégraphes RONIM /
-   REFMAR-SHOM lors des évènements de référence (et niveaux de référence PPRL) :
-     - Méditerranée : tempête déc. 1997 (Sète), microtidal, surcote-houle.
-     - Aquitaine    : Klaus 24/01/2009 (Arcachon-Eyrac).
-     - Atlantique   : Xynthia 28/02/2010 (La Rochelle-La Pallice) — réf. PPRL Pertuis.
-     - Manche/Nord  : 1953 / Xaver 06/12/2013 (Dunkerque).
-     - Manche       : Johanna 10/03/2008 (Saint-Malo).
-   surcote = peakSWL − PMVE ; la crête d'ouvrage par défaut = peakSWL − 0,6 m
-   (hypothèse : les défenses, non documentées en cote dans les données ouvertes,
-   sont dimensionnées sous l'évènement de référence → franchies). Ajustable. */
+/* === Références hydrographiques PAR FAÇADE — évènements documentés + marnage ===
+   pmve = pleine mer de vive-eau (m NGF) = demi-marnage ≈ amplitude de marée de
+   l'onde semi-diurne (marnage de vive-eau réel par façade) :
+     - Méditerranée : marnage ~0,4 m (microtidal) → amp 0,2 m
+     - Aquitaine    : marnage ~4,4 m (Arcachon)   → amp 2,2 m
+     - Atlantique   : marnage ~6,0 m (Pertuis)    → amp 3,0 m
+     - Manche/Nord  : marnage ~5,8 m (Dunkerque)  → amp 2,9 m
+     - Manche       : marnage ~11,6 m (St-Malo)   → amp 5,8 m
+   peakSWL = pic still-water observé RONIM/REFMAR-SHOM des évènements de référence
+   (surcote = peakSWL − pmve). */
 const FACADE_REF = {
-  mediterranee: { pmve: 0.4, peakSWL: 1.2, c100SWL: 1.5, event: 'tempête déc. 1997', short: '1997',    date: '16/12/1997', gauge: 'Sète',                 src: 'REFMAR/SHOM' },
-  aquitaine:    { pmve: 2.2, peakSWL: 3.2, c100SWL: 3.8, event: 'Klaus 2009',        short: 'Klaus',   date: '24/01/2009', gauge: 'Arcachon-Eyrac',        src: 'REFMAR/SHOM' },
-  atlantique:   { pmve: 3.0, peakSWL: 4.5, c100SWL: 4.8, event: 'Xynthia 2010',      short: 'Xynthia', date: '28/02/2010', gauge: 'La Rochelle-La Pallice', src: 'REFMAR/SHOM · réf. PPRL' },
-  manchenord:   { pmve: 3.6, peakSWL: 5.8, c100SWL: 6.3, event: 'tempête 1953 / Xaver', short: '1953', date: '01/02/1953', gauge: 'Dunkerque',            src: 'SHOM / historique' },
-  manche:       { pmve: 4.8, peakSWL: 6.4, c100SWL: 6.9, event: 'Johanna 2008',      short: 'Johanna', date: '10/03/2008', gauge: 'Saint-Malo',            src: 'REFMAR/SHOM' },
+  mediterranee: { pmve: 0.2, peakSWL: 1.2, c100SWL: 1.5, event: 'tempête déc. 1997',  short: '1997',    date: '16/12/1997', gauge: 'Sète',                 src: 'REFMAR/SHOM' },
+  aquitaine:    { pmve: 2.2, peakSWL: 3.2, c100SWL: 3.8, event: 'Klaus 2009',          short: 'Klaus',   date: '24/01/2009', gauge: 'Arcachon-Eyrac',        src: 'REFMAR/SHOM' },
+  atlantique:   { pmve: 3.0, peakSWL: 4.5, c100SWL: 4.8, event: 'Xynthia 2010',        short: 'Xynthia', date: '28/02/2010', gauge: 'La Rochelle-La Pallice', src: 'REFMAR/SHOM · réf. PPRL' },
+  manchenord:   { pmve: 2.9, peakSWL: 5.5, c100SWL: 6.0, event: 'tempête 1953 / Xaver', short: '1953',   date: '01/02/1953', gauge: 'Dunkerque',             src: 'SHOM / historique' },
+  manche:       { pmve: 5.8, peakSWL: 6.4, c100SWL: 6.9, event: 'Johanna 2008',        short: 'Johanna', date: '10/03/2008', gauge: 'Saint-Malo',            src: 'REFMAR/SHOM' },
 };
 function facadeRef(c) {
   const f = (c.facade || '').toLowerCase();
@@ -4627,7 +4625,7 @@ async function loadCommune3D(c) {
     if (cr) { cr.value = 0; updateCrestLabel(); }
     adaptPresetsToFacade(fref);
     document.getElementById('immEyebrow').textContent =
-      `Maquette · ${c.type} · ${c.facade} · PMVE +${fref.pmve.toFixed(1).replace('.', ',')} m NGF`;
+      `Maquette · ${c.type} · ${c.facade} · PM vive-eau +${fref.pmve.toFixed(1).replace('.', ',')} m · marnage ~${(fref.pmve * 2).toFixed(1).replace('.', ',')} m`;
     if (t3d.bruunFactor === 0 || !t3d.shorelineOk) {
       t3d.bruunActive = false;
       document.getElementById('immBruun').classList.remove('active');
@@ -5214,16 +5212,15 @@ function buildHydroArrows() {
     } else m.visible = false;
   });
 }
-/* Niveau marin (NGF) à l'instant T : marée semi-diurne (2 cycles) + surcote
-   gaussienne superposée sur la 2ᵉ pleine mer + RSLR.
-   - amplitude de marée = PMVE de la façade (adaptée localement : forte en
-     Manche, quasi nulle en Méditerranée) → pleine mer ≈ +PMVE, basse mer ≈ −PMVE,
-   - 2 pleines mers (à 0,5·Tc et 1,5·Tc), la 2ᵉ amplifiée par la surcote tempête. */
+/* Niveau marin (NGF) à l'instant T : marée semi-diurne (2 cycles, amplitude =
+   marnage local) + surcote gaussienne superposée sur la 1ʳᵉ pleine mer + RSLR.
+   → le 1er pic est le plus fort (surcote + marée) ; le 2e est une marée normale.
+   En Méditerranée la marée est quasi nulle : il ne reste qu'une bosse de surcote. */
 function surgeLevelAt(T) {
   const Tc = t3d.Tcycle || 44712;               // période semi-diurne ≈ 12 h 25
   const amp = t3d.tideAmp || 0;
   const tide = amp * Math.cos(2 * Math.PI * (T - 0.5 * Tc) / Tc);   // PM à 0,5·Tc et 1,5·Tc
-  const sp = 1.5 * Tc;                          // surcote calée sur la 2ᵉ pleine mer
+  const sp = 0.5 * Tc;                          // surcote calée sur la 1ʳᵉ pleine mer
   const surge = (t3d.simSurge || 0) * Math.exp(-Math.pow((T - sp) / (0.45 * Tc), 2));
   return (t3d.simRSLR || 0) + tide + surge;
 }
@@ -5271,17 +5268,21 @@ function drawHydrograph() {
   const Dh = D / 3600;
   for (let hh = 0; hh <= Dh + 0.1; hh += 6) { const xx = X(hh * 3600); ctx.fillText(hh + 'h', xx - 4, H - 2); }
 }
-function startStorm() {
-  if (!t3d.loaded) return;
-  t3d.hydro = true;
+/* Lit les curseurs → paramètres de l'hydrogramme (marée façade + RSLR + surcote). */
+function updateStormParams() {
   const rslr = parseFloat(immRange.value) / 100;
   const surge = parseFloat(document.getElementById('immSurge').value) / 100;
   t3d.Tcycle = 12.42 * 3600;        // marée semi-diurne
   t3d.simDur = 2 * t3d.Tcycle;      // 2 cycles de marée (~24,8 h)
-  t3d.tideAmp = t3d.marineRef || 0; // amplitude = PMVE de la façade
+  t3d.tideAmp = t3d.marineRef || 0; // amplitude = marnage local / 2
   t3d.simRSLR = rslr; t3d.simSurge = surge;
   t3d.simBase = rslr - t3d.tideAmp - 0.2;            // bornes y du graphe
-  t3d.simPeak = rslr + t3d.tideAmp + surge;
+  t3d.simPeak = rslr + t3d.tideAmp + surge;          // 1er pic = marée + surcote
+}
+function startStorm() {
+  if (!t3d.loaded) return;
+  t3d.hydro = true;
+  updateStormParams();
   t3d.simTime = 0; t3d.seaLevel = surgeLevelAt(0);   // départ : basse mer
   t3d.stormRunning = true;
   if (t3d.simSpeed == null) t3d.simSpeed = 1;
@@ -5336,9 +5337,11 @@ function applyWaterLevel() {
     `${rslr > 0 ? ' + RSLR ' + rslr.toFixed(2).replace('.', ',') : ''}` +
     `${surge > 0 ? ' + surcote ' + surge.toFixed(2).replace('.', ',') : ''})`;
   // Mode hydraulique dynamique : le moteur (boucle d'animation) pilote la nappe.
-  // On met juste à jour la cote-cible de la mer (relaxation continue) et on sort.
+  // L'hydrogramme suit les curseurs en direct (RSLR + surcote).
   if (t3d.hydro) {
+    updateStormParams();                       // recale l'hydrogramme sur les curseurs
     if (!t3d.stormRunning) t3d.seaLevel = v;
+    drawHydrograph();
     document.getElementById('immSeaLevel').innerHTML = `+${v.toFixed(2).replace('.', ',')}<small>m NGF</small>`;
     document.getElementById('immSliderValue').textContent = `+${rslr.toFixed(2).replace('.', ',')} m`;
     return;
@@ -5607,6 +5610,7 @@ document.getElementById('immCrest').addEventListener('input', () => {
   if (t3d.hydro && t3d.crestArr && t3d.ouvragesMask && t3d.crestEff) {
     for (let i = 0; i < t3d.crestArr.length; i++)
       if (t3d.ouvragesMask[i]) t3d.crestArr[i] = t3d.crestEff[i];   // réinitialise les brèches en cours
+    drawHydrograph();
   } else if (typeof applyWaterLevel === 'function') applyWaterLevel();
 });
 
