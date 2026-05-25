@@ -2221,18 +2221,18 @@ input.imm-range::-moz-range-thumb {
         <input type="range" class="imm-range" id="immSurge" min="0" max="300" value="0" step="5">
         <div class="imm-slider-hint">
           <span>0 m</span>
-          <span>Xynthia 2010 : +1,50 m</span>
+          <span id="immSurgeRefHint">Xynthia 2010 : +1,50 m</span>
           <span>+3 m</span>
         </div>
         <div class="imm-total">
           Niveau total simulé · <strong id="immTotalH">+0,00 m</strong>
         </div>
         <div class="imm-presets">
-          <button class="imm-preset" data-rslr="0"    data-surge="0"   title="Pleine mer de vive-eau actuelle (marée de référence, sans surcote)">Marée max</button>
-          <button class="imm-preset" data-rslr="0"    data-surge="150" title="Type Xynthia (28 fév. 2010) : PMVE + surcote ~1,50 m ≈ niveau de référence PPRL">Xynthia</button>
-          <button class="imm-preset" data-rslr="56"   data-surge="0"   title="PMVE + RSLR IPCC AR6 SSP2-4.5 médiane 2100">2100 médian</button>
-          <button class="imm-preset" data-rslr="56"   data-surge="210" title="PMVE + centennale + RSLR médian 2100">100ans 2100</button>
-          <button class="imm-preset" data-rslr="77"   data-surge="240" title="PMVE + SSP5-8.5 + centennale forte">Pire cas</button>
+          <button class="imm-preset" data-kind="tide"      data-rslr="0"  data-surge="0"   title="Pleine mer de vive-eau actuelle (marée de référence, sans surcote)">Marée max</button>
+          <button class="imm-preset" data-kind="storm"     data-rslr="0"  data-surge="150" title="Tempête de référence de la façade : PMVE + surcote">Xynthia</button>
+          <button class="imm-preset" data-kind="rslr2100"  data-rslr="56" data-surge="0"   title="PMVE + RSLR IPCC AR6 SSP2-4.5 médiane 2100">2100 médian</button>
+          <button class="imm-preset" data-kind="storm2100" data-rslr="56" data-surge="210" title="Tempête de référence + RSLR médian 2100">Réf.+2100</button>
+          <button class="imm-preset" data-kind="worst"     data-rslr="77" data-surge="240" title="Centennale + SSP5-8.5 2100">Pire cas</button>
         </div>
       </div>
 
@@ -4158,13 +4158,52 @@ function bruunFactorForCoast(c) { return bruunDefaultsForCoast(c).factor; }
    le modèle sous-estime massivement l'aléa (un Xynthia = ~4 m NGF en eau calme
    dans les Pertuis = PMVE ~3 m + surcote ~1,5 m, et non +1,5 m seul).
    Valeurs PMVE indicatives en m NGF-IGN69 par façade (ordre de grandeur). */
-function marineRefForCoast(c) {
+/* === Références hydrographiques PAR FAÇADE ===
+   Pour chaque façade : marée de référence PMVE (pleine mer de vive-eau, m NGF),
+   surcote de la tempête de référence locale, surcote centennale, franc-bord de
+   crête des ouvrages, et nom de l'évènement de référence. La submersion se
+   calcule en still-water level NGF = PMVE + RSLR + surcote.
+     - Méditerranée : microtidal (~0,4 m), surcotes faibles mais setup de houle.
+     - Aquitaine    : marnage moyen, tempêtes Martin/Klaus.
+     - Atlantique   : Pertuis/Bretagne sud, évènement de référence Xynthia 2010.
+     - Manche/Nord  : Dunkerque-Calais, grande marée, surcote 1953/Xaver.
+     - Manche       : Normandie/Cotentin/Bretagne nord, marnage très fort. */
+const FACADE_REF = {
+  mediterranee: { pmve: 0.4, surge: 0.7, c100: 1.1, fb: 1.0, event: 'tempête marine', short: 'Tempête' },
+  aquitaine:    { pmve: 2.2, surge: 1.4, c100: 2.0, fb: 1.3, event: 'Martin/Klaus',   short: 'Klaus' },
+  atlantique:   { pmve: 3.0, surge: 1.5, c100: 2.1, fb: 1.3, event: 'Xynthia 2010',   short: 'Xynthia' },
+  manchenord:   { pmve: 3.6, surge: 2.0, c100: 2.6, fb: 1.5, event: 'tempête 1953/Xaver', short: '1953' },
+  manche:       { pmve: 4.8, surge: 1.6, c100: 2.2, fb: 1.5, event: 'tempête de NO',  short: 'Tempête' },
+};
+function facadeRef(c) {
   const f = (c.facade || '').toLowerCase();
-  if (f.includes('méditerranée') || f.includes('mediterranee')) return 0.4;  // microtidal
-  if (f.includes('aquitaine')) return 2.2;
-  if (f.includes('manche/nord') || f.includes('nord')) return 4.5;
-  if (f.includes('manche')) return 4.8;                                       // macrotidal
-  return 3.0;                                                                 // Atlantique (Pertuis, Bretagne sud…)
+  if (f.includes('méditerr') || f.includes('mediterr')) return FACADE_REF.mediterranee;
+  if (f.includes('aquitaine')) return FACADE_REF.aquitaine;
+  if (f.includes('manche/nord') || f.includes('nord')) return FACADE_REF.manchenord;
+  if (f.includes('manche')) return FACADE_REF.manche;
+  return FACADE_REF.atlantique;
+}
+function marineRefForCoast(c) { return facadeRef(c).pmve; }
+
+/* Adapte les presets de niveau + les libellés à la façade de la commune :
+   la « tempête de référence » et la centennale sont propres à chaque littoral. */
+function adaptPresetsToFacade(fr) {
+  document.querySelectorAll('.imm-preset').forEach(btn => {
+    const k = btn.dataset.kind;
+    if (k === 'storm') {
+      btn.dataset.surge = Math.round(fr.surge * 100);
+      btn.textContent = fr.short;
+      btn.title = `${fr.event} : PMVE + surcote ${fr.surge.toFixed(2).replace('.', ',')} m`;
+    } else if (k === 'storm2100') {
+      btn.dataset.surge = Math.round(fr.surge * 100);
+      btn.title = `${fr.event} + RSLR médian SSP2-4.5 2100`;
+    } else if (k === 'worst') {
+      btn.dataset.surge = Math.round(fr.c100 * 100);
+      btn.title = `Centennale (${fr.c100.toFixed(1).replace('.', ',')} m) + SSP5-8.5 2100`;
+    }
+  });
+  const h = document.getElementById('immSurgeRefHint');
+  if (h) h.textContent = `${fr.event} : +${fr.surge.toFixed(2).replace('.', ',')} m`;
 }
 
 /* === Helper pour sampler l'élévation original par bilinéaire === */
@@ -4488,9 +4527,14 @@ async function loadCommune3D(c) {
     t3d.bruunFactor = bd.factor;
     t3d.closureDepth = bd.hStar;
     t3d.duneRefHeight = bd.B;
-    // Référence marine (PMVE) + cote de crête des ouvrages (PMVE + franc-bord)
-    t3d.marineRef = marineRefForCoast(c);
-    t3d.ouvrageCrestLevel = t3d.marineRef + 1.3;   // crête de digue ≈ PMVE + 1,3 m NGF
+    // Références hydrographiques de la façade : marée (PMVE), crête d'ouvrage,
+    // tempête de référence locale (presets + libellés adaptés)
+    const fref = facadeRef(c);
+    t3d.marineRef = fref.pmve;
+    t3d.ouvrageCrestLevel = fref.pmve + fref.fb;    // crête ≈ PMVE + franc-bord façade
+    adaptPresetsToFacade(fref);
+    document.getElementById('immEyebrow').textContent =
+      `Maquette · ${c.type} · ${c.facade} · PMVE +${fref.pmve.toFixed(1).replace('.', ',')} m NGF`;
     if (t3d.bruunFactor === 0 || !t3d.shorelineOk) {
       t3d.bruunActive = false;
       document.getElementById('immBruun').classList.remove('active');
