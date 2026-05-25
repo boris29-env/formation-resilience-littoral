@@ -1906,8 +1906,14 @@ input.imm-range::-moz-range-thumb {
               <div class="legend-row"><span class="legend-line legend-line-black" style="background:#1F1F1F"></span>Digue · perré · jetée · quai</div>
             </div>
             <div class="legend-group" data-layer="lyrCellules">
-              <div class="legend-title" style="margin-top:10px;">Cellules hydrosédimentaires · Cerema</div>
-              <div class="legend-row" style="font-size:10px;opacity:.75;line-height:1.4;">58 cellules métropole. Chaque couleur = une cellule (source→puits sédimentaire). Survol = budget net Cerema (déficit/équilibre/excédent).</div>
+              <div class="legend-title" style="margin-top:10px;">Cellules hydrosédimentaires (budget net)</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#7B0000"></span>Fort déficit (≤ −1 m/an)</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#E86E55"></span>Déficit (−1 à −0,3)</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#F4B400"></span>Équilibre (±0,3)</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#7FB069"></span>Excédent (0,3 à 1)</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#2A8C8C"></span>Fort excédent (≥ 1 m/an)</div>
+              <div class="legend-row"><span class="legend-line legend-line-thick" style="background:#9aa0a6"></span>Sans donnée Cerema</div>
+              <div class="legend-row" style="font-size:9px;opacity:.7;line-height:1.4;margin-top:4px;">805 cellules · délinéation par détection des caps + ports sur le trait de côte morpho-sédimentaire national</div>
             </div>
             <div class="legend-group" data-layer="lyrSubmersion">
               <div class="legend-title" style="margin-top:10px;">Submersion · PLU</div>
@@ -1949,7 +1955,7 @@ input.imm-range::-moz-range-thumb {
             </label>
             <label class="layer-toggle">
               <input type="checkbox" id="lyrCellules">
-              <span>Cellules hydrosédimentaires <em style="opacity:.55;font-style:normal;font-size:10px;">· Cerema</em></span>
+              <span>Cellules hydrosédimentaires <em style="opacity:.55;font-style:normal;font-size:10px;">· délinéation nationale</em></span>
             </label>
             <label class="layer-toggle">
               <input type="checkbox" id="lyrConservatoire">
@@ -2588,7 +2594,7 @@ input.imm-range::-moz-range-thumb {
           <li><a href="https://data.geopf.fr/wfs" target="_blank">WFS Géoplateforme</a> · BD TOPO® bâtiment (hauteur, altitude), limite_terre_mer, construction_lineaire, AdminExpress</li>
           <li><a href="https://apicarto.ign.fr/api/doc/" target="_blank">APIcarto IGN</a> · cadastre commune, PLU prescriptions risques</li>
           <li><a href="https://apidf-preprod.cerema.fr/dvf_opendata/" target="_blank">DVF Cerema</a> · mutations foncières 2020-2024 (prix, surface, type bien)</li>
-          <li><a href="https://www.data.gouv.fr/fr/datasets/cellules-hydrosedimentaires-1/" target="_blank">Cerema</a> · cellules hydrosédimentaires (projet « Dynamiques et évolution du littoral », 09/2020) — 58 cellules métropole, budget net calculé via l'indicateur d'érosion</li>
+          <li><strong>Cellules hydrosédimentaires</strong> · délinéation nationale data-driven (805 cellules) — stitching du trait de côte morpho-sédimentaire national (indice morphosédimentaire DGALN/Cerema, 56 865 segments) + détection des caps rocheux (rotation convexe) et grands ports ; budget net calculé par l'indicateur d'érosion Cerema. Validé contre la couche officielle Cerema (58 cellules, projet « Dynamiques et évolution du littoral » 2020)</li>
           <li><a href="https://www.data.gouv.fr/fr/datasets/indicateur-national-de-lerosion-cotiere-1/" target="_blank">Cerema</a> · indicateur national d'érosion (taux m/an, prod. 06/2018) embarqué en statique</li>
           <li><a href="https://www.georisques.gouv.fr/" target="_blank">Géorisques</a> · PPRN, Cat'Nat, PPRNN</li>
           <li><a href="https://www.ipcc.ch/report/ar6/wg1/" target="_blank">IPCC AR6 WG1</a> · scénarios SSP de niveau marin</li>
@@ -3005,39 +3011,43 @@ const ouvragesLayer = L.geoJSON(null, {
 });
 ouvragesLayer.options.attribution = '© IGN-F · BDTOPO® construction_lineaire';
 
-/* === Cellules hydrosédimentaires (Cerema, projet "Dynamiques et
-   évolution du littoral", prod. 09/2020) ===
-   58 cellules nommées du littoral métropolitain, chacune colorée et
-   caractérisée par son budget sédimentaire net (moyenne du taux Cerema
-   le long de la cellule : négatif = déficit/érosion, positif = excédent
-   /accrétion). Données statiques cellules_hydrosed.json. */
+/* === Cellules hydrosédimentaires — délinéation nationale data-driven ===
+   Construite par stitching du trait de côte morpho-sédimentaire national
+   (indice_TC, 56 865 segments) en lignes continues, puis détection des
+   barrières au transit : caps rocheux (rotation convexe > 60° sur substrat
+   rocher/artificiel) + grands ports. 805 cellules métropole.
+   Chaque cellule colorée par son budget sédimentaire net (taux Cerema
+   moyen le long du tracé) : rouge = déficit/érosion, vert/teal = accrétion. */
 function budgetLabel(b) {
-  if (b === null || b === undefined) return 'budget non calculé';
-  if (b <= -0.5) return `déficit sédimentaire · ${b.toFixed(2)} m/an (érosion dominante)`;
-  if (b < 0.1)   return `quasi-équilibre · ${b.toFixed(2)} m/an`;
-  return `excédent sédimentaire · +${b.toFixed(2)} m/an (accrétion dominante)`;
+  if (b === null || b === undefined) return 'budget Cerema non disponible sur ce secteur';
+  if (b <= -1.0) return `fort déficit · ${b.toFixed(2)} m/an (érosion marquée)`;
+  if (b <= -0.3) return `déficit · ${b.toFixed(2)} m/an (érosion)`;
+  if (b < 0.3)   return `quasi-équilibre · ${b.toFixed(2)} m/an`;
+  if (b < 1.0)   return `excédent · +${b.toFixed(2)} m/an (accrétion)`;
+  return `fort excédent · +${b.toFixed(2)} m/an (accrétion marquée)`;
 }
 const cellulesLayer = L.geoJSON(null, {
   style: f => ({
-    color: f.properties.color, weight: 5, opacity: 0.9,
+    color: f.properties.color, weight: 4.5, opacity: 0.9,
     fill: false, lineCap: 'round', lineJoin: 'round'
   }),
   onEachFeature: (f, layer) => {
     const p = f.properties;
     layer.bindTooltip(
-      `<strong>Cellule hydrosédimentaire</strong><br>${p.nom}<br>` +
-      `<span style="opacity:.8">${budgetLabel(p.budget)}</span>`,
+      `<strong>Cellule hydrosédimentaire #${p.id}</strong><br>` +
+      `Linéaire : ${p.km} km<br>` +
+      `<span style="opacity:.85">Budget : ${budgetLabel(p.budget)}</span>`,
       { sticky: true }
     );
-    layer.on('mouseover', () => layer.setStyle({ weight: 8 }));
-    layer.on('mouseout',  () => layer.setStyle({ weight: 5 }));
+    layer.on('mouseover', () => layer.setStyle({ weight: 7 }));
+    layer.on('mouseout',  () => layer.setStyle({ weight: 4.5 }));
   }
 });
-cellulesLayer.options.attribution = '© Cerema · Cellules hydrosédimentaires';
+cellulesLayer.options.attribution = 'Délinéation data-driven · trait de côte morpho-sédimentaire (Cerema/DGALN) + indicateur érosion';
 let _cellulesLoaded = false;
 function loadCellules() {
   if (_cellulesLoaded) return Promise.resolve();
-  return fetch('cellules_hydrosed.json')
+  return fetch('cellules_france.json')
     .then(r => r.ok ? r.json() : null)
     .then(gj => { if (gj) { cellulesLayer.addData(gj); _cellulesLoaded = true; } })
     .catch(() => {});
