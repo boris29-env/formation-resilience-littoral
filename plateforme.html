@@ -2242,6 +2242,7 @@ input.imm-range::-moz-range-thumb {
       </div>
 
       <div class="imm-attrib">
+        Submersion limitée aux zones connectées hydrauliquement à la mer (cuvettes isolées non inondées) · flèches&nbsp;= sens d'arrivée de l'eau.<br>
         Sources : MNT RGE ALTI® · BD TOPO® · BD ORTHO® — © IGN-F / Géoplateforme
       </div>
     </div>
@@ -4141,18 +4142,79 @@ function bruunFactorForCoast(c) { return bruunDefaultsForCoast(c).factor; }
 
 let terrainMesh = null;
 const buildingsGroup = new THREE.Group(); scene3.add(buildingsGroup);
+/* === Eau ===
+   Deux nappes :
+   1) waterMesh = anneau océanique d'horizon (au-delà du bbox), pour l'ambiance.
+   2) floodMesh = nappe de submersion reconstruite sur la grille du MNT, qui ne
+      couvre QUE les cellules connectées hydrauliquement à la mer (remplissage
+      par diffusion depuis le bord du bbox). Les cuvettes basses isolées
+      (derrière un cordon dunaire, une digue, un point haut) ne sont donc PAS
+      inondées tant qu'aucun chemin sous le niveau ne les relie à la mer. */
 let waterMesh = null;
-const waterGeo = new THREE.PlaneGeometry(SIZE * 1.8, SIZE * 1.8, 64, 64);
+const waterGeo = new THREE.RingGeometry(SIZE * 0.5, 7000, 96, 1);
 waterGeo.rotateX(-Math.PI / 2);
 const waterMat = new THREE.MeshStandardMaterial({
-  color: 0x3aa6c8,         // teal vif, distinct du fog sombre
-  emissive: 0x0a2a3a,       // glow subtil pour bien marquer la zone d'eau
-  transparent: true, opacity: 0.85,
-  roughness: 0.15, metalness: 0.55,
+  color: 0x3aa6c8, emissive: 0x0a2a3a,
+  transparent: true, opacity: 0.82,
+  roughness: 0.15, metalness: 0.55, side: THREE.DoubleSide,
 });
 waterMesh = new THREE.Mesh(waterGeo, waterMat);
 waterMesh.position.y = 0;
 scene3.add(waterMesh);
+
+// Nappe de submersion sur la grille NX×NZ : positions fixes, index reconstruit
+const floodGeo = new THREE.BufferGeometry();
+(() => {
+  const verts = new Float32Array(NX * NZ * 3);
+  for (let zi = 0; zi < NZ; zi++) {
+    for (let xi = 0; xi < NX; xi++) {
+      const i = zi * NX + xi;
+      verts[i * 3]     = (xi / (NX - 1) - 0.5) * SIZE;
+      verts[i * 3 + 1] = 0;
+      verts[i * 3 + 2] = (zi / (NZ - 1) - 0.5) * SIZE;
+    }
+  }
+  floodGeo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+  floodGeo.setIndex([]);
+})();
+const floodMat = new THREE.MeshStandardMaterial({
+  color: 0x35b6d8, emissive: 0x0c3344, emissiveIntensity: 0.6,
+  transparent: true, opacity: 0.8,
+  roughness: 0.18, metalness: 0.4, side: THREE.DoubleSide,
+});
+const floodMesh = new THREE.Mesh(floodGeo, floodMat);
+floodMesh.position.y = 0; floodMesh.renderOrder = 1;
+scene3.add(floodMesh);
+
+/* Flèches dynamiques : « d'où vient l'eau ». Orientées selon le sens de
+   propagation de la submersion (gradient de la distance hydraulique à la mer),
+   animées en flux vers les terres. Pool de meshes réutilisés (pas d'alloc). */
+const floodArrowGroup = new THREE.Group();
+scene3.add(floodArrowGroup);
+const arrowMat = new THREE.MeshStandardMaterial({
+  color: 0xffffff, emissive: 0x6fe6ff, emissiveIntensity: 1.0,
+  transparent: true, opacity: 0.95, roughness: 0.4, side: THREE.DoubleSide,
+});
+const chevronGeo = (() => {
+  const s = new THREE.Shape();
+  s.moveTo(58, 0); s.lineTo(2, 32); s.lineTo(14, 7);
+  s.lineTo(-46, 7); s.lineTo(-46, -7); s.lineTo(14, -7);
+  s.lineTo(2, -32); s.lineTo(58, 0);
+  const g = new THREE.ShapeGeometry(s);
+  g.rotateX(-Math.PI / 2);   // couché à plat dans le plan XZ
+  return g;
+})();
+const ARROW_POOL = [];
+for (let k = 0; k < 48; k++) {
+  const m = new THREE.Mesh(chevronGeo, arrowMat.clone());
+  m.visible = false;
+  floodArrowGroup.add(m);
+  ARROW_POOL.push(m);
+}
+t3d.floodArrows = [];      // sous-ensemble actif du pool, avec base+direction
+t3d.floodMask = null;
+t3d.floodDist = null;
+t3d.waterY = 0;
 
 /* Marqueur "MER" : grosse balise flottante dans la direction seaward,
    pour repérer instantanément où est la mer */
@@ -4661,6 +4723,99 @@ function sampleElev(buf, gx, gz) {
          (1 - fx) * fz * v01 + fx * fz * v11;
 }
 
+/* Remplissage hydraulique : cellules sous le niveau v ET reliées à la mer par
+   un chemin continu de cellules elles aussi sous l'eau. Graine = bord du bbox
+   (l'extérieur étant la mer). BFS 4-voisins → masque + distance à la mer. */
+const SEA_EPS = 0.15;   // marge waterline : la mer (MNT ≈ 0) reste visible au niveau de référence
+function computeFloodConnectivity(v) {
+  const lvl = v + SEA_EPS;
+  const N = NX * NZ;
+  const mask = new Uint8Array(N);
+  const dist = new Int32Array(N); dist.fill(-1);
+  const elev = t3d.elev;
+  const qx = new Int32Array(N), qz = new Int32Array(N);
+  let head = 0, tail = 0;
+  const seed = (xi, zi) => {
+    const i = zi * NX + xi;
+    if (!mask[i] && elev[i] < lvl) { mask[i] = 1; dist[i] = 0; qx[tail] = xi; qz[tail] = zi; tail++; }
+  };
+  for (let xi = 0; xi < NX; xi++) { seed(xi, 0); seed(xi, NZ - 1); }
+  for (let zi = 0; zi < NZ; zi++) { seed(0, zi); seed(NX - 1, zi); }
+  while (head < tail) {
+    const xi = qx[head], zi = qz[head]; head++;
+    const d = dist[zi * NX + xi];
+    const tryN = (nx, nz) => {
+      if (nx < 0 || nx >= NX || nz < 0 || nz >= NZ) return;
+      const ni = nz * NX + nx;
+      if (!mask[ni] && elev[ni] < lvl) { mask[ni] = 1; dist[ni] = d + 1; qx[tail] = nx; qz[tail] = nz; tail++; }
+    };
+    tryN(xi + 1, zi); tryN(xi - 1, zi); tryN(xi, zi + 1); tryN(xi, zi - 1);
+  }
+  return { mask, dist };
+}
+
+/* Reconstruit les faces de la nappe de submersion : un quad par cellule dont
+   les 4 coins sont submergés-connectés. */
+function rebuildFloodMesh(mask) {
+  const idx = [];
+  for (let zi = 0; zi < NZ - 1; zi++) {
+    for (let xi = 0; xi < NX - 1; xi++) {
+      const a = zi * NX + xi, b = a + 1, c = a + NX, d = c + 1;
+      if (mask[a] && mask[b] && mask[c] && mask[d]) idx.push(a, c, b, b, c, d);
+    }
+  }
+  floodGeo.setIndex(idx);
+  floodGeo.computeVertexNormals();
+}
+
+/* Positionne les flèches d'arrivée d'eau le long du sens de propagation
+   (gradient de la distance hydraulique = de la mer vers les terres). */
+function rebuildFloodArrows(mask, dist, v, waterY) {
+  t3d.floodArrows = [];
+  if (v <= 0.02) { ARROW_POOL.forEach(m => m.visible = false); return; }
+  const orig = t3d.origElev;
+  const cand = [];
+  const STEP = 4;
+  for (let zi = STEP; zi < NZ - STEP; zi += STEP) {
+    for (let xi = STEP; xi < NX - STEP; xi += STEP) {
+      const i = zi * NX + xi;
+      if (!mask[i] || orig[i] < SEA_EPS) continue;     // terre nouvellement envahie seulement (pas la mer)
+      const dxp = mask[i + 1]  ? dist[i + 1]  : dist[i];
+      const dxm = mask[i - 1]  ? dist[i - 1]  : dist[i];
+      const dzp = mask[i + NX] ? dist[i + NX] : dist[i];
+      const dzm = mask[i - NX] ? dist[i - NX] : dist[i];
+      let gx = dxp - dxm, gz = dzp - dzm;              // sens de dist croissante = vers les terres
+      const mag = Math.hypot(gx, gz);
+      if (mag < 0.5) continue;
+      gx /= mag; gz /= mag;
+      cand.push({
+        wx: (xi / (NX - 1) - 0.5) * SIZE,
+        wz: (zi / (NZ - 1) - 0.5) * SIZE,
+        gx, gz, d: dist[i],
+      });
+    }
+  }
+  // sous-échantillonnage régulier si trop de candidats
+  let chosen = cand;
+  const MAX = ARROW_POOL.length;
+  if (cand.length > MAX) {
+    const stride = cand.length / MAX;
+    chosen = [];
+    for (let k = 0; k < MAX; k++) chosen.push(cand[Math.floor(k * stride)]);
+  }
+  ARROW_POOL.forEach((m, k) => {
+    if (k < chosen.length) {
+      const a = chosen[k];
+      m.visible = true;
+      m.position.set(a.wx, waterY + 4, a.wz);
+      m.rotation.y = Math.atan2(-a.gz, a.gx);    // aligne la pointe +X sur (gx,gz)
+      t3d.floodArrows.push({ mesh: m, bx: a.wx, bz: a.wz, dx: a.gx, dz: a.gz, seed: (k * 0.137) % 1 });
+    } else {
+      m.visible = false;
+    }
+  });
+}
+
 function applyWaterLevel() {
   if (!waterMesh || !t3d.origElev) return;
   /* Niveau marin total = RSLR (moyen) + surcote tempête.
@@ -4671,7 +4826,10 @@ function applyWaterLevel() {
   const surge = parseFloat(document.getElementById('immSurge').value) / 100;
   const v     = rslr + surge;             // niveau d'eau total
   const vBruun = rslr;                    // seule la RSLR drive le recul morpho
-  waterMesh.position.y = v * VSCALE;
+  const waterY = v * VSCALE;
+  t3d.waterY = waterY;
+  waterMesh.position.y = waterY - 1.5;    // anneau océan, légèrement sous la nappe
+  floodMesh.position.y = waterY;
   document.getElementById('immSurgeValue').textContent = `+${surge.toFixed(2).replace('.', ',')} m`;
   document.getElementById('immTotalH').textContent =
     `+${v.toFixed(2).replace('.', ',')} m` +
@@ -4717,7 +4875,14 @@ function applyWaterLevel() {
     terrainMesh.geometry.computeVertexNormals();
   }
 
-  // Bâtiments : inondé / érodé / protégé
+  /* === Connectivité hydraulique : ne submerger que ce qui est relié à la mer === */
+  const { mask, dist } = computeFloodConnectivity(v);
+  t3d.floodMask = mask; t3d.floodDist = dist;
+  rebuildFloodMesh(mask);
+  rebuildFloodArrows(mask, dist, v, waterY);
+
+  // Bâtiments : inondé / érodé / protégé (uniquement si la cellule est
+  // hydrauliquement connectée à la mer — sinon cuvette isolée, non inondée)
   let flooded = 0, eroded = 0, protectedBldg = 0;
   t3d.buildings.forEach(b => {
     const bx = b.position.x, bz = b.position.z;
@@ -4725,6 +4890,7 @@ function applyWaterLevel() {
     const czi = Math.max(0, Math.min(NZ-1, Math.round((bz/SIZE + 0.5)*(NZ-1))));
     const cellIdx = czi * NX + cxi;
     const isProtected = useBruun && t3d.protectionMask && t3d.protectionMask[cellIdx];
+    const connected = mask[cellIdx] === 1;
     let newGroundAlt;
     if (useBruun && !isProtected) {
       const fc = t3d.bruunFactorCell ? t3d.bruunFactorCell[cellIdx] : t3d.bruunFactor;
@@ -4735,7 +4901,7 @@ function applyWaterLevel() {
     } else {
       newGroundAlt = b.userData.baseAlt;
     }
-    const lost = newGroundAlt < v - 0.1;
+    const lost = newGroundAlt < v - 0.1 && connected;
     if (lost && !isProtected) {
       flooded++;
       if (useBruun && b.userData.baseAlt > v) eroded++;
@@ -4747,8 +4913,9 @@ function applyWaterLevel() {
   });
   t3d.flooded = flooded;
 
+  // Surface immergée = terres submergées connectées à la mer (hors mer permanente)
   let cellsInWater = 0;
-  for (const e of t3d.elev) if (e < v) cellsInWater++;
+  for (let i = 0; i < mask.length; i++) if (mask[i] && t3d.origElev[i] > SEA_EPS) cellsInWater++;
   t3d.waterArea = cellsInWater * t3d.cellArea / 10000;
 
   // Recul moyen pour affichage (cellules non protégées)
@@ -4937,8 +5104,20 @@ function animateThree(t) {
   wp.needsUpdate = true;
   // tide
   if (state.immTide && t3d.loaded) {
-    const base = parseFloat(immRange.value) / 100;
-    waterMesh.position.y = (base + Math.sin(t * 0.0008) * 0.3) * VSCALE;
+    const osc = Math.sin(t * 0.0008) * 0.3 * VSCALE;
+    floodMesh.position.y = t3d.waterY + osc;
+    waterMesh.position.y = t3d.waterY - 1.5 + osc;
+  }
+  // flèches « d'où vient l'eau » : flux dérivant vers les terres + fondu
+  if (t3d.floodArrows && t3d.floodArrows.length) {
+    const STRIDE = 90;   // mètres parcourus par cycle
+    for (const a of t3d.floodArrows) {
+      const ph = (t * 0.00035 + a.seed) % 1;
+      const off = ph * STRIDE;
+      a.mesh.position.x = a.bx + a.dx * off;
+      a.mesh.position.z = a.bz + a.dz * off;
+      a.mesh.material.opacity = Math.sin(ph * Math.PI) * 0.85 + 0.1;
+    }
   }
   renderer.render(scene3, camera);
   requestAnimationFrame(animateThree);
