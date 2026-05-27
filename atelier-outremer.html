@@ -2419,7 +2419,7 @@ function construireImageModule(){
           <option value="3000">≈ 3 km — vue large</option>
         </select>
         <div id="sig-evol-ctrl" style="display:none;margin-top:8px;border-top:1px dashed var(--line);padding-top:8px">
-          <label>Photo ancienne (référence pour le taux d'évolution)</label>
+          <label>Date la plus ancienne incluse (régression multi-dates LRR)</label>
           <select id="sig-evol-layer" style="width:100%;font-size:12.5px;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)">
             <option value="ORTHOIMAGERY.ORTHOPHOTOS2000-2005|2003|image/jpeg" selected>BD Ortho 2000-2005 (~2003) — couverture outre-mer</option>
             <option value="ORTHOIMAGERY.ORTHOPHOTOS2006-2010|2008|image/jpeg">BD Ortho 2006-2010 (~2008)</option>
@@ -2969,62 +2969,69 @@ function segInter(p1,p2,p3,p4){const d1x=p2[0]-p1[0],d1y=p2[1]-p1[1],d2x=p4[0]-p
 function resampleLine(line,step){const out=[];if(line.length<2)return line.slice();out.push(line[0].slice());let carry=0;for(let i=1;i<line.length;i++){let ax=line[i-1][0],ay=line[i-1][1];const bx=line[i][0],by=line[i][1],dx=bx-ax,dy=by-ay,dist=Math.hypot(dx,dy);if(dist===0)continue;const ux=dx/dist,uy=dy/dist;let t=step-carry;while(t<=dist){out.push([ax+ux*t,ay+uy*t]);t+=step;}carry=dist-(t-step);}return out;}
 function maskAt(mask,w,h,x,y){x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=w||y>=h)return 0;return mask[y*w+x];}
 
-function computeEPR(shoreR,shoreO,maskR,w,h,bbox,yearO,yearR){
-  const dt=Math.max(1,yearR-yearO);
+function linesToSegs(lines){const s=[];for(const l of lines)for(let i=1;i<l.length;i++)s.push([l[i-1],l[i]]);return s;}
+// Taux d'évolution par régression linéaire multi-dates (LRR, façon DSAS) le long de transects.
+function computeLRR(dated,refLines,maskR,w,h,bbox){
   const mPerPx=((bbox.e-bbox.w)*111320*Math.cos((bbox.s+bbox.n)/2*Math.PI/180))/w;
-  const stepPx=Math.max(8,Math.round(40/mPerPx)); // un transect ~tous les 40 m
-  const Lpx=Math.max(15,Math.round(150/mPerPx)); // demi-longueur transect ~150 m
-  const oldSegs=[];for(const l of shoreO)for(let i=1;i<l.length;i++)oldSegs.push([l[i-1],l[i]]);
-  if(!oldSegs.length)return {feats:[],rates:[],dt};
+  const stepPx=Math.max(8,Math.round(40/mPerPx));
+  const Lpx=Math.max(15,Math.round(160/mPerPx));
   const feats=[],rates=[];
-  for(const l of shoreR){const R=resampleLine(l,stepPx);
+  for(const l of refLines){const R=resampleLine(l,stepPx);
     for(let k=1;k<R.length-1;k++){const P=R[k],a=R[k-1],c=R[k+1];
-      let tx=c[0]-a[0],ty=c[1]-a[1];const tl=Math.hypot(tx,ty)||1;tx/=tl;ty/=tl;
-      let nx=-ty,ny=tx; // normale
-      // sens "vers la mer" : côté où le masque récent est de l'eau
+      let tx=c[0]-a[0],ty=c[1]-a[1];const tl=Math.hypot(tx,ty)||1;tx/=tl;ty/=tl;let nx=-ty,ny=tx;
       const wf=maskAt(maskR,w,h,P[0]+nx*4,P[1]+ny*4)+maskAt(maskR,w,h,P[0]+nx*8,P[1]+ny*8);
       const wb=maskAt(maskR,w,h,P[0]-nx*4,P[1]-ny*4)+maskAt(maskR,w,h,P[0]-nx*8,P[1]-ny*8);
-      const sw=(wf>=wb)?1:-1;const Nx=nx*sw,Ny=ny*sw; // normale orientée vers la mer
+      const sw=(wf>=wb)?1:-1;const Nx=nx*sw,Ny=ny*sw;
       const A=[P[0]-Nx*Lpx,P[1]-Ny*Lpx],B=[P[0]+Nx*Lpx,P[1]+Ny*Lpx];
-      let best=null,bd=1e9;for(const s of oldSegs){const I=segInter(A,B,s[0],s[1]);if(I){const dd=Math.hypot(I[0]-P[0],I[1]-P[1]);if(dd<bd){bd=dd;best=I;}}}
-      if(!best)continue;
-      const dOld=(best[0]-P[0])*Nx+(best[1]-P[1])*Ny; // position du vieux trait le long de la normale mer (+ = au large)
-      const netSeaward=-dOld*mPerPx; // déplacement récent-vieux vers la mer (+ accrétion, - érosion)
-      const rate=netSeaward/dt;rates.push(rate);
-      const cR=pxToGeo(P[0],P[1],w,h,bbox),cO=pxToGeo(best[0],best[1],w,h,bbox);
-      feats.push({type:'Feature',geometry:{type:'LineString',coordinates:[cO,cR]},properties:{type:rate<-0.1?'érosion':rate>0.1?'accrétion':'stable',taux_m_an:+rate.toFixed(2),deplacement_m:+(netSeaward).toFixed(1),intervalle_ans:dt,certitude:'modérée'}});
+      const pts=[]; // (année, position le long de la normale mer, en m)
+      for(const d of dated){let best=null,bd=1e9;for(const s of d.segs){const I=segInter(A,B,s[0],s[1]);if(I){const dd=Math.hypot(I[0]-P[0],I[1]-P[1]);if(dd<bd){bd=dd;best=I;}}}
+        if(best)pts.push([d.year,((best[0]-P[0])*Nx+(best[1]-P[1])*Ny)*mPerPx]);}
+      if(pts.length<2)continue;
+      const n=pts.length;let sx=0,sy=0;for(const p of pts){sx+=p[0];sy+=p[1];}const mxx=sx/n,myy=sy/n;
+      let sxx=0,sxy=0;for(const p of pts){sxx+=(p[0]-mxx)*(p[0]-mxx);sxy+=(p[0]-mxx)*(p[1]-myy);}
+      if(sxx<1e-9)continue;const slope=sxy/sxx;const rate=slope; // m/an (positif=accrétion vers le large)
+      let r2=null,ci=null,signif;
+      if(n>=3){let sse=0,sst=0;for(const p of pts){const pred=myy+slope*(p[0]-mxx);sse+=(p[1]-pred)*(p[1]-pred);sst+=(p[1]-myy)*(p[1]-myy);}r2=sst>1e-9?1-sse/sst:0;const se=Math.sqrt(Math.max(0,sse/(n-2))/sxx);ci=1.96*se;signif=Math.abs(slope)>ci;}
+      else{const dt=Math.abs(pts[1][0]-pts[0][0])||1;ci=(mPerPx*2)/dt;signif=Math.abs(rate)>ci;}
+      rates.push(rate);
+      const ymin=Math.min(...pts.map(p=>p[0]));const oldP=pts.find(p=>p[0]===ymin);
+      const oldPx=[P[0]+Nx*(oldP[1]/mPerPx),P[1]+Ny*(oldP[1]/mPerPx)];
+      feats.push({type:'Feature',geometry:{type:'LineString',coordinates:[pxToGeo(oldPx[0],oldPx[1],w,h,bbox),pxToGeo(P[0],P[1],w,h,bbox)]},properties:{type:rate<-0.1?'érosion':rate>0.1?'accrétion':'stable',taux_m_an:+rate.toFixed(2),n_dates:n,r2:r2!=null?+r2.toFixed(2):null,incertitude_m_an:ci!=null?+ci.toFixed(2):null,significatif:!!signif,methode:n>=3?'LRR':'EPR'}});
     }
   }
-  return {feats,rates,dt};
+  return {feats,rates};
 }
 
 window.lancerEvolution=async function(){
   const b=getSigBbox();
   if(b==='invalid'){alert('Emprise invalide.');return;}
   if(!b){alert("Chargez l'orthophoto IGN d'un site (l'emprise est nécessaire).");return;}
-  if(!imgUrl1||!imgUrl1.includes('data.geopf.fr')){alert("L'évolution nécessite l'orthophoto IGN (bouton « Charger l'orthophoto IGN » d'un site).");return;}
-  const sel=(document.getElementById('sig-evol-layer')?.value||'ORTHOIMAGERY.ORTHOPHOTOS2000-2005|2003|image/jpeg').split('|');
-  const oldLayer=sel[0],yearO=+sel[1],oldFmt=sel[2]||'image/jpeg';
+  if(!imgUrl1||!imgUrl1.includes('data.geopf.fr')){alert("L'évolution nécessite l'orthophoto IGN.");return;}
+  const oldestYear=+((document.getElementById('sig-evol-layer')?.value||'x|2003|x').split('|')[1]);
   const sens=+(document.getElementById('sig-sens')?.value||50);
+  const HIST=[{layer:'ORTHOIMAGERY.ORTHOPHOTOS.1950-1965',year:1957,fmt:'image/png'},{layer:'ORTHOIMAGERY.ORTHOPHOTOS.1980-1995',year:1987,fmt:'image/png'},{layer:'ORTHOIMAGERY.ORTHOPHOTOS2000-2005',year:2003,fmt:'image/jpeg'},{layer:'ORTHOIMAGERY.ORTHOPHOTOS2006-2010',year:2008,fmt:'image/jpeg'}].filter(x=>x.year>=oldestYear);
   const btnS=document.getElementById('img-sig-btn');if(btnS)btnS.disabled=true;
-  const irBody=document.getElementById('ir-body');irBody.className='img-result-body loading';irBody.textContent='Comparaison ancien / récent…';
+  const irBody=document.getElementById('ir-body');irBody.className='img-result-body loading';irBody.textContent='Trait de côte récent…';
   document.getElementById('ir-titre').textContent='Évolution du trait de côte';document.getElementById('ir-badge').textContent='Calcul…';
   try{
-    const nd=nodataMask; // reuse
-    const imgR=await loadImageURL(ignOrthoUrl(b));const imR=drawCV(imgR);
-    const ndR=nodataMask(imR);const maskR=computeWaterMask(imR,sens);const shoreR=shorelinesFromMask(maskR,imR.w,imR.h,ndR);
+    const imR=drawCV(await loadImageURL(ignOrthoUrl(b)));const W=imR.w,H=imR.h;
+    const maskR=computeWaterMask(imR,sens);const shoreR=shorelinesFromMask(maskR,W,H,nodataMask(imR));
     const pd=await photoDateIGN(b);const yearR=pd&&pd.date_photo?+(pd.date_photo.slice(0,4)):new Date().getFullYear();
-    const imgO=await loadImageURL(ignLayerUrl(oldLayer,b,oldFmt));const imO=drawCV(imgO);
-    const ndO=nodataMask(imO);const maskO=computeWaterMask(imO,sens);const shoreO=shorelinesFromMask(maskO,imO.w,imO.h,ndO);
-    if(!shoreR.length||!shoreO.length){irBody.className='img-result-body';irBody.innerHTML='<em>Trait de côte introuvable sur l\'une des deux dates (couverture historique absente ici, ou segmentation à ajuster via la sensibilité).</em>';if(btnS)btnS.disabled=false;return;}
-    const {feats,rates,dt}=computeEPR(shoreR,shoreO,maskR,imR.w,imR.h,b,yearO,yearR);
-    const T=TERRITOIRES[TERR_ACTIF]||{};const meta={site:document.getElementById('img-site').value.trim()||T.nom||'',date_ancienne:yearO,date_recente:(pd&&pd.date_photo)||yearR,intervalle_ans:dt};
-    feats.forEach(f=>{f.properties.date_ancienne=yearO;f.properties.date_recente=(pd&&pd.date_photo)||yearR;});
+    if(!shoreR.length){irBody.className='img-result-body';irBody.innerHTML='<em>Trait de côte récent introuvable (ajustez la sensibilité).</em>';if(btnS)btnS.disabled=false;return;}
+    const dated=[{year:yearR,segs:linesToSegs(shoreR)}];const datesUsed=[yearR];
+    for(const hl of HIST){irBody.textContent='Trait de côte '+hl.year+'…';
+      try{const im=drawCV(await loadImageURL(ignLayerUrl(hl.layer,b,hl.fmt)));const sh=shorelinesFromMask(computeWaterMask(im,sens),im.w,im.h,nodataMask(im));if(sh.length){dated.push({year:hl.year,segs:linesToSegs(sh)});datesUsed.push(hl.year);}}catch(e){}}
+    if(dated.length<2){irBody.className='img-result-body';irBody.innerHTML='<em>Une seule date exploitable (pas de couverture historique ici). Évolution impossible.</em>';if(btnS)btnS.disabled=false;return;}
+    irBody.textContent='Calcul des taux (régression)…';
+    const {feats,rates}=computeLRR(dated,shoreR,maskR,W,H,b);
+    const T=TERRITOIRES[TERR_ACTIF]||{};const yrs=datesUsed.slice().sort((a,b)=>a-b);
+    const meta={site:document.getElementById('img-site').value.trim()||T.nom||'',dates:yrs,date_ancienne:yrs[0],date_recente:(pd&&pd.date_photo)||yearR,intervalle_ans:yrs[yrs.length-1]-yrs[0]};
+    feats.forEach(f=>{f.properties.dates=yrs.join('/');f.properties.date_recente=(pd&&pd.date_photo)||yearR;});
     renderEvolution(feats,rates,b,meta);
     if(feats.length)addToCumul(feats,meta);
     document.getElementById('ir-badge').textContent='Terminé';
     const now=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-    imgHistory.push({type:'evolution',icon:'📈',date:now,geojson:_lastSigGeojson,bbox:b,site:meta.site,resume:feats.length+' transects · '+yearO+'→'+meta.date_recente});
+    imgHistory.push({type:'evolution',icon:'📈',date:now,geojson:_lastSigGeojson,bbox:b,site:meta.site,resume:feats.length+' transects · '+yrs.join('/')});
     renderImgHistory();
   }catch(e){irBody.className='img-result-body';irBody.innerHTML=`<em>Erreur : ${e.message}</em>`;document.getElementById('ir-badge').textContent='Erreur';}
   if(btnS)btnS.disabled=false;
@@ -3037,16 +3044,19 @@ function renderEvolution(feats,rates,bbox,meta){
   const mean=rates.reduce((a,x)=>a+x,0)/rates.length;
   const mn=Math.min(...rates),mx=Math.max(...rates);
   const eros=rates.filter(r=>r<-0.1).length,accr=rates.filter(r=>r>0.1).length;
+  const signif=feats.filter(f=>f.properties.significatif).length;
+  const nLRR=feats.filter(f=>f.properties.methode==='LRR').length;
+  const meth=nLRR>0?('LRR (régression) sur '+(meta.dates?meta.dates.length:'plusieurs')+' dates'):'EPR (2 dates)';
   const fmt=v=>(v>0?'+':'')+v.toFixed(2);
   irBody.innerHTML=`
-    <div class="img-result-section"><h4>Évolution ${meta.date_ancienne} → ${meta.date_recente} · ${meta.intervalle_ans} ans · ${rates.length} transects</h4>
+    <div class="img-result-section"><h4>Évolution ${meta.dates?meta.dates.join(' · '):(meta.date_ancienne+' → '+meta.date_recente)} · ${meta.intervalle_ans} ans · ${rates.length} transects</h4>
       <div class="ev-stat" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
-        <div class="ev-stat-box" style="background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:8px"><div style="font-family:var(--serif);font-size:18px;font-weight:600;color:${mean<-0.1?'var(--terra)':mean>0.1?'var(--green)':'var(--navy)'}">${fmt(mean)} m/an</div><div style="font-size:10.5px;color:var(--muted)">taux moyen (EPR)</div></div>
+        <div class="ev-stat-box" style="background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:8px"><div style="font-family:var(--serif);font-size:18px;font-weight:600;color:${mean<-0.1?'var(--terra)':mean>0.1?'var(--green)':'var(--navy)'}">${fmt(mean)} m/an</div><div style="font-size:10.5px;color:var(--muted)">taux moyen (${meth})</div></div>
         <div class="ev-stat-box" style="background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:8px"><div style="font-family:var(--serif);font-size:18px;font-weight:600;color:var(--navy)">${fmt(mn)} / ${fmt(mx)}</div><div style="font-size:10.5px;color:var(--muted)">min / max m/an</div></div>
         <div class="ev-stat-box" style="background:#FDECEA;border:1px solid #E8C4BE;border-radius:6px;padding:8px"><div style="font-family:var(--serif);font-size:18px;font-weight:600;color:var(--terra)">${Math.round(100*eros/rates.length)} %</div><div style="font-size:10.5px;color:var(--muted)">en érosion (< -0,1 m/an)</div></div>
-        <div class="ev-stat-box" style="background:#E2F0E8;border:1px solid #BcdCC8;border-radius:6px;padding:8px"><div style="font-family:var(--serif);font-size:18px;font-weight:600;color:var(--green)">${Math.round(100*accr/rates.length)} %</div><div style="font-size:10.5px;color:var(--muted)">en accrétion (> +0,1 m/an)</div></div>
+        <div class="ev-stat-box" style="background:#E2EEF2;border:1px solid #BcdCC8;border-radius:6px;padding:8px"><div style="font-family:var(--serif);font-size:18px;font-weight:600;color:var(--ocean)">${Math.round(100*signif/rates.length)} %</div><div style="font-size:10.5px;color:var(--muted)">significatifs (&gt; incertitude)</div></div>
       </div>
-      <p style="font-size:11px;color:var(--muted);margin-top:8px">Méthode EPR (End Point Rate) inspirée de DSAS (USGS) et MobiTC (Cerema). Traits de côte extraits automatiquement (segmentation mer/terre) — <b>indicatif</b>, à valider sur traits de côte de référence. Dates anciennes = millésime moyen de la campagne.</p>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px">Méthode <b>${meth}</b> — taux par régression multi-dates (LRR, façon DSAS/MobiTC) ou End-Point Rate si 2 dates. <b>Significatif</b> = |taux| &gt; IC 95 % (≥3 dates) ou &gt; 2 px (2 dates). Accrétion : ${Math.round(100*accr/rates.length)} %. Traits de côte extraits automatiquement — <b>indicatif</b>, à valider sur traits de côte de référence ; dates anciennes = millésime moyen de campagne.</p>
     </div>
     <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
       <button onclick="chargerSigSurCarte()" style="background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Transects sur la carte</button>
