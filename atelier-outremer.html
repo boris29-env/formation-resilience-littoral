@@ -2349,6 +2349,12 @@ Méthode : Cerema, Guide méthodologique de suivi du trait de côte (2018) ; SHO
    sublabel:'taux annuel (DSAS / EPR)',
    desc:"Compare le trait de côte ancien (ortho IGN historique) et récent le long de transects, et calcule un taux moyen d'évolution annuelle (m/an), méthode EPR inspirée de DSAS (USGS) et MobiTC (Cerema).",
    twoImages:false,systemPrompt:'',sigSystemPrompt:''},
+  {id:'mnt',
+   icon:'📐',
+   label:'Zones basses',
+   sublabel:'submersion (MNT)',
+   desc:"Cartographie les zones basses sous un seuil d'altitude à partir du MNT IGN (RGE ALTI). Couverture : SPM, Antilles, métropole — pas le Pacifique (NC, Polynésie, Wallis, absence de MNT IGN).",
+   twoImages:false,systemPrompt:'',sigSystemPrompt:''},
 ];
 
 // État du module image
@@ -2426,7 +2432,17 @@ function construireImageModule(){
             <option value="ORTHOIMAGERY.ORTHOPHOTOS.1980-1995|1987|image/png">BD Ortho 1980-1995 (~1987) — surtout métropole</option>
             <option value="ORTHOIMAGERY.ORTHOPHOTOS.1950-1965|1957|image/png">BD Ortho 1950-1965 (~1957) — surtout métropole</option>
           </select>
-          <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:4px">Taux moyen m/an (EPR) = déplacement du trait de côte ÷ intervalle. Méthode inspirée DSAS (USGS) / MobiTC (Cerema). Travaillez à ~1:10 000 (emprise 2 km).</div>
+          <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:4px">Régression multi-dates (LRR, façon DSAS/MobiTC) + incertitude. Travaillez à ~1:10 000 (emprise 2 km).</div>
+        </div>
+        <div id="sig-mnt-ctrl" style="display:none;margin-top:8px;border-top:1px dashed var(--line);padding-top:8px">
+          <label>Seuil de submersion (altitude, MNT IGN)</label>
+          <select id="sig-mnt-thr" style="width:100%;font-size:12.5px;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)">
+            <option value="0.5">+ 0,5 m</option>
+            <option value="1" selected>+ 1 m</option>
+            <option value="2">+ 2 m</option>
+            <option value="3">+ 3 m</option>
+          </select>
+          <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:4px">Altitude réelle (RGE ALTI). Couverture SPM/Antilles/métropole — pas le Pacifique. Choisissez un seuil cohérent avec la trajectoire (médiane TRACC).</div>
         </div>
         <label id="sig-sens-label">Sensibilité de détection (mer/terre)</label>
         <input type="range" id="sig-sens" min="0" max="100" value="50" style="width:100%">
@@ -2505,9 +2521,10 @@ function getSigBbox(){
 function updateSigUi(){
   const wrap=document.getElementById('img-bbox-wrap');if(!wrap)return;
   const auto=document.getElementById('img-bbox-auto');
-  const isEvol=(imgRoutineActive==='evolution');
+  const isEvol=(imgRoutineActive==='evolution');const isMnt=(imgRoutineActive==='mnt');
   const evolCtrl=document.getElementById('sig-evol-ctrl');if(evolCtrl)evolCtrl.style.display=isEvol?'block':'none';
-  const sigBtn=document.getElementById('img-sig-btn');if(sigBtn)sigBtn.textContent=isEvol?'📈 Calculer le taux d\'évolution (m/an)':'🗺️ Extraire la couche SIG (GeoJSON)';
+  const mntCtrl=document.getElementById('sig-mnt-ctrl');if(mntCtrl)mntCtrl.style.display=isMnt?'block':'none';
+  const sigBtn=document.getElementById('img-sig-btn');if(sigBtn)sigBtn.textContent=isEvol?'📈 Calculer le taux d\'évolution (m/an)':isMnt?'📐 Calculer les zones basses (MNT)':'🗺️ Extraire la couche SIG (GeoJSON)';
   const sl=document.getElementById('sig-sens-label');if(sl)sl.textContent=(imgRoutineActive==='ouvrages')?'Sensibilité de détection (bords / droites)':'Sensibilité de détection (mer / terre)';
   // L'extraction SIG est possible sur tous les onglets → l'emprise est toujours proposée.
   // Source URL → emprise automatique ; photo → saisie manuelle.
@@ -3064,7 +3081,60 @@ function renderEvolution(feats,rates,bbox,meta){
     </div>`;
 }
 
-window.lancerSIGAction=function(){if(imgRoutineActive==='evolution')lancerEvolution();else lancerExtractionSIG();};
+window.lancerSIGAction=function(){if(imgRoutineActive==='evolution')lancerEvolution();else if(imgRoutineActive==='mnt')lancerMNT();else lancerExtractionSIG();};
+
+/* ============================================================
+   ZONES BASSES / SUBMERSION par MNT (RGE ALTI IGN)
+============================================================ */
+async function fetchElevations(lons,lats){const out=[];const CH=180;
+  for(let i=0;i<lons.length;i+=CH){const lo=lons.slice(i,i+CH),la=lats.slice(i,i+CH);
+    try{const r=await fetch(`https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json?lon=${lo.join('|')}&lat=${la.join('|')}&resource=ign_rge_alti_wld&zonly=true&delimiter=|`);const d=await r.json();if(d&&Array.isArray(d.elevations)){out.push(...d.elevations);continue;}}catch(e){}
+    for(let k=0;k<lo.length;k++)out.push(-99999);}
+  return out;}
+window.lancerMNT=async function(){
+  const b=getSigBbox();
+  if(b==='invalid'){alert('Emprise invalide.');return;}
+  if(!b){alert("Chargez l'orthophoto IGN d'un site (l'emprise est nécessaire).");return;}
+  const thr=+(document.getElementById('sig-mnt-thr')?.value||1);const G=44;
+  const btnS=document.getElementById('img-sig-btn');if(btnS)btnS.disabled=true;
+  const irBody=document.getElementById('ir-body');irBody.className='img-result-body loading';irBody.textContent='Interrogation du MNT IGN (RGE ALTI)…';
+  document.getElementById('ir-titre').textContent='Zones basses (MNT) · ≤ +'+thr+' m';document.getElementById('ir-badge').textContent='MNT…';
+  try{
+    const lons=[],lats=[];
+    for(let gy=0;gy<G;gy++)for(let gx=0;gx<G;gx++){lons.push((b.w+(gx/(G-1))*(b.e-b.w)).toFixed(6));lats.push((b.n-(gy/(G-1))*(b.n-b.s)).toFixed(6));}
+    const elev=await fetchElevations(lons,lats);
+    let nValid=0;for(const e of elev)if(e>-9999)nValid++;
+    if(nValid<G*G*0.2){irBody.className='img-result-body';irBody.innerHTML="<em>Altimétrie IGN (RGE ALTI) indisponible sur cette emprise — typiquement le Pacifique (Nouvelle-Calédonie, Polynésie, Wallis). Les zones basses par MNT ne sont calculables que là où l'IGN fournit l'altitude (SPM, Antilles, métropole).</em>";document.getElementById('ir-badge').textContent='Indisponible';if(btnS)btnS.disabled=false;return;}
+    const low=new Uint8Array(G*G);let nLow=0;for(let i=0;i<G*G;i++){const e=elev[i];if(e>0&&e<=thr){low[i]=1;nLow++;}}
+    const g2geo=(gx,gy)=>[+(b.w+(gx/(G-1))*(b.e-b.w)).toFixed(7),+(b.n-(gy/(G-1))*(b.n-b.s)).toFixed(7)];
+    const lines=chainSegments(marchingSquares(low,G,G)).map(l=>simplifyDP(l,0.6)).filter(l=>l.length>=2);
+    const feats=lines.map(l=>({type:'Feature',geometry:{type:'LineString',coordinates:l.map(p=>g2geo(p[0],p[1]))},properties:{type:'limite zone basse (≤ +'+thr+' m)',seuil_m:thr,methode:'MNT RGE ALTI IGN',certitude:'modérée'}}));
+    const latMid=(b.s+b.n)/2;const cellW=(b.e-b.w)/(G-1)*111320*Math.cos(latMid*Math.PI/180);const cellH=(b.n-b.s)/(G-1)*111320;const surfHa=nLow*cellW*cellH/10000;
+    const T=TERRITOIRES[TERR_ACTIF]||{};const meta={site:document.getElementById('img-site').value.trim()||T.nom||'',seuil_m:thr,surface_ha:+surfHa.toFixed(1)};
+    renderMNT(feats,meta,thr,surfHa,G);
+    if(feats.length)addToCumul(feats,meta);
+    document.getElementById('ir-badge').textContent='Terminé';
+    const now=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    imgHistory.push({type:'mnt',icon:'📐',date:now,geojson:_lastSigGeojson,bbox:b,site:meta.site,resume:'zones basses ≤ +'+thr+' m · '+surfHa.toFixed(1)+' ha'});
+    renderImgHistory();
+  }catch(e){irBody.className='img-result-body';irBody.innerHTML=`<em>Erreur : ${e.message}</em>`;document.getElementById('ir-badge').textContent='Erreur';}
+  if(btnS)btnS.disabled=false;
+};
+function renderMNT(feats,meta,thr,surfHa,G){
+  const irBody=document.getElementById('ir-body');
+  _lastSigGeojson={type:'FeatureCollection',name:'zones_basses_mnt',features:feats};_lastSigMeta=meta;
+  irBody.innerHTML=`<div class="img-result-section"><h4>Zones basses — submersion ≤ +${thr} m (MNT IGN)</h4>
+    <div class="ev-stat" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
+      <div class="ev-stat-box" style="background:#FDECEA;border:1px solid #E8C4BE;border-radius:6px;padding:8px"><div style="font-family:var(--serif);font-size:18px;font-weight:600;color:var(--terra)">${surfHa.toFixed(1)} ha</div><div style="font-size:10.5px;color:var(--muted)">surface ≤ +${thr} m (emprise)</div></div>
+      <div class="ev-stat-box" style="background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:8px"><div style="font-family:var(--serif);font-size:18px;font-weight:600;color:var(--navy)">+${thr} m</div><div style="font-size:10.5px;color:var(--muted)">seuil de submersion</div></div>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px">Altitude réelle issue du <b>MNT RGE ALTI IGN</b> (grille ${G}×${G}). Zone basse = terre émergée d'altitude ≤ +${thr} m. <b>Indicatif</b> : résolution de la grille, ne tient pas compte de la connexion hydraulique à la mer ni des ouvrages de protection.</p>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+    <button onclick="chargerSigSurCarte()" style="background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Limite sur la carte</button>
+    <button onclick="telechargerSigGeojson()" style="background:var(--teal);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Télécharger .geojson</button>
+  </div>`;
+}
 let _lastSigMeta={};
 window.chargerSigSurCarte=function(){
   if(!_lastSigGeojson){alert('Aucune couche SIG à afficher.');return;}
