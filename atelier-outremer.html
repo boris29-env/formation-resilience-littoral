@@ -1432,21 +1432,23 @@ function construireVoixPasse(T){const host=document.getElementById('vp-container
   const opener=`Je vous écoute. Je suis ici pour témoigner de ce que j'ai vécu et observé. Posez-moi vos questions sur cet événement.`;
   vpHistory.push({role:'assistant',content:opener});
   host.innerHTML=`<div class="vp-dialog"><div class="vp-dialog-head"><div><div class="vpdh-nom">${ev.personnage.nom}</div><div class="vpdh-role">${ev.personnage.role}</div></div><div style="display:flex;align-items:center;gap:6px"><span style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.5)">${ev.titre}</span><button class="vp-stop" onclick="stopSpeech()" title="Arrêter">⏹</button></div></div><div class="vp-msgs" id="vp-msgs"></div><div class="vp-input-row"><input type="text" id="vp-input" placeholder="Votre question…" onkeydown="if(event.key==='Enter')sendVp()"><button id="vp-send" onclick="sendVp()">Envoyer</button></div><div class="vp-counter" id="vp-counter">0/6 échanges · Claude claude-haiku-4-5${voiceId?' · synthèse vocale Voxtral':' · Web Speech API'}</div></div>`;
-  window._vpSystem=ev.system+"\n\nCONTRAINTES DE FORME (impératives) : réponds en 3 à 4 phrases maximum, d'un seul tenant. Texte courant uniquement — AUCUN formatage markdown : pas d'astérisques, pas de gras, pas de listes à puces, pas de titres.\n\nFIABILITÉ : reste cohérent avec le dossier ci-dessous, n'invente aucun chiffre ni date. Si on te demande une donnée absente du dossier, dis simplement que tu ne l'as pas constatée.\n\nDONNÉES DE RÉFÉRENCE DU DOSSIER :\n"+buildFactBrief(TERR_ACTIF);window._vpCount=0;window._vpVoiceId=voiceId;
+  window._vpSystem=ev.system+"\n\nCONTRAINTES DE FORME (impératives) : réponds en 3 à 4 phrases maximum, d'un seul tenant. Texte courant uniquement — AUCUN formatage markdown : pas d'astérisques, pas de gras, pas de listes à puces, pas de titres.\n\nFIABILITÉ : reste cohérent avec le dossier ci-dessous, n'invente aucun chiffre ni date. Si on te demande une donnée absente du dossier, dis simplement que tu ne l'as pas constatée.\n\nSOURCE (impératif) : termine TOUJOURS ta réponse par le marqueur exact ||SOURCE|| suivi de la ou des références précises qui appuient ton propos (document, organisme, année — tirés des sources du dossier ci-dessous). Ne mets AUCUNE référence entre parenthèses dans le témoignage lui-même : tout ce qui précède le marqueur est ton témoignage parlé, tout ce qui suit est la source. Exemple : « … j'ai vu la route coupée pendant des jours. ||SOURCE|| DTAM de Saint-Pierre-et-Miquelon, archives ; Météo-France, bilan 2008. »\n\nDONNÉES DE RÉFÉRENCE DU DOSSIER :\n"+buildFactBrief(TERR_ACTIF);window._vpCount=0;window._vpVoiceId=voiceId;
   addVpMsg('char',opener,voiceId,false);}
 
 function vpClean(s){return (s||'').replace(/[*_`]/g,'').replace(/^#{1,6}\s+/gm,'').replace(/^\s*[-•]\s+/gm,'').replace(/\n{3,}/g,'\n\n').trim();}
-function addVpMsg(cls,txt,voiceId,autoPlay=false){
+function splitSource(txt){const i=(txt||'').indexOf('||SOURCE||');if(i<0)return {spoken:(txt||'').trim(),source:''};return {spoken:txt.slice(0,i).trim(),source:txt.slice(i+10).trim()};}
+function addVpMsg(cls,txt,voiceId,autoPlay=false,source=''){
   const h=document.getElementById('vp-msgs');if(!h)return;
   const d=document.createElement('div');d.className='vp-msg '+cls;
   if(cls==='char'){
     const clean=vpClean(txt);
-    d.textContent=clean;
+    d.textContent=clean; // texte parlé uniquement (la source n'est pas lue)
     const vid=voiceId||window._vpVoiceId||'';
     const ttsBtn=document.createElement('button');
     ttsBtn.className='tts-btn';ttsBtn.innerHTML='🔊 Écouter';
     ttsBtn.onclick=()=>speakMsg(ttsBtn,clean,vid);
     d.appendChild(document.createElement('br'));d.appendChild(ttsBtn);
+    if(source){const sc=document.createElement('div');sc.style.cssText='margin-top:7px;font-family:var(--mono);font-size:9.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:5px;line-height:1.45';sc.textContent='⌖ Source : '+vpClean(source);d.appendChild(sc);}
     if(autoPlay&&(vid||window.speechSynthesis))setTimeout(()=>speakText(clean,vid),450);
   }else{
     d.textContent=txt;
@@ -1457,7 +1459,7 @@ function addVpMsg(cls,txt,voiceId,autoPlay=false){
 window.sendVp=async function(){const inp=document.getElementById('vp-input');const text=inp.value.trim();if(!text)return;if(window._vpCount>=6){addVpMsg('system','Nombre maximum d\'échanges atteint.');return;}inp.value='';inp.disabled=true;document.getElementById('vp-send').disabled=true;addVpMsg('user',text);vpHistory.push({role:'user',content:text});addVpMsg('thinking','…');
   const cfg=getClaudeConfig();
   if(!cfg){removeLastMsg('vp-msgs');addVpMsg('system','Proxy non configuré et clé API absente. Renseignez l\'URL du proxy dans le panneau formateur (⚙).');inp.disabled=false;document.getElementById('vp-send').disabled=false;return;}
-  try{const r=await fetch(cfg.url,{method:'POST',headers:cfg.headers,body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:350,system:window._vpSystem,messages:vpHistory})});const d=await r.json();removeLastMsg('vp-msgs');const reply=d.content?.[0]?.text||'[Pas de réponse]';vpHistory.push({role:'assistant',content:reply});addVpMsg('char',reply,window._vpVoiceId,true);window._vpCount++;document.getElementById('vp-counter').textContent=window._vpCount+'/6 échanges · '+cfg.via;collectVpTurn(text,reply);}
+  try{const r=await fetch(cfg.url,{method:'POST',headers:cfg.headers,body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:350,system:window._vpSystem,messages:vpHistory})});const d=await r.json();removeLastMsg('vp-msgs');const reply=d.content?.[0]?.text||'[Pas de réponse]';vpHistory.push({role:'assistant',content:reply});const sp=splitSource(reply);addVpMsg('char',sp.spoken,window._vpVoiceId,true,sp.source);window._vpCount++;document.getElementById('vp-counter').textContent=window._vpCount+'/6 échanges · '+cfg.via;collectVpTurn(text,reply);}
   catch(e){removeLastMsg('vp-msgs');addVpMsg('system','Erreur : '+e.message);}inp.disabled=false;document.getElementById('vp-send').disabled=false;};
 
 /* ============================================================
