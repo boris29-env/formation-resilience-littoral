@@ -94,6 +94,38 @@ function toMistralContent(content) {
 }
 
 // ---------------------------------------------------------------------------
+// Mistral ne récupère pas les images distantes par URL : le worker les
+// télécharge lui-même (pas de contrainte CORS côté serveur) et les inline
+// en data URI base64.
+// ---------------------------------------------------------------------------
+function abToBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  let bin = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(bin);
+}
+
+async function inlineRemoteImages(messages) {
+  for (const m of messages) {
+    if (!Array.isArray(m.content)) continue;
+    for (const part of m.content) {
+      if (part && part.type === 'image_url' && typeof part.image_url === 'string' && /^https?:/i.test(part.image_url)) {
+        const resp = await fetch(part.image_url, { headers: { 'Accept': 'image/*' } });
+        if (!resp.ok) throw new Error("image inaccessible (HTTP " + resp.status + ") : " + part.image_url);
+        const ct = (resp.headers.get('Content-Type') || '').split(';')[0].trim() || 'image/jpeg';
+        if (!ct.startsWith('image/')) throw new Error("l'URL ne renvoie pas une image (type " + ct + "). Vérifiez le lien (orthophoto/satellite direct).");
+        const buf = await resp.arrayBuffer();
+        if (buf.byteLength > 8_000_000) throw new Error("image distante trop volumineuse (>8 Mo).");
+        part.image_url = 'data:' + ct + ';base64,' + abToBase64(buf);
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // HANDLER : CHAT (route /)
 // ---------------------------------------------------------------------------
 async function handleChat(request, env, origin) {
@@ -118,6 +150,13 @@ async function handleChat(request, env, origin) {
 
   if (mistralMessages.filter(m => m.role !== 'system').length === 0) {
     return jsonResponse({ error: 'Aucun message exploitable', _proxy: 'mistral-chat' }, 400, origin);
+  }
+
+  // Les images fournies par URL sont téléchargées et inline en base64
+  // (Mistral ne va pas chercher les URL lui-même).
+  if (hasImage) {
+    try { await inlineRemoteImages(mistralMessages); }
+    catch (e) { return jsonResponse({ error: 'Image distante non récupérable', detail: String(e.message || e), _proxy: 'mistral-vision' }, 400, origin); }
   }
 
   const mistralPayload = {
