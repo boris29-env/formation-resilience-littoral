@@ -1097,7 +1097,8 @@ CADRE ÉPISTÉMIQUE STRICT :
 - Le territoire de ${nom} est hors du périmètre direct de la TRACC (qui couvre France hexagonale et Corse). Les données régionalisées ci-dessus sont issues de la littérature scientifique disponible.
 - Tu es une trajectoire conditionnelle. Tu ne formuleras jamais de certitude sur l'avenir.
 - Volume : 6-10 phrases par réponse. Structure : (a) la donnée demandée, (b) sa traduction concrète pour ${nom}, (c) un angle mort.
-- Style : vouvoiement, ton rigoureux et pédagogique, citations des sources.`;
+- Style : vouvoiement, ton rigoureux et pédagogique, citations des sources.
+- Forme : texte courant, sans aucun formatage markdown (pas d'astérisques, pas de gras, pas de listes, pas de titres).`;
 }
 
 /* ============================================================
@@ -1396,23 +1397,25 @@ function stLbl(s){return{go:'éligible',cond:'conditionnel',exist:'présent',act
 ============================================================ */
 function construireVoixPasse(T){const host=document.getElementById('vp-container');host.innerHTML='';const ev=T.event_passe;vpHistory=[];
   const voiceId=ev.voiceId||'';
-  const opener=`Je vous écoute. Je suis ici pour témoigner de ce que j'ai vécu et observé autour de ${ev.titre}. Posez-moi vos questions.`;
+  const opener=`Je vous écoute. Je suis ici pour témoigner de ce que j'ai vécu et observé. Posez-moi vos questions sur cet événement.`;
   vpHistory.push({role:'assistant',content:opener});
   host.innerHTML=`<div class="vp-dialog"><div class="vp-dialog-head"><div><div class="vpdh-nom">${ev.personnage.nom}</div><div class="vpdh-role">${ev.personnage.role}</div></div><div style="display:flex;align-items:center;gap:6px"><span style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.5)">${ev.titre}</span><button class="vp-stop" onclick="stopSpeech()" title="Arrêter">⏹</button></div></div><div class="vp-msgs" id="vp-msgs"></div><div class="vp-input-row"><input type="text" id="vp-input" placeholder="Votre question…" onkeydown="if(event.key==='Enter')sendVp()"><button id="vp-send" onclick="sendVp()">Envoyer</button></div><div class="vp-counter" id="vp-counter">0/6 échanges · Claude claude-haiku-4-5${voiceId?' · synthèse vocale Voxtral':' · Web Speech API'}</div></div>`;
-  window._vpSystem=ev.system;window._vpCount=0;window._vpVoiceId=voiceId;
+  window._vpSystem=ev.system+"\n\nCONTRAINTES DE FORME (impératives) : réponds en 3 à 4 phrases maximum, d'un seul tenant. Texte courant uniquement — AUCUN formatage markdown : pas d'astérisques, pas de gras, pas de listes à puces, pas de titres.";window._vpCount=0;window._vpVoiceId=voiceId;
   addVpMsg('char',opener,voiceId,false);}
 
+function vpClean(s){return (s||'').replace(/[*_`]/g,'').replace(/^#{1,6}\s+/gm,'').replace(/^\s*[-•]\s+/gm,'').replace(/\n{3,}/g,'\n\n').trim();}
 function addVpMsg(cls,txt,voiceId,autoPlay=false){
   const h=document.getElementById('vp-msgs');if(!h)return;
   const d=document.createElement('div');d.className='vp-msg '+cls;
   if(cls==='char'){
-    d.textContent=txt;
+    const clean=vpClean(txt);
+    d.textContent=clean;
     const vid=voiceId||window._vpVoiceId||'';
     const ttsBtn=document.createElement('button');
     ttsBtn.className='tts-btn';ttsBtn.innerHTML='🔊 Écouter';
-    ttsBtn.onclick=()=>speakMsg(ttsBtn,txt,vid);
+    ttsBtn.onclick=()=>speakMsg(ttsBtn,clean,vid);
     d.appendChild(document.createElement('br'));d.appendChild(ttsBtn);
-    if(autoPlay&&(vid||window.speechSynthesis))setTimeout(()=>speakText(txt,vid),400);
+    if(autoPlay&&(vid||window.speechSynthesis))setTimeout(()=>speakText(clean,vid),450);
   }else{
     d.textContent=txt;
   }
@@ -1422,7 +1425,7 @@ function addVpMsg(cls,txt,voiceId,autoPlay=false){
 window.sendVp=async function(){const inp=document.getElementById('vp-input');const text=inp.value.trim();if(!text)return;if(window._vpCount>=6){addVpMsg('system','Nombre maximum d\'échanges atteint.');return;}inp.value='';inp.disabled=true;document.getElementById('vp-send').disabled=true;addVpMsg('user',text);vpHistory.push({role:'user',content:text});addVpMsg('thinking','…');
   const cfg=getClaudeConfig();
   if(!cfg){removeLastMsg('vp-msgs');addVpMsg('system','Proxy non configuré et clé API absente. Renseignez l\'URL du proxy dans le panneau formateur (⚙).');inp.disabled=false;document.getElementById('vp-send').disabled=false;return;}
-  try{const r=await fetch(cfg.url,{method:'POST',headers:cfg.headers,body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:600,system:window._vpSystem,messages:vpHistory})});const d=await r.json();removeLastMsg('vp-msgs');const reply=d.content?.[0]?.text||'[Pas de réponse]';vpHistory.push({role:'assistant',content:reply});addVpMsg('char',reply,window._vpVoiceId,false);window._vpCount++;document.getElementById('vp-counter').textContent=window._vpCount+'/6 échanges · '+cfg.via;collectVpTurn(text,reply);}
+  try{const r=await fetch(cfg.url,{method:'POST',headers:cfg.headers,body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:350,system:window._vpSystem,messages:vpHistory})});const d=await r.json();removeLastMsg('vp-msgs');const reply=d.content?.[0]?.text||'[Pas de réponse]';vpHistory.push({role:'assistant',content:reply});addVpMsg('char',reply,window._vpVoiceId,true);window._vpCount++;document.getElementById('vp-counter').textContent=window._vpCount+'/6 échanges · '+cfg.via;collectVpTurn(text,reply);}
   catch(e){removeLastMsg('vp-msgs');addVpMsg('system','Erreur : '+e.message);}inp.disabled=false;document.getElementById('vp-send').disabled=false;};
 
 /* ============================================================
@@ -1961,7 +1964,7 @@ window.openCvModal=(code,v,region,nom)=>{cvVoiceCode=code;cvHistory=[];const tra
   document.getElementById('cv-overlay').classList.add('open');document.getElementById('cv-modal-head').style.background=cvColors[code]||'var(--navy)';document.getElementById('cv-eyebrow').textContent=v.line;document.getElementById('cv-modal-title').textContent=v.name;document.getElementById('cv-modal-sub').textContent=v.sub;document.getElementById('cv-counter').textContent='0/'+CV_MAX;
   const body=document.getElementById('cv-modal-body');body.innerHTML='';addCvMsg('char',opener);window._cvCount=0;};
 window.closeCvModal=()=>{document.getElementById('cv-overlay').classList.remove('open');};
-function addCvMsg(cls,txt){const b=document.getElementById('cv-modal-body');if(!b)return;const d=document.createElement('div');d.className='cv-msg '+cls;d.textContent=txt;b.appendChild(d);b.scrollTop=b.scrollHeight;}
+function addCvMsg(cls,txt){const b=document.getElementById('cv-modal-body');if(!b)return;const d=document.createElement('div');d.className='cv-msg '+cls;d.textContent=(cls==='char')?vpClean(txt):txt;b.appendChild(d);b.scrollTop=b.scrollHeight;}
 function removeCvLast(){const b=document.getElementById('cv-modal-body');if(b&&b.lastChild)b.removeChild(b.lastChild);}
 window.sendCv=async()=>{const inp=document.getElementById('cv-input');const text=inp.value.trim();if(!text)return;if(window._cvCount>=CV_MAX){addCvMsg('system','Nombre maximum d\'échanges atteint.');return;}inp.value='';inp.disabled=true;document.getElementById('cv-send').disabled=true;addCvMsg('user',text);cvHistory.push({role:'user',content:text});addCvMsg('thinking','…');
   const cfg=getClaudeConfig();
@@ -2039,7 +2042,7 @@ async function speakText(text, voiceId) {
   let snippet = text.trim();
   if(snippet.length > 1900){
     const cut = snippet.substring(0,1900);
-    const lp = Math.max(cut.lastIndexOf('.',' '),cut.lastIndexOf('!'),cut.lastIndexOf('?'));
+    const lp = Math.max(cut.lastIndexOf('.'),cut.lastIndexOf('!'),cut.lastIndexOf('?'));
     snippet = lp > 1400 ? cut.substring(0,lp+1) : cut;
   }
 
