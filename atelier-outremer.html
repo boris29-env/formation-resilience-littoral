@@ -2864,7 +2864,14 @@ function dilate(mask,w,h,k){const tmp=new Uint8Array(w*h),out=new Uint8Array(w*h
 // Pixels "no-data" de l'ortho (dalles blanches hors couverture, ou noir total) :
 // à exclure pour ne pas tracer le bord de dalle ni créer de faux ouvrages.
 function nodataMask(im){const {data,w,h}=im;const nd=new Uint8Array(w*h);for(let i=0,p=0;p<w*h;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];if((r>248&&g>248&&b>248)||(r<7&&g<7&&b<7))nd[p]=1;}return nd;}
-function computeWaterMask(im,sens){const {data,w,h}=im,n=w*h;const nd=nodataMask(im);const wi=new Float32Array(n);let lo=1e9,hi=-1e9;for(let i=0,p=0;p<n;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2],v=(b-r)+0.5*(b-g);wi[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;}let thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p])?1:0;return keepBorderConnected(majority(m,w,h),w,h);}
+function computeWaterMask(im,sens){const {data,w,h}=im,n=w*h;const nd=nodataMask(im);const wi=new Float32Array(n);const veg=new Uint8Array(n);let lo=1e9,hi=-1e9;
+  for(let i=0,p=0;p<n;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];const v=(b-r)+0.5*(b-g);wi[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;
+    // Indice de végétation RGB (le PIR n'étant pas disponible) : vert dominant et nettement
+    // supérieur au bleu → végétation. Exclue de l'eau pour écarter les faux positifs en forêt.
+    if(g>r && (g-b)>18 && g>45)veg[p]=1;}
+  let thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);
+  const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p]&&!veg[p])?1:0;
+  return keepBorderConnected(majority(m,w,h),w,h);}
 function shorelinesFromMask(mask,w,h,bad){const minLen=Math.max(24,0.06*Math.max(w,h));return chainSegments(marchingSquares(mask,w,h,bad)).map(l=>simplifyDP(l,1.5)).filter(l=>l.length>=2&&polyLenPx(l)>=minLen);}
 function buildShoreVerts(lines){const V=[];for(const l of lines)for(let i=0;i<l.length;i++){const a=l[Math.max(0,i-1)],b=l[Math.min(l.length-1,i+1)];let tx=b[0]-a[0],ty=b[1]-a[1];const L=Math.hypot(tx,ty)||1;V.push({x:l[i][0],y:l[i][1],tx:tx/L,ty:ty/L});}return V;}
 function nearestShore(V,x,y){let best=null,bd=1e18;for(const v of V){const d=(v.x-x)*(v.x-x)+(v.y-y)*(v.y-y);if(d<bd){bd=d;best=v;}}return best?{v:best,dist:Math.sqrt(bd)}:null;}
