@@ -575,7 +575,7 @@ svg.house{width:100%;max-width:290px;height:auto}
       <a href="#sec-diag">Diagnostic</a>
       <a href="#sec-outils">Outils</a>
       <a href="#sec-passe">Voix du passé</a>
-      <a href="#sec-cas">Études de cas</a>
+      <a href="#sec-cas">Analyse territoriale</a>
       <a href="#sec-diag-inst">Tableau de bord</a>
       <a href="#sec-image">Analyse d'images</a>
       <a href="#sec-climat">Voix du climat</a>
@@ -685,8 +685,8 @@ svg.house{width:100%;max-width:290px;height:auto}
 
     <!-- ÉTUDES DE CAS -->
     <section class="ps" id="sec-cas">
-      <div class="sec-hd"><span class="sec-num">06</span><h2 class="sec-title">Études de cas</h2></div>
-      <div class="sec-intro">Quatre séquences de travail, synchronisées entre groupes en temps réel via Firebase.</div>
+      <div class="sec-hd"><span class="sec-num">06</span><h2 class="sec-title">Analyse territoriale</h2></div>
+      <div class="sec-intro">Quatre analyses calées sur les questions de la lettre de commande, alimentées par la monographie du territoire : inventaire des biens exposés, orientation de recomposition site par site, verrou foncier et gouvernance, feuille de route.</div>
       <div id="cas-container"></div>
     </section>
 
@@ -1515,38 +1515,53 @@ window.sendVp=async function(){const inp=document.getElementById('vp-input');con
 /* ============================================================
    ÉTUDES DE CAS
 ============================================================ */
+function mkCas(id,num,titre,objectif,body,open){
+  const c=document.createElement('div');c.className='cas-card'+(open?' open':'');c.id=id;
+  c.innerHTML=`<div class="cas-head" onclick="toggleCas('${id}')"><div class="cas-num">${num}</div><span class="cas-chev">▾</span><h3>${titre}</h3></div><div class="cas-body"><div class="consigne"><div class="conk">Objectif · lettre de commande réf. 014917-02</div>${objectif}</div>${body}</div>`;
+  return c;
+}
 function construireCas(T){const host=document.getElementById('cas-container');host.innerHTML='';
-  // CAS 1
-  const c1=document.createElement('div');c1.className='cas-card';c1.id='cas1';
+  const filled=d=>(d.match(/●/g)||[]).length;
+  // ANALYSE 1 — Connaissance et inventaire
   let sitesHtml=`<div class="site-grid"><div class="site-row hdr"><span>Site</span><span>Description</span><span>Menace 2030/2050/2100</span><span>Statut</span></div>`;
-  T.sites.forEach(s=>sitesHtml+=`<div class="site-row"><div class="sr-nom">${s.nom}</div><div class="sr-desc">${s.desc}</div><div class="sr-h">${s.h30} / ${s.h50} / ${s.h100}</div><span class="sr-stat s-${s.statut}">${s.statut.toUpperCase()}</span></div>`);
+  T.sites.forEach(s=>sitesHtml+=`<div class="site-row"><div class="sr-nom">${s.nom}</div><div class="sr-desc">${s.desc}</div><div class="sr-h">${s.h30} / ${s.h50} / ${s.h100}</div><span class="sr-stat s-${s.statut}">${(s.statut||'').toUpperCase()}</span></div>`);
   sitesHtml+='</div>';
-  c1.innerHTML=`<div class="cas-head" onclick="toggleCas('cas1')"><div class="cas-num">Étude de cas n° 1</div><span class="cas-chev">▾</span><h3>Inventaire des biens exposés</h3><div class="cas-desc">Recenser, classer par destination, hiérarchiser. Répondant à la lettre de commande du 5 juillet 2024.</div></div><div class="cas-body"><div class="consigne"><div class="conk">Consigne (45 min)</div><strong>Chaque groupe complète le tableau pour son domaine.</strong> Pour chaque site : quel bâti, qui est exposé, quel horizon (2030/2050/2100). La commande demande une <strong>classification par destination</strong> (logements, équipements, infrastructures, immobilier économique).</div>${sitesHtml}<div class="src-note"><b>Source :</b> ${T.cas1_src}</div></div>`;
-  host.appendChild(c1);
-  // CAS 2
-  const c2=document.createElement('div');c2.className='cas-card';c2.id='cas2';
-  c2.innerHTML=`<div class="cas-head" onclick="toggleCas('cas2')"><div class="cas-num">Étude de cas n° 2</div><span class="cas-chev">▾</span><h3>Routage stratégique site par site</h3><div class="cas-desc">Adapter, transformer, assumer la perte, ou rester. Votes synchronisés Firebase entre tous les groupes.</div></div>
-  <div class="cas-body"><div class="consigne"><div class="conk">Consigne (60 min)</div><strong>Chaque groupe propose un routage pour les sites de son domaine, puis confronte sa position aux autres groupes.</strong> Sources : Adger et al., <em>Global Environmental Change</em>, 2005 ; GIEC AR6 WG2 chap. 15 (2022).</div>
-  <div class="routing-grid"><div class="route-card" onclick="selectRoute(this,'A')"><div class="rc-letter">A</div><div class="rc-label">Adapter sur place</div><div class="rc-desc">Conforter, rehausser, protéger. Horizon court (0-30 ans), coût de protection supportable, équipement critique.</div></div>
-  <div class="route-card" onclick="selectRoute(this,'T')"><div class="rc-letter">T</div><div class="rc-label">Transformer et relocaliser</div><div class="rc-desc">Déplacer le bâti ou la fonction vers un secteur sûr. Horizon 30-100 ans, risque grave pour la vie humaine.</div></div>
-  <div class="route-card" onclick="selectRoute(this,'P')"><div class="rc-letter">P</div><div class="rc-label">Assumer la perte</div><div class="rc-desc">Accompagner une transition sans reconstruction. Menace imminente, pas de secteur de report disponible.</div></div>
-  <div class="route-card" onclick="selectRoute(this,'R')"><div class="rc-letter">R</div><div class="rc-label">Rester et surveiller</div><div class="rc-desc">Horizon lointain, incertitude élevée. Maintenir sans investir lourd. Réviser tous les cinq ans.</div></div></div>
-  <div class="vote-status"><span class="vote-dot" id="route-dot"></span><span id="route-txt">Vote non soumis</span></div>
-  <button class="btn primary" style="margin-top:10px" onclick="soumettreRoutage()">Soumettre le vote de mon groupe</button>
-  <div class="route-vote-out" id="route-vote-out"><h4>Votes des groupes (Firebase temps réel)</h4><div id="route-votes-content"><em style="color:var(--muted);font-size:11px">En attente…</em></div></div></div>`;
-  host.appendChild(c2);
-  // CAS 3
-  const c3=document.createElement('div');c3.className='cas-card';c3.id='cas3';
-  let coutHtml=T.coutume&&T.coutume_content?`<div class="coutume-panel"><div class="cpk">Régime coutumier applicable</div><div class="cpt">${T.coutume_content.titre}</div>${T.coutume_content.corps.map(p=>`<p>${p}</p>`).join('')}<div class="cps">${T.coutume_content.src}</div></div>`:`<p style="font-style:italic;color:var(--muted);font-size:13.5px">Ce territoire ne présente pas de régime coutumier affectant la recomposition littorale.</p>`;
-  c3.innerHTML=`<div class="cas-head" onclick="toggleCas('cas3')"><div class="cas-num">Étude de cas n° 3</div><span class="cas-chev">▾</span><h3>Acceptabilité ${T.coutume?'et coutume':''}</h3><div class="cas-desc">Qui décide, avec qui, selon quelles règles. La coutume est activée uniquement pour les territoires concernés.</div></div><div class="cas-body"><div class="consigne"><div class="conk">Consigne (45 min)</div><strong>Identifier les parties prenantes absentes et proposer un mécanisme de consultation.</strong></div>${coutHtml}
-  <div class="fdr-axe"><div class="fdr-axe-head">🤝 Parties prenantes à associer</div><div class="fdr-axe-body"><ul><li><strong>Population exposée directement</strong> : premiers concernés, souvent absents des premières réunions.</li><li><strong>Propriétaires bailleurs</strong> : enjeux distincts des occupants.</li><li><strong>Acteurs économiques du littoral</strong> : conchyliculteurs, hôteliers, pêcheurs.</li>${T.coutume?'<li><strong>Instances coutumières</strong> : accord préalable indispensable pour tout site sur terres coutumières.</li>':''}</ul></div></div></div>`;
-  host.appendChild(c3);
-  // CAS 4
-  const c4=document.createElement('div');c4.className='cas-card';c4.id='cas4';
-  let fdrHtml=T.fdr_axes.map(ax=>`<div class="fdr-axe"><div class="fdr-axe-head">${ax.icon} ${ax.titre}</div><div class="fdr-axe-body"><ul>${ax.items.map(i=>`<li>${i}</li>`).join('')}</ul></div></div>`).join('');
+  host.appendChild(mkCas('cas1','Analyse n° 1','Connaissance et inventaire des biens exposés',
+    "Recenser les biens exposés par <b>destination</b> (logements, équipements, infrastructures, activités) et par <b>horizon</b> (2030/2050/2100) — base de toute recomposition. La connaissance reste à consolider sur les COM, où la boîte à outils métropolitaine (cartes d'exposition loi Climat 2021) ne s'applique pas.",
+    sitesHtml+`<div class="src-note"><b>Source :</b> ${T.cas1_src}</div>`,true));
+  // ANALYSE 2 — Recomposition spatiale, orientation par site (analytique, sans vote)
+  const orient=s=>{const f30=filled(s.h30),f50=filled(s.h50),f100=filled(s.h100);
+    if(f30>=3)return['Relocaliser / renaturer','rvo-P','menace forte dès 2030'];
+    if(f30>=2||f50>=3)return['Transformer / relocaliser','rvo-T','menace à l\'horizon 2050'];
+    if(f50>=2||f100>=3)return['Adapter / surveiller','rvo-A','menace progressive'];
+    return['Surveiller','rvo-R','horizon lointain ou incertain'];};
+  const contrainte=T.coutume?'régime coutumier (accord préalable)':(T.type==='com'?'foncier / compétence locale':'foncier');
+  const grid=`<div class="routing-grid">
+    <div class="route-card"><div class="rc-letter">A</div><div class="rc-label">Adapter sur place</div><div class="rc-desc">Conforter / protéger. Horizon court, coût supportable, enjeu critique.</div></div>
+    <div class="route-card"><div class="rc-letter">T</div><div class="rc-label">Transformer / relocaliser</div><div class="rc-desc">Déplacer le bâti ou la fonction vers un secteur sûr.</div></div>
+    <div class="route-card"><div class="rc-letter">P</div><div class="rc-label">Renaturer / assumer</div><div class="rc-desc">Transition sans reconstruction, renaturation. Menace imminente, pas de report.</div></div>
+    <div class="route-card"><div class="rc-letter">R</div><div class="rc-label">Surveiller</div><div class="rc-desc">Horizon lointain, incertitude. Maintenir sans investir lourd, réviser.</div></div></div>`;
+  let perSite=`<div class="site-grid" style="margin-top:12px"><div class="site-row hdr"><span>Site</span><span>Menace 30/50/100</span><span>Orientation indicative</span><span>Contrainte dominante</span></div>`;
+  T.sites.forEach(s=>{const o=orient(s);perSite+=`<div class="site-row"><div class="sr-nom">${s.nom}</div><div class="sr-h">${s.h30}/${s.h50}/${s.h100}</div><div><span class="rvo-badge ${o[1]}">${o[0]}</span><div style="font-size:10.5px;color:var(--muted);margin-top:2px">${o[2]}</div></div><div class="sr-desc" style="font-size:11px">${contrainte}</div></div>`;});
+  perSite+='</div>';
+  host.appendChild(mkCas('cas2','Analyse n° 2','Recomposition spatiale — orientation par site',
+    "Croiser, pour chaque site, l'horizon de menace, le régime juridique et la faisabilité. L'orientation ci-dessous est <b>indicative</b> (aide à la décision déduite du profil de menace), à confronter aux données de terrain — ce n'est pas une décision. Réf. : Adger et al. (2005) ; GIEC AR6 WG2 chap. 15 (2022).",
+    grid+perSite,false));
+  // ANALYSE 3 — Foncier, gouvernance, acceptabilité
+  const verrou=(T.vigilance||'').split(' · ').filter(x=>/foncier|indivision|50 pas|coutum|domanial|titre|inali/i.test(x)).join(' · ');
+  const coutHtml=T.coutume&&T.coutume_content
+    ?`<div class="coutume-panel"><div class="cpk">Régime foncier applicable</div><div class="cpt">${T.coutume_content.titre}</div>${T.coutume_content.corps.map(p=>`<p>${p}</p>`).join('')}<div class="cps">${T.coutume_content.src}</div></div>`
+    :`<div class="coutume-panel" style="background:var(--soft);border-color:var(--line)"><div class="cpk" style="color:var(--muted)">Verrou foncier du territoire</div><p>${verrou||'Voir les points de vigilance juridiques en en-tête de territoire.'}</p></div>`;
+  host.appendChild(mkCas('cas3','Analyse n° 3','Foncier, gouvernance et acceptabilité',
+    "Le foncier est le verrou propre à chaque collectivité (coutume, indivision, rareté, occupations sans titre) ; il commande la faisabilité de toute relocalisation. Qui décide, avec qui, selon quelles règles ?",
+    coutHtml+`<div class="fdr-axe"><div class="fdr-axe-head">🤝 Parties prenantes et qui décide</div><div class="fdr-axe-body"><ul><li><strong>Population exposée</strong> : premiers concernés.</li><li><strong>Propriétaires / occupants</strong> : titres, indivision, baux.</li><li><strong>Acteurs économiques du littoral</strong>.</li>${T.coutume?'<li><strong>Instances coutumières</strong> : accord préalable indispensable sur terres coutumières.</li>':''}<li><strong>Répartition des compétences</strong> : ${T.statut.split(',')[0]} — l'aménagement relève selon les cas de la collectivité, du Pays ou de l'État.</li></ul></div></div>`,false));
+  // ANALYSE 4 — Feuille de route et indicateurs
+  const fdrHtml=T.fdr_axes.map(ax=>`<div class="fdr-axe"><div class="fdr-axe-head">${ax.icon} ${ax.titre}</div><div class="fdr-axe-body"><ul>${ax.items.map(i=>`<li>${i}</li>`).join('')}</ul></div></div>`).join('');
   const indHtml=`<div class="ind-grid">${T.indicateurs.map(ind=>`<div class="ind-card"><div class="ic-lbl">${ind.lbl}</div><div class="ic-val">${ind.val}</div><div class="ic-desc">${ind.desc}</div></div>`).join('')}</div>`;
-  c4.innerHTML=`<div class="cas-head" onclick="toggleCas('cas4')"><div class="cas-num">Étude de cas n° 4</div><span class="cas-chev">▾</span><h3>Feuille de route du territoire</h3><div class="cas-desc">La feuille de route appartient au territoire. Aucune recommandation n'est adressée à l'État dans cet exercice.</div></div><div class="cas-body"><div class="consigne"><div class="conk">Consigne (45 min)</div><strong>Chaque groupe propose une action à 12 mois, 3 ans et 10 ans.</strong></div>${fdrHtml}${indHtml}<div class="src-note"><b>Source :</b> ${T.cas4_src}</div></div>`;
-  host.appendChild(c4);}
+  host.appendChild(mkCas('cas4','Analyse n° 4','Feuille de route et indicateurs',
+    "Séquencement des actions (12 mois / 3 ans / 10 ans) propre au territoire, et indicateurs de suivi. Les outils mobilisables — et ceux à <b>transposer/créer</b> faute de cadre métropolitain applicable — sont détaillés en section « Outils ».",
+    fdrHtml+indHtml+`<div class="src-note"><b>Source :</b> ${T.cas4_src}</div>`,false));
+}
 
 /* ============================================================
    DIAGNOSTIC INSTITUTIONNEL (CAS 5)
