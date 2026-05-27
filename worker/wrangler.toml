@@ -1,0 +1,16 @@
+name = "dialogue-1972"
+main = "dialogue-1972.js"
+compatibility_date = "2024-11-01"
+
+# La clé Mistral est un SECRET, jamais dans ce fichier :
+#   wrangler secret put MISTRAL_API_KEY
+# (ou dans le dashboard : Settings → Variables and Secrets)
+
+# Rate-limiting natif (par IP, fenêtre de 60 s).
+# namespace_id : entier arbitraire, unique par compte.
+# Ajuste "limit" selon ton trafic attendu (ici 30 requêtes / minute / IP).
+[[unsafe.bindings]]
+name = "RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1972"
+simple = { limit = 30, period = 60 }
