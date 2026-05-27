@@ -32,11 +32,11 @@ const ALLOWED_ORIGINS = [
 ];
 
 const MISTRAL_CHAT_MODEL   = 'mistral-medium-latest';  // texte
-const MISTRAL_VISION_MODEL = 'pixtral-12b-2409';       // images (analyse côtière)
+const MISTRAL_VISION_MODEL = 'pixtral-large-latest';   // images (analyse côtière, précision)
 const MISTRAL_TTS_MODEL    = 'voxtral-mini-tts-2603';  // synthèse vocale
 
 // Garde-fous de coût
-const MAX_TOKENS_CAP   = 1500;   // plafond dur quel que soit le max_tokens demandé
+const MAX_TOKENS_CAP   = 2048;   // plafond dur quel que soit le max_tokens demandé (relevé pour le GeoJSON SIG)
 const MAX_BODY_BYTES   = 5_000_000; // 5 Mo (une image base64 reste sous cette limite)
 const MAX_TTS_CHARS    = 2000;
 
