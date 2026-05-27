@@ -2909,14 +2909,21 @@ function computeWaterMask(im,sens){const {data,w,h}=im,n=w*h;const nd=nodataMask
   const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p]&&!veg[p])?1:0;
   // denoise → ouverture (supprime rivières/tendrils) → garde mer + grands plans d'eau (lagons/atolls)
   return keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h);}
-function shorelinesFromMask(mask,w,h,bad){const minLen=Math.max(24,0.06*Math.max(w,h));return chainSegments(marchingSquares(mask,w,h,bad)).map(l=>simplifyDP(l,1.0)).filter(l=>l.length>=2&&polyLenPx(l)>=minLen);}
+// epsPx : tolérance de simplification Douglas-Peucker en PIXELS. À haute résolution une tolérance
+// fixe de 1 px conserve le bruit pixellaire et fragmente le trait en micro-segments (la rectitude
+// d'un ouvrage devient indétectable) ; les appelants la calculent donc en mètres (≈2 m) via la
+// résolution sol, pour rester à l'échelle quel que soit le zoom.
+function shorelinesFromMask(mask,w,h,bad,epsPx){const eps=epsPx>0?epsPx:1.0;const minLen=Math.max(24,0.06*Math.max(w,h));return chainSegments(marchingSquares(mask,w,h,bad)).map(l=>simplifyDP(l,eps)).filter(l=>l.length>=2&&polyLenPx(l)>=minLen);}
+// Résolution sol (mètres/pixel) à partir de l'emprise géographique et de la largeur image.
+function metresParPixel(bbox,w){return ((bbox.e-bbox.w)*111320*Math.cos((bbox.s+bbox.n)/2*Math.PI/180))/w;}
 
 // Lissage Chaikin (corner-cutting) → trait de côte plus naturel / sub-pixel
 function smoothChaikin(pts,it){if(pts.length<3)return pts;let p=pts;for(let k=0;k<it;k++){const out=[p[0]];for(let i=0;i<p.length-1;i++){const a=p[i],b=p[i+1];out.push([a[0]*0.75+b[0]*0.25,a[1]*0.75+b[1]*0.25]);out.push([a[0]*0.25+b[0]*0.75,a[1]*0.25+b[1]*0.75]);}out.push(p[p.length-1]);p=out;}return p;}
 function extraireTraitDeCote(im,bbox,sens){
   const nd=nodataMask(im);
   const mask=computeWaterMask(im,sens);
-  let lines=shorelinesFromMask(mask,im.w,im.h,nd).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,6).map(l=>smoothChaikin(l,2));
+  const epsPx=Math.max(1,2/metresParPixel(bbox,im.w));   // tolérance DP ≈ 2 m
+  let lines=shorelinesFromMask(mask,im.w,im.h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,6).map(l=>smoothChaikin(l,2));
   return lines.map(l=>{const coords=l.map(p=>pxToGeo(p[0],p[1],im.w,im.h,bbox));return {type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:'trait de côte',methode:'segmentation mer/terre (Otsu) + contour lissé (Chaikin)',certitude:'modérée',longueur_m_est:Math.round(geoLenM(coords,bbox))}};});
 }
 
@@ -2983,21 +2990,27 @@ function classifieOuvrage(s,tr,gr){
   if(!s)return {type:'forme linéaire côtière à qualifier',certitude:'faible',rugosite:null,teinte:'',largeurPx:null,bords:'',contact_eau:null,granularite:null};
   const {Lm,sat,sd,r,b}=s;
   const teinte=(r-b>18&&sat>22)?'naturelle (ocre/brun)':(Lm<95?'gris sombre':'gris clair');
-  const cv=tr?tr.largeurCV:1,net=tr?tr.netteteBord:0,contact=tr?tr.contactEau:true,
+  const cv=tr?tr.largeurCV:1,net=tr?tr.netteteBord:0,wf=tr?tr.waterFrac:1,
         persist=tr?tr.persistanceTerrePx:0,granu=gr||0;
+  // Contact FRANC à l'eau : vraie masse d'eau ouverte (mer/lagon) d'un côté. Un ouvrage côtier
+  // borde la mer ; sans eau franche d'un côté, la forme rectiligne est un bord intérieur (toiture,
+  // défrichement, chemin, ombre) capté par un masque d'eau imparfait → à écarter.
+  const contact=wf>0.35;
   const bords=(cv<0.35&&net>40)?'réguliers (parallèles)':(cv>0.6?'irréguliers (dentelés)':'diffus');
   let type,cert;
-  // a) Aucun contact à l'eau + signature "route" se prolongeant vers l'intérieur → réseau viaire
-  if(!contact&&persist>=28&&Lm<120&&sat<24&&sd<24){type='route / voie probable (réseau, à écarter)';cert='faible';}
-  // b) Teinte ocre saturée + bande diffuse peu granuleuse → dalle naturelle intertidale (beachrock)
-  else if(r-b>18&&sat>25&&Lm<175&&granu<6){type='beachrock probable (naturel, à écarter)';cert='faible';}
-  // c) Blocs : rugosité ou granularité forte + bords dentelés → enrochement
+  if(!contact){
+    // Hors interface mer/terre : si signature "route" se prolongeant vers l'intérieur → réseau viaire.
+    type=(persist>=28&&Lm<120&&sat<24&&sd<24)?'route / voie probable (réseau, à écarter)':'forme hors interface mer/terre (à écarter)';
+    cert='faible';
+  }
+  // a) Teinte ocre saturée + bande diffuse peu granuleuse → dalle naturelle intertidale (beachrock)
+  //    NB : seuil de teinte (r-b) à valider/relativiser — l'imagerie de lagon est rééquilibrée vers le bleu.
+  else if(r-b>12&&sat>25&&granu<6&&net<35){type='beachrock probable (naturel, à écarter)';cert='faible';}
+  // b) Blocs : rugosité ou granularité forte + bords dentelés → enrochement
   else if((sd>30||granu>9)&&cv>0.45){type='enrochement probable';cert='modérée';}
   else if(sd>34){type='enrochement probable';cert='modérée';}
-  // d) Bande lisse, bords parallèles réguliers, au contact de l'eau → parement béton/maçonné
-  else if(sd<26&&cv<0.4&&net>35&&contact){type='perré / digue probable';cert='modérée';}
-  // e) Bande lisse sombre sans contact à l'eau → route probable (persistance non confirmée → doute)
-  else if(Lm<95&&sat<22&&sd<22&&!contact){type='route / voie probable (à écarter ?)';cert='faible';}
+  // c) Bande lisse, bords parallèles réguliers, au contact de l'eau → parement béton/maçonné
+  else if(sd<26&&cv<0.4&&net>35){type='perré / digue probable';cert='modérée';}
   else if(sd<26&&sat<30){type='perré / digue probable';cert='faible';}
   else {type='forme linéaire côtière à qualifier';cert='faible';}
   return {type,certitude:cert,rugosite:Math.round(sd),teinte,
@@ -3009,9 +3022,9 @@ function extraireOuvrages(im,bbox,sens){
   // classe chaque forme par sa radiométrie (rugosité/teinte/luminance) en proposant une classe.
   const nd=nodataMask(im);
   const water=computeWaterMask(im,sens);
-  const lines=shorelinesFromMask(water,im.w,im.h,nd);
+  const mPerPx=metresParPixel(bbox,im.w);
+  const lines=shorelinesFromMask(water,im.w,im.h,nd,Math.max(1,2/mPerPx)); // tolérance DP ≈ 2 m
   if(!lines.length)return [];
-  const mPerPx=((bbox.e-bbox.w)*111320*Math.cos((bbox.s+bbox.n)/2*Math.PI/180))/im.w;
   const minM=Math.max(20,55-(sens-50)*0.5);
   const feats=[];
   // 1) Longitudinaux : segments droits assez longs, classés par radiométrie + géométrie transversale
@@ -3047,10 +3060,14 @@ window.lancerExtractionSIG=async function(){
     const sens=+(document.getElementById('sig-sens')?.value||50);
     let feats=(imgRoutineActive==='trait_cote')?extraireTraitDeCote(im,b,sens):extraireOuvrages(im,b,sens);
     let aiNote='';
+    // Garde-fou de résolution : un ouvrage (perré/digue ~5-15 m) devient sous-pixellaire au-delà
+    // de ~2,5 m/px ; la caractérisation radiométrique (largeur/texture) n'est alors plus fiable.
+    if(imgRoutineActive==='ouvrages'){const mpp=metresParPixel(b,im.w);
+      if(mpp>2.5)aiNote=`Résolution ≈ ${mpp.toFixed(1)} m/px : un ouvrage (~5-15 m) est quasi sous-pixellaire — resserrez l'emprise (visez < 1 m/px) pour une caractérisation fiable. `;}
     if(feats.length&&document.getElementById('sig-ai-check')?.checked){
       irBody.textContent='Contrôle IA (2ᵉ passe)…';document.getElementById('ir-badge').textContent='Contrôle IA…';
       const before=feats.length;feats=await controleIA(im,feats,b,imgRoutineActive);
-      aiNote=`Contrôle IA : ${feats.length}/${before} entité(s) retenue(s).`;
+      aiNote+=`Contrôle IA : ${feats.length}/${before} entité(s) retenue(s).`;
     }
     const T=TERRITOIRES[TERR_ACTIF]||{};
     let pd=null;
