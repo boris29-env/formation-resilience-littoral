@@ -2717,7 +2717,7 @@ function waterMask(im,thr){const {data,w,h}=im;const m=new Uint8Array(w*h);for(l
 function majority(mask,w,h){const out=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){let s=0,c=0;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=w||yy>=h)continue;s+=mask[yy*w+xx];c++;}out[y*w+x]=(s*2>c)?1:0;}return out;}
 const _MS={0:[],1:[['L','T']],2:[['T','R']],3:[['L','R']],4:[['R','B']],5:[['L','T'],['R','B']],6:[['T','B']],7:[['L','B']],8:[['L','B']],9:[['T','B']],10:[['T','R'],['L','B']],11:[['R','B']],12:[['L','R']],13:[['T','R']],14:[['L','T']],15:[]};
 function _ept(e,x,y){return e==='T'?[x+0.5,y]:e==='R'?[x+1,y+0.5]:e==='B'?[x+0.5,y+1]:[x,y+0.5];}
-function marchingSquares(mask,w,h){const segs=[];for(let y=0;y<h-1;y++)for(let x=0;x<w-1;x++){const v=mask[y*w+x]*1+mask[y*w+x+1]*2+mask[(y+1)*w+x+1]*4+mask[(y+1)*w+x]*8;const L=_MS[v];for(let k=0;k<L.length;k++)segs.push([_ept(L[k][0],x,y),_ept(L[k][1],x,y)]);}return segs;}
+function marchingSquares(mask,w,h,bad){const segs=[];for(let y=0;y<h-1;y++)for(let x=0;x<w-1;x++){if(bad&&(bad[y*w+x]||bad[y*w+x+1]||bad[(y+1)*w+x+1]||bad[(y+1)*w+x]))continue;const v=mask[y*w+x]*1+mask[y*w+x+1]*2+mask[(y+1)*w+x+1]*4+mask[(y+1)*w+x]*8;const L=_MS[v];for(let k=0;k<L.length;k++)segs.push([_ept(L[k][0],x,y),_ept(L[k][1],x,y)]);}return segs;}
 function chainSegments(segs){
   const key=p=>p[0]+'_'+p[1];const adj=new Map();
   segs.forEach((s,i)=>{[[s[0],s[1]],[s[1],s[0]]].forEach(([a,b])=>{const k=key(a);if(!adj.has(k))adj.set(k,[]);adj.get(k).push({i,b});});});
@@ -2736,14 +2736,18 @@ function simplifyDP(pts,eps){if(pts.length<3)return pts;let dmax=0,idx=0;const a
 function otsu(sc,lo,hi){const B=64,H=new Array(B).fill(0),sp=(hi-lo)||1;for(let i=0;i<sc.length;i++){let b=Math.floor((sc[i]-lo)/sp*B);if(b<0)b=0;if(b>=B)b=B-1;H[b]++;}const tot=sc.length;let sum=0;for(let b=0;b<B;b++)sum+=b*H[b];let sB=0,wB=0,mx=-1,thr=B>>1;for(let b=0;b<B;b++){wB+=H[b];if(!wB)continue;const wF=tot-wB;if(!wF)break;sB+=b*H[b];const mB=sB/wB,mF=(sum-sB)/wF,v=wB*wF*(mB-mF)*(mB-mF);if(v>mx){mx=v;thr=b;}}return lo+(thr+0.5)/B*sp;}
 function keepBorderConnected(mask,w,h){const out=new Uint8Array(w*h),st=[];const push=(x,y)=>{const p=y*w+x;if(mask[p]&&!out[p]){out[p]=1;st.push(p);}};for(let x=0;x<w;x++){push(x,0);push(x,h-1);}for(let y=0;y<h;y++){push(0,y);push(w-1,y);}while(st.length){const p=st.pop(),x=p%w,y=(p-x)/w;if(x>0)push(x-1,y);if(x<w-1)push(x+1,y);if(y>0)push(x,y-1);if(y<h-1)push(x,y+1);}return out;}
 function dilate(mask,w,h,k){const tmp=new Uint8Array(w*h),out=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){let v=0;for(let dx=-k;dx<=k;dx++){const xx=x+dx;if(xx>=0&&xx<w&&mask[y*w+xx]){v=1;break;}}tmp[y*w+x]=v;}for(let x=0;x<w;x++)for(let y=0;y<h;y++){let v=0;for(let dy=-k;dy<=k;dy++){const yy=y+dy;if(yy>=0&&yy<h&&tmp[yy*w+x]){v=1;break;}}out[y*w+x]=v;}return out;}
-function computeWaterMask(im,sens){const {data,w,h}=im,n=w*h;const wi=new Float32Array(n);let lo=1e9,hi=-1e9;for(let i=0,p=0;p<n;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2],v=(b-r)+0.5*(b-g);wi[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;}let thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=wi[p]>thr?1:0;return keepBorderConnected(majority(m,w,h),w,h);}
-function shorelinesFromMask(mask,w,h){const minLen=Math.max(24,0.06*Math.max(w,h));return chainSegments(marchingSquares(mask,w,h)).map(l=>simplifyDP(l,1.5)).filter(l=>l.length>=2&&polyLenPx(l)>=minLen);}
+// Pixels "no-data" de l'ortho (dalles blanches hors couverture, ou noir total) :
+// à exclure pour ne pas tracer le bord de dalle ni créer de faux ouvrages.
+function nodataMask(im){const {data,w,h}=im;const nd=new Uint8Array(w*h);for(let i=0,p=0;p<w*h;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];if((r>248&&g>248&&b>248)||(r<7&&g<7&&b<7))nd[p]=1;}return nd;}
+function computeWaterMask(im,sens){const {data,w,h}=im,n=w*h;const nd=nodataMask(im);const wi=new Float32Array(n);let lo=1e9,hi=-1e9;for(let i=0,p=0;p<n;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2],v=(b-r)+0.5*(b-g);wi[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;}let thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p])?1:0;return keepBorderConnected(majority(m,w,h),w,h);}
+function shorelinesFromMask(mask,w,h,bad){const minLen=Math.max(24,0.06*Math.max(w,h));return chainSegments(marchingSquares(mask,w,h,bad)).map(l=>simplifyDP(l,1.5)).filter(l=>l.length>=2&&polyLenPx(l)>=minLen);}
 function buildShoreVerts(lines){const V=[];for(const l of lines)for(let i=0;i<l.length;i++){const a=l[Math.max(0,i-1)],b=l[Math.min(l.length-1,i+1)];let tx=b[0]-a[0],ty=b[1]-a[1];const L=Math.hypot(tx,ty)||1;V.push({x:l[i][0],y:l[i][1],tx:tx/L,ty:ty/L});}return V;}
 function nearestShore(V,x,y){let best=null,bd=1e18;for(const v of V){const d=(v.x-x)*(v.x-x)+(v.y-y)*(v.y-y);if(d<bd){bd=d;best=v;}}return best?{v:best,dist:Math.sqrt(bd)}:null;}
 
 function extraireTraitDeCote(im,bbox,sens){
+  const nd=nodataMask(im);
   const mask=computeWaterMask(im,sens);
-  let lines=shorelinesFromMask(mask,im.w,im.h).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,6);
+  let lines=shorelinesFromMask(mask,im.w,im.h,nd).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,6);
   return lines.map(l=>{const coords=l.map(p=>pxToGeo(p[0],p[1],im.w,im.h,bbox));return {type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:'trait de côte',methode:'segmentation mer/terre (Otsu) + contour',certitude:'modérée',longueur_m_est:Math.round(geoLenM(coords,bbox))}};});
 }
 
@@ -2754,26 +2758,29 @@ function _longestRun(pts,gap){if(!pts.length)return null;let best=null,bestLen=-
 function extraireOuvrages(im,bbox,sens){
   const {w,h}=im;
   // 1) Mer + trait de côte (les ouvrages se définissent par rapport à l'eau)
+  const nd=nodataMask(im);
   const water=computeWaterMask(im,sens);
-  const shoreV=buildShoreVerts(shorelinesFromMask(water,w,h));
+  const shoreV=buildShoreVerts(shorelinesFromMask(water,w,h,nd));
   if(!shoreV.length)return []; // pas de littoral détecté → rien "au contact de l'eau"
-  // 2) Bande côtière (~35 m de part et d'autre du trait de côte)
+  // 2) Bande côtière (~40 m de part et d'autre du trait de côte)
   const mPerPx=((bbox.e-bbox.w)*111320*Math.cos((bbox.s+bbox.n)/2*Math.PI/180))/w;
-  const K=Math.max(4,Math.min(14,Math.round(35/Math.max(0.01,mPerPx))));
+  const K=Math.max(5,Math.min(18,Math.round(40/Math.max(0.01,mPerPx))));
   const near=dilate(water,w,h,K);
-  // 3) Bords (Sobel) + droites (Hough)
-  const edgeThr=Math.max(30,90-(sens-50)*1.2);
-  const mag=sobelMag(im);const edges=[];for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(mag[y*w+x]>edgeThr)edges.push([x,y]);
+  // 3) Bords (Sobel) + droites (Hough) — on ignore les bords au contact du no-data (bord de dalle)
+  const edgeThr=Math.max(28,90-(sens-50)*1.2);
+  const ndDil=dilate(nd,w,h,2);
+  const mag=sobelMag(im);const edges=[];for(let y=0;y<h;y++)for(let x=0;x<w;x++){if(mag[y*w+x]>edgeThr&&!ndDil[y*w+x])edges.push([x,y]);}
   if(edges.length<10)return [];
   let pts=edges;if(pts.length>6000){const step=Math.ceil(pts.length/6000);pts=pts.filter((_,i)=>i%step===0);}
   const nT=180,cos=new Float32Array(nT),sin=new Float32Array(nT);for(let t=0;t<nT;t++){const a=t*Math.PI/nT;cos[t]=Math.cos(a);sin[t]=Math.sin(a);}
   const diag=Math.ceil(Math.hypot(w,h)),nR=2*diag+1,acc=new Int32Array(nT*nR);
   for(const [x,y] of pts)for(let t=0;t<nT;t++){const r=Math.round(x*cos[t]+y*sin[t])+diag;acc[t*nR+r]++;}
-  const minVotes=Math.max(20,Math.round(0.18*Math.max(w,h)));const peaks=[];
+  // Seuil de votes adapté aux ouvrages (souvent courts) : ~3 % de la dimension
+  const minVotes=Math.max(12,Math.round(0.03*Math.max(w,h)));const peaks=[];
   for(let t=0;t<nT;t++)for(let r=0;r<nR;r++){const v=acc[t*nR+r];if(v<minVotes)continue;let mx=true;for(let dt=-1;dt<=1&&mx;dt++)for(let dr=-2;dr<=2;dr++){const tt=(t+dt+nT)%nT,rr=r+dr;if(rr<0||rr>=nR)continue;if(acc[tt*nR+rr]>v)mx=false;}if(mx)peaks.push({t,r,v});}
   peaks.sort((a,b)=>b.v-a.v);
   const eset=new Uint8Array(w*h);for(const [x,y] of edges)eset[y*w+x]=1;
-  const minLen=Math.max(16,0.035*Math.max(w,h));const raw=[];
+  const minLen=Math.max(14,0.028*Math.max(w,h));const raw=[];
   for(const pk of peaks.slice(0,40)){const a=pk.t*Math.PI/nT,ct=Math.cos(a),st=Math.sin(a),rho=pk.r-diag;const lp=[];
     if(Math.abs(st)>=Math.abs(ct)){for(let x=0;x<w;x++){const y=Math.round((rho-x*ct)/st);if(y<0||y>=h)continue;if(_near(eset,w,h,x,y))lp.push([x,y]);}}
     else{for(let y=0;y<h;y++){const x=Math.round((rho-y*st)/ct);if(x<0||x>=w)continue;if(_near(eset,w,h,x,y))lp.push([x,y]);}}
@@ -2784,7 +2791,7 @@ function extraireOuvrages(im,bbox,sens){
   const frac=(s,grid)=>{let c=0;const N=12;for(let i=0;i<=N;i++){const x=Math.round(s[0][0]+(s[1][0]-s[0][0])*i/N),y=Math.round(s[0][1]+(s[1][1]-s[0][1])*i/N);if(x>=0&&y>=0&&x<w&&y<h&&grid[y*w+x])c++;}return c/(N+1);};
   const feats=[],kept=[];
   for(const s of raw.sort((a,b)=>segLenPx(b)-segLenPx(a))){
-    if(frac(s,near)<0.6)continue; // pas au contact de l'eau → route/bâti intérieur écarté
+    if(frac(s,near)<0.5)continue; // pas au contact de l'eau → route/bâti intérieur écarté
     const as=ang(s),ms=mid(s);
     if(kept.some(k=>{let da=Math.abs(as-ang(k));da=Math.min(da,Math.PI-da);const mk=mid(k);return da<0.12&&Math.hypot(ms[0]-mk[0],ms[1]-mk[1])<10;}))continue;
     kept.push(s);
