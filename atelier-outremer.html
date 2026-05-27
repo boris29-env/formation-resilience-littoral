@@ -2932,17 +2932,76 @@ function sampleBand(im,a,b){
   if(!cnt)return null;const Lm=sL/cnt;let v=0;for(const L of Ls)v+=(L-Lm)*(L-Lm);
   return {Lm,sat:sS/cnt,sd:Math.sqrt(v/cnt),r:sr/cnt,g:sg/cnt,b:sb/cnt};
 }
-function classifieOuvrage(s){
-  if(!s)return {type:'forme linéaire côtière à qualifier',certitude:'faible',rugosite:null,teinte:''};
+// Analyse transversale (perpendiculaire à la forme), à partir de l'image + masque d'eau :
+//  - contact à l'eau : un ouvrage côtier touche la mer d'un côté ; une route en est éloignée ;
+//  - persistance terrestre : longueur sur laquelle une signature "route" (lisse/sombre) se prolonge
+//    vers l'intérieur → indice de réseau viaire (route) plutôt que d'ouvrage isolé ;
+//  - largeur + régularité des bords : route/perré = largeur constante, bords nets et parallèles ;
+//    enrochement = largeur irrégulière, bords dentelés ; beachrock = bande diffuse sans bord franc.
+function analyseTransversale(im,water,a,b){
+  const {data,w,h}=im;
+  const dx=b[0]-a[0],dy=b[1]-a[1];const len=Math.hypot(dx,dy)||1;
+  const nx=-dy/len,ny=dx/len;
+  const isWater=(x,y)=>{x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=w||y>=h)return 0;return water[y*w+x]?1:0;};
+  const lum=(x,y)=>{x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=w||y>=h)return null;const i=(y*w+x)*4;return 0.299*data[i]+0.587*data[i+1]+0.114*data[i+2];};
+  const Ns=Math.max(3,Math.round(len/4));
+  const R=16;                                       // portée perpendiculaire courte (largeur/bords)
+  const RL=Math.max(30,Math.min(70,Math.round(len)));// portée longue (eau + persistance terre)
+  let wPos=0,wNeg=0;const widths=[],edges=[];
+  for(let s=0;s<=Ns;s++){
+    const px=a[0]+dx*s/Ns,py=a[1]+dy*s/Ns;
+    for(let o=4;o<=RL;o++){wPos+=isWater(px+nx*o,py+ny*o);wNeg+=isWater(px-nx*o,py-ny*o);}
+    const cL=lum(px,py);if(cL==null)continue;
+    const prof=[];for(let o=-R;o<=R;o++)prof.push(lum(px+nx*o,py+ny*o));
+    let gMax=0;for(let k=1;k<prof.length;k++){if(prof[k-1]==null||prof[k]==null)continue;const g=Math.abs(prof[k]-prof[k-1]);if(g>gMax)gMax=g;}
+    const seuil=Math.max(16,0.3*gMax);let lo=R,hi=R;
+    for(let o=R-1;o>=0;o--){if(prof[o]==null||Math.abs(prof[o]-cL)>seuil)break;lo=o;}
+    for(let o=R+1;o<prof.length;o++){if(prof[o]==null||Math.abs(prof[o]-cL)>seuil)break;hi=o;}
+    widths.push(hi-lo);edges.push(gMax);
+  }
+  const tot=(Ns+1)*(RL-3);
+  const waterFrac=Math.max(wPos,wNeg)/Math.max(1,tot);
+  const seaSign=wPos>=wNeg?1:-1,landSign=-seaSign;   // direction perpendiculaire vers la terre
+  let persist=0,prev=null;const cx=a[0]+dx*0.5,cy=a[1]+dy*0.5;
+  for(let o=4;o<=RL;o++){const x=cx+nx*o*landSign,y=cy+ny*o*landSign;const L=lum(x,y);if(L==null)break;
+    if(prev!=null&&L<120&&Math.abs(L-prev)<24&&!isWater(x,y))persist=o;else if(o-persist>6)break;prev=L;}
+  let mw=0,cv=1,me=0;
+  if(widths.length){mw=widths.reduce((p,x)=>p+x,0)/widths.length;let vw=0;for(const x of widths)vw+=(x-mw)*(x-mw);cv=mw>0?Math.sqrt(vw/widths.length)/mw:1;me=edges.reduce((p,x)=>p+x,0)/edges.length;}
+  return {waterFrac,contactEau:waterFrac>0.12,largeurPx:mw,largeurCV:cv,netteteBord:me,persistanceTerrePx:persist};
+}
+// Granularité : énergie haute-fréquence le long de l'axe (|dérivée seconde| de luminance).
+// Enrochement = blocs/joints → granularité forte ; beachrock = litage continu → faible ;
+// perré béton = très lisse → quasi nulle. Complète l'écart-type (rugosité) déjà mesuré.
+function granulariteBande(im,a,b){
+  const {data,w,h}=im;const N=Math.max(8,Math.round(Math.hypot(b[0]-a[0],b[1]-a[1])));
+  const lum=(x,y)=>{x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=w||y>=h)return null;const i=(y*w+x)*4;return 0.299*data[i]+0.587*data[i+1]+0.114*data[i+2];};
+  const Ls=[];for(let i=0;i<=N;i++){const L=lum(a[0]+(b[0]-a[0])*i/N,a[1]+(b[1]-a[1])*i/N);if(L!=null)Ls.push(L);}
+  if(Ls.length<5)return 0;let e=0,c=0;for(let i=2;i<Ls.length;i++){e+=Math.abs(Ls[i]-2*Ls[i-1]+Ls[i-2]);c++;}
+  return c?e/c:0;
+}
+function classifieOuvrage(s,tr,gr){
+  if(!s)return {type:'forme linéaire côtière à qualifier',certitude:'faible',rugosite:null,teinte:'',largeurPx:null,bords:'',contact_eau:null,granularite:null};
   const {Lm,sat,sd,r,b}=s;
   const teinte=(r-b>18&&sat>22)?'naturelle (ocre/brun)':(Lm<95?'gris sombre':'gris clair');
+  const cv=tr?tr.largeurCV:1,net=tr?tr.netteteBord:0,contact=tr?tr.contactEau:true,
+        persist=tr?tr.persistanceTerrePx:0,granu=gr||0;
+  const bords=(cv<0.35&&net>40)?'réguliers (parallèles)':(cv>0.6?'irréguliers (dentelés)':'diffus');
   let type,cert;
-  if(r-b>18&&sat>25&&Lm<175){type='beachrock probable (naturel, à écarter)';cert='faible';}
+  // a) Aucun contact à l'eau + signature "route" se prolongeant vers l'intérieur → réseau viaire
+  if(!contact&&persist>=28&&Lm<120&&sat<24&&sd<24){type='route / voie probable (réseau, à écarter)';cert='faible';}
+  // b) Teinte ocre saturée + bande diffuse peu granuleuse → dalle naturelle intertidale (beachrock)
+  else if(r-b>18&&sat>25&&Lm<175&&granu<6){type='beachrock probable (naturel, à écarter)';cert='faible';}
+  // c) Blocs : rugosité ou granularité forte + bords dentelés → enrochement
+  else if((sd>30||granu>9)&&cv>0.45){type='enrochement probable';cert='modérée';}
   else if(sd>34){type='enrochement probable';cert='modérée';}
-  else if(Lm<95&&sat<22&&sd<22){type='route / voie probable (à écarter ?)';cert='faible';}
-  else if(sd<26&&sat<30){type='perré / digue probable';cert='modérée';}
+  // d) Bande lisse, bords parallèles réguliers, au contact de l'eau → parement béton/maçonné
+  else if(sd<26&&cv<0.4&&net>35&&contact){type='perré / digue probable';cert='modérée';}
+  // e) Bande lisse sombre sans contact à l'eau → route probable (persistance non confirmée → doute)
+  else if(Lm<95&&sat<22&&sd<22&&!contact){type='route / voie probable (à écarter ?)';cert='faible';}
+  else if(sd<26&&sat<30){type='perré / digue probable';cert='faible';}
   else {type='forme linéaire côtière à qualifier';cert='faible';}
-  return {type,certitude:cert,rugosite:Math.round(sd),teinte};
+  return {type,certitude:cert,rugosite:Math.round(sd),teinte,
+    largeurPx:tr?tr.largeurPx:null,bords,contact_eau:contact,granularite:Math.round(granu)};
 }
 function extraireOuvrages(im,bbox,sens){
   // Photo-interprétation côtière : un littoral naturel est sinueux ; un ouvrage longitudinal
@@ -2955,12 +3014,14 @@ function extraireOuvrages(im,bbox,sens){
   const mPerPx=((bbox.e-bbox.w)*111320*Math.cos((bbox.s+bbox.n)/2*Math.PI/180))/im.w;
   const minM=Math.max(20,55-(sens-50)*0.5);
   const feats=[];
-  // 1) Longitudinaux : segments droits assez longs, classés par radiométrie
+  // 1) Longitudinaux : segments droits assez longs, classés par radiométrie + géométrie transversale
+  //    (contact à l'eau, persistance vers la terre, largeur/bords parallèles, granularité de texture).
   for(const l of lines)for(let i=1;i<l.length;i++){
     const coords=[pxToGeo(l[i-1][0],l[i-1][1],im.w,im.h,bbox),pxToGeo(l[i][0],l[i][1],im.w,im.h,bbox)];
     const Lm=geoLenM(coords,bbox);
-    if(Lm>=minM){const cl=classifieOuvrage(sampleBand(im,l[i-1],l[i]));
-      feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:cl.type,classe_suggeree:cl.type,methode:'rectitude + radiométrie (rugosité/teinte)',rugosite:cl.rugosite,teinte:cl.teinte,certitude:cl.certitude,longueur_m_est:Math.round(Lm)}});}
+    if(Lm>=minM){const tr=analyseTransversale(im,water,l[i-1],l[i]);
+      const cl=classifieOuvrage(sampleBand(im,l[i-1],l[i]),tr,granulariteBande(im,l[i-1],l[i]));
+      feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:cl.type,classe_suggeree:cl.type,methode:'rectitude + radiométrie + transversale (contact eau, largeur/bords, granularité)',rugosite:cl.rugosite,teinte:cl.teinte,granularite:cl.granularite,largeur_m_est:cl.largeurPx!=null?Math.round(cl.largeurPx*mPerPx):null,bords:cl.bords,contact_eau:cl.contact_eau,certitude:cl.certitude,longueur_m_est:Math.round(Lm)}});}
   }
   // 2) Transversaux : saillies étroites (épis)
   for(const l of lines){for(let j=1;j<l.length-1;j++){const a=l[j-1],P=l[j],b=l[j+1];
