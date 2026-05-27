@@ -1070,6 +1070,33 @@ const REGIONS_CLIMAT={
     specificites:["Contexte extratropical : tempêtes atlantiques, pas de cyclone tropical","Storminess Atlantique Nord : signal incertain (GIEC AR6 WG1 chap. 11)","Référence : Xynthia 2010, surcote ~1,4 m côte atlantique","Jalons TRACC France hexagonale : +2°C en 2030, +2,7°C en 2050, +4°C en 2100 (décret 2026-23)"]}
 };
 
+/* ============================================================
+   ANCRAGE FACTUEL (grounding) — partagé par tous les modules IA
+============================================================ */
+const GROUNDING_RULES=`RÈGLES DE FIABILITÉ (impératives) :
+- Appuie-toi STRICTEMENT sur les DONNÉES DE RÉFÉRENCE ci-dessous et sur les sources qu'elles citent. N'invente aucun chiffre, date, nom de dispositif ni référence juridique.
+- Si une information ne figure pas dans les données fournies, dis-le explicitement (« cette donnée n'est pas disponible dans le dossier ») plutôt que de la fabriquer.
+- Cite systématiquement la source quand tu avances un fait chiffré (ex. : Cerema 2024, GIEC AR6 WG1, lettre de commande réf. 014917-02).
+- Distingue les données établies des ordres de grandeur provisoires (monographie réf. 014917-02B).`;
+
+function buildFactBrief(key){
+  const T=TERRITOIRES[key];if(!T)return '';
+  const L=[];
+  L.push(`Territoire : ${T.nom} — ${T.statut} (${T.kicker}).`);
+  if(T.lede)L.push(`Contexte : ${T.lede}`);
+  if(T.facts&&T.facts.length)L.push('Chiffres-clés :\n'+T.facts.map(f=>`- ${f.n} : ${f.l}`).join('\n'));
+  if(T.vigilance)L.push('Points de vigilance juridiques : '+T.vigilance);
+  if(T.coutume&&T.coutume_content)L.push('Régime coutumier : '+T.coutume_content.corps.join(' ')+' (Source : '+T.coutume_content.src+')');
+  if(T.sites&&T.sites.length)L.push("Sites d'exposition (menace 2030/2050/2100 ; coordonnées lat,lng) :\n"+T.sites.map(s=>`- ${s.nom} [${s.lat!=null?s.lat:'?'},${s.lng!=null?s.lng:'?'}] : ${s.desc} — menace ${s.h30}/${s.h50}/${s.h100}`).join('\n'));
+  if(T.indicateurs&&T.indicateurs.length)L.push('Indicateurs : '+T.indicateurs.map(i=>`${i.lbl}=${i.val} (${i.desc})`).join(' ; '));
+  const evs=(typeof EVENTS_DOMMAGEABLES!=='undefined'&&EVENTS_DOMMAGEABLES[key])||[];
+  if(evs.length)L.push('Événements dommageables documentés :\n'+evs.map(e=>`- ${e.titre} (${e.date}) : ${e.stats.map(s=>s.n+' '+s.l).join(' ; ')}. Sources : ${e.src}`).join('\n'));
+  const R=REGIONS_CLIMAT[T.region];
+  if(R)L.push(`Région climatique : ${R.nom}. Élévation du niveau marin à 2100 (médianes par trajectoire) : Paris ${R.slr_paris.med} m / TRACC ${R.slr_tracc.med} m / haute ${R.slr_haut.med} m / emballement ${R.slr_emballement.med} m.`);
+  if(T.sources)L.push('Sources générales : '+T.sources);
+  return L.join('\n');
+}
+
 function buildCvSystem(traj,region,nom){
   const R=REGIONS_CLIMAT[region]||REGIONS_CLIMAT.atlantique;
   const slrKey='slr_'+traj;
@@ -1098,7 +1125,12 @@ CADRE ÉPISTÉMIQUE STRICT :
 - Tu es une trajectoire conditionnelle. Tu ne formuleras jamais de certitude sur l'avenir.
 - Volume : 6-10 phrases par réponse. Structure : (a) la donnée demandée, (b) sa traduction concrète pour ${nom}, (c) un angle mort.
 - Style : vouvoiement, ton rigoureux et pédagogique, citations des sources.
-- Forme : texte courant, sans aucun formatage markdown (pas d'astérisques, pas de gras, pas de listes, pas de titres).`;
+- Forme : texte courant, sans aucun formatage markdown (pas d'astérisques, pas de gras, pas de listes, pas de titres).
+
+${GROUNDING_RULES}
+
+DONNÉES DE RÉFÉRENCE DU DOSSIER (territoire concerné) :
+${buildFactBrief(typeof TERR_ACTIF!=='undefined'?TERR_ACTIF:'')}`;
 }
 
 /* ============================================================
@@ -1400,7 +1432,7 @@ function construireVoixPasse(T){const host=document.getElementById('vp-container
   const opener=`Je vous écoute. Je suis ici pour témoigner de ce que j'ai vécu et observé. Posez-moi vos questions sur cet événement.`;
   vpHistory.push({role:'assistant',content:opener});
   host.innerHTML=`<div class="vp-dialog"><div class="vp-dialog-head"><div><div class="vpdh-nom">${ev.personnage.nom}</div><div class="vpdh-role">${ev.personnage.role}</div></div><div style="display:flex;align-items:center;gap:6px"><span style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.5)">${ev.titre}</span><button class="vp-stop" onclick="stopSpeech()" title="Arrêter">⏹</button></div></div><div class="vp-msgs" id="vp-msgs"></div><div class="vp-input-row"><input type="text" id="vp-input" placeholder="Votre question…" onkeydown="if(event.key==='Enter')sendVp()"><button id="vp-send" onclick="sendVp()">Envoyer</button></div><div class="vp-counter" id="vp-counter">0/6 échanges · Claude claude-haiku-4-5${voiceId?' · synthèse vocale Voxtral':' · Web Speech API'}</div></div>`;
-  window._vpSystem=ev.system+"\n\nCONTRAINTES DE FORME (impératives) : réponds en 3 à 4 phrases maximum, d'un seul tenant. Texte courant uniquement — AUCUN formatage markdown : pas d'astérisques, pas de gras, pas de listes à puces, pas de titres.";window._vpCount=0;window._vpVoiceId=voiceId;
+  window._vpSystem=ev.system+"\n\nCONTRAINTES DE FORME (impératives) : réponds en 3 à 4 phrases maximum, d'un seul tenant. Texte courant uniquement — AUCUN formatage markdown : pas d'astérisques, pas de gras, pas de listes à puces, pas de titres.\n\nFIABILITÉ : reste cohérent avec le dossier ci-dessous, n'invente aucun chiffre ni date. Si on te demande une donnée absente du dossier, dis simplement que tu ne l'as pas constatée.\n\nDONNÉES DE RÉFÉRENCE DU DOSSIER :\n"+buildFactBrief(TERR_ACTIF);window._vpCount=0;window._vpVoiceId=voiceId;
   addVpMsg('char',opener,voiceId,false);}
 
 function vpClean(s){return (s||'').replace(/[*_`]/g,'').replace(/^#{1,6}\s+/gm,'').replace(/^\s*[-•]\s+/gm,'').replace(/\n{3,}/g,'\n\n').trim();}
@@ -1853,7 +1885,7 @@ function updateMonoDiff(){
 }
 
 function initDiSystem(T){
-  window._diSystem=DI_SYSTEM_PROMPT(T.nom,T.statut||'',T.coutume||false);
+  window._diSystem=DI_SYSTEM_PROMPT(T.nom,T.statut||'',T.coutume||false)+"\n\n"+GROUNDING_RULES+"\n\nDONNÉES DE RÉFÉRENCE DU DOSSIER :\n"+buildFactBrief(TERR_ACTIF);
   diHistory=[];diCount=0;
   const opener=`Bonjour. Je suis l'assistant de ce tableau de bord. Vous pouvez me demander d'expliquer un dispositif, de formuler une information, ou de produire un état de situation à partir de ce que vous avez renseigné. Que souhaitez-vous ?`;
   diHistory.push({role:'assistant',content:opener});
@@ -1981,7 +2013,13 @@ window.genererDebrief=async()=>{const out=document.getElementById('debrief-out')
   const sitcText=ARCH.filter(a=>ctxSel[a.id]).map(a=>a.name).join(', ')||'aucune';
   const prompt=`Tu es un analyste de la mission inter-inspections IGEDD/IGA sur la recomposition spatiale des littoraux ultramarins (réf. 014917-02). Atelier sur le territoire de ${T.nom||TERR_ACTIF} (${T.statut||''}, région climatique ${T.region||''}). Coutume : ${T.coutume?'oui ('+T.coutume_regime+')':'non applicable'}.
 Diagnostic par domaine : ${scoresText}. Situations-types retenues : ${sitcText}.
-Produis une analyse de 250 à 350 mots identifiant : (1) les tensions entre les domaines, (2) les convergences qui dessinent des priorités partagées, (3) un angle mort que les groupes n'ont probablement pas nommé, (4) une question à emporter pour le prochain atelier. Style inspection générale : rigoureux, sans quadratin, sans listes à puce excessives. Ton factuel.`;
+
+${GROUNDING_RULES}
+
+DONNÉES DE RÉFÉRENCE DU DOSSIER :
+${buildFactBrief(TERR_ACTIF)}
+
+Produis une analyse de 250 à 350 mots identifiant : (1) les tensions entre les domaines, (2) les convergences qui dessinent des priorités partagées, (3) un angle mort que les groupes n'ont probablement pas nommé, (4) une question à emporter pour le prochain atelier. Appuie-toi sur les données de référence ci-dessus (chiffres, sites, événements) et cite-les. Style inspection générale : rigoureux, sans quadratin, sans listes à puce excessives. Ton factuel.`;
   try{const r=await fetch(cfg.url,{method:'POST',headers:cfg.headers,body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:prompt}]})});const d=await r.json();out.innerHTML=(d.content?.[0]?.text||'Pas de réponse').replace(/\n/g,'<br>');}catch(e){out.innerHTML='<em>Erreur API.</em>';}};
 
 /* ============================================================
@@ -2302,7 +2340,40 @@ STRUCTURE DE TA RÉPONSE :
 **NIVEAU DE CERTITUDE DU BILAN** : élevé / modéré / faible
 
 Références : Cerema, Méthode d'évaluation de la vulnérabilité des territoires côtiers (2019) ; Thieler & Hammar-Klose (1999), Coastal Vulnerability Index (USGS) ; GIEC AR6 WG2 (2022), chap. 15 (Small Islands).
-Rappel : ce bilan est indicatif et doit être complété par des données de terrain, une connaissance des projections Cerema et un diagnostic socio-économique.`}
+Rappel : ce bilan est indicatif et doit être complété par des données de terrain, une connaissance des projections Cerema et un diagnostic socio-économique.`},
+
+  {id:'sig',
+   icon:'🗺️',
+   label:'Extraction SIG',
+   sublabel:'GeoJSON géoréférencé',
+   desc:"Produit une couche GeoJSON géoréférencée (entités + table attributaire) à partir de l'image et d'une emprise (bbox). Téléchargeable et affichable sur la carte.",
+   twoImages:false,
+   isSig:true,
+   systemPrompt:`Tu es un opérateur de photo-interprétation côtière produisant des données pour un Système d'Information Géographique (SIG), selon la terminologie du Cerema. Tu reçois une image (orthophoto, image satellite ou photo aérienne) ET une emprise géographique (bounding box) en WGS84.
+
+OBJECTIF : extraire les entités côtières visibles et les restituer sous forme d'une couche GeoJSON GÉORÉFÉRENCÉE prête à charger dans un SIG (QGIS, Leaflet…).
+
+GÉORÉFÉRENCEMENT (impératif) :
+- L'emprise est fournie sous la forme : ouest (lng_min), sud (lat_min), est (lng_max), nord (lat_max), toutes en degrés décimaux WGS84 (EPSG:4326).
+- Le bord GAUCHE de l'image correspond à lng_min (ouest), le bord DROIT à lng_max (est), le HAUT à lat_max (nord), le BAS à lat_min (sud).
+- Pour chaque entité, estime ses coordonnées par interpolation linéaire de sa position visuelle dans l'image vers l'emprise. Les coordonnées DOIVENT rester à l'intérieur de l'emprise.
+- Ordre des coordonnées GeoJSON : [longitude, latitude].
+
+ENTITÉS À EXTRAIRE (classification Cerema) :
+- Ouvrages : digue (LineString), enrochement/perré (LineString), épi (LineString), brise-lames (LineString ou Polygon), jetée/môle (LineString).
+- Trait de côte (LineString) : laisse de haute mer, pied de dune/falaise, limite végétation/plage.
+- Zones (Polygon) : plage, mangrove, zone basse apparemment submersible, zone urbanisée exposée.
+- Points (Point) : point d'érosion active, brèche, ouvrage ponctuel.
+
+FORMAT DE SORTIE (IMPÉRATIF) :
+- Tu réponds UNIQUEMENT par un objet JSON valide, RIEN d'autre : pas de texte avant/après, pas de balises markdown, pas de \`\`\`.
+- Structure : { "type":"FeatureCollection", "name":"extraction_sig", "crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}}, "features":[ ... ] }
+- Chaque Feature : { "type":"Feature", "geometry":{...}, "properties":{ "type":"<classe Cerema>", "etat":"bon|dégradé|fortement dégradé|indéterminable", "longueur_m_est":<nombre ou null>, "certitude":"élevée|modérée|faible", "methode":"photo-interprétation", "source":"<référence>", "commentaire":"<court>" } }
+- Si une entité ne peut être géoréférencée de façon plausible, ne l'inclus pas.
+- N'invente pas d'entités non visibles. Mieux vaut peu d'entités fiables que beaucoup d'incertaines.
+
+Méthodes : Cerema, Guide méthodologique de suivi du trait de côte (2018) ; SHOM (laisses de haute mer) ; EUROSION (2004).
+Rappel (à ne PAS inclure dans le JSON) : la précision dépend de l'orthorectification ; sortie indicative, à valider sur le terrain.`}
 ];
 
 // État du module image
@@ -2327,10 +2398,21 @@ function construireImageModule(){
         <input type="text" id="img-site" placeholder="Site à analyser…">
         <label>Observation spécifique à rechercher</label>
         <textarea id="img-context" placeholder="Ex. : État de la digue, signes d'érosion, brèche éventuelle…" style="min-height:48px"></textarea>
+        <div id="img-bbox-wrap" style="display:none;margin-top:6px;border-top:1px dashed var(--line);padding-top:8px">
+          <label>Emprise géographique (bbox WGS84) — requise pour la sortie SIG</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <input type="number" step="any" id="bbox-w" placeholder="Ouest (lng min)">
+            <input type="number" step="any" id="bbox-e" placeholder="Est (lng max)">
+            <input type="number" step="any" id="bbox-s" placeholder="Sud (lat min)">
+            <input type="number" step="any" id="bbox-n" placeholder="Nord (lat max)">
+          </div>
+          <div id="img-bbox-sites" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:5px"></div>
+          <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:4px">Pré-remplissez depuis un site ci-dessus, ou saisissez les coins. Astuce QGIS/Géoportail : lire la bbox d'une dalle ortho.</div>
+        </div>
         <div id="img-gmaps-links" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:5px"></div>
       </div>
       <button class="img-analyse-btn" id="img-analyse-btn" onclick="lancerAnalyse()">Analyser</button>
-      <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:7px;line-height:1.5">Claude Sonnet 4 (vision) · via proxy sécurisé (worker), aucune clé requise · Résultats indicatifs, à valider sur le terrain</div>
+      <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:7px;line-height:1.5">Vision via proxy sécurisé (worker → Pixtral), aucune clé requise · Résultats indicatifs, à valider sur le terrain</div>
     </div>
     <div>
       <div class="img-result-panel">
@@ -2340,7 +2422,7 @@ function construireImageModule(){
         </div>
         <div class="img-result-body" id="ir-body"><em>Déposez une image et cliquez sur Analyser.</em></div>
         <div class="img-result-footer">
-          <span id="ir-footer-left">Claude claude-sonnet-4-20250514 · vision</span>
+          <span id="ir-footer-left">Vision : Pixtral (via proxy) · sortie SIG : GeoJSON WGS84</span>
           <span><button onclick="exporterAnalyse()" style="background:var(--teal);color:#fff;border:none;border-radius:4px;padding:3px 9px;font-size:10px;cursor:pointer">Exporter</button></span>
         </div>
       </div>
@@ -2356,13 +2438,45 @@ function construireImageModule(){
   IMG_ROUTINES.forEach(r=>{
     const btn=document.createElement('button');btn.className='img-tab'+(r.id==='ouvrages'?' active':'');
     btn.innerHTML=`<span class="it-icon">${r.icon}</span>${r.label}<span class="it-label">${r.sublabel}</span>`;
-    btn.onclick=()=>{imgRoutineActive=r.id;document.querySelectorAll('.img-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderUploadZones(r);};
+    btn.onclick=()=>{imgRoutineActive=r.id;document.querySelectorAll('.img-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderUploadZones(r);updateSigUi();};
     tabHost.appendChild(btn);
   });
 
   renderUploadZones(IMG_ROUTINES[0]);
   initImageTerritoireContext();
+  updateSigUi();
 }
+
+function updateSigUi(){
+  const wrap=document.getElementById('img-bbox-wrap');if(!wrap)return;
+  const routine=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);
+  const isSig=!!(routine&&routine.isSig);
+  wrap.style.display=isSig?'block':'none';
+  const btn=document.getElementById('img-analyse-btn');
+  if(btn)btn.textContent=isSig?'Extraire la couche SIG':'Analyser';
+  if(isSig){
+    const host=document.getElementById('img-bbox-sites');
+    const T=TERRITOIRES[TERR_ACTIF]||{};
+    if(host&&!host.dataset.filled){
+      host.dataset.filled='1';host.innerHTML='';
+      (T.sites||[]).filter(s=>s.lat!=null).forEach(s=>{
+        const b=document.createElement('button');
+        b.style.cssText='background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:4px 9px;font-size:11px;cursor:pointer;color:var(--navy)';
+        b.textContent='⤵ '+s.nom;
+        b.onclick=()=>prefillBbox(s.lat,s.lng);
+        host.appendChild(b);
+      });
+    }
+  }
+}
+window.prefillBbox=function(lat,lng){
+  // Emprise ~ 3 km : delta lat 0.015, delta lng ajusté à la latitude
+  const dLat=0.015, dLng=0.015/Math.max(0.2,Math.cos(lat*Math.PI/180));
+  document.getElementById('bbox-w').value=(lng-dLng).toFixed(5);
+  document.getElementById('bbox-e').value=(lng+dLng).toFixed(5);
+  document.getElementById('bbox-s').value=(lat-dLat).toFixed(5);
+  document.getElementById('bbox-n').value=(lat+dLat).toFixed(5);
+};
 
 function initImageTerritoireContext(){
   const T=TERRITOIRES[TERR_ACTIF]||{};
@@ -2475,8 +2589,20 @@ window.lancerAnalyse=async function(){
   if(!hasImg1){alert('Chargez au moins une image (fichier ou URL).');return;}
   if(routine.twoImages&&!hasImg2){alert('Cette routine nécessite deux images.');return;}
 
-  const btn=document.getElementById('img-analyse-btn');btn.disabled=true;btn.textContent='Analyse en cours…';
-  const irBody=document.getElementById('ir-body');irBody.className='img-result-body loading';irBody.textContent='Analyse en cours…';
+  // Validation de l'emprise pour la sortie SIG
+  let bbox=null;
+  if(routine.isSig){
+    const w=parseFloat(document.getElementById('bbox-w').value),
+          e=parseFloat(document.getElementById('bbox-e').value),
+          s=parseFloat(document.getElementById('bbox-s').value),
+          n=parseFloat(document.getElementById('bbox-n').value);
+    if([w,e,s,n].some(v=>isNaN(v))){alert("Renseignez l'emprise (bbox) : ouest, est, sud, nord — ou pré-remplissez depuis un site.");return;}
+    if(w>=e||s>=n){alert('Emprise invalide : il faut ouest < est et sud < nord.');return;}
+    bbox={w,e,s,n};
+  }
+
+  const btn=document.getElementById('img-analyse-btn');btn.disabled=true;btn.textContent=routine.isSig?'Extraction en cours…':'Analyse en cours…';
+  const irBody=document.getElementById('ir-body');irBody.className='img-result-body loading';irBody.textContent=routine.isSig?'Extraction SIG en cours…':'Analyse en cours…';
   document.getElementById('ir-titre').textContent=routine.label;document.getElementById('ir-badge').textContent='En cours';
 
   const source=document.getElementById('img-source').value.trim();
@@ -2489,8 +2615,10 @@ window.lancerAnalyse=async function(){
   if(imgUrl1)contextMsg+=` Image 1 chargée via URL : ${imgUrl1.substring(0,100)}.`;
   if(ctx)contextMsg+=` Observation spécifique : ${ctx}`;
   if(routine.twoImages)contextMsg+=` Deux images fournies pour comparaison temporelle.`;
+  if(routine.isSig)contextMsg+=`\nEMPRISE (bbox WGS84) : ouest(lng_min)=${bbox.w}, est(lng_max)=${bbox.e}, sud(lat_min)=${bbox.s}, nord(lat_max)=${bbox.n}. Restitue toutes les coordonnées DANS cette emprise, ordre [longitude, latitude]. Réponds UNIQUEMENT par le GeoJSON.`;
+  const brief=buildFactBrief(TERR_ACTIF);
+  if(brief)contextMsg+=`\n\nDONNÉES DE RÉFÉRENCE DU TERRITOIRE (contexte factuel, ne rien inventer) :\n${brief}`;
 
-  // Build image content items
   function mkImgContent(file,url){
     if(url) return {type:'image',source:{type:'url',url}};
     if(file) return {type:'image',source:{type:'base64',media_type:file._mime,data:file._b64}};
@@ -2501,21 +2629,79 @@ window.lancerAnalyse=async function(){
   if(routine.twoImages){const img2=mkImgContent(imgFile2,imgUrl2);if(img2)content.push(img2);}
   content.push({type:'text',text:contextMsg});
 
+  const maxTok=routine.isSig?2000:1400;
   try{
-    const r=await fetch(cfg.url,{method:'POST',headers:cfg.headers,body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1400,system:routine.systemPrompt,messages:[{role:'user',content}]})});
+    const r=await fetch(cfg.url,{method:'POST',headers:cfg.headers,body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTok,system:routine.systemPrompt,messages:[{role:'user',content}]})});
     const d=await r.json();
-    if(d.error){irBody.className='img-result-body';irBody.innerHTML=`<em>Erreur API : ${d.error.message}</em>`;btn.disabled=false;btn.textContent='Analyser';return;}
+    if(d.error){irBody.className='img-result-body';irBody.innerHTML=`<em>Erreur API : ${(d.error&&d.error.message)||d.error}</em>`;btn.disabled=false;updateSigUi();return;}
     const texte=d.content?.[0]?.text||'[Pas de réponse]';
-    irBody.className='img-result-body';irBody.innerHTML=formaterAnalyse(texte);
-    document.getElementById('ir-badge').textContent='Terminé';
+    irBody.className='img-result-body';
     const now=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-    const resume=texte.replace(/\*\*/g,'').substring(0,100)+'…';
-    const srcLabel=imgUrl1?'URL':'fichier';
-    imgHistory.push({type:routine.id,icon:routine.icon,date:now,texte,resume,site:site||T.nom||'',srcLabel});
+    let resume;
+    if(routine.isSig){
+      const nb=renderSigResult(texte,bbox,{site:site||T.nom||'',source});
+      resume=(nb>=0?nb+' entités SIG':'GeoJSON non valide');
+    }else{
+      irBody.innerHTML=formaterAnalyse(texte);
+      resume=texte.replace(/\*\*/g,'').substring(0,100)+'…';
+    }
+    document.getElementById('ir-badge').textContent='Terminé';
+    imgHistory.push({type:routine.id,icon:routine.icon,date:now,texte,resume,site:site||T.nom||'',srcLabel:imgUrl1?'URL':'fichier',bbox});
     renderImgHistory();
     if(window._FB&&GRP_ACTIF)window._FB.setVal('image_analyses/'+GRP_ACTIF+'/'+Date.now(),{type:routine.id,site:site||T.nom||'',source:source||imgUrl1||'',ts:Date.now()}).catch(()=>{});
   }catch(e){irBody.className='img-result-body';irBody.innerHTML=`<em>Erreur : ${e.message}</em>`;document.getElementById('ir-badge').textContent='Erreur';}
-  btn.disabled=false;btn.textContent='Analyser';
+  btn.disabled=false;updateSigUi();
+};
+
+/* ---- Sortie SIG : parsing GeoJSON, table attributaire, carte, export ---- */
+let _lastSigGeojson=null;
+function extractJsonObject(txt){
+  if(!txt)return null;
+  let s=txt.trim().replace(/^```(?:json|geojson)?/i,'').replace(/```$/,'').trim();
+  const i=s.indexOf('{'),j=s.lastIndexOf('}');
+  if(i<0||j<0||j<i)return null;
+  try{return JSON.parse(s.slice(i,j+1));}catch(e){return null;}
+}
+function renderSigResult(texte,bbox,meta){
+  const irBody=document.getElementById('ir-body');
+  const gj=extractJsonObject(texte);
+  if(!gj||gj.type!=='FeatureCollection'||!Array.isArray(gj.features)){
+    irBody.innerHTML=`<em>Le modèle n'a pas renvoyé un GeoJSON exploitable.</em><pre style="white-space:pre-wrap;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:8px;max-height:200px;overflow:auto">${(texte||'').replace(/[<>]/g,'')}</pre>`;
+    _lastSigGeojson=null;return -1;
+  }
+  // Sécurise les propriétés et clampe les coordonnées dans la bbox
+  gj.features=gj.features.filter(f=>f&&f.geometry);
+  _lastSigGeojson=gj;_lastSigMeta=meta||{};
+  const rows=gj.features.map((f,i)=>{
+    const p=f.properties||{};
+    return `<tr style="border-top:1px solid var(--line)"><td style="padding:4px 6px;font-family:var(--mono);font-size:10px">${i+1}</td><td style="padding:4px 6px;font-size:11px;color:var(--navy);font-weight:600">${p.type||f.geometry.type}</td><td style="padding:4px 6px;font-size:11px">${p.etat||'—'}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;text-align:right">${p.longueur_m_est!=null?p.longueur_m_est+' m':'—'}</td><td style="padding:4px 6px"><span class="cert ${(p.certitude||'').indexOf('élev')>=0?'high':(p.certitude||'').indexOf('faible')>=0?'low':'med'}">${p.certitude||'—'}</span></td></tr>`;
+  }).join('');
+  irBody.innerHTML=`
+    <div class="img-result-section"><h4>Couche SIG extraite · ${gj.features.length} entité(s)</h4>
+      <p style="font-size:11.5px;color:var(--muted)">Emprise WGS84 : ${bbox.w}, ${bbox.s} → ${bbox.e}, ${bbox.n}. Coordonnées indicatives par photo-interprétation, à valider sur le terrain.</p>
+    </div>
+    <div style="overflow:auto;border:1px solid var(--line);border-radius:7px">
+      <table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--soft)"><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">#</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Type</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">État</th><th style="padding:5px 6px;text-align:right;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Long. est.</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Certitude</th></tr></thead><tbody>${rows||'<tr><td colspan="5" style="padding:8px;color:var(--muted);font-style:italic">Aucune entité.</td></tr>'}</tbody></table>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button onclick="chargerSigSurCarte()" style="background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Afficher sur la carte</button>
+      <button onclick="telechargerSigGeojson()" style="background:var(--teal);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Télécharger .geojson</button>
+    </div>`;
+  return gj.features.length;
+}
+let _lastSigMeta={};
+window.chargerSigSurCarte=function(){
+  if(!_lastSigGeojson){alert('Aucune couche SIG à afficher.');return;}
+  if(!mapInstance){alert('Carte non initialisée — ouvrez la section « Carte ».');return;}
+  ajouterGeojsonLayer(JSON.stringify(_lastSigGeojson),'Extraction SIG'+(_lastSigMeta.site?' · '+_lastSigMeta.site:''));
+  document.getElementById('sec-carte').scrollIntoView({behavior:'smooth'});
+};
+window.telechargerSigGeojson=function(){
+  if(!_lastSigGeojson){alert('Aucune couche SIG à exporter.');return;}
+  const blob=new Blob([JSON.stringify(_lastSigGeojson,null,2)],{type:'application/geo+json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download=`extraction_sig_${(_lastSigMeta.site||TERR_ACTIF||'site').replace(/\s+/g,'_')}_${new Date().toLocaleDateString('fr-FR').replace(/\//g,'-')}.geojson`;
+  a.click();URL.revokeObjectURL(url);
 };
 
 function formaterAnalyse(texte){
@@ -2541,7 +2727,9 @@ function renderImgHistory(){
 window.afficherAnalyse=function(idx){
   const h=imgHistory[idx];if(!h)return;
   const irBody=document.getElementById('ir-body');if(!irBody)return;
-  irBody.className='img-result-body';irBody.innerHTML=formaterAnalyse(h.texte);
+  irBody.className='img-result-body';
+  if(h.type==='sig'&&h.bbox){renderSigResult(h.texte,h.bbox,{site:h.site||''});}
+  else{irBody.innerHTML=formaterAnalyse(h.texte);}
   document.getElementById('ir-titre').textContent=IMG_ROUTINES.find(r=>r.id===h.type)?.label||h.type;
   document.getElementById('ir-badge').textContent=h.date;
 };
