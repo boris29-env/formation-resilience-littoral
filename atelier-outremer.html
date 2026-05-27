@@ -731,7 +731,7 @@ svg.house{width:100%;max-width:290px;height:auto}
     <div class="export-block"><div class="eb-left"><div class="ebk">Bilan de séance</div><p>Diagnostic, votes de routage et orientations exportés en texte.</p></div><button class="btn primary" onclick="exporterBilan()">Générer le bilan</button></div>
   </main>
 </div>
-<footer class="plat-foot"><strong>Mode d'emploi</strong>Atelier de co-construction autonome. Voix climatiques et IA requièrent une clé API Anthropic (panneau formateur ⚙). Firebase synchronise les groupes. Ce kit ne constitue pas un engagement de la mission.</footer>
+<footer class="plat-foot"><strong>Mode d'emploi</strong>Atelier de co-construction autonome. Les dialogues IA (voix du passé, voix du climat, analyse d'images, débrief) et la synthèse vocale passent par défaut par le proxy sécurisé (worker) — aucune clé à saisir. Une clé API Anthropic peut être renseignée dans le panneau formateur (⚙) en secours. Firebase synchronise les groupes. Ce kit ne constitue pas un engagement de la mission.</footer>
 </div>
 
 <div class="cv-overlay" id="cv-overlay">
@@ -1419,8 +1419,7 @@ function addVpMsg(cls,txt,voiceId,autoPlay=false){
   h.appendChild(d);h.scrollTop=h.scrollHeight;
 }
 
-window.sendVp=async function(){const inp=document.getElementById('vp-input');const text=inp.value.trim();if(!text)return;if(window._vpCount>=6){addVpMsg('system','Nombre maximum d\'échanges atteint.');return;}inp.value='';inp.disabled=true;document.getElementById('vp-send').disabled=true;addVpMsg('user',text);vpHistory.push({role:'user',content:text});addVpMsg('thinking','…');const key=getApiKey();
-  if(!key){removeLastMsg('vp-msgs');addVpMsg('system','Clé API non configurée (panneau formateur ⚙).');inp.disabled=false;document.getElementById('vp-send').disabled=false;return;}
+window.sendVp=async function(){const inp=document.getElementById('vp-input');const text=inp.value.trim();if(!text)return;if(window._vpCount>=6){addVpMsg('system','Nombre maximum d\'échanges atteint.');return;}inp.value='';inp.disabled=true;document.getElementById('vp-send').disabled=true;addVpMsg('user',text);vpHistory.push({role:'user',content:text});addVpMsg('thinking','…');
   const cfg=getClaudeConfig();
   if(!cfg){removeLastMsg('vp-msgs');addVpMsg('system','Proxy non configuré et clé API absente. Renseignez l\'URL du proxy dans le panneau formateur (⚙).');inp.disabled=false;document.getElementById('vp-send').disabled=false;return;}
   try{const r=await fetch(cfg.url,{method:'POST',headers:cfg.headers,body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:600,system:window._vpSystem,messages:vpHistory})});const d=await r.json();removeLastMsg('vp-msgs');const reply=d.content?.[0]?.text||'[Pas de réponse]';vpHistory.push({role:'assistant',content:reply});addVpMsg('char',reply,window._vpVoiceId,false);window._vpCount++;document.getElementById('vp-counter').textContent=window._vpCount+'/6 échanges · '+cfg.via;collectVpTurn(text,reply);}
@@ -2328,7 +2327,7 @@ function construireImageModule(){
         <div id="img-gmaps-links" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:5px"></div>
       </div>
       <button class="img-analyse-btn" id="img-analyse-btn" onclick="lancerAnalyse()">Analyser</button>
-      <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:7px;line-height:1.5">Claude Sonnet 4 (vision) · Clé API : panneau formateur ⚙ · Résultats indicatifs, à valider sur le terrain</div>
+      <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:7px;line-height:1.5">Claude Sonnet 4 (vision) · via proxy sécurisé (worker), aucune clé requise · Résultats indicatifs, à valider sur le terrain</div>
     </div>
     <div>
       <div class="img-result-panel">
