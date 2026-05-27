@@ -2288,6 +2288,12 @@ Rappel : cette analyse est indicative et ne remplace pas un relevé GPS/GNSS ni 
 `+SIG_FORMAT+`
 
 Méthode : Cerema, Guide méthodologique de suivi du trait de côte (2018) ; SHOM. Sortie indicative (repérage planimétrique), à valider sur le terrain.`},
+  {id:'evolution',
+   icon:'📈',
+   label:'Évolution',
+   sublabel:'taux annuel (DSAS / EPR)',
+   desc:"Compare le trait de côte ancien (ortho IGN historique) et récent le long de transects, et calcule un taux moyen d'évolution annuelle (m/an), méthode EPR inspirée de DSAS (USGS) et MobiTC (Cerema).",
+   twoImages:false,systemPrompt:'',sigSystemPrompt:''},
 ];
 
 // État du module image
@@ -2354,8 +2360,19 @@ function construireImageModule(){
           <option value="400">≈ 400 m — détail fin (ouvrages)</option>
           <option value="800" selected>≈ 800 m — détail</option>
           <option value="1500">≈ 1,5 km</option>
+          <option value="2000">≈ 2 km — ~1:10 000 (évolution)</option>
           <option value="3000">≈ 3 km — vue large</option>
         </select>
+        <div id="sig-evol-ctrl" style="display:none;margin-top:8px;border-top:1px dashed var(--line);padding-top:8px">
+          <label>Photo ancienne (référence pour le taux d'évolution)</label>
+          <select id="sig-evol-layer" style="width:100%;font-size:12.5px;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)">
+            <option value="ORTHOIMAGERY.ORTHOPHOTOS2000-2005|2003|image/jpeg" selected>BD Ortho 2000-2005 (~2003) — couverture outre-mer</option>
+            <option value="ORTHOIMAGERY.ORTHOPHOTOS2006-2010|2008|image/jpeg">BD Ortho 2006-2010 (~2008)</option>
+            <option value="ORTHOIMAGERY.ORTHOPHOTOS.1980-1995|1987|image/png">BD Ortho 1980-1995 (~1987) — surtout métropole</option>
+            <option value="ORTHOIMAGERY.ORTHOPHOTOS.1950-1965|1957|image/png">BD Ortho 1950-1965 (~1957) — surtout métropole</option>
+          </select>
+          <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:4px">Taux moyen m/an (EPR) = déplacement du trait de côte ÷ intervalle. Méthode inspirée DSAS (USGS) / MobiTC (Cerema). Travaillez à ~1:10 000 (emprise 2 km).</div>
+        </div>
         <label id="sig-sens-label">Sensibilité de détection (mer/terre)</label>
         <input type="range" id="sig-sens" min="0" max="100" value="50" style="width:100%">
         <label style="margin-top:8px">Couverture « tout le territoire » (grille autour de chaque site)</label>
@@ -2366,7 +2383,7 @@ function construireImageModule(){
           <option value="7">7×7 tuiles / site (exhaustif, plus long)</option>
         </select>
       </div>
-      <button class="img-analyse-btn" id="img-sig-btn" onclick="lancerExtractionSIG()" style="background:var(--teal)">🗺️ Extraire la couche SIG (GeoJSON)</button>
+      <button class="img-analyse-btn" id="img-sig-btn" onclick="lancerSIGAction()" style="background:var(--teal)">🗺️ Extraire la couche SIG (GeoJSON)</button>
       <button class="img-analyse-btn" id="img-batch-btn" onclick="traiterTousSites()" style="background:var(--navy);margin-top:7px">🧭 Traiter tout le territoire (couverture)</button>
       <div id="sig-cumul-bar" style="margin-top:8px;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:none">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
@@ -2431,6 +2448,9 @@ function getSigBbox(){
 function updateSigUi(){
   const wrap=document.getElementById('img-bbox-wrap');if(!wrap)return;
   const auto=document.getElementById('img-bbox-auto');
+  const isEvol=(imgRoutineActive==='evolution');
+  const evolCtrl=document.getElementById('sig-evol-ctrl');if(evolCtrl)evolCtrl.style.display=isEvol?'block':'none';
+  const sigBtn=document.getElementById('img-sig-btn');if(sigBtn)sigBtn.textContent=isEvol?'📈 Calculer le taux d\'évolution (m/an)':'🗺️ Extraire la couche SIG (GeoJSON)';
   const sl=document.getElementById('sig-sens-label');if(sl)sl.textContent=(imgRoutineActive==='ouvrages')?'Sensibilité de détection (bords / droites)':'Sensibilité de détection (mer / terre)';
   // L'extraction SIG est possible sur tous les onglets → l'emprise est toujours proposée.
   // Source URL → emprise automatique ; photo → saisie manuelle.
@@ -2832,6 +2852,103 @@ window.lancerExtractionSIG=async function(){
   }catch(e){irBody.className='img-result-body';irBody.innerHTML=`<em>Erreur : ${e.message}</em>`;document.getElementById('ir-badge').textContent='Erreur';}
   if(btnS)btnS.disabled=false;
 };
+
+/* ============================================================
+   ÉVOLUTION DU TRAIT DE CÔTE — taux annuel (EPR, inspiré DSAS/MobiTC)
+   Compare le trait de côte ANCIEN (ortho IGN historique) et RÉCENT le long
+   de transects perpendiculaires ; EPR = déplacement / intervalle (m/an).
+============================================================ */
+function ignLayerUrl(layer,b,fmt){return `https://data.geopf.fr/wms-r/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=${layer}&STYLES=&CRS=CRS:84&BBOX=${b.w.toFixed(6)},${b.s.toFixed(6)},${b.e.toFixed(6)},${b.n.toFixed(6)}&WIDTH=1280&HEIGHT=1280&FORMAT=${encodeURIComponent(fmt)}`;}
+function segInter(p1,p2,p3,p4){const d1x=p2[0]-p1[0],d1y=p2[1]-p1[1],d2x=p4[0]-p3[0],d2y=p4[1]-p3[1];const den=d1x*d2y-d1y*d2x;if(Math.abs(den)<1e-9)return null;const t=((p3[0]-p1[0])*d2y-(p3[1]-p1[1])*d2x)/den;const u=((p3[0]-p1[0])*d1y-(p3[1]-p1[1])*d1x)/den;if(t<0||t>1||u<0||u>1)return null;return [p1[0]+t*d1x,p1[1]+t*d1y];}
+function resampleLine(line,step){const out=[];if(line.length<2)return line.slice();out.push(line[0].slice());let carry=0;for(let i=1;i<line.length;i++){let ax=line[i-1][0],ay=line[i-1][1];const bx=line[i][0],by=line[i][1],dx=bx-ax,dy=by-ay,dist=Math.hypot(dx,dy);if(dist===0)continue;const ux=dx/dist,uy=dy/dist;let t=step-carry;while(t<=dist){out.push([ax+ux*t,ay+uy*t]);t+=step;}carry=dist-(t-step);}return out;}
+function maskAt(mask,w,h,x,y){x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=w||y>=h)return 0;return mask[y*w+x];}
+
+function computeEPR(shoreR,shoreO,maskR,w,h,bbox,yearO,yearR){
+  const dt=Math.max(1,yearR-yearO);
+  const mPerPx=((bbox.e-bbox.w)*111320*Math.cos((bbox.s+bbox.n)/2*Math.PI/180))/w;
+  const stepPx=Math.max(8,Math.round(40/mPerPx)); // un transect ~tous les 40 m
+  const Lpx=Math.max(15,Math.round(150/mPerPx)); // demi-longueur transect ~150 m
+  const oldSegs=[];for(const l of shoreO)for(let i=1;i<l.length;i++)oldSegs.push([l[i-1],l[i]]);
+  if(!oldSegs.length)return {feats:[],rates:[],dt};
+  const feats=[],rates=[];
+  for(const l of shoreR){const R=resampleLine(l,stepPx);
+    for(let k=1;k<R.length-1;k++){const P=R[k],a=R[k-1],c=R[k+1];
+      let tx=c[0]-a[0],ty=c[1]-a[1];const tl=Math.hypot(tx,ty)||1;tx/=tl;ty/=tl;
+      let nx=-ty,ny=tx; // normale
+      // sens "vers la mer" : côté où le masque récent est de l'eau
+      const wf=maskAt(maskR,w,h,P[0]+nx*4,P[1]+ny*4)+maskAt(maskR,w,h,P[0]+nx*8,P[1]+ny*8);
+      const wb=maskAt(maskR,w,h,P[0]-nx*4,P[1]-ny*4)+maskAt(maskR,w,h,P[0]-nx*8,P[1]-ny*8);
+      const sw=(wf>=wb)?1:-1;const Nx=nx*sw,Ny=ny*sw; // normale orientée vers la mer
+      const A=[P[0]-Nx*Lpx,P[1]-Ny*Lpx],B=[P[0]+Nx*Lpx,P[1]+Ny*Lpx];
+      let best=null,bd=1e9;for(const s of oldSegs){const I=segInter(A,B,s[0],s[1]);if(I){const dd=Math.hypot(I[0]-P[0],I[1]-P[1]);if(dd<bd){bd=dd;best=I;}}}
+      if(!best)continue;
+      const dOld=(best[0]-P[0])*Nx+(best[1]-P[1])*Ny; // position du vieux trait le long de la normale mer (+ = au large)
+      const netSeaward=-dOld*mPerPx; // déplacement récent-vieux vers la mer (+ accrétion, - érosion)
+      const rate=netSeaward/dt;rates.push(rate);
+      const cR=pxToGeo(P[0],P[1],w,h,bbox),cO=pxToGeo(best[0],best[1],w,h,bbox);
+      feats.push({type:'Feature',geometry:{type:'LineString',coordinates:[cO,cR]},properties:{type:rate<-0.1?'érosion':rate>0.1?'accrétion':'stable',taux_m_an:+rate.toFixed(2),deplacement_m:+(netSeaward).toFixed(1),intervalle_ans:dt,certitude:'modérée'}});
+    }
+  }
+  return {feats,rates,dt};
+}
+
+window.lancerEvolution=async function(){
+  const b=getSigBbox();
+  if(b==='invalid'){alert('Emprise invalide.');return;}
+  if(!b){alert("Chargez l'orthophoto IGN d'un site (l'emprise est nécessaire).");return;}
+  if(!imgUrl1||!imgUrl1.includes('data.geopf.fr')){alert("L'évolution nécessite l'orthophoto IGN (bouton « Charger l'orthophoto IGN » d'un site).");return;}
+  const sel=(document.getElementById('sig-evol-layer')?.value||'ORTHOIMAGERY.ORTHOPHOTOS2000-2005|2003|image/jpeg').split('|');
+  const oldLayer=sel[0],yearO=+sel[1],oldFmt=sel[2]||'image/jpeg';
+  const sens=+(document.getElementById('sig-sens')?.value||50);
+  const btnS=document.getElementById('img-sig-btn');if(btnS)btnS.disabled=true;
+  const irBody=document.getElementById('ir-body');irBody.className='img-result-body loading';irBody.textContent='Comparaison ancien / récent…';
+  document.getElementById('ir-titre').textContent='Évolution du trait de côte';document.getElementById('ir-badge').textContent='Calcul…';
+  try{
+    const nd=nodataMask; // reuse
+    const imgR=await loadImageURL(ignOrthoUrl(b));const imR=drawCV(imgR);
+    const ndR=nodataMask(imR);const maskR=computeWaterMask(imR,sens);const shoreR=shorelinesFromMask(maskR,imR.w,imR.h,ndR);
+    const pd=await photoDateIGN(b);const yearR=pd&&pd.date_photo?+(pd.date_photo.slice(0,4)):new Date().getFullYear();
+    const imgO=await loadImageURL(ignLayerUrl(oldLayer,b,oldFmt));const imO=drawCV(imgO);
+    const ndO=nodataMask(imO);const maskO=computeWaterMask(imO,sens);const shoreO=shorelinesFromMask(maskO,imO.w,imO.h,ndO);
+    if(!shoreR.length||!shoreO.length){irBody.className='img-result-body';irBody.innerHTML='<em>Trait de côte introuvable sur l\'une des deux dates (couverture historique absente ici, ou segmentation à ajuster via la sensibilité).</em>';if(btnS)btnS.disabled=false;return;}
+    const {feats,rates,dt}=computeEPR(shoreR,shoreO,maskR,imR.w,imR.h,b,yearO,yearR);
+    const T=TERRITOIRES[TERR_ACTIF]||{};const meta={site:document.getElementById('img-site').value.trim()||T.nom||'',date_ancienne:yearO,date_recente:(pd&&pd.date_photo)||yearR,intervalle_ans:dt};
+    feats.forEach(f=>{f.properties.date_ancienne=yearO;f.properties.date_recente=(pd&&pd.date_photo)||yearR;});
+    renderEvolution(feats,rates,b,meta);
+    if(feats.length)addToCumul(feats,meta);
+    document.getElementById('ir-badge').textContent='Terminé';
+    const now=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    imgHistory.push({type:'evolution',icon:'📈',date:now,geojson:_lastSigGeojson,bbox:b,site:meta.site,resume:feats.length+' transects · '+yearO+'→'+meta.date_recente});
+    renderImgHistory();
+  }catch(e){irBody.className='img-result-body';irBody.innerHTML=`<em>Erreur : ${e.message}</em>`;document.getElementById('ir-badge').textContent='Erreur';}
+  if(btnS)btnS.disabled=false;
+};
+
+function renderEvolution(feats,rates,bbox,meta){
+  const irBody=document.getElementById('ir-body');
+  _lastSigGeojson={type:'FeatureCollection',name:'evolution_trait_cote',features:feats};_lastSigMeta=meta;
+  if(!feats.length){irBody.innerHTML='<div class="img-result-section"><h4>Aucun transect exploitable</h4><p style="font-size:12px;color:var(--muted)">Les deux traits de côte ne se recouvrent pas le long des transects. Essayez une autre période ancienne ou ajustez la sensibilité.</p></div>';return;}
+  const mean=rates.reduce((a,x)=>a+x,0)/rates.length;
+  const mn=Math.min(...rates),mx=Math.max(...rates);
+  const eros=rates.filter(r=>r<-0.1).length,accr=rates.filter(r=>r>0.1).length;
+  const fmt=v=>(v>0?'+':'')+v.toFixed(2);
+  irBody.innerHTML=`
+    <div class="img-result-section"><h4>Évolution ${meta.date_ancienne} → ${meta.date_recente} · ${meta.intervalle_ans} ans · ${rates.length} transects</h4>
+      <div class="ev-stat" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px">
+        <div class="ev-stat-box" style="background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:8px"><div style="font-family:var(--serif);font-size:18px;font-weight:600;color:${mean<-0.1?'var(--terra)':mean>0.1?'var(--green)':'var(--navy)'}">${fmt(mean)} m/an</div><div style="font-size:10.5px;color:var(--muted)">taux moyen (EPR)</div></div>
+        <div class="ev-stat-box" style="background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:8px"><div style="font-family:var(--serif);font-size:18px;font-weight:600;color:var(--navy)">${fmt(mn)} / ${fmt(mx)}</div><div style="font-size:10.5px;color:var(--muted)">min / max m/an</div></div>
+        <div class="ev-stat-box" style="background:#FDECEA;border:1px solid #E8C4BE;border-radius:6px;padding:8px"><div style="font-family:var(--serif);font-size:18px;font-weight:600;color:var(--terra)">${Math.round(100*eros/rates.length)} %</div><div style="font-size:10.5px;color:var(--muted)">en érosion (< -0,1 m/an)</div></div>
+        <div class="ev-stat-box" style="background:#E2F0E8;border:1px solid #BcdCC8;border-radius:6px;padding:8px"><div style="font-family:var(--serif);font-size:18px;font-weight:600;color:var(--green)">${Math.round(100*accr/rates.length)} %</div><div style="font-size:10.5px;color:var(--muted)">en accrétion (> +0,1 m/an)</div></div>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px">Méthode EPR (End Point Rate) inspirée de DSAS (USGS) et MobiTC (Cerema). Traits de côte extraits automatiquement (segmentation mer/terre) — <b>indicatif</b>, à valider sur traits de côte de référence. Dates anciennes = millésime moyen de la campagne.</p>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+      <button onclick="chargerSigSurCarte()" style="background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Transects sur la carte</button>
+      <button onclick="telechargerSigGeojson()" style="background:var(--teal);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Télécharger .geojson</button>
+    </div>`;
+}
+
+window.lancerSIGAction=function(){if(imgRoutineActive==='evolution')lancerEvolution();else lancerExtractionSIG();};
 let _lastSigMeta={};
 window.chargerSigSurCarte=function(){
   if(!_lastSigGeojson){alert('Aucune couche SIG à afficher.');return;}
