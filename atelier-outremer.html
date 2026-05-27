@@ -2594,8 +2594,9 @@ window.chargerOrthoIGN=function(lat,lng,nom){
   const srcInput=document.getElementById('img-source');if(srcInput)srcInput.value='Orthophoto IGN Géoplateforme (ORTHOIMAGERY.ORTHOPHOTOS) · emprise '+sizeM+' m';
   document.getElementById('img-site').value=nom;
   imgUrl1=ignUrl;imgFile1=null;imgUrlBbox={w:b.w,e:b.e,s:b.s,n:b.n};
-  const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);if(r)renderUploadZones(r);
-  updateSigUi();
+  const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);
+  // précharge le blob (cache bitmap + objectURL pour l'aperçu) puis affiche
+  bitmapFor(ignUrl).then(()=>{if(r)renderUploadZones(r);updateSigUi();}).catch(()=>{if(r)renderUploadZones(r);updateSigUi();});
 };
 window.rechargerEmprise=function(){const s=window._lastSite;if(s)chargerOrthoIGN(s.lat,s.lng,s.nom);};
 
@@ -2612,7 +2613,8 @@ function renderUploadZone(hostId,idx,label){
   if(file&&file._preview){
     host.innerHTML=`<div class="img-upload-zone has-image"><img src="${file._preview}" class="img-preview" alt="Aperçu"><div class="img-preview-label"><span>${label} · ${file.name}</span><button onclick="clearImg(${idx})">✕ Retirer</button></div></div>`;
   }else if(url){
-    host.innerHTML=`<div class="img-upload-zone has-image" style="padding:10px 14px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:18px">🔗</span><strong style="font-size:13px;color:var(--navy);flex:1">${label}</strong><button onclick="clearImg(${idx})" style="background:none;border:none;color:var(--terra);cursor:pointer;font-size:12px">✕</button></div><div style="font-family:var(--mono);font-size:10px;color:var(--teal);word-break:break-all">${url.substring(0,80)}…</div><img src="${url}" class="img-preview" style="margin-top:8px;border-radius:6px" onerror="this.style.display='none'" alt="Aperçu URL"></div>`;
+    const psrc=(idx===1&&_imgCache.key===url&&_imgCache.objURL)?_imgCache.objURL:url; // aperçu depuis le blob local si dispo (ne disparaît pas)
+    host.innerHTML=`<div class="img-upload-zone has-image" style="padding:10px 14px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:18px">🔗</span><strong style="font-size:13px;color:var(--navy);flex:1">${label}</strong><button onclick="clearImg(${idx})" style="background:none;border:none;color:var(--terra);cursor:pointer;font-size:12px">✕</button></div><div style="font-family:var(--mono);font-size:10px;color:var(--teal);word-break:break-all">${url.substring(0,80)}…</div><img src="${psrc}" class="img-preview" style="margin-top:8px;border-radius:6px" alt="Aperçu"></div>`;
   }else{
     const urlInputId='img-url-'+idx;
     host.innerHTML=`<div class="img-upload-zone" id="drop-img-${idx}" ondragover="dragOverImg(event,${idx})" ondrop="dropImg(event,${idx})">
@@ -2636,14 +2638,15 @@ function renderUploadZone(hostId,idx,label){
 window.dragOverImg=(e,idx)=>{e.preventDefault();const el=document.getElementById('drop-img-'+idx);if(el)el.classList.add('drag-over');};
 window.dropImg=(e,idx)=>{e.preventDefault();const el=document.getElementById('drop-img-'+idx);if(el)el.classList.remove('drag-over');const file=e.dataTransfer.files[0];if(file)chargerImgFile(file,idx);};
 window.chargerImg=(input,idx)=>{if(input.files[0])chargerImgFile(input.files[0],idx);};
-window.clearImg=(idx)=>{if(idx===1){imgFile1=null;imgUrl1='';imgUrlBbox=null;}else{imgFile2=null;imgUrl2='';}const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);if(r)renderUploadZones(r);updateSigUi();};
+window.clearImg=(idx)=>{if(idx===1){imgFile1=null;imgUrl1='';imgUrlBbox=null;if(_imgCache.objURL)URL.revokeObjectURL(_imgCache.objURL);_imgCache={key:'',bm:null,objURL:''};}else{imgFile2=null;imgUrl2='';}const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);if(r)renderUploadZones(r);updateSigUi();};
 window.chargerUrl=(idx)=>{
   const inputId='img-url-'+idx;
   const input=document.getElementById(inputId);if(!input)return;
   const url=input.value.trim();if(!url){alert('Saisissez une URL d\'image valide.');return;}
   if(!url.startsWith('http')){alert('L\'URL doit commencer par https://');return;}
-  if(idx===1){imgUrl1=url;imgFile1=null;imgUrlBbox=extractBboxFromUrl(url);}else{imgUrl2=url;imgFile2=null;}
-  const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);if(r)renderUploadZones(r);updateSigUi();
+  const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);
+  if(idx===1){imgUrl1=url;imgFile1=null;imgUrlBbox=extractBboxFromUrl(url);bitmapFor(url).then(()=>{if(r)renderUploadZones(r);updateSigUi();}).catch(()=>{if(r)renderUploadZones(r);updateSigUi();});}
+  else{imgUrl2=url;imgFile2=null;if(r)renderUploadZones(r);updateSigUi();}
 };
 
 function chargerImgFile(file,idx){
@@ -2652,7 +2655,7 @@ function chargerImgFile(file,idx){
     file._preview=e.target.result;
     file._b64=e.target.result.split(',')[1];
     file._mime=file.type||'image/jpeg';
-    if(idx===1){imgFile1=file;imgUrl1='';imgUrlBbox=null;}else imgFile2=file;
+    if(idx===1){imgFile1=file;imgUrl1='';imgUrlBbox=null;if(_imgCache.objURL)URL.revokeObjectURL(_imgCache.objURL);_imgCache={key:'',bm:null,objURL:''};}else imgFile2=file;
     const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);if(r)renderUploadZones(r);updateSigUi();
   };
   reader.readAsDataURL(file);
@@ -2825,13 +2828,22 @@ function renderSigResult(texte,bbox,meta){
    Ouvrages     : bords (Sobel) + droites (Hough) = formes non naturelles.
 ============================================================ */
 const SIG_MAXDIM=900;
-// Chargement robuste : fetch CORS → blob → ImageBitmap (source same-origin, jamais "tainted",
-// indépendant du cache non-CORS de l'aperçu) — corrige le bug « plus rien ne s'extrait au 2e run ».
-function urlToBitmap(url){return fetch(url,{mode:'cors',cache:'reload'}).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.blob();}).then(bl=>createImageBitmap(bl));}
-function loadImageURL(url){return urlToBitmap(url);}
+// Chargement robuste : fetch CORS → blob → ImageBitmap (same-origin, jamais "tainted").
+// Bitmap + objectURL mis en CACHE : les ré-exécutions ne re-téléchargent pas et l'aperçu
+// s'affiche depuis un blob local (ne disparaît jamais). Corrige le blocage au 2e run.
+let _imgCache={key:'',bm:null,objURL:''};
+async function bitmapFor(url){
+  if(_imgCache.key===url&&_imgCache.bm)return _imgCache.bm;
+  const r=await fetch(url,{mode:'cors'});if(!r.ok)throw new Error('HTTP '+r.status);
+  const bl=await r.blob();
+  if(_imgCache.objURL)URL.revokeObjectURL(_imgCache.objURL);
+  const objURL=URL.createObjectURL(bl);const bm=await createImageBitmap(bl);
+  _imgCache={key:url,bm,objURL};return bm;
+}
+function loadImageURL(url){return bitmapFor(url);}
 function loadImageCV(){
-  if(imgUrl1)return urlToBitmap(imgUrl1);
-  if(imgFile1&&imgFile1._preview)return new Promise((res,rej)=>{const img=new Image();img.onload=()=>res(img);img.onerror=()=>rej(new Error('image illisible'));img.src=imgFile1._preview;});
+  if(imgUrl1)return bitmapFor(imgUrl1);
+  if(imgFile1&&imgFile1._preview)return fetch(imgFile1._preview).then(r=>r.blob()).then(b=>createImageBitmap(b));
   return Promise.reject(new Error('aucune image chargée'));
 }
 function drawCV(img){
@@ -2897,7 +2909,7 @@ function computeWaterMask(im,sens){const {data,w,h}=im,n=w*h;const nd=nodataMask
   const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p]&&!veg[p])?1:0;
   // denoise → ouverture (supprime rivières/tendrils) → garde mer + grands plans d'eau (lagons/atolls)
   return keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h);}
-function shorelinesFromMask(mask,w,h,bad){const minLen=Math.max(24,0.06*Math.max(w,h));return chainSegments(marchingSquares(mask,w,h,bad)).map(l=>simplifyDP(l,1.5)).filter(l=>l.length>=2&&polyLenPx(l)>=minLen);}
+function shorelinesFromMask(mask,w,h,bad){const minLen=Math.max(24,0.06*Math.max(w,h));return chainSegments(marchingSquares(mask,w,h,bad)).map(l=>simplifyDP(l,1.0)).filter(l=>l.length>=2&&polyLenPx(l)>=minLen);}
 
 // Lissage Chaikin (corner-cutting) → trait de côte plus naturel / sub-pixel
 function smoothChaikin(pts,it){if(pts.length<3)return pts;let p=pts;for(let k=0;k<it;k++){const out=[p[0]];for(let i=0;i<p.length-1;i++){const a=p[i],b=p[i+1];out.push([a[0]*0.75+b[0]*0.25,a[1]*0.75+b[1]*0.25]);out.push([a[0]*0.25+b[0]*0.75,a[1]*0.25+b[1]*0.75]);}out.push(p[p.length-1]);p=out;}return p;}
