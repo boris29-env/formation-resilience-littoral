@@ -2633,7 +2633,7 @@ window.lancerAnalyse=async function(){
   try{
     const r=await fetch(cfg.url,{method:'POST',headers:cfg.headers,body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTok,system:routine.systemPrompt,messages:[{role:'user',content}]})});
     const d=await r.json();
-    if(d.error){irBody.className='img-result-body';irBody.innerHTML=`<em>Erreur API : ${(d.error&&d.error.message)||d.error}</em>`;btn.disabled=false;updateSigUi();return;}
+    if(d.error){irBody.className='img-result-body';irBody.innerHTML=`<em>Erreur API : ${(d.error&&d.error.message)||d.error}${d.detail?' — '+d.detail:''}</em>`;btn.disabled=false;updateSigUi();return;}
     const texte=d.content?.[0]?.text||'[Pas de réponse]';
     irBody.className='img-result-body';
     const now=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
