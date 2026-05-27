@@ -110,7 +110,8 @@ section.ps{margin-bottom:76px;scroll-margin-top:72px}
 .sec-intro{font-family:var(--serif);font-size:16.5px;font-style:italic;color:var(--muted);margin-bottom:24px;max-width:700px;line-height:1.6}
 
 /* ===== CARTE ===== */
-.map-layout{display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start}
+.map-layout{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
+#event-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;align-items:start}
 .map-wrap{border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--panel)}
 .map-ctrl-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
 .map-ctrl-bar .mcb-label{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
@@ -122,7 +123,7 @@ section.ps{margin-bottom:76px;scroll-margin-top:72px}
 .map-upload label{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .map-upload input{font-size:12px;cursor:pointer}
 .map-upload button{background:var(--teal);color:#fff;border:none;border-radius:5px;padding:5px 10px;font-size:11px;cursor:pointer}
-.map-side{position:sticky;top:68px}
+.map-side{position:static}
 .event-card{background:var(--navy);color:#fff;border-radius:11px;overflow:hidden;margin-bottom:10px}
 .event-card .ec-head{padding:14px 16px;cursor:pointer;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .event-card .ec-kicker{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#7FD3D9;margin-bottom:4px}
@@ -968,6 +969,7 @@ const EVENTS_DOMMAGEABLES={
 const TERRITOIRES={
   spm:{nom:"Saint-Pierre-et-Miquelon",kicker:"COM · Article 74",statut:"COM, loi organique n° 2007-223 du 21 février 2007",type:"com",region:"atlantique",
     mapCenter:[47.05,-56.30],mapZoom:10,
+    imgDir:[{nom:"Miquelon — le bourg",lat:47.097,lng:-56.380},{nom:"Isthme Miquelon-Langlade",lat:47.043,lng:-56.383},{nom:"Grand Barachois",lat:47.06,lng:-56.34},{nom:"Saint-Pierre — front de mer",lat:46.781,lng:-56.173},{nom:"Île aux Marins",lat:46.778,lng:-56.146},{nom:"Langlade",lat:46.93,lng:-56.30}],
     lede:"6 000 habitants dans l'archipel, 585 au village de Miquelon (AOC media, 2024). La révision partielle du STAU (juillet 2024) a ouvert les zones de report : 1AUh, 1AUm et ND1, avec une OAP n°SM5 dédiée. La Banque des Territoires a rejoint la gouvernance en 2023. Le verrou n'est pas foncier — la réserve est constituée de l'autre côté du pont (cédée par la CT pour 1 € symbolique). Il est financier et politique.",
     facts:[{n:"585",l:"habitants à Miquelon (village exposé, AOC media 2024)"},{n:"Phase 1",l:"Révision partielle STAU juillet 2024 : zones 1AUh, 1AUm, ND1 et OAP n°SM5 approuvées"},{n:"Banque des Territoires",l:"dans la gouvernance depuis 2023 aux côtés de l'État, CT et commune"},{n:"6 résidences",l:"d'ateliers avec les habitants, 2022-2023, pour coconstruire le futur village"}],
     vigilance:"GEMAPI non transposée · Loi Littoral non applicable · Urbanisme et logement : collectivité (STAU 2022) · Environnement et risques : État · CatNat applicable",
@@ -990,6 +992,7 @@ const TERRITOIRES={
 
   wallis:{nom:"Wallis-et-Futuna",kicker:"COM · Article 74",statut:"Collectivité d'outre-mer, loi n° 61-814 du 29 juillet 1961",type:"com",region:"pacifique",
     mapCenter:[-13.28,-176.18],mapZoom:11,
+    imgDir:[{nom:"Wallis — Mata-Utu",lat:-13.282,lng:-176.176},{nom:"Wallis — Gahi / lagon sud",lat:-13.335,lng:-176.165},{nom:"Wallis — Halalo",lat:-13.350,lng:-176.190},{nom:"Wallis — Mua",lat:-13.345,lng:-176.145},{nom:"Futuna — Leava (Sigave)",lat:-14.295,lng:-178.158},{nom:"Futuna — Alo / Ono",lat:-14.311,lng:-178.070},{nom:"Alofi (quasi-inhabitée)",lat:-14.330,lng:-178.060}],
     lede:"Deux archipels du Pacifique Sud. Trois royaumes coutumiers (Uvea, Alo, Sigave). La quasi-totalité des terres est coutumière et inaliénable. Toute recomposition spatiale passe par un accord des royaumes coutumiers.",
     facts:[{n:"~11 200",l:"habitants (ISPF 2018)"},{n:"3 royaumes",l:"coutumiers : Uvea, Alo, Sigave"},{n:"Inaliénable",l:"quasi-totalité des terres (loi 61-814)"},{n:"À évaluer",l:"biens exposés (Cerema, inventaire en cours)"}],
     vigilance:"Terres coutumières inaliénables (loi n° 61-814 du 29 juillet 1961) · Aucun document d'urbanisme opposable · Construction soumise à autorisation préfectorale · Érosion côtière documentée (Aubert, 2017) sur Uvea, liée à des erreurs d'aménagement de la bande côtière · GEMAPI non transposée · Code env. non applicable · PTOM de l'UE (DAO 2021-2027)",
@@ -1009,6 +1012,7 @@ const TERRITOIRES={
 
   nc:{nom:"Nouvelle-Calédonie",kicker:"Collectivité sui generis",statut:"Accord de Nouméa (1998), loi organique n° 99-209 du 19 mars 1999",type:"nc",region:"pacifique",
     mapCenter:[-20.90,167.20],mapZoom:8,
+    imgDir:[{nom:"Ouvéa — Mouli (pont)",lat:-20.720,lng:166.450},{nom:"Ouvéa — Fayaoué",lat:-20.650,lng:166.555},{nom:"Lifou — Wé",lat:-20.912,lng:167.270},{nom:"Maré — Tadine",lat:-21.547,lng:167.880},{nom:"Grande Terre — Nouméa (baie)",lat:-22.280,lng:166.440},{nom:"Île des Pins — Kuto",lat:-22.660,lng:167.450}],
     lede:"Collectivité sui generis. La Chambre Territoriale des Comptes a rendu en 2025 un rapport de 105 pages sur l'érosion côtière en NC : les mesures sont insuffisantes et mal coordonnées. La hausse du niveau marin est de 4,12 mm/an entre 1993 et 2023, supérieure à la moyenne mondiale. L'inventaire Cerema porte sur Grande Terre, Lifou, Maré et Ouvéa.",
     facts:[{n:"4,12 mm/an",l:"hausse niveau mer en NC, 1993-2023 (CTC 2025, vs 3,4 mm mondial)"},{n:"~50 M F.CFP",l:"dépenses érosion côtière NC 2019-2023 (2/3 pour connaissance, CTC 2025)"},{n:"Gladys",l:"Ouvéa : 1re commune NC à tester les pieux bois anti-érosion (courants)"},{n:"36 Mds F.CFP",l:"participation État aux contrats de développement 2024-2027 (fil : transition éco.)"}],
     vigilance:"Urbanisme : compétence conjointe NC (CUNC, principes directeurs) et provinces (PUD provinciaux) · Loi Climat 2021 et Loi Littoral non applicables · CUNC (Code de l'Urbanisme de la Nouvelle-Calédonie) : loi organique 2015, PUD ≈ PLU en compétence provinciale · Terres coutumières kanak inaliénables (LO 99-209, titre IV) · ADRAF (Agence de Développement Rural et Aménagement Foncier) : droit de préemption sur terres agricoles · Sénat coutumier : consultation obligatoire · NC 2025 : Schéma d'Aménagement et de Développement approuvé par le Congrès",
@@ -1028,6 +1032,7 @@ const TERRITOIRES={
 
   drom:{nom:"DROM – cadre commun",kicker:"DROM · Départements et Régions d'outre-mer",statut:"Guadeloupe, Martinique, La Réunion, Mayotte, Guyane",type:"drom",region:"caraibes",
     mapCenter:[18.073,-63.083],mapZoom:12,
+    imgDir:[{nom:"Saint-Martin — Marigot / Baie Orientale",lat:18.073,lng:-63.083},{nom:"Saint-Barthélemy — Gustavia",lat:17.897,lng:-62.852},{nom:"Guadeloupe — Le Moule",lat:16.332,lng:-61.350},{nom:"Guadeloupe — Sainte-Anne",lat:16.227,lng:-61.379},{nom:"Martinique — Le Vauclin",lat:14.547,lng:-60.838},{nom:"Martinique — Le Prêcheur",lat:14.782,lng:-61.220},{nom:"La Réunion — Saint-Gilles / l'Ermitage",lat:-21.080,lng:55.220},{nom:"La Réunion — Saint-André",lat:-20.960,lng:55.650},{nom:"Mayotte — Pamandzi (Petite-Terre)",lat:-12.800,lng:45.280},{nom:"Guyane — Cayenne / Montjoly",lat:4.920,lng:-52.280},{nom:"Guyane — Kourou",lat:5.160,lng:-52.650}],
     lede:"Les cinq DROM concentrent 29 % des résidences principales du territoire français menacées à 2050 (Cerema 2024). Le Cerema estime 5 200 logements touchés à 2050 (1,2 Md€). En Martinique, la zone des 50 pas géométriques (806 ha) est transférée à la CTM au 1er janvier 2025 sous le nom de Biwo bod lanmè Matnik (3 000 dossiers en cours + 2 000 foyers sans titre). À Mayotte, un volcan sous-marin actif depuis 2018 amplifie les phénomènes de submersion.",
     facts:[{n:"5 200",l:"logements menacés à 2050 dans les DROM (Cerema, avril 2024, 1,2 Md€)"},{n:"1er janv. 2025",l:"Biwo bod lanmè Matnik : transfert 50 pas à la CTM de Martinique (806 ha)"},{n:"3 000 + 2 000",l:"dossiers régularisation 50 pas en cours + foyers sans titre (Martinique)"},{n:"2018",l:"Volcan sous-marin à Mayotte : remontée des eaux, submersions devenues mensuelles"}],
     vigilance:"Instruction 2 août 2023 : PPRL sans érosion · Cartes locales d'exposition (loi Climat 2021) pour l'érosion · Bande des 50 pas : régime foncier spécifique Guadeloupe et Martinique · Zones de menace grave pour la vie humaine : identifiées sous l'égide des préfets",
@@ -2466,7 +2471,7 @@ function updateSigUi(){
     const T=TERRITOIRES[TERR_ACTIF]||{};
     if(host&&!host.dataset.filled){
       host.dataset.filled='1';host.innerHTML='';
-      (T.sites||[]).filter(s=>s.lat!=null).forEach(s=>{
+      ((T.imgDir&&T.imgDir.length?T.imgDir:(T.sites||[]))).filter(s=>s.lat!=null).forEach(s=>{
         const b=document.createElement('button');
         b.style.cssText='background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:4px 9px;font-size:11px;cursor:pointer;color:var(--navy)';
         b.textContent='⤵ '+s.nom;
@@ -2493,22 +2498,23 @@ function initImageTerritoireContext(){
   // Pré-remplir la source
   const srcInput=document.getElementById('img-source');
   if(srcInput) srcInput.placeholder='Ex. : Google Maps satellite '+new Date().getFullYear()+', Sentinel Hub, orthophoto IGN…';
-  // Générer les liens Google Maps satellite pour les sites du territoire
+  // Répertoire d'images du territoire (sites côtiers — COM de la lettre de commande)
   const linksHost=document.getElementById('img-gmaps-links');
-  if(!linksHost||!T.sites) return;
+  const dir=(T.imgDir&&T.imgDir.length?T.imgDir:(T.sites||[])).filter(s=>s.lat!=null);
+  if(!linksHost||!dir.length) return;
+  linksHost.innerHTML='<div style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px">Répertoire d\'images — '+dir.length+' sites</div>';
   const seen=new Set();
-  T.sites.filter(s=>s.lat).forEach(s=>{
+  dir.forEach(s=>{
     if(seen.has(s.nom))return;seen.add(s.nom);
-    const zoom=14;
+    const zoom=15;
     const gmUrl=`https://www.google.com/maps/@${s.lat},${s.lng},${zoom}z/data=!3m1!1e3`;
     const nomEsc=s.nom.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    const div=document.createElement('div');div.style.cssText='width:100%';
-    div.innerHTML=`<div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.07em">${s.nom}</div><div style="display:flex;gap:5px;flex-wrap:wrap">
-      <button onclick="chargerOrthoIGN('${s.lat}','${s.lng}','${nomEsc}')" style="background:var(--teal);color:#fff;border:none;border-radius:4px;padding:4px 9px;font-size:11px;font-weight:600;cursor:pointer">⤵ Charger l'orthophoto IGN</button>
-      <a href="${gmUrl}" target="_blank" style="background:var(--navy);color:#fff;border-radius:4px;padding:4px 9px;font-size:11px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px">🗺 Voir Google Maps</a>
+    const div=document.createElement('div');div.style.cssText='width:100%;padding:3px 0;border-top:1px solid var(--line)';
+    div.innerHTML=`<div style="font-size:11.5px;font-weight:600;color:var(--navy);margin-bottom:3px">${s.nom}</div><div style="display:flex;gap:5px;flex-wrap:wrap">
+      <button onclick="chargerOrthoIGN('${s.lat}','${s.lng}','${nomEsc}')" style="background:var(--teal);color:#fff;border:none;border-radius:4px;padding:4px 9px;font-size:11px;font-weight:600;cursor:pointer">⤵ Ortho IGN</button>
+      <a href="${gmUrl}" target="_blank" style="background:var(--navy);color:#fff;border-radius:4px;padding:4px 9px;font-size:11px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px">🗺 Google Maps</a>
     </div>`;
     linksHost.appendChild(div);
-    if(T.sites.filter(x=>x.lat).length>1){const hr=document.createElement('div');hr.style.cssText='height:1px;background:var(--line);margin:6px 0';linksHost.appendChild(hr);}
   });
 }
 
@@ -2987,7 +2993,7 @@ window.viderCumul=function(){if(!_sigCumul.features.length)return;if(!confirm('V
 
 let _batchStop=false;
 window.traiterTousSites=async function(){
-  const T=TERRITOIRES[TERR_ACTIF]||{};const sites=(T.sites||[]).filter(s=>s.lat!=null);
+  const T=TERRITOIRES[TERR_ACTIF]||{};const sites=((T.imgDir&&T.imgDir.length?T.imgDir:(T.sites||[]))).filter(s=>s.lat!=null);
   if(!sites.length){alert('Aucun site géolocalisé pour ce territoire.');return;}
   const btn=document.getElementById('img-batch-btn'),btn2=document.getElementById('img-sig-btn');
   // Deuxième clic = arrêt
