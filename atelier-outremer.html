@@ -2446,7 +2446,8 @@ function construireImageModule(){
           <span id="sig-cumul-count" style="font-size:12px;font-weight:600;color:var(--navy)">Couche cumulée : 0</span>
           <span style="display:flex;gap:6px;flex-wrap:wrap">
             <button onclick="cumulSurCarte()" style="background:var(--navy);color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer">Carte</button>
-            <button onclick="telechargerCumul()" style="background:var(--teal);color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer">Télécharger</button>
+            <button onclick="telechargerCumul()" style="background:var(--teal);color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer">GeoJSON</button>
+            <button onclick="telechargerCumulCSV()" style="background:var(--teal);color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer">CSV</button>
             <button onclick="viderCumul()" style="background:var(--terra);color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer">Vider</button>
           </span>
         </div>
@@ -2861,6 +2862,20 @@ function simplifyDP(pts,eps){if(pts.length<3)return pts;let dmax=0,idx=0;const a
 function otsu(sc,lo,hi){const B=64,H=new Array(B).fill(0),sp=(hi-lo)||1;for(let i=0;i<sc.length;i++){let b=Math.floor((sc[i]-lo)/sp*B);if(b<0)b=0;if(b>=B)b=B-1;H[b]++;}const tot=sc.length;let sum=0;for(let b=0;b<B;b++)sum+=b*H[b];let sB=0,wB=0,mx=-1,thr=B>>1;for(let b=0;b<B;b++){wB+=H[b];if(!wB)continue;const wF=tot-wB;if(!wF)break;sB+=b*H[b];const mB=sB/wB,mF=(sum-sB)/wF,v=wB*wF*(mB-mF)*(mB-mF);if(v>mx){mx=v;thr=b;}}return lo+(thr+0.5)/B*sp;}
 function keepBorderConnected(mask,w,h){const out=new Uint8Array(w*h),st=[];const push=(x,y)=>{const p=y*w+x;if(mask[p]&&!out[p]){out[p]=1;st.push(p);}};for(let x=0;x<w;x++){push(x,0);push(x,h-1);}for(let y=0;y<h;y++){push(0,y);push(w-1,y);}while(st.length){const p=st.pop(),x=p%w,y=(p-x)/w;if(x>0)push(x-1,y);if(x<w-1)push(x+1,y);if(y>0)push(x,y-1);if(y<h-1)push(x,y+1);}return out;}
 function dilate(mask,w,h,k){const tmp=new Uint8Array(w*h),out=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){let v=0;for(let dx=-k;dx<=k;dx++){const xx=x+dx;if(xx>=0&&xx<w&&mask[y*w+xx]){v=1;break;}}tmp[y*w+x]=v;}for(let x=0;x<w;x++)for(let y=0;y<h;y++){let v=0;for(let dy=-k;dy<=k;dy++){const yy=y+dy;if(yy>=0&&yy<h&&tmp[yy*w+x]){v=1;break;}}out[y*w+x]=v;}return out;}
+function erodeMask(mask,w,h,k){const tmp=new Uint8Array(w*h),out=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){let v=1;for(let dx=-k;dx<=k;dx++){const xx=x+dx;if(xx<0||xx>=w||!mask[y*w+xx]){v=0;break;}}tmp[y*w+x]=v;}for(let x=0;x<w;x++)for(let y=0;y<h;y++){let v=1;for(let dy=-k;dy<=k;dy++){const yy=y+dy;if(yy<0||yy>=h||!tmp[yy*w+x]){v=0;break;}}out[y*w+x]=v;}return out;}
+function openMask(mask,w,h,k){return dilate(erodeMask(mask,w,h,k),w,h,k);} // ouverture morpho : supprime les tendrils fins (rivières, bruit)
+// Garde les composantes d'eau touchant le bord (mer ouverte) OU assez grandes (lagons / atolls fermés), écarte les petites taches (ombres, mares).
+function keepSeaComponents(mask,w,h){const lab=new Int32Array(w*h);let cur=0;const comp=[];const st=[];
+  for(let p0=0;p0<w*h;p0++){if(!mask[p0]||lab[p0])continue;cur++;let area=0,border=false;st.length=0;st.push(p0);lab[p0]=cur;
+    while(st.length){const p=st.pop();area++;const x=p%w,y=(p-x)/w;if(x===0||y===0||x===w-1||y===h-1)border=true;
+      if(x>0&&mask[p-1]&&!lab[p-1]){lab[p-1]=cur;st.push(p-1);}
+      if(x<w-1&&mask[p+1]&&!lab[p+1]){lab[p+1]=cur;st.push(p+1);}
+      if(y>0&&mask[p-w]&&!lab[p-w]){lab[p-w]=cur;st.push(p-w);}
+      if(y<h-1&&mask[p+w]&&!lab[p+w]){lab[p+w]=cur;st.push(p+w);}}
+    comp[cur]={area,border};}
+  const minArea=Math.max(80,0.01*w*h);const out=new Uint8Array(w*h);
+  for(let p=0;p<w*h;p++){const c=comp[lab[p]];if(c&&(c.border||c.area>=minArea))out[p]=1;}
+  return out;}
 // Pixels "no-data" de l'ortho (dalles blanches hors couverture, ou noir total) :
 // à exclure pour ne pas tracer le bord de dalle ni créer de faux ouvrages.
 function nodataMask(im){const {data,w,h}=im;const nd=new Uint8Array(w*h);for(let i=0,p=0;p<w*h;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];if((r>248&&g>248&&b>248)||(r<7&&g<7&&b<7))nd[p]=1;}return nd;}
@@ -2871,7 +2886,8 @@ function computeWaterMask(im,sens){const {data,w,h}=im,n=w*h;const nd=nodataMask
     if(g>r && (g-b)>18 && g>45)veg[p]=1;}
   let thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);
   const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p]&&!veg[p])?1:0;
-  return keepBorderConnected(majority(m,w,h),w,h);}
+  // denoise → ouverture (supprime rivières/tendrils) → garde mer + grands plans d'eau (lagons/atolls)
+  return keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h);}
 function shorelinesFromMask(mask,w,h,bad){const minLen=Math.max(24,0.06*Math.max(w,h));return chainSegments(marchingSquares(mask,w,h,bad)).map(l=>simplifyDP(l,1.5)).filter(l=>l.length>=2&&polyLenPx(l)>=minLen);}
 function buildShoreVerts(lines){const V=[];for(const l of lines)for(let i=0;i<l.length;i++){const a=l[Math.max(0,i-1)],b=l[Math.min(l.length-1,i+1)];let tx=b[0]-a[0],ty=b[1]-a[1];const L=Math.hypot(tx,ty)||1;V.push({x:l[i][0],y:l[i][1],tx:tx/L,ty:ty/L});}return V;}
 function nearestShore(V,x,y){let best=null,bd=1e18;for(const v of V){const d=(v.x-x)*(v.x-x)+(v.y-y)*(v.y-y);if(d<bd){bd=d;best=v;}}return best?{v:best,dist:Math.sqrt(bd)}:null;}
@@ -3073,6 +3089,14 @@ function addToCumul(features,meta){const d=new Date().toLocaleDateString('fr-FR'
 function refreshCumulBar(){const bar=document.getElementById('sig-cumul-bar');if(!bar)return;const n=_sigCumul.features.length;bar.style.display=n?'block':'none';const c=document.getElementById('sig-cumul-count');if(c)c.textContent='Couche cumulée : '+n+' entité'+(n>1?'s':'');}
 window.cumulSurCarte=function(){if(!_sigCumul.features.length){alert('Couche cumulée vide.');return;}if(!mapInstance){alert('Carte non initialisée — ouvrez la section « Carte ».');return;}ajouterGeojsonLayer(JSON.stringify(_sigCumul),'SIG cumulé ('+_sigCumul.features.length+')');document.getElementById('sec-carte').scrollIntoView({behavior:'smooth'});};
 window.telechargerCumul=function(){if(!_sigCumul.features.length){alert('Couche cumulée vide.');return;}const blob=new Blob([JSON.stringify(_sigCumul,null,2)],{type:'application/geo+json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='sig_cumul_'+(TERR_ACTIF||'territoire')+'_'+new Date().toLocaleDateString('fr-FR').replace(/\//g,'-')+'.geojson';a.click();URL.revokeObjectURL(url);};
+// Export CSV+WKT (import direct dans QGIS : « Add Delimited Text Layer », géométrie WKT)
+function geojsonToCSV(fc){const props=new Set();fc.features.forEach(f=>Object.keys(f.properties||{}).forEach(k=>props.add(k)));const cols=[...props];
+  const wkt=g=>{if(!g)return'';if(g.type==='Point')return'POINT('+g.coordinates[0]+' '+g.coordinates[1]+')';if(g.type==='LineString')return'LINESTRING('+g.coordinates.map(c=>c[0]+' '+c[1]).join(', ')+')';if(g.type==='Polygon')return'POLYGON(('+(g.coordinates[0]||[]).map(c=>c[0]+' '+c[1]).join(', ')+'))';return'';};
+  const esc=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const rows=['WKT;'+cols.join(';')];
+  fc.features.forEach(f=>rows.push(esc(wkt(f.geometry))+';'+cols.map(k=>esc((f.properties||{})[k])).join(';')));
+  return rows.join('\r\n');}
+window.telechargerCumulCSV=function(){if(!_sigCumul.features.length){alert('Couche cumulée vide.');return;}const blob=new Blob(['﻿'+geojsonToCSV(_sigCumul)],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='sig_cumul_'+(TERR_ACTIF||'territoire')+'_'+new Date().toLocaleDateString('fr-FR').replace(/\//g,'-')+'.csv';a.click();URL.revokeObjectURL(url);};
 window.viderCumul=function(){if(!_sigCumul.features.length)return;if(!confirm('Vider la couche cumulée ('+_sigCumul.features.length+' entités) ?'))return;_sigCumul={type:'FeatureCollection',name:'sig_cumul',features:[]};refreshCumulBar();};
 
 let _batchStop=false;
