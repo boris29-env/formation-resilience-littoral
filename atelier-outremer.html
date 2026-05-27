@@ -701,7 +701,7 @@ svg.house{width:100%;max-width:290px;height:auto}
     <!-- ANALYSE D'IMAGES CÔTIÈRES -->
     <section class="ps" id="sec-image">
       <div class="sec-hd"><span class="sec-num">07</span><h2 class="sec-title">Analyse automatique d'images côtières</h2></div>
-      <div class="sec-intro">Identification des ouvrages côtiers, caractérisation du trait de côte, comparaison temporelle. Les résultats sont indicatifs et ne remplacent pas un levé de terrain ou une analyse photogrammétrique. Modèle : Claude Sonnet 4 (vision).</div>
+      <div class="sec-intro">Extraction de données SIG (GeoJSON géoréférencé) par photo-interprétation : repérage planimétrique des ouvrages côtiers et du trait de côte. Repérage <b>indicatif</b> — positions approximatives, sans évaluation d'état d'ouvrage ni d'altitude (non déterminables depuis une image optique) ; à valider par un levé de terrain. Modèle vision : Pixtral (via proxy).</div>
       <div id="image-module"></div>
     </section>
 
@@ -2159,7 +2159,13 @@ window.speakMsg = function(btn, text, voiceId) {
 const SIG_FORMAT=`GÉORÉFÉRENCEMENT : l'emprise (bbox WGS84) est fournie sous la forme ouest(lng_min), sud(lat_min), est(lng_max), nord(lat_max). Bord gauche=ouest, droit=est, haut=nord, bas=sud. Estime chaque coordonnée par interpolation de la position visuelle dans l'image vers l'emprise. Les coordonnées DOIVENT rester dans l'emprise, ordre [longitude, latitude], WGS84.
 
 FORMAT DE SORTIE (IMPÉRATIF) : réponds UNIQUEMENT par un objet JSON valide, rien d'autre — aucun texte avant/après, pas de balises markdown, pas de \`\`\`.
-{ "type":"FeatureCollection", "name":"extraction_sig", "features":[ { "type":"Feature", "geometry":{ "type":"Point|LineString|Polygon", "coordinates": ... }, "properties":{ "type":"<classe Cerema>", "etat":"bon|dégradé|fortement dégradé|indéterminable", "longueur_m_est":<nombre ou null>, "certitude":"élevée|modérée|faible", "methode":"photo-interprétation", "source":"<réf>", "commentaire":"<court>" } } ] }
+{ "type":"FeatureCollection", "name":"extraction_sig", "features":[ { "type":"Feature", "geometry":{ "type":"Point|LineString|Polygon", "coordinates": ... }, "properties":{ "type":"<classe Cerema>", "longueur_m_est":<nombre ou null>, "certitude":"élevée|modérée|faible", "methode":"photo-interprétation", "source":"<réf>", "commentaire":"<court>" } } ] }
+
+LIMITES IMPÉRATIVES (image optique vue du dessus uniquement) :
+- N'attribue JAMAIS d'état ou de niveau de dégradation à un ouvrage : non déterminable sans inspection de terrain.
+- N'identifie AUCUNE zone "basse", "inondable" ou "submersible" : l'altitude n'est pas observable sur une image optique (il faut un MNT/LiDAR).
+- Tu ne décris que ce qui est directement visible : présence, emprise et géométrie planimétrique des objets.
+- "certitude" porte sur la fiabilité de l'interprétation visuelle, pas sur un état physique.
 
 NIVEAUX D'IMBRICATION DES COORDONNÉES (respecte-les EXACTEMENT) :
 - Point      : [lng, lat]
@@ -2172,7 +2178,7 @@ const IMG_ROUTINES=[
   {id:'ouvrages',
    icon:'🪨',
    label:'Ouvrages côtiers',
-   sublabel:'Identification et état apparent',
+   sublabel:'Repérage planimétrique → SIG',
    desc:"Détecte et classifie les ouvrages de protection côtière visibles. Évalue leur état apparent et leur efficacité probable.",
    twoImages:false,
    systemPrompt:`Tu es un expert en génie côtier et ouvrages de protection du littoral, appliquant la terminologie et les méthodes du Cerema (France). Tu analyses une image aérienne ou photographique d'un site côtier d'outre-mer.
@@ -2211,11 +2217,11 @@ STRUCTURE DE TA RÉPONSE (en français, sans quadratin) :
 
 Méthodes de référence : Cerema, Guide méthodologique de suivi du trait de côte (2018) ; Cerema, Référentiel technique ouvrages de protection (2021).
 Rappel : cette analyse est indicative et ne remplace pas un diagnostic terrain.`,
-   sigSystemPrompt:`Tu es un opérateur de photo-interprétation côtière (terminologie Cerema). À partir de l'image aérienne/satellite et de l'emprise fournie, extrais en GeoJSON les OUVRAGES CÔTIERS visibles : digue (LineString), enrochement/perré (LineString), épi (LineString), brise-lames (LineString ou Polygon), jetée/môle (LineString), ouvrage ponctuel ou point d'altération (Point). Renseigne pour chacun son type Cerema, son état apparent et la certitude.
+   sigSystemPrompt:`Tu es un opérateur de photo-interprétation côtière (terminologie Cerema). À partir de l'image aérienne/satellite et de l'emprise fournie, extrais en GeoJSON les OUVRAGES CÔTIERS visibles : digue (LineString), enrochement/perré (LineString), épi (LineString), brise-lames (LineString ou Polygon), jetée/môle (LineString). Renseigne uniquement le type Cerema (ce que tu vois) et la certitude d'interprétation. Tu n'évalues NI l'état NI la dégradation de l'ouvrage : c'est impossible depuis une image et relève d'une inspection de terrain.
 
 `+SIG_FORMAT+`
 
-Méthode : Cerema, Référentiel technique ouvrages de protection (2021). Sortie indicative, à valider sur le terrain.`},
+Méthode : Cerema, Référentiel technique ouvrages de protection (2021). Sortie indicative (repérage planimétrique), à valider sur le terrain.`},
 
   {id:'trait_cote',
    icon:'🌊',
@@ -2265,11 +2271,11 @@ STRUCTURE DE TA RÉPONSE :
 
 Méthodes : Cerema, Guide méthodologique de suivi du trait de côte (2018) ; SHOM, délimitation des laissées de haute mer ; EUROSION (2004), classification des côtes européennes.
 Rappel : cette analyse est indicative et ne remplace pas un relevé GPS/GNSS ni une analyse photogrammétrique.`,
-   sigSystemPrompt:`Tu es un opérateur de photo-interprétation côtière (terminologie Cerema). À partir de l'image aérienne/satellite et de l'emprise fournie, extrais en GeoJSON : le TRAIT DE CÔTE en LineString (laisse de haute mer, ou à défaut pied de dune / pied de falaise / limite végétation-plage) ; et les zones associées en Polygon (plage, mangrove, zone basse apparemment submersible). Renseigne pour chaque entité son type, son état/morphologie et la certitude.
+   sigSystemPrompt:`Tu es un opérateur de photo-interprétation côtière (terminologie Cerema). À partir de l'image aérienne/satellite et de l'emprise fournie, extrais en GeoJSON : le TRAIT DE CÔTE en LineString (limite terre/eau visible : laisse de haute mer, ou à défaut limite végétation-plage / pied de dune / pied de falaise) ; et, en Polygon, les COUVERTURES DU SOL directement visibles (plage/sable, mangrove, végétation). Renseigne uniquement le type (ce que tu vois) et la certitude d'interprétation. N'identifie AUCUNE zone basse/inondable/submersible : l'altitude n'est pas observable sur une image (cela exige un MNT/LiDAR).
 
 `+SIG_FORMAT+`
 
-Méthode : Cerema, Guide méthodologique de suivi du trait de côte (2018) ; SHOM. Sortie indicative, à valider sur le terrain.`},
+Méthode : Cerema, Guide méthodologique de suivi du trait de côte (2018) ; SHOM. Sortie indicative (repérage planimétrique), à valider sur le terrain.`},
 ];
 
 // État du module image
@@ -2329,10 +2335,7 @@ function construireImageModule(){
         </div>
         <div id="img-gmaps-links" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:5px"></div>
       </div>
-      <div style="display:flex;gap:8px">
-        <button class="img-analyse-btn" id="img-analyse-btn" onclick="lancerAnalyse('analyse')" style="flex:1">🔍 Analyser (texte)</button>
-        <button class="img-analyse-btn" id="img-sig-btn" onclick="lancerAnalyse('sig')" style="flex:1;background:var(--teal)">🗺️ Extraire en SIG</button>
-      </div>
+      <button class="img-analyse-btn" id="img-sig-btn" onclick="lancerAnalyse('sig')" style="background:var(--teal)">🗺️ Extraire la couche SIG (GeoJSON)</button>
       <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:7px;line-height:1.5">Vision via proxy sécurisé (worker → Pixtral), aucune clé requise · Résultats indicatifs, à valider sur le terrain</div>
     </div>
     <div>
@@ -2627,12 +2630,17 @@ function renderSigResult(texte,bbox,meta){
     irBody.innerHTML=`<em>Le modèle n'a pas renvoyé un GeoJSON exploitable.</em><pre style="white-space:pre-wrap;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:8px;max-height:200px;overflow:auto">${(texte||'').replace(/[<>]/g,'')}</pre>`;
     _lastSigGeojson=null;return -1;
   }
-  // Normalise chaque géométrie (corrige les imbrications) et écarte les invalides
+  // Restreint une coordonnée à l'emprise (évite les points aberrants hors cadre)
+  const clampPos=p=>[Math.min(Math.max(p[0],bbox.w),bbox.e),Math.min(Math.max(p[1],bbox.s),bbox.n)];
+  const clampCoords=c=>(Array.isArray(c[0])?c.map(clampCoords):clampPos(c));
+  // Normalise chaque géométrie (corrige les imbrications), clampe à l'emprise, écarte les invalides
   gj.features=gj.features.map(f=>{
     if(!f||!f.geometry)return null;
     const ng=normalizeGeometry(f.geometry);
     if(!ng)return null;
-    return {type:'Feature',geometry:ng,properties:f.properties||{}};
+    ng.coordinates=clampCoords(ng.coordinates);
+    const p=f.properties||{};delete p.etat; // attribut non déterminable depuis l'image
+    return {type:'Feature',geometry:ng,properties:p};
   }).filter(Boolean);
   // GeoJSON standard WGS84 : pas de membre crs (CRS84 par défaut)
   delete gj.crs;
@@ -2643,14 +2651,14 @@ function renderSigResult(texte,bbox,meta){
   }
   const rows=gj.features.map((f,i)=>{
     const p=f.properties||{};
-    return `<tr style="border-top:1px solid var(--line)"><td style="padding:4px 6px;font-family:var(--mono);font-size:10px">${i+1}</td><td style="padding:4px 6px;font-size:11px;color:var(--navy);font-weight:600">${p.type||f.geometry.type}</td><td style="padding:4px 6px;font-size:11px">${p.etat||'—'}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;text-align:right">${p.longueur_m_est!=null?p.longueur_m_est+' m':'—'}</td><td style="padding:4px 6px"><span class="cert ${(p.certitude||'').indexOf('élev')>=0?'high':(p.certitude||'').indexOf('faible')>=0?'low':'med'}">${p.certitude||'—'}</span></td></tr>`;
+    return `<tr style="border-top:1px solid var(--line)"><td style="padding:4px 6px;font-family:var(--mono);font-size:10px">${i+1}</td><td style="padding:4px 6px;font-size:11px;color:var(--navy);font-weight:600">${p.type||f.geometry.type}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;color:var(--muted)">${f.geometry.type}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;text-align:right">${p.longueur_m_est!=null?p.longueur_m_est+' m':'—'}</td><td style="padding:4px 6px"><span class="cert ${(p.certitude||'').indexOf('élev')>=0?'high':(p.certitude||'').indexOf('faible')>=0?'low':'med'}">${p.certitude||'—'}</span></td></tr>`;
   }).join('');
   irBody.innerHTML=`
     <div class="img-result-section"><h4>Couche SIG extraite · ${gj.features.length} entité(s)</h4>
-      <p style="font-size:11.5px;color:var(--muted)">Emprise WGS84 : ${bbox.w}, ${bbox.s} → ${bbox.e}, ${bbox.n}. Coordonnées indicatives par photo-interprétation, à valider sur le terrain.</p>
+      <p style="font-size:11.5px;color:var(--muted)">Emprise WGS84 : ${bbox.w}, ${bbox.s} → ${bbox.e}, ${bbox.n}. Repérage <b>planimétrique</b> par photo-interprétation : positions approximatives, à valider sur le terrain. Aucune évaluation d'état d'ouvrage ni d'altitude (zones basses) — non déterminables depuis une image optique.</p>
     </div>
     <div style="overflow:auto;border:1px solid var(--line);border-radius:7px">
-      <table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--soft)"><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">#</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Type</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">État</th><th style="padding:5px 6px;text-align:right;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Long. est.</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Certitude</th></tr></thead><tbody>${rows||'<tr><td colspan="5" style="padding:8px;color:var(--muted);font-style:italic">Aucune entité.</td></tr>'}</tbody></table>
+      <table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--soft)"><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">#</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Type</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Géom.</th><th style="padding:5px 6px;text-align:right;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Long. est.</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Certitude</th></tr></thead><tbody>${rows||'<tr><td colspan="5" style="padding:8px;color:var(--muted);font-style:italic">Aucune entité.</td></tr>'}</tbody></table>
     </div>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
       <button onclick="chargerSigSurCarte()" style="background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Afficher sur la carte</button>
