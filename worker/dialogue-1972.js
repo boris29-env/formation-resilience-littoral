@@ -113,7 +113,7 @@ async function inlineRemoteImages(messages) {
     if (!Array.isArray(m.content)) continue;
     for (const part of m.content) {
       if (part && part.type === 'image_url' && typeof part.image_url === 'string' && /^https?:/i.test(part.image_url)) {
-        const resp = await fetch(part.image_url, { headers: { 'Accept': 'image/*' } });
+        const resp = await fetch(part.image_url, { headers: { 'Accept': 'image/*', 'User-Agent': 'Mozilla/5.0 (compatible; AtelierLittoralBot/1.0; +https://boris29-env.github.io)' } });
         if (!resp.ok) throw new Error("image inaccessible (HTTP " + resp.status + ") : " + part.image_url);
         const ct = (resp.headers.get('Content-Type') || '').split(';')[0].trim() || 'image/jpeg';
         if (!ct.startsWith('image/')) throw new Error("l'URL ne renvoie pas une image (type " + ct + "). Vérifiez le lien (orthophoto/satellite direct).");
