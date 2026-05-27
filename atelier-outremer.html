@@ -2039,11 +2039,6 @@ function pushDiToFb(){
 }
 
 window.toggleCas=id=>{document.getElementById(id).classList.toggle('open');};
-let selectedRoute=null;
-window.selectRoute=(el,code)=>{document.querySelectorAll('.route-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');selectedRoute=code;};
-window.soumettreRoutage=()=>{if(!selectedRoute){alert('Choisissez une option (A, T, P ou R).');return;}if(!window._FB||!GRP_ACTIF){alert('Firebase non disponible.');return;}
-  const labels={A:'Adapter sur place',T:'Transformer et relocaliser',P:'Assumer la perte',R:'Rester et surveiller'};
-  window._FB.setVal('routing/'+GRP_ACTIF,{code:selectedRoute,label:labels[selectedRoute],grp:GRP_ACTIF,ts:Date.now()}).then(()=>{collectRoutage(selectedRoute,labels[selectedRoute]);document.getElementById('route-dot').className='vote-dot synced';document.getElementById('route-txt').textContent='Vote soumis : '+labels[selectedRoute]+' · Firebase synchronisé';}).catch(()=>{document.getElementById('route-dot').className='vote-dot';document.getElementById('route-txt').textContent='Erreur de synchronisation Firebase.';});};
 
 /* ============================================================
    VOIX DU CLIMAT
@@ -2877,7 +2872,6 @@ function simplifyDP(pts,eps){if(pts.length<3)return pts;let dmax=0,idx=0;const a
        on ne garde que la mer connectée au bord de l'image (supprime ombres/
        plans d'eau intérieurs parasites). --- */
 function otsu(sc,lo,hi){const B=64,H=new Array(B).fill(0),sp=(hi-lo)||1;for(let i=0;i<sc.length;i++){let b=Math.floor((sc[i]-lo)/sp*B);if(b<0)b=0;if(b>=B)b=B-1;H[b]++;}const tot=sc.length;let sum=0;for(let b=0;b<B;b++)sum+=b*H[b];let sB=0,wB=0,mx=-1,thr=B>>1;for(let b=0;b<B;b++){wB+=H[b];if(!wB)continue;const wF=tot-wB;if(!wF)break;sB+=b*H[b];const mB=sB/wB,mF=(sum-sB)/wF,v=wB*wF*(mB-mF)*(mB-mF);if(v>mx){mx=v;thr=b;}}return lo+(thr+0.5)/B*sp;}
-function keepBorderConnected(mask,w,h){const out=new Uint8Array(w*h),st=[];const push=(x,y)=>{const p=y*w+x;if(mask[p]&&!out[p]){out[p]=1;st.push(p);}};for(let x=0;x<w;x++){push(x,0);push(x,h-1);}for(let y=0;y<h;y++){push(0,y);push(w-1,y);}while(st.length){const p=st.pop(),x=p%w,y=(p-x)/w;if(x>0)push(x-1,y);if(x<w-1)push(x+1,y);if(y>0)push(x,y-1);if(y<h-1)push(x,y+1);}return out;}
 function dilate(mask,w,h,k){const tmp=new Uint8Array(w*h),out=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){let v=0;for(let dx=-k;dx<=k;dx++){const xx=x+dx;if(xx>=0&&xx<w&&mask[y*w+xx]){v=1;break;}}tmp[y*w+x]=v;}for(let x=0;x<w;x++)for(let y=0;y<h;y++){let v=0;for(let dy=-k;dy<=k;dy++){const yy=y+dy;if(yy>=0&&yy<h&&tmp[yy*w+x]){v=1;break;}}out[y*w+x]=v;}return out;}
 function erodeMask(mask,w,h,k){const tmp=new Uint8Array(w*h),out=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){let v=1;for(let dx=-k;dx<=k;dx++){const xx=x+dx;if(xx<0||xx>=w||!mask[y*w+xx]){v=0;break;}}tmp[y*w+x]=v;}for(let x=0;x<w;x++)for(let y=0;y<h;y++){let v=1;for(let dy=-k;dy<=k;dy++){const yy=y+dy;if(yy<0||yy>=h||!tmp[yy*w+x]){v=0;break;}}out[y*w+x]=v;}return out;}
 function openMask(mask,w,h,k){return dilate(erodeMask(mask,w,h,k),w,h,k);} // ouverture morpho : supprime les tendrils fins (rivières, bruit)
@@ -2906,8 +2900,6 @@ function computeWaterMask(im,sens){const {data,w,h}=im,n=w*h;const nd=nodataMask
   // denoise → ouverture (supprime rivières/tendrils) → garde mer + grands plans d'eau (lagons/atolls)
   return keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h);}
 function shorelinesFromMask(mask,w,h,bad){const minLen=Math.max(24,0.06*Math.max(w,h));return chainSegments(marchingSquares(mask,w,h,bad)).map(l=>simplifyDP(l,1.5)).filter(l=>l.length>=2&&polyLenPx(l)>=minLen);}
-function buildShoreVerts(lines){const V=[];for(const l of lines)for(let i=0;i<l.length;i++){const a=l[Math.max(0,i-1)],b=l[Math.min(l.length-1,i+1)];let tx=b[0]-a[0],ty=b[1]-a[1];const L=Math.hypot(tx,ty)||1;V.push({x:l[i][0],y:l[i][1],tx:tx/L,ty:ty/L});}return V;}
-function nearestShore(V,x,y){let best=null,bd=1e18;for(const v of V){const d=(v.x-x)*(v.x-x)+(v.y-y)*(v.y-y);if(d<bd){bd=d;best=v;}}return best?{v:best,dist:Math.sqrt(bd)}:null;}
 
 function extraireTraitDeCote(im,bbox,sens){
   const nd=nodataMask(im);
@@ -2917,9 +2909,6 @@ function extraireTraitDeCote(im,bbox,sens){
 }
 
 /* --- bords + droites (Hough) pour les ouvrages --- */
-function sobelMag(im){const {data,w,h}=im;const gray=new Float32Array(w*h);for(let i=0,p=0;p<w*h;i+=4,p++)gray[p]=0.299*data[i]+0.587*data[i+1]+0.114*data[i+2];const g=new Float32Array(w*h);for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const o=y*w+x;const gx=-gray[o-w-1]-2*gray[o-1]-gray[o+w-1]+gray[o-w+1]+2*gray[o+1]+gray[o+w+1];const gy=-gray[o-w-1]-2*gray[o-w]-gray[o-w+1]+gray[o+w-1]+2*gray[o+w]+gray[o+w+1];g[o]=Math.hypot(gx,gy);}return g;}
-function _near(eset,w,h,x,y){for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const xx=x+dx,yy=y+dy;if(xx>=0&&yy>=0&&xx<w&&yy<h&&eset[yy*w+xx])return true;}return false;}
-function _longestRun(pts,gap){if(!pts.length)return null;let best=null,bestLen=-1,start=0;for(let i=1;i<=pts.length;i++){const brk=(i===pts.length)||(Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1])>gap);if(brk){const run=pts.slice(start,i);const s=[run[0],run[run.length-1]];const L=segLenPx(s);if(L>bestLen){bestLen=L;best=s;}start=i;}}return best;}
 function extraireOuvrages(im,bbox,sens){
   // Méthode robuste, ancrée dans la photo-interprétation : un littoral NATUREL est
   // sinueux ; un ouvrage longitudinal (digue, perré, enrochement) RECTILINÉARISE le
@@ -3205,6 +3194,7 @@ window.traiterTousSites=async function(){
     if(_batchStop)break;
     if(btn)btn.textContent='⏹ Arrêter ('+(done+1)+'/'+total+')';
     irBody.className='img-result-body loading';irBody.textContent='Couverture du territoire : tuile '+(done+1)+'/'+total+'…';
+    await new Promise(r=>setTimeout(r,0)); // rend la main à l'UI (pas de gel pendant le batch)
     try{
       const b=bboxAutour(t.lat,t.lng,sizeM);
       const img=await loadImageURL(ignOrthoUrl(b));
