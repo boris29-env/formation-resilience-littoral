@@ -2380,7 +2380,25 @@ Rappel (à ne PAS inclure dans le JSON) : la précision dépend de l'orthorectif
 let imgRoutineActive='ouvrages';
 let imgFile1=null,imgFile2=null;
 let imgUrl1='',imgUrl2='';
+let imgUrlBbox=null; // emprise déduite de l'URL chargée (image 1)
 const imgHistory=[];
+
+// Extrait une bbox {w,s,e,n} d'une URL de type WMS GetMap (paramètre BBOX)
+function extractBboxFromUrl(url){
+  try{
+    const u=new URL(url);let bboxStr=null,crs=null;
+    u.searchParams.forEach((v,k)=>{const kl=k.toLowerCase();if(kl==='bbox')bboxStr=v;if(kl==='crs'||kl==='srs')crs=v;});
+    if(!bboxStr)return null;
+    const p=bboxStr.split(',').map(parseFloat);
+    if(p.length<4||p.slice(0,4).some(isNaN))return null;
+    const lonLat={w:p[0],s:p[1],e:p[2],n:p[3]};        // ordre minx,miny,maxx,maxy (lon,lat)
+    const latLon={s:p[0],w:p[1],n:p[2],e:p[3]};        // ordre WMS1.3 EPSG:4326 (lat,lon)
+    const ok=b=>Math.abs(b.s)<=90&&Math.abs(b.n)<=90&&Math.abs(b.w)<=180&&Math.abs(b.e)<=180&&b.w<b.e&&b.s<b.n;
+    if(ok(lonLat))return lonLat;
+    if(ok({w:latLon.w,s:latLon.s,e:latLon.e,n:latLon.n}))return {w:latLon.w,s:latLon.s,e:latLon.e,n:latLon.n};
+    return null;
+  }catch(e){return null;}
+}
 
 function construireImageModule(){
   const host=document.getElementById('image-module');
@@ -2398,8 +2416,12 @@ function construireImageModule(){
         <input type="text" id="img-site" placeholder="Site à analyser…">
         <label>Observation spécifique à rechercher</label>
         <textarea id="img-context" placeholder="Ex. : État de la digue, signes d'érosion, brèche éventuelle…" style="min-height:48px"></textarea>
+        <div id="img-bbox-auto" style="display:none;margin-top:6px;border-top:1px dashed var(--line);padding-top:8px">
+          <label>Emprise géographique (SIG)</label>
+          <div style="background:#E2F0E8;border:1px solid #BcdCC8;border-radius:6px;padding:7px 10px;font-size:11.5px;color:var(--green)">📍 Emprise déduite automatiquement de l'URL chargée.<br><span id="img-bbox-auto-val" style="font-family:var(--mono);font-size:10px;color:var(--ink)"></span></div>
+        </div>
         <div id="img-bbox-wrap" style="display:none;margin-top:6px;border-top:1px dashed var(--line);padding-top:8px">
-          <label>Emprise géographique (bbox WGS84) — requise pour la sortie SIG</label>
+          <label>Emprise géographique (bbox WGS84) — requise pour la sortie SIG d'une photo</label>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
             <input type="number" step="any" id="bbox-w" placeholder="Ouest (lng min)">
             <input type="number" step="any" id="bbox-e" placeholder="Est (lng max)">
@@ -2407,7 +2429,7 @@ function construireImageModule(){
             <input type="number" step="any" id="bbox-n" placeholder="Nord (lat max)">
           </div>
           <div id="img-bbox-sites" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:5px"></div>
-          <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:4px">Pré-remplissez depuis un site ci-dessus, ou saisissez les coins. Astuce QGIS/Géoportail : lire la bbox d'une dalle ortho.</div>
+          <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:4px">Photo sans géoréférencement : pré-remplissez depuis un site, ou saisissez les coins.</div>
         </div>
         <div id="img-gmaps-links" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:5px"></div>
       </div>
@@ -2447,14 +2469,37 @@ function construireImageModule(){
   updateSigUi();
 }
 
+function getSigBbox(){
+  // Emprise utilisée pour l'extraction SIG : URL → automatique, photo → champs manuels
+  if(imgUrl1){
+    if(!imgUrlBbox)imgUrlBbox=extractBboxFromUrl(imgUrl1);
+    if(imgUrlBbox)return imgUrlBbox;
+  }
+  const w=parseFloat(document.getElementById('bbox-w')?.value),
+        e=parseFloat(document.getElementById('bbox-e')?.value),
+        s=parseFloat(document.getElementById('bbox-s')?.value),
+        n=parseFloat(document.getElementById('bbox-n')?.value);
+  if([w,e,s,n].some(v=>isNaN(v)))return null;
+  if(w>=e||s>=n)return 'invalid';
+  return {w,e,s,n};
+}
 function updateSigUi(){
   const wrap=document.getElementById('img-bbox-wrap');if(!wrap)return;
+  const auto=document.getElementById('img-bbox-auto');
   const routine=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);
   const isSig=!!(routine&&routine.isSig);
-  wrap.style.display=isSig?'block':'none';
   const btn=document.getElementById('img-analyse-btn');
   if(btn)btn.textContent=isSig?'Extraire la couche SIG':'Analyser';
-  if(isSig){
+  if(!isSig){wrap.style.display='none';if(auto)auto.style.display='none';return;}
+  // Source URL → emprise automatique ; photo → saisie manuelle
+  let urlBbox=null;
+  if(imgUrl1){if(!imgUrlBbox)imgUrlBbox=extractBboxFromUrl(imgUrl1);urlBbox=imgUrlBbox;}
+  if(imgUrl1&&urlBbox){
+    if(auto){auto.style.display='block';const v=document.getElementById('img-bbox-auto-val');if(v)v.textContent=`O ${urlBbox.w.toFixed(5)}, S ${urlBbox.s.toFixed(5)} → E ${urlBbox.e.toFixed(5)}, N ${urlBbox.n.toFixed(5)}`;}
+    wrap.style.display='none';
+  }else{
+    if(auto)auto.style.display='none';
+    wrap.style.display='block';
     const host=document.getElementById('img-bbox-sites');
     const T=TERRITOIRES[TERR_ACTIF]||{};
     if(host&&!host.dataset.filled){
@@ -2507,18 +2552,17 @@ function initImageTerritoireContext(){
 }
 
 window.chargerGmapsEmbed=function(lat,lng,nom,zoom){
-  // Utilise l'URL statique Google Maps pour l'API vision (format URL image)
-  const url=`https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=640x480&maptype=satellite&key=`;
-  // Sans clé Google Maps → on utilise une URL OpenStreetMap tiles ou on informe
-  // Utiliser l'URL de l'image Google Maps directe n'est pas possible sans API key
-  // On remplit le champ URL avec l'URL Sentinel Hub qui est publique
-  const sentUrl=`https://services.sentinel-hub.com/ogc/wms/DEMO?REQUEST=GetMap&BBOX=${parseFloat(lng)-0.02},${parseFloat(lat)-0.015},${parseFloat(lng)+0.02},${parseFloat(lat)+0.015}&LAYERS=NATURAL-COLOR&WIDTH=800&HEIGHT=600&FORMAT=image/jpeg&CRS=EPSG:4326`;
+  lat=parseFloat(lat);lng=parseFloat(lng);
+  // Emprise ~3 km autour du site, delta longitude ajusté à la latitude
+  const dLat=0.015, dLng=0.015/Math.max(0.2,Math.cos(lat*Math.PI/180));
+  const w=lng-dLng,e=lng+dLng,s=lat-dLat,n=lat+dLat;
+  const sentUrl=`https://services.sentinel-hub.com/ogc/wms/DEMO?REQUEST=GetMap&BBOX=${w.toFixed(5)},${s.toFixed(5)},${e.toFixed(5)},${n.toFixed(5)}&LAYERS=NATURAL-COLOR&WIDTH=800&HEIGHT=600&FORMAT=image/jpeg&CRS=EPSG:4326`;
   const urlInput=document.getElementById('img-url-1');
   if(urlInput){urlInput.value=sentUrl;}
   document.getElementById('img-site').value=nom;
-  imgUrl1=sentUrl;imgFile1=null;
+  imgUrl1=sentUrl;imgFile1=null;imgUrlBbox={w,e,s,n}; // emprise mémorisée → SIG automatique
   const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);if(r)renderUploadZones(r);
-  alert('URL Sentinel Hub chargée pour '+nom+'. Cliquez sur Analyser.');
+  updateSigUi();
 };
 
 function renderUploadZones(r){
@@ -2558,14 +2602,14 @@ function renderUploadZone(hostId,idx,label){
 window.dragOverImg=(e,idx)=>{e.preventDefault();const el=document.getElementById('drop-img-'+idx);if(el)el.classList.add('drag-over');};
 window.dropImg=(e,idx)=>{e.preventDefault();const el=document.getElementById('drop-img-'+idx);if(el)el.classList.remove('drag-over');const file=e.dataTransfer.files[0];if(file)chargerImgFile(file,idx);};
 window.chargerImg=(input,idx)=>{if(input.files[0])chargerImgFile(input.files[0],idx);};
-window.clearImg=(idx)=>{if(idx===1){imgFile1=null;imgUrl1='';}else{imgFile2=null;imgUrl2='';}const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);if(r)renderUploadZones(r);};
+window.clearImg=(idx)=>{if(idx===1){imgFile1=null;imgUrl1='';imgUrlBbox=null;}else{imgFile2=null;imgUrl2='';}const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);if(r)renderUploadZones(r);updateSigUi();};
 window.chargerUrl=(idx)=>{
   const inputId='img-url-'+idx;
   const input=document.getElementById(inputId);if(!input)return;
   const url=input.value.trim();if(!url){alert('Saisissez une URL d\'image valide.');return;}
   if(!url.startsWith('http')){alert('L\'URL doit commencer par https://');return;}
-  if(idx===1){imgUrl1=url;imgFile1=null;}else{imgUrl2=url;imgFile2=null;}
-  const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);if(r)renderUploadZones(r);
+  if(idx===1){imgUrl1=url;imgFile1=null;imgUrlBbox=extractBboxFromUrl(url);}else{imgUrl2=url;imgFile2=null;}
+  const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);if(r)renderUploadZones(r);updateSigUi();
 };
 
 function chargerImgFile(file,idx){
@@ -2574,8 +2618,8 @@ function chargerImgFile(file,idx){
     file._preview=e.target.result;
     file._b64=e.target.result.split(',')[1];
     file._mime=file.type||'image/jpeg';
-    if(idx===1)imgFile1=file;else imgFile2=file;
-    const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);if(r)renderUploadZones(r);
+    if(idx===1){imgFile1=file;imgUrl1='';imgUrlBbox=null;}else imgFile2=file;
+    const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);if(r)renderUploadZones(r);updateSigUi();
   };
   reader.readAsDataURL(file);
 }
@@ -2589,16 +2633,13 @@ window.lancerAnalyse=async function(){
   if(!hasImg1){alert('Chargez au moins une image (fichier ou URL).');return;}
   if(routine.twoImages&&!hasImg2){alert('Cette routine nécessite deux images.');return;}
 
-  // Validation de l'emprise pour la sortie SIG
+  // Emprise pour la sortie SIG : automatique si URL géoréférencée, sinon champs manuels (photo)
   let bbox=null;
   if(routine.isSig){
-    const w=parseFloat(document.getElementById('bbox-w').value),
-          e=parseFloat(document.getElementById('bbox-e').value),
-          s=parseFloat(document.getElementById('bbox-s').value),
-          n=parseFloat(document.getElementById('bbox-n').value);
-    if([w,e,s,n].some(v=>isNaN(v))){alert("Renseignez l'emprise (bbox) : ouest, est, sud, nord — ou pré-remplissez depuis un site.");return;}
-    if(w>=e||s>=n){alert('Emprise invalide : il faut ouest < est et sud < nord.');return;}
-    bbox={w,e,s,n};
+    const b=getSigBbox();
+    if(b==='invalid'){alert('Emprise invalide : il faut ouest < est et sud < nord.');return;}
+    if(!b){alert(imgUrl1?"L'emprise n'a pas pu être déduite de l'URL — saisissez-la, ou chargez une orthophoto/WMS contenant un paramètre BBOX.":"Renseignez l'emprise (bbox) : ouest, est, sud, nord — ou pré-remplissez depuis un site.");return;}
+    bbox=b;
   }
 
   const btn=document.getElementById('img-analyse-btn');btn.disabled=true;btn.textContent=routine.isSig?'Extraction en cours…':'Analyse en cours…';
