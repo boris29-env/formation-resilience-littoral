@@ -2825,16 +2825,14 @@ function renderSigResult(texte,bbox,meta){
    Ouvrages     : bords (Sobel) + droites (Hough) = formes non naturelles.
 ============================================================ */
 const SIG_MAXDIM=900;
-function loadImageURL(url){return new Promise((res,rej)=>{const img=new Image();img.crossOrigin='anonymous';img.onload=()=>res(img);img.onerror=()=>rej(new Error('image illisible (CORS / URL)'));img.src=url;});}
+// Chargement robuste : fetch CORS → blob → ImageBitmap (source same-origin, jamais "tainted",
+// indépendant du cache non-CORS de l'aperçu) — corrige le bug « plus rien ne s'extrait au 2e run ».
+function urlToBitmap(url){return fetch(url,{mode:'cors',cache:'reload'}).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.blob();}).then(bl=>createImageBitmap(bl));}
+function loadImageURL(url){return urlToBitmap(url);}
 function loadImageCV(){
-  return new Promise((res,rej)=>{
-    const img=new Image();
-    img.onload=()=>res(img);
-    img.onerror=()=>rej(new Error("image illisible (CORS refusé ou URL invalide)"));
-    if(imgUrl1){img.crossOrigin='anonymous';img.src=imgUrl1;}
-    else if(imgFile1&&imgFile1._preview){img.src=imgFile1._preview;}
-    else rej(new Error('aucune image chargée'));
-  });
+  if(imgUrl1)return urlToBitmap(imgUrl1);
+  if(imgFile1&&imgFile1._preview)return new Promise((res,rej)=>{const img=new Image();img.onload=()=>res(img);img.onerror=()=>rej(new Error('image illisible'));img.src=imgFile1._preview;});
+  return Promise.reject(new Error('aucune image chargée'));
 }
 function drawCV(img){
   let W=img.naturalWidth||img.width,H=img.naturalHeight||img.height;
@@ -2901,31 +2899,38 @@ function computeWaterMask(im,sens){const {data,w,h}=im,n=w*h;const nd=nodataMask
   return keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h);}
 function shorelinesFromMask(mask,w,h,bad){const minLen=Math.max(24,0.06*Math.max(w,h));return chainSegments(marchingSquares(mask,w,h,bad)).map(l=>simplifyDP(l,1.5)).filter(l=>l.length>=2&&polyLenPx(l)>=minLen);}
 
+// Lissage Chaikin (corner-cutting) → trait de côte plus naturel / sub-pixel
+function smoothChaikin(pts,it){if(pts.length<3)return pts;let p=pts;for(let k=0;k<it;k++){const out=[p[0]];for(let i=0;i<p.length-1;i++){const a=p[i],b=p[i+1];out.push([a[0]*0.75+b[0]*0.25,a[1]*0.75+b[1]*0.25]);out.push([a[0]*0.25+b[0]*0.75,a[1]*0.25+b[1]*0.75]);}out.push(p[p.length-1]);p=out;}return p;}
 function extraireTraitDeCote(im,bbox,sens){
   const nd=nodataMask(im);
   const mask=computeWaterMask(im,sens);
-  let lines=shorelinesFromMask(mask,im.w,im.h,nd).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,6);
-  return lines.map(l=>{const coords=l.map(p=>pxToGeo(p[0],p[1],im.w,im.h,bbox));return {type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:'trait de côte',methode:'segmentation mer/terre (Otsu) + contour',certitude:'modérée',longueur_m_est:Math.round(geoLenM(coords,bbox))}};});
+  let lines=shorelinesFromMask(mask,im.w,im.h,nd).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,6).map(l=>smoothChaikin(l,2));
+  return lines.map(l=>{const coords=l.map(p=>pxToGeo(p[0],p[1],im.w,im.h,bbox));return {type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:'trait de côte',methode:'segmentation mer/terre (Otsu) + contour lissé (Chaikin)',certitude:'modérée',longueur_m_est:Math.round(geoLenM(coords,bbox))}};});
 }
 
-/* --- bords + droites (Hough) pour les ouvrages --- */
+/* --- Ouvrages : longitudinaux (rectitude du trait de côte) + transversaux (saillies = épis) --- */
 function extraireOuvrages(im,bbox,sens){
-  // Méthode robuste, ancrée dans la photo-interprétation : un littoral NATUREL est
-  // sinueux ; un ouvrage longitudinal (digue, perré, enrochement) RECTILINÉARISE le
-  // trait de côte. La segmentation mer/terre donne le trait de côte, la simplification
-  // (Douglas-Peucker) fusionne les portions droites → tout segment droit assez long,
-  // AU CONTACT DE L'EAU par construction, est un ouvrage longitudinal probable.
+  // Photo-interprétation côtière : un littoral naturel est sinueux ; un ouvrage longitudinal
+  // (digue/perré/enrochement) RECTILINÉARISE la côte → segments droits longs. Un épi forme une
+  // SAILLIE transversale étroite. Les deux sont au contact de l'eau par construction (issus du trait de côte).
   const nd=nodataMask(im);
   const water=computeWaterMask(im,sens);
   const lines=shorelinesFromMask(water,im.w,im.h,nd);
   if(!lines.length)return [];
-  // seuil de longueur : sensibilité haute → seuil plus bas (détecte des ouvrages plus courts)
+  const mPerPx=((bbox.e-bbox.w)*111320*Math.cos((bbox.s+bbox.n)/2*Math.PI/180))/im.w;
   const minM=Math.max(20,55-(sens-50)*0.5);
   const feats=[];
+  // 1) Longitudinaux : segments droits assez longs
   for(const l of lines)for(let i=1;i<l.length;i++){
     const coords=[pxToGeo(l[i-1][0],l[i-1][1],im.w,im.h,bbox),pxToGeo(l[i][0],l[i][1],im.w,im.h,bbox)];
     const Lm=geoLenM(coords,bbox);
-    if(Lm>=minM)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:'ouvrage longitudinal probable (digue / perré / enrochement)',methode:'rectitude du trait de côte (segmentation mer/terre + simplification)',certitude:'modérée',longueur_m_est:Math.round(Lm)}});
+    if(Lm>=minM)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:'ouvrage longitudinal probable (digue / perré / enrochement)',methode:'rectitude du trait de côte',certitude:'modérée',longueur_m_est:Math.round(Lm)}});
+  }
+  // 2) Transversaux : saillies étroites du trait de côte (épis) — sommet éloigné à base étroite
+  for(const l of lines){for(let j=1;j<l.length-1;j++){const a=l[j-1],P=l[j],b=l[j+1];
+    const base=Math.hypot(b[0]-a[0],b[1]-a[1])*mPerPx,d=_perp(P,a,b)*mPerPx;
+    if(d>=12&&base<=Math.min(20,0.8*d)){const mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+      feats.push({type:'Feature',geometry:{type:'LineString',coordinates:[pxToGeo(mid[0],mid[1],im.w,im.h,bbox),pxToGeo(P[0],P[1],im.w,im.h,bbox)]},properties:{type:'épi probable (ouvrage transversal)',methode:'saillie du trait de côte',certitude:'faible',longueur_m_est:Math.round(d)}});}}
   }
   return feats;
 }
