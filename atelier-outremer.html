@@ -2430,6 +2430,7 @@ function construireImageModule(){
         </div>
         <label id="sig-sens-label">Sensibilité de détection (mer/terre)</label>
         <input type="range" id="sig-sens" min="0" max="100" value="50" style="width:100%">
+        <label style="display:flex;align-items:center;gap:7px;margin-top:8px;font-family:var(--sans);text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink);cursor:pointer"><input type="checkbox" id="sig-ai-check" style="width:auto;accent-color:var(--teal)"> Contrôle IA (2ᵉ passe) — écarte les faux positifs (forêt, rivière, ombre…)</label>
         <label style="margin-top:8px">Couverture « tout le territoire » (grille autour de chaque site)</label>
         <select id="sig-grille" style="width:100%;font-size:12.5px;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)">
           <option value="1">1 tuile / site (rapide)</option>
@@ -2743,6 +2744,26 @@ function normalizeGeometry(g){
   }
   return null;
 }
+// 2e passe de contrôle IA : superpose les lignes candidates numérotées sur l'image
+// et demande au modèle vision lesquelles sont réellement le trait de côte / un ouvrage.
+async function controleIA(im,feats,bbox,kind){
+  const cfg=getClaudeConfig(true);if(!cfg)return feats; // pas d'IA dispo → on ne filtre pas
+  const W=im.w,H=im.h;
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');
+  try{ctx.putImageData(new ImageData(new Uint8ClampedArray(im.data),W,H),0,0);}catch(e){return feats;}
+  const g2p=c=>[(c[0]-bbox.w)/(bbox.e-bbox.w)*W,(bbox.n-c[1])/(bbox.n-bbox.s)*H];
+  feats.forEach((f,i)=>{const co=f.geometry.coordinates.map(g2p);ctx.lineWidth=3;ctx.strokeStyle='#FF1744';ctx.beginPath();co.forEach((p,k)=>k?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();const m=co[Math.floor(co.length/2)]||co[0];ctx.font='bold 20px sans-serif';ctx.lineWidth=4;ctx.strokeStyle='#000';ctx.strokeText(String(i+1),m[0],m[1]);ctx.fillStyle='#FFEB3B';ctx.fillText(String(i+1),m[0],m[1]);});
+  let b64;try{b64=cv.toDataURL('image/jpeg',0.85).split(',')[1];}catch(e){return feats;}
+  const sys=kind==='ouvrages'
+    ? "Tu es photo-interprète côtier. L'image porte des LIGNES ROUGES NUMÉROTÉES (en jaune) tracées automatiquement, censées repérer des ouvrages côtiers (digue, perré, enrochement) AU CONTACT DE L'EAU. Beaucoup sont fausses : routes, limites de parcelles, bâtiments, lisières, formes naturelles non en contact avec la mer. Indique UNIQUEMENT les numéros des lignes qui correspondent à un ouvrage côtier réel au contact de l'eau. Réponds STRICTEMENT en JSON sans aucun texte : {\"valides\":[numéros]}."
+    : "Tu es photo-interprète côtier. L'image porte des LIGNES ROUGES NUMÉROTÉES (en jaune) tracées automatiquement, censées suivre le TRAIT DE CÔTE (limite terre / mer ou lagon). Beaucoup sont fausses : lisière de forêt, cours d'eau intérieur, ombre, route, limite de champ, nuage. Indique UNIQUEMENT les numéros des lignes qui suivent réellement la limite terre/mer. Réponds STRICTEMENT en JSON sans aucun texte : {\"valides\":[numéros]}.";
+  try{
+    const r=await fetch(cfg.url,{method:'POST',headers:cfg.headers,body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:sys,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},{type:'text',text:'Quels numéros sont valides ?'}]}]})});
+    const d=await r.json();const obj=extractJsonObject(d.content?.[0]?.text||'');
+    if(obj&&Array.isArray(obj.valides)){const keep=new Set(obj.valides.map(Number));const out=feats.filter((_,i)=>keep.has(i+1));return out;}
+  }catch(e){}
+  return feats; // échec → on ne filtre pas
+}
 function afficherSig(gj,bbox,meta){
   const irBody=document.getElementById('ir-body');
   const clampPos=p=>[Math.min(Math.max(p[0],bbox.w),bbox.e),Math.min(Math.max(p[1],bbox.s),bbox.n)];
@@ -2767,7 +2788,7 @@ function afficherSig(gj,bbox,meta){
   }).join('');
   irBody.innerHTML=`
     <div class="img-result-section"><h4>Couche SIG extraite · ${gj.features.length} entité(s)${(meta&&meta.date_photo)?' · prise de vue '+meta.date_photo:''}</h4>
-      <p style="font-size:11.5px;color:var(--muted)">Emprise WGS84 : ${bbox.w}, ${bbox.s} → ${bbox.e}, ${bbox.n}.${(meta&&meta.date_photo)?' Date de la photo (IGN) : <b>'+meta.date_photo+'</b>.':''} Coordonnées par <b>géoréférencement pixel→WGS84</b> (exact à la résolution de l'image). Détection automatique par traitement d'image — à valider sur le terrain. Pas d'évaluation d'état ni d'altitude.</p>
+      <p style="font-size:11.5px;color:var(--muted)">Emprise WGS84 : ${bbox.w}, ${bbox.s} → ${bbox.e}, ${bbox.n}.${(meta&&meta.date_photo)?' Date de la photo (IGN) : <b>'+meta.date_photo+'</b>.':''} Coordonnées par <b>géoréférencement pixel→WGS84</b> (exact à la résolution de l'image). Détection automatique par traitement d'image — à valider sur le terrain. Pas d'évaluation d'état ni d'altitude.${(meta&&meta.aiNote)?' <b style="color:var(--teal)">'+meta.aiNote+'</b>':''}</p>
     </div>
     <div style="overflow:auto;border:1px solid var(--line);border-radius:7px">
       <table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--soft)"><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">#</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Type</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Géom.</th><th style="padding:5px 6px;text-align:right;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Long. est.</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Certitude</th></tr></thead><tbody>${rows}</tbody></table>
@@ -2893,11 +2914,17 @@ window.lancerExtractionSIG=async function(){
     const img=await loadImageCV();
     const im=drawCV(img);
     const sens=+(document.getElementById('sig-sens')?.value||50);
-    const feats=(imgRoutineActive==='trait_cote')?extraireTraitDeCote(im,b,sens):extraireOuvrages(im,b,sens);
+    let feats=(imgRoutineActive==='trait_cote')?extraireTraitDeCote(im,b,sens):extraireOuvrages(im,b,sens);
+    let aiNote='';
+    if(feats.length&&document.getElementById('sig-ai-check')?.checked){
+      irBody.textContent='Contrôle IA (2ᵉ passe)…';document.getElementById('ir-badge').textContent='Contrôle IA…';
+      const before=feats.length;feats=await controleIA(im,feats,b,imgRoutineActive);
+      aiNote=`Contrôle IA : ${feats.length}/${before} entité(s) retenue(s).`;
+    }
     const T=TERRITOIRES[TERR_ACTIF]||{};
     let pd=null;
     if(feats.length&&imgUrl1&&imgUrl1.includes('data.geopf.fr')){pd=await photoDateIGN(b);stampPhotoDate(feats,pd);}
-    const meta={site:document.getElementById('img-site').value.trim()||T.nom||'',source:document.getElementById('img-source').value.trim(),date_photo:pd&&pd.date_photo};
+    const meta={site:document.getElementById('img-site').value.trim()||T.nom||'',source:document.getElementById('img-source').value.trim(),date_photo:pd&&pd.date_photo,aiNote};
     irBody.className='img-result-body';
     const nb=afficherSig({type:'FeatureCollection',name:'extraction_sig',features:feats},b,meta);
     document.getElementById('ir-badge').textContent='Terminé';
