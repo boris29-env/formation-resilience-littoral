@@ -3094,19 +3094,27 @@ function extraireOuvrages(im,bbox,sens){
    de l'entité. Une régression logistique entraînée dans le navigateur en déduit un « score ouvrage »
    qui remplace la certitude heuristique dès qu'assez d'exemples sont disponibles (cold-start sinon). */
 const OUVR_FK=['sd','gran','cv','net','wf','persist','Lm','sat','rmb','larg','len'];
-let _ouvrLabels=[],_ouvrModel=null,_apprInit=false;
+const OUVR_FB_PATH='outremer/_apprentissage_ouvrages/labels';
+// Labels Firebase (partagés) + labels locaux (localStorage / importés) ; fusionnés (dédoublonnés par ts)
+// pour que la synchro Firebase n'écrase pas un corpus importé hors-ligne.
+let _ouvrLabelsFb=[],_ouvrLabelsLocal=[],_ouvrModel=null,_apprLocalInit=false,_apprFbInit=false;
+function _loadLocalLabels(){try{const s=localStorage.getItem('ouvr_labels');_ouvrLabelsLocal=s?JSON.parse(s):[];}catch(e){_ouvrLabelsLocal=[];}}
+function _saveLocalLabels(){try{localStorage.setItem('ouvr_labels',JSON.stringify(_ouvrLabelsLocal));}catch(e){}}
+function _allLabels(){const seen={},out=[];for(const r of _ouvrLabelsLocal.concat(_ouvrLabelsFb)){if(!r||!r.f)continue;if(r.ts){if(seen[r.ts])continue;seen[r.ts]=1;}out.push(r);}return out;}
 function initApprentissageOuvrages(){
-  if(_apprInit||!window._FB||!window._FB.glisten)return;_apprInit=true;
-  window._FB.glisten('outremer/_apprentissage_ouvrages/labels',(val)=>{
-    _ouvrLabels=val?Object.values(val).filter(r=>r&&r.f&&typeof r.y==='number'):[];
-    entrainerModeleOuvrages();
-    if(typeof imgRoutineActive!=='undefined'&&imgRoutineActive==='ouvrages')majApprentissageUI();
-  });
+  if(!_apprLocalInit){_apprLocalInit=true;_loadLocalLabels();entrainerModeleOuvrages();}
+  if(window._FB&&window._FB.glisten&&!_apprFbInit){_apprFbInit=true;
+    window._FB.glisten(OUVR_FB_PATH,(val)=>{
+      _ouvrLabelsFb=val?Object.values(val).filter(r=>r&&r.f&&typeof r.y==='number'):[];
+      entrainerModeleOuvrages();
+      if(typeof imgRoutineActive!=='undefined'&&imgRoutineActive==='ouvrages')majApprentissageUI();
+    });
+  }
 }
 function _vecOuvr(f){const v=[];for(const k of OUVR_FK){const x=f?f[k]:null;if(x==null||isNaN(x))return null;v.push(+x);}return v;}
 function entrainerModeleOuvrages(){
   const X=[],Y=[];
-  for(const r of _ouvrLabels){const v=_vecOuvr(r.f);if(v){X.push(v);Y.push(r.y?1:0);}}
+  for(const r of _allLabels()){const v=_vecOuvr(r.f);if(v){X.push(v);Y.push(r.y?1:0);}}
   const n=X.length,F=OUVR_FK.length,npos=Y.reduce((a,b)=>a+b,0),nneg=n-npos;
   if(n<12||npos<3||nneg<3){_ouvrModel=null;return;}
   const mean=new Array(F).fill(0),std=new Array(F).fill(0);
@@ -3132,21 +3140,40 @@ window.validerOuvrage=function(idx,y){
   if(!p._features){alert("Entité non apprenable (pas de vecteur de caractéristiques).");return;}
   p._label=y;
   const rec={f:p._features,y:y?1:0,type:p.type||'',site:(typeof _lastSigMeta!=='undefined'&&_lastSigMeta&&_lastSigMeta.site)||'',sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now()};
-  if(window._FB&&window._FB.gpush)window._FB.gpush('outremer/_apprentissage_ouvrages/labels',rec).catch(()=>{});
+  _ouvrLabelsLocal.push(rec);_saveLocalLabels();entrainerModeleOuvrages();
+  if(window._FB&&window._FB.gpush)window._FB.gpush(OUVR_FB_PATH,rec).catch(()=>{});
   majApprentissageUI();
 };
 window.exporterLabelsOuvrages=function(){
-  const blob=new Blob([JSON.stringify(_ouvrLabels,null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);
+  const blob=new Blob([JSON.stringify(_allLabels(),null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=u;a.download='apprentissage_ouvrages_labels.json';a.click();URL.revokeObjectURL(u);
 };
+window.importerLabelsOuvrages=function(input){
+  const file=input&&input.files&&input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    let arr;try{arr=JSON.parse(ev.target.result);}catch(e){alert('JSON invalide.');return;}
+    if(!Array.isArray(arr)){alert('Le fichier doit être un tableau de validations.');return;}
+    const valid=arr.filter(r=>r&&r.f&&typeof r.y==='number');
+    if(!valid.length){alert('Aucune validation exploitable dans ce fichier.');return;}
+    const byTs={};for(const r of _ouvrLabelsLocal)if(r.ts)byTs[r.ts]=r;valid.forEach((r,k)=>{byTs[r.ts||('imp'+Date.now()+'_'+k)]=r;});
+    _ouvrLabelsLocal=Object.values(byTs);_saveLocalLabels();entrainerModeleOuvrages();
+    if(window._FB&&window._FB.gpush)for(const r of valid)window._FB.gpush(OUVR_FB_PATH,r).catch(()=>{});
+    majApprentissageUI();
+    alert(valid.length+' validation(s) importée(s). Modèle '+(_ouvrModel?'actif (exactitude '+Math.round(_ouvrModel.acc*100)+'%).':'en attente (besoin de ≥12 exemples, 2 classes).'));
+  };
+  reader.readAsText(file);input.value='';
+};
 function apprentissageStatutHTML(){
-  const n=_ouvrLabels.length,pos=_ouvrLabels.filter(r=>r.y).length;
+  const all=_allLabels(),n=all.length,pos=all.filter(r=>r.y).length;
   const etat=_ouvrModel?`<b style="color:var(--teal)">modèle actif</b> · exactitude ${Math.round(_ouvrModel.acc*100)}% (n=${_ouvrModel.n})`
     :`amorce heuristique <span style="color:var(--muted)">(modèle dès 12 exemples avec les 2 classes)</span>`;
   return `<div style="margin-top:10px;padding:8px 10px;border:1px dashed var(--line);border-radius:7px;background:var(--soft);font-size:11px">
-    <b>Apprentissage partagé</b> — ${n} validation(s) : ${pos} ouvrage(s) / ${n-pos} rejet(s). État : ${etat}.
-    Validez ✓ / ✗ les entités ci-dessous ; le modèle se met à jour pour tous.
-    <button onclick="exporterLabelsOuvrages()" style="margin-left:6px;background:#fff;border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer">Exporter les validations</button></div>`;
+    <b>Apprentissage</b> — ${n} validation(s) : ${pos} ouvrage(s) / ${n-pos} rejet(s). État : ${etat}.
+    Validez ✓ / ✗ les entités ci-dessous ; le modèle (régression logistique) se recalcule et est partagé via Firebase.
+    <input type="file" id="ouvr-import" accept=".json,application/json" style="display:none" onchange="importerLabelsOuvrages(this)">
+    <button onclick="document.getElementById('ouvr-import').click()" style="margin-left:6px;background:#fff;border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer">Importer un corpus</button>
+    <button onclick="exporterLabelsOuvrages()" style="margin-left:4px;background:#fff;border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer">Exporter</button></div>`;
 }
 function majApprentissageUI(){
   if(typeof _lastSigGeojson==='undefined'||!_lastSigGeojson||typeof imgRoutineActive==='undefined'||imgRoutineActive!=='ouvrages')return;
