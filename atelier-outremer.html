@@ -617,6 +617,7 @@ svg.house{width:100%;max-width:290px;height:auto}
               <button class="layer-btn" onclick="dessinerSecteur('rect')" title="Dessiner un rectangle : zone où chercher davantage">▭ Secteur</button>
               <button class="layer-btn" onclick="dessinerSecteur('line')" title="Tracer une ligne le long d'un ouvrage/côte manquant">⟋ Tracé</button>
               <button class="layer-btn" id="btn-sect-fin" style="display:none" onclick="terminerTrace()">Terminer le tracé</button>
+              <button class="layer-btn" onclick="marquerOuvrage()" title="Affirmer que le tracé / le rectangle est un ouvrage (exemple positif pour le modèle)">✔ Ouvrage ici</button>
               <button class="layer-btn" onclick="chercherDansSecteurs()" title="Re-détecter dans les secteurs, seuils abaissés">🔍 Chercher ici</button>
               <button class="layer-btn" onclick="effacerSecteurs()" title="Effacer les secteurs dessinés">✕ Secteurs</button>
               <span id="annot-hint" style="font-size:10px;color:var(--muted);flex-basis:100%"></span>
@@ -3171,11 +3172,12 @@ function extraireOuvrages(im,bbox,sens){
     const base=Math.hypot(b[0]-a[0],b[1]-a[1])*mPerPx,d=_perp(P,a,b)*mPerPx;
     if(d>=12&&base<=Math.min(20,0.8*d)){
       const mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];
-      const dx=b[0]-a[0],dy=b[1]-a[1],Ln=Math.hypot(dx,dy)||1,nx=-dy/Ln,ny=dx/Ln;
-      let wPos=0,wNeg=0;for(let o=6;o<=28;o+=4){wPos+=_wmask(mid[0]+nx*o,mid[1]+ny*o);wNeg+=_wmask(mid[0]-nx*o,mid[1]-ny*o);}
-      const projP=(P[0]-mid[0])*nx+(P[1]-mid[1])*ny,seaPos=wPos>=wNeg;   // apex du côté mer ?
-      if((seaPos&&projP>0)||(!seaPos&&projP<0))
-        feats.push({type:'Feature',geometry:{type:'LineString',coordinates:[pxToGeo(mid[0],mid[1],im.w,im.h,bbox),pxToGeo(P[0],P[1],im.w,im.h,bbox)]},properties:{type:'épi probable (ouvrage transversal)',methode:'saillie du trait de côte, côté mer',certitude:'faible',longueur_m_est:Math.round(d)}});
+      // côté mer : l'extrémité (apex) de la saillie doit AVANCER vers l'eau. Test direct (robuste aux
+      // cordons à eau des deux côtés comme Sandy Ground) : prolonger au-delà de l'apex, est-ce de l'eau ?
+      const vx=P[0]-mid[0],vy=P[1]-mid[1],vl=Math.hypot(vx,vy)||1;let waterBeyond=0;
+      for(let o=2;o<=16;o+=3)waterBeyond+=_wmask(P[0]+vx/vl*o,P[1]+vy/vl*o);
+      if(waterBeyond>=1)
+        feats.push({type:'Feature',geometry:{type:'LineString',coordinates:[pxToGeo(mid[0],mid[1],im.w,im.h,bbox),pxToGeo(P[0],P[1],im.w,im.h,bbox)]},properties:{type:'épi probable (ouvrage transversal)',methode:'saillie du trait de côte, avançant vers l’eau',certitude:'faible',longueur_m_est:Math.round(d)}});
     }}
   }
   return feats;
@@ -3585,6 +3587,47 @@ function _enSecteur(f){if(!_secteurs||!_secteurs.length||!f||!f.geometry)return 
   }return false;}
 function _dejaPresent(f){const cs=f.geometry.coordinates;if(!Array.isArray(cs[0]))return false;const a=cs[0],b=cs[cs.length-1];const close=(p,q)=>Math.abs(p[0]-q[0])<2e-4&&Math.abs(p[1]-q[1])<2e-4;
   for(const g of (_lastSigGeojson.features||[])){if(!g.geometry)continue;const gc=g.geometry.coordinates;if(!Array.isArray(gc[0]))continue;const ga=gc[0],gb=gc[gc.length-1];if((close(a,ga)&&close(b,gb))||(close(a,gb)&&close(b,ga)))return true;}return false;}
+// Construit une entité OUVRAGE à partir d'un tracé géographique (suite de [lng,lat]) en échantillonnant
+// ses caractéristiques sur l'orthophoto en mémoire → utilisable comme exemple positif pour le modèle.
+function _ouvrageDepuisTrace(geo){
+  if(!geo||geo.length<2||!_lastSigImage||!_lastSigBbox)return null;
+  const im=_lastSigImage,bb=_lastSigBbox,mPerPx=metresParPixel(bb,im.w);
+  const water=(window.__lastWater&&window.__lastWaterSens===_lastSigSens)?window.__lastWater:(window.__lastWater=computeWaterMask(im,_lastSigSens||50),window.__lastWaterSens=_lastSigSens,window.__lastWater);
+  const toPx=c=>[ (c[0]-bb.w)/(bb.e-bb.w)*im.w, (bb.n-c[1])/(bb.n-bb.s)*im.h ];
+  const pxs=geo.map(toPx);let agg=null,wsum=0,totLen=0;
+  for(let i=1;i<pxs.length;i++){const a=pxs[i-1],b=pxs[i];const s=sampleBand(im,a,b);if(!s)continue;
+    const tr=analyseTransversale(im,water,a,b),gr=granulariteBande(im,a,b),lenM=geoLenM([geo[i-1],geo[i]],bb);
+    const fv={sd:s.sd,gran:gr,cv:tr.largeurCV,net:tr.netteteBord,wf:tr.waterFrac,persist:tr.persistanceTerrePx,Lm:s.Lm,sat:s.sat,rmb:s.r-s.b,larg:(tr.largeurPx||0)*mPerPx,len:lenM,landReach:tr.landReach};
+    if(!agg){agg={};for(const k in fv)agg[k]=0;}const w=lenM||1;wsum+=w;totLen+=lenM;for(const k in fv)agg[k]+=fv[k]*w;}
+  if(!agg||totLen<5)return null;for(const k in agg)agg[k]/=(wsum||1);agg.len=totLen;
+  return {type:'Feature',geometry:{type:'LineString',coordinates:geo.slice()},properties:{_features:agg,longueur_m_est:Math.round(totLen)}};
+}
+function _coastlineDansRect(s){const a=s.coords[0],b=s.coords[1],w=Math.min(a[0],b[0]),e=Math.max(a[0],b[0]),so=Math.min(a[1],b[1]),n=Math.max(a[1],b[1]);
+  const inR=p=>p[0]>=w&&p[0]<=e&&p[1]>=so&&p[1]<=n,out=[];
+  for(const f of (_lastSigGeojson.features||[])){if(!f.properties||!f.properties._base)continue;
+    let run=[];for(const p of f.geometry.coordinates){if(inR(p))run.push(p);else{if(run.length>=2){const o=_ouvrageDepuisTrace(run);if(o)out.push(o);}run=[];}}
+    if(run.length>=2){const o=_ouvrageDepuisTrace(run);if(o)out.push(o);}}
+  return out;}
+// « C'est un ouvrage ici » : l'utilisateur AFFIRME qu'une portion du littoral est un ouvrage (trace ⟋
+// ou rectangle ▭ sur la portion de trait de côte). On crée l'entité + un exemple POSITIF pour le modèle.
+window.marquerOuvrage=function(){
+  try{
+    if(!_secteurs.length){alert('Tracez l’ouvrage (⟋ Tracé) ou cadrez-le (▭ Secteur), puis « ✔ Ouvrage ici ».');return;}
+    if(!_lastSigImage||!_lastSigBbox){alert('Lancez d’abord une extraction (l’orthophoto doit être en mémoire).');return;}
+    let added=[];
+    for(const s of _secteurs){if(s.kind==='line'){const o=_ouvrageDepuisTrace(s.coords);if(o)added.push(o);}else added=added.concat(_coastlineDansRect(s));}
+    if(!added.length){alert('Impossible de créer un ouvrage : tracé trop court, ou aucun trait de côte dans le rectangle (utilisez plutôt ⟋ Tracé en suivant l’ouvrage).');return;}
+    added.forEach(f=>{const p=f.properties;p.type='ouvrage confirmé (manuel)';p.classe_suggeree=p.type;p.certitude='confirmé';p.methode='marqué manuellement sur la carte';p._label=1;
+      if(p._features){const rec={f:p._features,y:1,type:p.type,site:(_lastSigMeta&&_lastSigMeta.site)||'',sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now()+Math.random()};_ouvrLabelsLocal.push(rec);
+        if(window._FB&&window._FB.gpush)window._FB.gpush(OUVR_FB_PATH,rec).then(()=>{_fbWriteOk=true;}).catch(()=>{_fbWriteOk=false;});}});
+    _saveLocalLabels();entrainerModeleOuvrages();
+    _lastSigGeojson.features=(_lastSigGeojson.features||[]).concat(added);
+    if(_lastSigCandidates)_lastSigCandidates=_lastSigCandidates.concat(added);
+    _construireSigLayer();if(_lastSigBbox)afficherSig(_lastSigGeojson,_lastSigBbox,_lastSigMeta);
+    _hint(added.length+' ouvrage(s) confirmé(s) et appris (exemple positif). Effacez le secteur si besoin.');
+    alert(added.length+' ouvrage(s) confirmé(s) et ajouté(s) comme exemple positif pour le modèle.');
+  }catch(err){alert('Erreur : '+(err&&err.message||err));}
+};
 window.chercherDansSecteurs=function(){
   try{
     if(!_secteurs.length){alert('Dessinez d’abord un secteur (▭ Secteur ou ⟋ Tracé), puis « Chercher ici ».');return;}
