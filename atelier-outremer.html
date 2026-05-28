@@ -2980,39 +2980,38 @@ function computeVegMask(im){const {data,w,h}=im,n=w*h;const m=new Uint8Array(n);
 function _pxNearWater(water,w,h,x,y,R){x=Math.round(x);y=Math.round(y);const st=Math.max(3,R/6);
   for(const d of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]])for(let r=4;r<=R;r+=st){const xx=Math.round(x+d[0]*r),yy=Math.round(y+d[1]*r);if(xx<0||yy<0||xx>=w||yy>=h)continue;if(water[yy*w+xx])return true;}
   return false;}
-// Classe d'un segment de la ligne d'eau : 'beachrock' (estran rocheux naturel) ou 'trait' (côte).
-function _classeBordCote(im,water,a,b){const s=sampleBand(im,a,b);if(!s)return 'trait';
-  const cl=classifieOuvrage(s,analyseTransversale(im,water,a,b),granulariteBande(im,a,b));
-  return /beachrock/.test(cl.type)?'beachrock':'trait';}
+// Logigramme du trait de côte (côtes sans marée) : on classe le CONTACT terre/mer selon la nature du
+// rivage côté TERRE, par priorité : sable (plage/eau) › bâti/enrochement/autre › front végétal (mangrove).
+function _classeRivage(im,water,a,b){
+  const {data,w,h}=im;const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L;
+  const wAt=(x,y)=>{x=Math.round(x);y=Math.round(y);return(x<0||y<0||x>=w||y>=h)?0:(water[y*w+x]?1:0);};
+  const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;let wp=0,wn=0;for(let o=4;o<=20;o+=2){wp+=wAt(mx+nx*o,my+ny*o);wn+=wAt(mx-nx*o,my-ny*o);}
+  const landSign=(wp>=wn)?-1:1;                                  // côté terre = opposé à la mer
+  let sr=0,sg=0,sb=0,sL=0,cnt=0;const Ls=[];const N=Math.max(4,Math.round(L));
+  for(let i=0;i<=N;i++){const px=a[0]+dx*i/N,py=a[1]+dy*i/N;
+    for(let o=3;o<=12;o+=2){const x=Math.round(px+nx*o*landSign),y=Math.round(py+ny*o*landSign);if(x<0||y<0||x>=w||y>=h)continue;if(water[y*w+x])continue;const idx=(y*w+x)*4;const r=data[idx],g=data[idx+1],bl=data[idx+2];const Lum=0.299*r+0.587*g+0.114*bl;sr+=r;sg+=g;sb+=bl;sL+=Lum;Ls.push(Lum);cnt++;}}
+  if(cnt<3)return 'indetermine';
+  const rr=sr/cnt,gg=sg/cnt,bb=sb/cnt,Lm=sL/cnt;
+  const sat=Math.max(rr,gg,bb)-Math.min(rr,gg,bb);
+  if(gg-bb>12&&gg>=rr-10)return 'vegetation';                   // front végétal / mangrove (vert) — non ambigu
+  if(Lm>=140&&sat<55&&gg-bb<16&&rr>=bb-6)return 'sable';        // sable : clair, chaud/neutre (non bleuté), non vert
+  return 'bati';                                                // bâti / enrochement / rocher / autre (gris, sombre, structuré)
+}
+const _RIVAGE_LBL={sable:'trait de côte · plage (sable/eau)',bati:'trait de côte · bâti / enrochement (au contact mer)',vegetation:'trait de côte · front végétal / mangrove',indetermine:'trait de côte (indéterminé)'};
 function extraireTraitDeCote(im,bbox,sens){
   const nd=nodataMask(im);
   const water=computeWaterMask(im,sens);
-  const mPerPx=metresParPixel(bbox,im.w),epsPx=Math.max(1,3.5/mPerPx);   // DP ≈ 3,5 m → trait plus propre
-  // Pour la LIGNE elle-même : ouverture supplémentaire du masque d'eau → on supprime les fines poches
-  // d'eau/estran qui font divaguer le trait vers l'intérieur ; la ligne suit le sable au bord de l'eau.
-  const waterLisse=openMask(water,im.w,im.h,2);
+  const mPerPx=metresParPixel(bbox,im.w),epsPx=Math.max(1,3/mPerPx);
+  const waterLisse=openMask(water,im.w,im.h,2);   // supprime les fines poches → le trait suit le bord franc
   const feats=[];
-  // 1) LIGNE D'EAU, segmentée : trait de côte naturel vs BEACHROCK (estran rocheux, étiqueté à part).
   const lines=shorelinesFromMask(waterLisse,im.w,im.h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,8);
   for(const raw of lines){const l=smoothChaikin(raw,3);
-    const cls=[];for(let i=1;i<l.length;i++)cls.push(_classeBordCote(im,water,l[i-1],l[i]));
+    const cls=[];for(let i=1;i<l.length;i++)cls.push(_classeRivage(im,water,l[i-1],l[i]));
     let k=0;while(k<cls.length){const t=cls[k];let m=k;while(m+1<cls.length&&cls[m+1]===t)m++;
       const coords=[];for(let pi=k;pi<=m+1;pi++)coords.push(pxToGeo(l[pi][0],l[pi][1],im.w,im.h,bbox));
       const lenM=geoLenM(coords,bbox);
-      if(lenM>=15)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{
-        type:(t==='beachrock')?'beachrock (estran naturel)':'trait de côte (ligne d’eau)',
-        methode:'segmentation mer/terre (Otsu) + contour lissé',certitude:(t==='beachrock'?'naturel':'modérée'),longueur_m_est:Math.round(lenM)}});
+      if(lenM>=12)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:_RIVAGE_LBL[t]||'trait de côte',classe_rivage:t,methode:'contact mer/terre classé (sable › bâti/enrochement › végétation)',certitude:'modérée',longueur_m_est:Math.round(lenM)}});
       k=m+1;}
-  }
-  // 2) LIMITE VÉGÉTATION (haut de plage / terre ferme) — boundary du masque végétation, gardée près du rivage.
-  const veg=computeVegMask(im);
-  const Rpx=Math.max(6,80/mPerPx);
-  for(const raw of shorelinesFromMask(veg,im.w,im.h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,6)){
-    const l=smoothChaikin(raw,2);let run=[];
-    const flush=()=>{if(run.length>=2){const coords=run.map(p=>pxToGeo(p[0],p[1],im.w,im.h,bbox)),lenM=geoLenM(coords,bbox);
-      if(lenM>=20)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:'limite végétation (haut de plage, indicatif)',methode:'limite végétation RGB près du rivage',certitude:'indicatif',longueur_m_est:Math.round(lenM),_base:true}});}run=[];};
-    for(const p of l){const xi=Math.round(p[0]),yi=Math.round(p[1]);const land=(xi>=0&&yi>=0&&xi<im.w&&yi<im.h)?!water[yi*im.w+xi]:true;
-      if(land&&_pxNearWater(water,im.w,im.h,p[0],p[1],Rpx))run.push(p);else flush();}flush();
   }
   return feats;
 }
@@ -3571,6 +3570,9 @@ function _saveTrait(){try{localStorage.setItem('trait_corr',JSON.stringify(_trai
 function _hint(t){const el=document.getElementById('annot-hint');if(el)el.textContent=t||'';}
 function _styleSig(p){p=p||{};
   if(p._label===0)return {color:'#9aa0a6',weight:2,opacity:.55,dashArray:'2,6'};   // invalidé → grisé
+  if(p.classe_rivage==='sable')return {color:'#e6b800',weight:3,opacity:.95};        // plage sable/eau (jaune sable)
+  if(p.classe_rivage==='bati')return {color:'#d23b3b',weight:3,opacity:.95};         // bâti/enrochement au contact mer (rouge)
+  if(p.classe_rivage==='vegetation')return {color:'#2e7d32',weight:3,opacity:.9};    // front végétal/mangrove (vert)
   if(/beachrock/.test(p.type||''))return {color:'#c8861e',weight:3,opacity:.9};     // estran rocheux naturel (ocre)
   if(/limite végétation/.test(p.type||''))return {color:'#2e7d32',weight:2,opacity:.85,dashArray:'7,4'}; // haut de plage (vert)
   if(p.proba_ouvrage!=null){const s=p.proba_ouvrage;return s>=0.66?{color:'#c0392b',weight:4,opacity:.95}:s>=0.4?{color:'#e08e0b',weight:3,opacity:.9,dashArray:'6,4'}:{color:'#8a8a8a',weight:2,opacity:.8,dashArray:'3,5'};}
