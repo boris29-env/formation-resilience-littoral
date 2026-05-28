@@ -2987,9 +2987,17 @@ function analyseTransversale(im,water,a,b){
   let persist=0,prev=null;const cx=a[0]+dx*0.5,cy=a[1]+dy*0.5;
   for(let o=4;o<=RL;o++){const x=cx+nx*o*landSign,y=cy+ny*o*landSign;const L=lum(x,y);if(L==null)break;
     if(prev!=null&&L<120&&Math.abs(L-prev)<24&&!isWater(x,y))persist=o;else if(o-persist>6)break;prev=L;}
+  // landReach : distance LANDWARD (côté opposé à la mer) avant que l'eau ne réapparaisse, normalisée.
+  // ~1 = vraie masse de terre derrière (quai/perré/enrochement adossés à la côte) ; petit = l'eau
+  // revient vite derrière → objet détaché du rivage (ponton, banc, môle isolé) ou bord en eau.
+  let lrSum=0,lrN=0;
+  for(let s=0;s<=Ns;s++){const px=a[0]+dx*s/Ns,py=a[1]+dy*s/Ns;let lr=RL;
+    for(let o=2;o<=RL;o++){if(isWater(px+nx*o*landSign,py+ny*o*landSign)){lr=o;break;}}
+    lrSum+=lr;lrN++;}
+  const landReach=lrSum/Math.max(1,lrN)/RL;
   let mw=0,cv=1,me=0;
   if(widths.length){mw=widths.reduce((p,x)=>p+x,0)/widths.length;let vw=0;for(const x of widths)vw+=(x-mw)*(x-mw);cv=mw>0?Math.sqrt(vw/widths.length)/mw:1;me=edges.reduce((p,x)=>p+x,0)/edges.length;}
-  return {waterFrac,contactEau:waterFrac>0.12,largeurPx:mw,largeurCV:cv,netteteBord:me,persistanceTerrePx:persist};
+  return {waterFrac,contactEau:waterFrac>0.12,largeurPx:mw,largeurCV:cv,netteteBord:me,persistanceTerrePx:persist,landReach};
 }
 // Granularité : énergie haute-fréquence le long de l'axe (|dérivée seconde| de luminance).
 // Enrochement = blocs/joints → granularité forte ; beachrock = litage continu → faible ;
@@ -3006,7 +3014,7 @@ function classifieOuvrage(s,tr,gr){
   const {Lm,sat,sd,r,b}=s;
   const teinte=(r-b>18&&sat>22)?'naturelle (ocre/brun)':(Lm<95?'gris sombre':'gris clair');
   const cv=tr?tr.largeurCV:1,net=tr?tr.netteteBord:0,wf=tr?tr.waterFrac:1,
-        persist=tr?tr.persistanceTerrePx:0,granu=gr||0;
+        persist=tr?tr.persistanceTerrePx:0,granu=gr||0,landReach=tr?tr.landReach:1;
   // Contact FRANC à l'eau : vraie masse d'eau ouverte (mer/lagon) d'un côté. Un ouvrage côtier
   // borde la mer ; sans eau franche d'un côté, la forme rectiligne est un bord intérieur (toiture,
   // défrichement, chemin, ombre) capté par un masque d'eau imparfait → à écarter.
@@ -3055,7 +3063,7 @@ function extraireOuvrages(im,bbox,sens){
       const tr=analyseTransversale(im,water,l[i-1],l[i]);
       const gr=granulariteBande(im,l[i-1],l[i]);
       const cl=classifieOuvrage(s,tr,gr);
-      const fv=s?{sd:s.sd,gran:gr,cv:tr.largeurCV,net:tr.netteteBord,wf:tr.waterFrac,persist:tr.persistanceTerrePx,Lm:s.Lm,sat:s.sat,rmb:s.r-s.b,larg:(tr.largeurPx||0)*mPerPx,len:lenM}:null;
+      const fv=s?{sd:s.sd,gran:gr,cv:tr.largeurCV,net:tr.netteteBord,wf:tr.waterFrac,persist:tr.persistanceTerrePx,Lm:s.Lm,sat:s.sat,rmb:s.r-s.b,larg:(tr.largeurPx||0)*mPerPx,len:lenM,landReach:tr.landReach}:null;
       segs.push({cl,fv,lenM,p0:i-1,p1:i});
     }
     let k=0;
@@ -3093,11 +3101,11 @@ function extraireOuvrages(im,bbox,sens){
    (Firebase, chemin GLOBAL partagé entre toutes les sessions) avec le vecteur de caractéristiques
    de l'entité. Une régression logistique entraînée dans le navigateur en déduit un « score ouvrage »
    qui remplace la certitude heuristique dès qu'assez d'exemples sont disponibles (cold-start sinon). */
-const OUVR_FK=['sd','gran','cv','net','wf','persist','Lm','sat','rmb','larg','len'];
+const OUVR_FK=['sd','gran','cv','net','wf','persist','Lm','sat','rmb','larg','len','landReach'];
 const OUVR_FB_PATH='outremer/_apprentissage_ouvrages/labels';
 // Labels Firebase (partagés) + labels locaux (localStorage / importés) ; fusionnés (dédoublonnés par ts)
 // pour que la synchro Firebase n'écrase pas un corpus importé hors-ligne.
-let _ouvrLabelsFb=[],_ouvrLabelsLocal=[],_ouvrModel=null,_apprLocalInit=false,_apprFbInit=false;
+let _ouvrLabelsFb=[],_ouvrLabelsLocal=[],_ouvrModel=null,_apprLocalInit=false,_apprFbInit=false,_fbWriteOk=null;
 function _loadLocalLabels(){try{const s=localStorage.getItem('ouvr_labels');_ouvrLabelsLocal=s?JSON.parse(s):[];}catch(e){_ouvrLabelsLocal=[];}}
 function _saveLocalLabels(){try{localStorage.setItem('ouvr_labels',JSON.stringify(_ouvrLabelsLocal));}catch(e){}}
 function _allLabels(){const seen={},out=[];for(const r of _ouvrLabelsLocal.concat(_ouvrLabelsFb)){if(!r||!r.f)continue;if(r.ts){if(seen[r.ts])continue;seen[r.ts]=1;}out.push(r);}return out;}
@@ -3141,7 +3149,7 @@ window.validerOuvrage=function(idx,y){
   p._label=y;
   const rec={f:p._features,y:y?1:0,type:p.type||'',site:(typeof _lastSigMeta!=='undefined'&&_lastSigMeta&&_lastSigMeta.site)||'',sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now()};
   _ouvrLabelsLocal.push(rec);_saveLocalLabels();entrainerModeleOuvrages();
-  if(window._FB&&window._FB.gpush)window._FB.gpush(OUVR_FB_PATH,rec).catch(()=>{});
+  if(window._FB&&window._FB.gpush)window._FB.gpush(OUVR_FB_PATH,rec).then(()=>{_fbWriteOk=true;majApprentissageUI();}).catch(()=>{_fbWriteOk=false;majApprentissageUI();});
   majApprentissageUI();
 };
 window.exporterLabelsOuvrages=function(){
@@ -3158,7 +3166,7 @@ window.importerLabelsOuvrages=function(input){
     if(!valid.length){alert('Aucune validation exploitable dans ce fichier.');return;}
     const byTs={};for(const r of _ouvrLabelsLocal)if(r.ts)byTs[r.ts]=r;valid.forEach((r,k)=>{byTs[r.ts||('imp'+Date.now()+'_'+k)]=r;});
     _ouvrLabelsLocal=Object.values(byTs);_saveLocalLabels();entrainerModeleOuvrages();
-    if(window._FB&&window._FB.gpush)for(const r of valid)window._FB.gpush(OUVR_FB_PATH,r).catch(()=>{});
+    if(window._FB&&window._FB.gpush){let ok=0,ko=0;const proms=valid.map(r=>window._FB.gpush(OUVR_FB_PATH,r).then(()=>ok++,()=>ko++));Promise.all(proms).then(()=>{_fbWriteOk=ko===0&&ok>0;majApprentissageUI();});}
     majApprentissageUI();
     alert(valid.length+' validation(s) importée(s). Modèle '+(_ouvrModel?'actif (exactitude '+Math.round(_ouvrModel.acc*100)+'%).':'en attente (besoin de ≥12 exemples, 2 classes).'));
   };
@@ -3168,8 +3176,9 @@ function apprentissageStatutHTML(){
   const all=_allLabels(),n=all.length,pos=all.filter(r=>r.y).length;
   const etat=_ouvrModel?`<b style="color:var(--teal)">modèle actif</b> · exactitude ${Math.round(_ouvrModel.acc*100)}% (n=${_ouvrModel.n})`
     :`amorce heuristique <span style="color:var(--muted)">(modèle dès 12 exemples avec les 2 classes)</span>`;
+  const partage=_fbWriteOk===true?'<span style="color:#1a8a4a">✓ partagé (Firebase)</span>':_fbWriteOk===false?'<span style="color:#c0392b">✗ local seulement (Firebase refuse l’écriture)</span>':'<span style="color:var(--muted)">local (partage non encore testé)</span>';
   return `<div style="margin-top:10px;padding:8px 10px;border:1px dashed var(--line);border-radius:7px;background:var(--soft);font-size:11px">
-    <b>Apprentissage</b> — ${n} validation(s) : ${pos} ouvrage(s) / ${n-pos} rejet(s). État : ${etat}.
+    <b>Apprentissage</b> — ${n} validation(s) : ${pos} ouvrage(s) / ${n-pos} rejet(s). État : ${etat}. Stockage : ${partage}.
     Validez ✓ / ✗ les entités ci-dessous ; le modèle (régression logistique) se recalcule et est partagé via Firebase.
     <input type="file" id="ouvr-import" accept=".json,application/json" style="display:none" onchange="importerLabelsOuvrages(this)">
     <button onclick="document.getElementById('ouvr-import').click()" style="margin-left:6px;background:#fff;border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer">Importer un corpus</button>
