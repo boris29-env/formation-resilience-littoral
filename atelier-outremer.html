@@ -2952,12 +2952,45 @@ function metresParPixel(bbox,w){return ((bbox.e-bbox.w)*111320*Math.cos((bbox.s+
 
 // Lissage Chaikin (corner-cutting) → trait de côte plus naturel / sub-pixel
 function smoothChaikin(pts,it){if(pts.length<3)return pts;let p=pts;for(let k=0;k<it;k++){const out=[p[0]];for(let i=0;i<p.length-1;i++){const a=p[i],b=p[i+1];out.push([a[0]*0.75+b[0]*0.25,a[1]*0.75+b[1]*0.25]);out.push([a[0]*0.25+b[0]*0.75,a[1]*0.25+b[1]*0.75]);}out.push(p[p.length-1]);p=out;}return p;}
+// Masque de végétation (chlorophylle : vert > bleu, suffisamment vert) — sert à la limite végétation.
+function computeVegMask(im){const {data,w,h}=im,n=w*h;const m=new Uint8Array(n);
+  for(let i=0,p=0;p<n;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];if(g>b+8&&g>50&&g>=r-12)m[p]=1;}
+  return majority(m,w,h);}
+// Un pixel est-il à proximité (≤ R px) d'eau ? (pour ne garder que la limite végétation côtière)
+function _pxNearWater(water,w,h,x,y,R){x=Math.round(x);y=Math.round(y);const st=Math.max(3,R/6);
+  for(const d of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]])for(let r=4;r<=R;r+=st){const xx=Math.round(x+d[0]*r),yy=Math.round(y+d[1]*r);if(xx<0||yy<0||xx>=w||yy>=h)continue;if(water[yy*w+xx])return true;}
+  return false;}
+// Classe d'un segment de la ligne d'eau : 'beachrock' (estran rocheux naturel) ou 'trait' (côte).
+function _classeBordCote(im,water,a,b){const s=sampleBand(im,a,b);if(!s)return 'trait';
+  const cl=classifieOuvrage(s,analyseTransversale(im,water,a,b),granulariteBande(im,a,b));
+  return /beachrock/.test(cl.type)?'beachrock':'trait';}
 function extraireTraitDeCote(im,bbox,sens){
   const nd=nodataMask(im);
-  const mask=computeWaterMask(im,sens);
-  const epsPx=Math.max(1,2/metresParPixel(bbox,im.w));   // tolérance DP ≈ 2 m
-  let lines=shorelinesFromMask(mask,im.w,im.h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,6).map(l=>smoothChaikin(l,2));
-  return lines.map(l=>{const coords=l.map(p=>pxToGeo(p[0],p[1],im.w,im.h,bbox));return {type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:'trait de côte',methode:'segmentation mer/terre (Otsu) + contour lissé (Chaikin)',certitude:'modérée',longueur_m_est:Math.round(geoLenM(coords,bbox))}};});
+  const water=computeWaterMask(im,sens);
+  const mPerPx=metresParPixel(bbox,im.w),epsPx=Math.max(1,2/mPerPx);
+  const feats=[];
+  // 1) LIGNE D'EAU, segmentée : trait de côte naturel vs BEACHROCK (estran rocheux, étiqueté à part).
+  const lines=shorelinesFromMask(water,im.w,im.h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,8);
+  for(const raw of lines){const l=smoothChaikin(raw,2);
+    const cls=[];for(let i=1;i<l.length;i++)cls.push(_classeBordCote(im,water,l[i-1],l[i]));
+    let k=0;while(k<cls.length){const t=cls[k];let m=k;while(m+1<cls.length&&cls[m+1]===t)m++;
+      const coords=[];for(let pi=k;pi<=m+1;pi++)coords.push(pxToGeo(l[pi][0],l[pi][1],im.w,im.h,bbox));
+      const lenM=geoLenM(coords,bbox);
+      if(lenM>=15)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{
+        type:(t==='beachrock')?'beachrock (estran naturel)':'trait de côte (ligne d’eau)',
+        methode:'segmentation mer/terre (Otsu) + contour lissé',certitude:(t==='beachrock'?'naturel':'modérée'),longueur_m_est:Math.round(lenM)}});
+      k=m+1;}
+  }
+  // 2) LIMITE VÉGÉTATION (haut de plage / terre ferme) — boundary du masque végétation, gardée près du rivage.
+  const veg=computeVegMask(im);
+  const Rpx=Math.max(6,80/mPerPx);
+  for(const raw of shorelinesFromMask(veg,im.w,im.h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,6)){
+    const l=smoothChaikin(raw,2);let run=[];
+    const flush=()=>{if(run.length>=2){const coords=run.map(p=>pxToGeo(p[0],p[1],im.w,im.h,bbox)),lenM=geoLenM(coords,bbox);
+      if(lenM>=20)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:'limite végétation (haut de plage, indicatif)',methode:'limite végétation RGB près du rivage',certitude:'indicatif',longueur_m_est:Math.round(lenM),_base:true}});}run=[];};
+    for(const p of l){if(_pxNearWater(water,im.w,im.h,p[0],p[1],Rpx))run.push(p);else flush();}flush();
+  }
+  return feats;
 }
 
 /* --- Ouvrages : longitudinaux (rectitude du trait de côte) + transversaux (saillies = épis) --- */
@@ -3514,6 +3547,8 @@ function _saveTrait(){try{localStorage.setItem('trait_corr',JSON.stringify(_trai
 function _hint(t){const el=document.getElementById('annot-hint');if(el)el.textContent=t||'';}
 function _styleSig(p){p=p||{};
   if(p._label===0)return {color:'#9aa0a6',weight:2,opacity:.55,dashArray:'2,6'};   // invalidé → grisé
+  if(/beachrock/.test(p.type||''))return {color:'#c8861e',weight:3,opacity:.9};     // estran rocheux naturel (ocre)
+  if(/limite végétation/.test(p.type||''))return {color:'#2e7d32',weight:2,opacity:.85,dashArray:'7,4'}; // haut de plage (vert)
   if(p.proba_ouvrage!=null){const s=p.proba_ouvrage;return s>=0.66?{color:'#c0392b',weight:4,opacity:.95}:s>=0.4?{color:'#e08e0b',weight:3,opacity:.9,dashArray:'6,4'}:{color:'#8a8a8a',weight:2,opacity:.8,dashArray:'3,5'};}
   if(/trait de côte/.test(p.type||''))return {color:'#0E7C86',weight:3,opacity:.9};
   if(/à vérifier|à écarter|à qualifier/.test(p.type||''))return {color:'#e08e0b',weight:3,opacity:.9,dashArray:'6,4'};
