@@ -817,11 +817,12 @@ if(typeof firebase!=="undefined"&&!window._fbLoadFail){
     fbSet=(p,v)=>fbRef(p).set(v);
     fbListen=(p,cb)=>{fbRef(p).on("value",s=>cb(s.val()));};
     fbRemove=(p)=>fbRef(p).remove();
-    window._FB={setVal:fbSet,listen:fbListen,remove:fbRemove,ready:()=>fbReady,session:()=>SESSION_ID};
+    // gpush/glisten : chemin GLOBAL (hors session) pour l'apprentissage partagé des ouvrages.
+    window._FB={setVal:fbSet,listen:fbListen,remove:fbRemove,gpush:(p,v)=>fbDB.ref(p).push(v),glisten:(p,cb)=>{fbDB.ref(p).on("value",s=>cb(s.val()));},ready:()=>fbReady,session:()=>SESSION_ID};
     fbRef("_ping").set(Date.now()).then(()=>{fbReady=true;updateVoteDot(true);}).catch(()=>updateVoteDot(false));
-  }catch(e){console.warn("Firebase init error:",e);updateVoteDot(false);window._FB={setVal:()=>Promise.resolve(),listen:()=>{},remove:()=>Promise.resolve(),ready:()=>false,session:()=>SESSION_ID};}
+  }catch(e){console.warn("Firebase init error:",e);updateVoteDot(false);window._FB={setVal:()=>Promise.resolve(),listen:()=>{},remove:()=>Promise.resolve(),gpush:()=>Promise.resolve(),glisten:()=>{},ready:()=>false,session:()=>SESSION_ID};}
 }else{
-  window._FB={setVal:()=>Promise.resolve(),listen:()=>{},remove:()=>Promise.resolve(),ready:()=>false,session:()=>SESSION_ID};
+  window._FB={setVal:()=>Promise.resolve(),listen:()=>{},remove:()=>Promise.resolve(),gpush:()=>Promise.resolve(),glisten:()=>{},ready:()=>false,session:()=>SESSION_ID};
   // Retry après le chargement des scripts Firebase
   window.addEventListener('load',()=>{
     if(typeof firebase!=="undefined"&&!window._fbLoadFail){
@@ -831,8 +832,8 @@ if(typeof firebase!=="undefined"&&!window._fbLoadFail){
         const fbDB=firebase.database();
         const fbRef=p=>fbDB.ref("outremer/"+SESSION_ID+"/"+p);
         fbSet=(p,v)=>fbRef(p).set(v);fbListen=(p,cb)=>{fbRef(p).on("value",s=>cb(s.val()));};fbRemove=(p)=>fbRef(p).remove();
-        window._FB={setVal:fbSet,listen:fbListen,remove:fbRemove,ready:()=>fbReady,session:()=>SESSION_ID};
-        fbRef("_ping").set(Date.now()).then(()=>{fbReady=true;updateVoteDot(true);if(typeof TERR_ACTIF!=='undefined'&&TERR_ACTIF)initFbListeners();}).catch(()=>updateVoteDot(false));
+        window._FB={setVal:fbSet,listen:fbListen,remove:fbRemove,gpush:(p,v)=>fbDB.ref(p).push(v),glisten:(p,cb)=>{fbDB.ref(p).on("value",s=>cb(s.val()));},ready:()=>fbReady,session:()=>SESSION_ID};
+        fbRef("_ping").set(Date.now()).then(()=>{fbReady=true;updateVoteDot(true);if(typeof TERR_ACTIF!=='undefined'&&TERR_ACTIF){initFbListeners();initApprentissageOuvrages();}}).catch(()=>updateVoteDot(false));
       }catch(e){console.warn("Firebase retry failed:",e);}
     }else{updateVoteDot(false);}
   });
@@ -1452,6 +1453,7 @@ function updateDiag(T){const ss=ALL.map(ax=>axSc(ax));drawHouse(ss);
    FIREBASE LISTENERS
 ============================================================ */
 function initFbListeners(){if(!window._FB){setTimeout(initFbListeners,500);return;}
+  initApprentissageOuvrages();
   window._FB.listen('diagnostic',(val)=>updateLiveBoard(val));
   window._FB.listen('routing',(val)=>{const h=document.getElementById('route-votes-content');if(!h)return;if(!val){h.innerHTML='<em style="color:var(--muted);font-size:11px">Aucun vote.</em>';return;}let html='';GROUPES.forEach(g=>{const v=val[g.id];if(!v)return;html+=`<div class="route-vote-row"><div class="fb-board-badge" style="background:${g.couleur}">${g.lettre}</div><span class="rvo-badge rvo-${v.code}">${v.code}</span> <span style="font-size:12px;color:var(--ink)">${v.label}</span></div>`;});h.innerHTML=html||'<em>Aucun vote.</em>';});}
 function pushDiagToFb(){if(!window._FB||!GRP_ACTIF)return;const ss=ALL.map(ax=>axSc(ax));
@@ -2728,7 +2730,7 @@ window.lancerAnalyse=async function(mode){
 };
 
 /* ---- Sortie SIG : parsing GeoJSON, table attributaire, carte, export ---- */
-let _lastSigGeojson=null;
+let _lastSigGeojson=null,_lastSigBbox=null;
 function extractJsonObject(txt){
   if(!txt)return null;
   let s=txt.trim().replace(/^```(?:json|geojson)?/i,'').replace(/```$/,'').trim();
@@ -2793,21 +2795,28 @@ function afficherSig(gj,bbox,meta){
     return {type:'Feature',geometry:ng,properties:p};
   }).filter(Boolean);
   delete gj.crs;
-  _lastSigGeojson=gj;_lastSigMeta=meta||{};
+  _lastSigGeojson=gj;_lastSigMeta=meta||{};_lastSigBbox=bbox;
   if(!gj.features.length){
     irBody.innerHTML=`<div class="img-result-section"><h4>Aucune entité détectée</h4><p style="font-size:12px;color:var(--muted)">Aucune limite mer/terre ni forme rectiligne détectée. Ajustez la sensibilité, choisissez une orthophoto plus nette ou une emprise plus serrée.</p></div>`;
     return 0;
   }
+  const apprenable=gj.features.some(f=>f.properties&&f.properties._features);
   const rows=gj.features.map((f,i)=>{
     const p=f.properties||{};
-    return `<tr style="border-top:1px solid var(--line)"><td style="padding:4px 6px;font-family:var(--mono);font-size:10px">${i+1}</td><td style="padding:4px 6px;font-size:11px;color:var(--navy);font-weight:600">${p.type||f.geometry.type}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;color:var(--muted)">${f.geometry.type}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;text-align:right">${p.longueur_m_est!=null?p.longueur_m_est+' m':'—'}</td><td style="padding:4px 6px"><span class="cert ${(p.certitude||'').indexOf('élev')>=0?'high':(p.certitude||'').indexOf('faible')>=0?'low':'med'}">${p.certitude||'—'}</span></td></tr>`;
+    const valCell=apprenable?(p._features?`<td style="padding:4px 6px;white-space:nowrap">`+
+        `<button onclick="validerOuvrage(${i},1)" title="Valider : vrai ouvrage" style="border:1px solid ${p._label===1?'#1a8a4a':'var(--line)'};background:${p._label===1?'#1a8a4a':'#fff'};color:${p._label===1?'#fff':'#1a8a4a'};border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer;font-weight:700">✓</button> `+
+        `<button onclick="validerOuvrage(${i},0)" title="Invalider : pas un ouvrage" style="border:1px solid ${p._label===0?'#c0392b':'var(--line)'};background:${p._label===0?'#c0392b':'#fff'};color:${p._label===0?'#fff':'#c0392b'};border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer;font-weight:700">✗</button>`+
+        (p.proba_ouvrage!=null?` <span style="font-family:var(--mono);font-size:9.5px;color:var(--muted)">p=${p.proba_ouvrage}</span>`:'')+
+      `</td>`:`<td style="padding:4px 6px;color:var(--muted);font-size:10px">—</td>`):'';
+    return `<tr style="border-top:1px solid var(--line)"><td style="padding:4px 6px;font-family:var(--mono);font-size:10px">${i+1}</td><td style="padding:4px 6px;font-size:11px;color:var(--navy);font-weight:600">${p.type||f.geometry.type}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;color:var(--muted)">${f.geometry.type}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;text-align:right">${p.longueur_m_est!=null?p.longueur_m_est+' m':'—'}</td><td style="padding:4px 6px"><span class="cert ${(p.certitude||'').indexOf('élev')>=0?'high':(p.certitude||'').indexOf('faible')>=0?'low':'med'}">${p.certitude||'—'}</span></td>${valCell}</tr>`;
   }).join('');
   irBody.innerHTML=`
     <div class="img-result-section"><h4>Couche SIG extraite · ${gj.features.length} entité(s)${(meta&&meta.date_photo)?' · prise de vue '+meta.date_photo:''}</h4>
       <p style="font-size:11.5px;color:var(--muted)">Emprise WGS84 : ${bbox.w}, ${bbox.s} → ${bbox.e}, ${bbox.n}.${(meta&&meta.date_photo)?' Date de la photo (IGN) : <b>'+meta.date_photo+'</b>.':''} Coordonnées par <b>géoréférencement pixel→WGS84</b> (exact à la résolution de l'image). Détection automatique par traitement d'image — à valider sur le terrain. Pas d'évaluation d'état ni d'altitude.${(meta&&meta.aiNote)?' <b style="color:var(--teal)">'+meta.aiNote+'</b>':''}</p>
+      ${apprenable?apprentissageStatutHTML():''}
     </div>
     <div style="overflow:auto;border:1px solid var(--line);border-radius:7px">
-      <table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--soft)"><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">#</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Type</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Géom.</th><th style="padding:5px 6px;text-align:right;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Long. est.</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Certitude</th></tr></thead><tbody>${rows}</tbody></table>
+      <table style="width:100%;border-collapse:collapse"><thead><tr style="background:var(--soft)"><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">#</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Type</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Géom.</th><th style="padding:5px 6px;text-align:right;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Long. est.</th><th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Certitude</th>${apprenable?'<th style="padding:5px 6px;text-align:left;font-family:var(--mono);font-size:8.5px;text-transform:uppercase;color:var(--muted)">Validation</th>':''}</tr></thead><tbody>${rows}</tbody></table>
     </div>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
       <button onclick="chargerSigSurCarte()" style="background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Afficher sur la carte</button>
@@ -3033,14 +3042,42 @@ function extraireOuvrages(im,bbox,sens){
   if(!lines.length)return [];
   const minM=Math.max(20,55-(sens-50)*0.5);
   const feats=[];
-  // 1) Longitudinaux : segments droits assez longs, classés par radiométrie + géométrie transversale
-  //    (contact à l'eau, persistance vers la terre, largeur/bords parallèles, granularité de texture).
-  for(const l of lines)for(let i=1;i<l.length;i++){
-    const coords=[pxToGeo(l[i-1][0],l[i-1][1],im.w,im.h,bbox),pxToGeo(l[i][0],l[i][1],im.w,im.h,bbox)];
-    const Lm=geoLenM(coords,bbox);
-    if(Lm>=minM){const tr=analyseTransversale(im,water,l[i-1],l[i]);
-      const cl=classifieOuvrage(sampleBand(im,l[i-1],l[i]),tr,granulariteBande(im,l[i-1],l[i]));
-      feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:cl.type,classe_suggeree:cl.type,methode:'rectitude + radiométrie + transversale (contact eau, largeur/bords, granularité)',rugosite:cl.rugosite,teinte:cl.teinte,granularite:cl.granularite,largeur_m_est:cl.largeurPx!=null?Math.round(cl.largeurPx*mPerPx):null,bords:cl.bords,contact_eau:cl.contact_eau,certitude:cl.certitude,longueur_m_est:Math.round(Lm)}});}
+  // 1) Longitudinaux : on classe CHAQUE segment du trait par radiométrie + géométrie transversale,
+  //    puis on CHAÎNE les segments contigus de même classe → un ouvrage est restitué sur toute sa
+  //    longueur (et non par tronçons). Chaque entité porte son vecteur de caractéristiques (_features)
+  //    pour l'apprentissage supervisé (validation humaine → régression logistique).
+  for(const l of lines){
+    const segs=[];
+    for(let i=1;i<l.length;i++){
+      const cg=[pxToGeo(l[i-1][0],l[i-1][1],im.w,im.h,bbox),pxToGeo(l[i][0],l[i][1],im.w,im.h,bbox)];
+      const lenM=geoLenM(cg,bbox);
+      const s=sampleBand(im,l[i-1],l[i]);
+      const tr=analyseTransversale(im,water,l[i-1],l[i]);
+      const gr=granulariteBande(im,l[i-1],l[i]);
+      const cl=classifieOuvrage(s,tr,gr);
+      const fv=s?{sd:s.sd,gran:gr,cv:tr.largeurCV,net:tr.netteteBord,wf:tr.waterFrac,persist:tr.persistanceTerrePx,Lm:s.Lm,sat:s.sat,rmb:s.r-s.b,larg:(tr.largeurPx||0)*mPerPx,len:lenM}:null;
+      segs.push({cl,fv,lenM,p0:i-1,p1:i});
+    }
+    let k=0;
+    while(k<segs.length){
+      const t=segs[k].cl.type;let m=k;
+      while(m+1<segs.length&&segs[m+1].cl.type===t)m++;
+      const run=segs.slice(k,m+1),totLen=run.reduce((a,x)=>a+x.lenM,0);
+      if(totLen>=minM){
+        const pts=[];for(let pi=run[0].p0;pi<=run[run.length-1].p1;pi++)pts.push(pxToGeo(l[pi][0],l[pi][1],im.w,im.h,bbox));
+        const valid=run.every(x=>x.fv);const agg={};
+        if(valid){let wsum=0;for(const key in run[0].fv)agg[key]=0;for(const x of run){const wgt=x.lenM||1;wsum+=wgt;for(const key in x.fv)agg[key]+=x.fv[key]*wgt;}for(const key in agg)agg[key]/=(wsum||1);agg.len=totLen;}
+        const cl0=run[0].cl;
+        const bords=valid?((agg.cv<0.35&&agg.net>40)?'réguliers (parallèles)':(agg.cv>0.6?'irréguliers (dentelés)':'diffus')):cl0.bords;
+        const props={type:t,classe_suggeree:t,methode:'rectitude + radiométrie + transversale · segments chaînés',
+          rugosite:valid?Math.round(agg.sd):cl0.rugosite,teinte:cl0.teinte,granularite:valid?Math.round(agg.gran):cl0.granularite,
+          largeur_m_est:valid?Math.round(agg.larg):(cl0.largeurPx!=null?Math.round(cl0.largeurPx*mPerPx):null),
+          bords,contact_eau:valid?(agg.wf>0.35):cl0.contact_eau,certitude:cl0.certitude,longueur_m_est:Math.round(totLen),n_segments:run.length};
+        if(valid)props._features=agg;
+        feats.push({type:'Feature',geometry:{type:'LineString',coordinates:pts},properties:props});
+      }
+      k=m+1;
+    }
   }
   // 2) Transversaux : saillies étroites (épis)
   for(const l of lines){for(let j=1;j<l.length-1;j++){const a=l[j-1],P=l[j],b=l[j+1];
@@ -3049,6 +3086,72 @@ function extraireOuvrages(im,bbox,sens){
       feats.push({type:'Feature',geometry:{type:'LineString',coordinates:[pxToGeo(mid[0],mid[1],im.w,im.h,bbox),pxToGeo(P[0],P[1],im.w,im.h,bbox)]},properties:{type:'épi probable (ouvrage transversal)',methode:'saillie du trait de côte',certitude:'faible',longueur_m_est:Math.round(d)}});}}
   }
   return feats;
+}
+
+/* === Apprentissage supervisé des ouvrages =================================================
+   L'utilisateur valide (✓) ou invalide (✗) chaque ouvrage détecté ; chaque label est stocké
+   (Firebase, chemin GLOBAL partagé entre toutes les sessions) avec le vecteur de caractéristiques
+   de l'entité. Une régression logistique entraînée dans le navigateur en déduit un « score ouvrage »
+   qui remplace la certitude heuristique dès qu'assez d'exemples sont disponibles (cold-start sinon). */
+const OUVR_FK=['sd','gran','cv','net','wf','persist','Lm','sat','rmb','larg','len'];
+let _ouvrLabels=[],_ouvrModel=null,_apprInit=false;
+function initApprentissageOuvrages(){
+  if(_apprInit||!window._FB||!window._FB.glisten)return;_apprInit=true;
+  window._FB.glisten('outremer/_apprentissage_ouvrages/labels',(val)=>{
+    _ouvrLabels=val?Object.values(val).filter(r=>r&&r.f&&typeof r.y==='number'):[];
+    entrainerModeleOuvrages();
+    if(typeof imgRoutineActive!=='undefined'&&imgRoutineActive==='ouvrages')majApprentissageUI();
+  });
+}
+function _vecOuvr(f){const v=[];for(const k of OUVR_FK){const x=f?f[k]:null;if(x==null||isNaN(x))return null;v.push(+x);}return v;}
+function entrainerModeleOuvrages(){
+  const X=[],Y=[];
+  for(const r of _ouvrLabels){const v=_vecOuvr(r.f);if(v){X.push(v);Y.push(r.y?1:0);}}
+  const n=X.length,F=OUVR_FK.length,npos=Y.reduce((a,b)=>a+b,0),nneg=n-npos;
+  if(n<12||npos<3||nneg<3){_ouvrModel=null;return;}
+  const mean=new Array(F).fill(0),std=new Array(F).fill(0);
+  for(const x of X)for(let j=0;j<F;j++)mean[j]+=x[j];for(let j=0;j<F;j++)mean[j]/=n;
+  for(const x of X)for(let j=0;j<F;j++)std[j]+=(x[j]-mean[j])**2;for(let j=0;j<F;j++)std[j]=Math.sqrt(std[j]/n)||1;
+  const Z=X.map(x=>x.map((v,j)=>(v-mean[j])/std[j]));
+  let w=new Array(F).fill(0),b=0;const lr=0.3,lam=0.01,iters=400;
+  for(let it=0;it<iters;it++){const gw=new Array(F).fill(0);let gb=0;
+    for(let i=0;i<n;i++){let z=b;for(let j=0;j<F;j++)z+=w[j]*Z[i][j];const p=1/(1+Math.exp(-z)),e=p-Y[i];for(let j=0;j<F;j++)gw[j]+=e*Z[i][j];gb+=e;}
+    for(let j=0;j<F;j++)w[j]-=lr*(gw[j]/n+lam*w[j]);b-=lr*gb/n;}
+  let ok=0;for(let i=0;i<n;i++){let z=b;for(let j=0;j<F;j++)z+=w[j]*Z[i][j];if(((1/(1+Math.exp(-z)))>=0.5?1:0)===Y[i])ok++;}
+  _ouvrModel={w,b,mean,std,n,npos,nneg,acc:ok/n};
+}
+function scoreOuvrage(f){if(!_ouvrModel)return null;const v=_vecOuvr(f);if(!v)return null;let z=_ouvrModel.b;for(let j=0;j<OUVR_FK.length;j++)z+=_ouvrModel.w[j]*((v[j]-_ouvrModel.mean[j])/_ouvrModel.std[j]);return 1/(1+Math.exp(-z));}
+function appliquerModeleOuvrages(feats){
+  if(!_ouvrModel)return;
+  for(const f of feats){const p=f&&f.properties;if(!p||!p._features)continue;const s=scoreOuvrage(p._features);if(s==null)continue;
+    p.proba_ouvrage=+s.toFixed(2);p.certitude=(s>=0.66?'élevée':s>=0.4?'modérée':'faible')+' (modèle)';}
+}
+window.validerOuvrage=function(idx,y){
+  const gj=_lastSigGeojson;if(!gj||!gj.features||!gj.features[idx])return;
+  const p=gj.features[idx].properties||{};
+  if(!p._features){alert("Entité non apprenable (pas de vecteur de caractéristiques).");return;}
+  p._label=y;
+  const rec={f:p._features,y:y?1:0,type:p.type||'',site:(typeof _lastSigMeta!=='undefined'&&_lastSigMeta&&_lastSigMeta.site)||'',sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now()};
+  if(window._FB&&window._FB.gpush)window._FB.gpush('outremer/_apprentissage_ouvrages/labels',rec).catch(()=>{});
+  majApprentissageUI();
+};
+window.exporterLabelsOuvrages=function(){
+  const blob=new Blob([JSON.stringify(_ouvrLabels,null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=u;a.download='apprentissage_ouvrages_labels.json';a.click();URL.revokeObjectURL(u);
+};
+function apprentissageStatutHTML(){
+  const n=_ouvrLabels.length,pos=_ouvrLabels.filter(r=>r.y).length;
+  const etat=_ouvrModel?`<b style="color:var(--teal)">modèle actif</b> · exactitude ${Math.round(_ouvrModel.acc*100)}% (n=${_ouvrModel.n})`
+    :`amorce heuristique <span style="color:var(--muted)">(modèle dès 12 exemples avec les 2 classes)</span>`;
+  return `<div style="margin-top:10px;padding:8px 10px;border:1px dashed var(--line);border-radius:7px;background:var(--soft);font-size:11px">
+    <b>Apprentissage partagé</b> — ${n} validation(s) : ${pos} ouvrage(s) / ${n-pos} rejet(s). État : ${etat}.
+    Validez ✓ / ✗ les entités ci-dessous ; le modèle se met à jour pour tous.
+    <button onclick="exporterLabelsOuvrages()" style="margin-left:6px;background:#fff;border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer">Exporter les validations</button></div>`;
+}
+function majApprentissageUI(){
+  if(typeof _lastSigGeojson==='undefined'||!_lastSigGeojson||typeof imgRoutineActive==='undefined'||imgRoutineActive!=='ouvrages')return;
+  appliquerModeleOuvrages(_lastSigGeojson.features);
+  if(typeof _lastSigBbox!=='undefined'&&_lastSigBbox)afficherSig(_lastSigGeojson,_lastSigBbox,_lastSigMeta);
 }
 
 window.lancerExtractionSIG=async function(){
@@ -3069,7 +3172,8 @@ window.lancerExtractionSIG=async function(){
     // Garde-fou de résolution : un ouvrage (perré/digue ~5-15 m) devient sous-pixellaire au-delà
     // de ~2,5 m/px ; la caractérisation radiométrique (largeur/texture) n'est alors plus fiable.
     if(imgRoutineActive==='ouvrages'){const mpp=metresParPixel(b,im.w);
-      if(mpp>2.5)aiNote=`Résolution ≈ ${mpp.toFixed(1)} m/px : un ouvrage (~5-15 m) est quasi sous-pixellaire — resserrez l'emprise (visez < 1 m/px) pour une caractérisation fiable. `;}
+      if(mpp>2.5)aiNote=`Résolution ≈ ${mpp.toFixed(1)} m/px : un ouvrage (~5-15 m) est quasi sous-pixellaire — resserrez l'emprise (visez < 1 m/px) pour une caractérisation fiable. `;
+      appliquerModeleOuvrages(feats);}
     if(feats.length&&document.getElementById('sig-ai-check')?.checked){
       irBody.textContent='Contrôle IA (2ᵉ passe)…';document.getElementById('ir-badge').textContent='Contrôle IA…';
       const before=feats.length;feats=await controleIA(im,feats,b,imgRoutineActive);
