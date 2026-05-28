@@ -1330,7 +1330,12 @@ window.dragOver=function(e){e.preventDefault();document.getElementById('drop-zon
 function ajouterGeojsonLayer(txt,nom){
   if(!mapInstance||!window.L)return;const L=window.L;
   try{const data=JSON.parse(txt);
-    const layer=L.geoJSON(data,{style:{color:'#B07E1B',weight:2,opacity:.85,fillOpacity:.2},pointToLayer:(_,ll)=>L.circleMarker(ll,{radius:7,color:'#B07E1B',fillOpacity:.7})}).addTo(mapInstance);
+    // Style par niveau de confiance quand un score modèle est présent : rouge = ouvrage (≥0.66),
+    // orange = à vérifier (0.4–0.66), gris pointillé = douteux ; sinon ocre par défaut.
+    const styleFor=p=>{p=p||{};if(p.proba_ouvrage!=null){const s=p.proba_ouvrage;return s>=0.66?{color:'#c0392b',weight:3,opacity:.95}:s>=0.4?{color:'#e08e0b',weight:2,opacity:.9,dashArray:'6,4'}:{color:'#8a8a8a',weight:2,opacity:.8,dashArray:'3,5'};}
+      if(/à vérifier|à écarter|à qualifier/.test(p.type||''))return {color:'#8a8a8a',weight:2,opacity:.8,dashArray:'3,5'};
+      return {color:'#B07E1B',weight:2,opacity:.85,fillOpacity:.2};};
+    const layer=L.geoJSON(data,{style:f=>styleFor(f&&f.properties),pointToLayer:(_,ll)=>L.circleMarker(ll,{radius:7,color:'#B07E1B',fillOpacity:.7})}).addTo(mapInstance);
     loadedLayers.push({nom,layer});refreshLoadedLayers();
     const bounds=layer.getBounds();if(bounds.isValid())mapInstance.fitBounds(bounds,{padding:[20,20]});
   }catch(err){alert('Fichier GeoJSON invalide : '+err.message);}
@@ -2730,7 +2735,7 @@ window.lancerAnalyse=async function(mode){
 };
 
 /* ---- Sortie SIG : parsing GeoJSON, table attributaire, carte, export ---- */
-let _lastSigGeojson=null,_lastSigBbox=null;
+let _lastSigGeojson=null,_lastSigBbox=null,_lastSigCandidates=null;
 function extractJsonObject(txt){
   if(!txt)return null;
   let s=txt.trim().replace(/^```(?:json|geojson)?/i,'').replace(/```$/,'').trim();
@@ -2808,7 +2813,8 @@ function afficherSig(gj,bbox,meta){
         `<button onclick="validerOuvrage(${i},0)" title="Invalider : pas un ouvrage" style="border:1px solid ${p._label===0?'#c0392b':'var(--line)'};background:${p._label===0?'#c0392b':'#fff'};color:${p._label===0?'#fff':'#c0392b'};border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer;font-weight:700">✗</button>`+
         (p.proba_ouvrage!=null?` <span style="font-family:var(--mono);font-size:9.5px;color:var(--muted)">p=${p.proba_ouvrage}</span>`:'')+
       `</td>`:`<td style="padding:4px 6px;color:var(--muted);font-size:10px">—</td>`):'';
-    return `<tr style="border-top:1px solid var(--line)"><td style="padding:4px 6px;font-family:var(--mono);font-size:10px">${i+1}</td><td style="padding:4px 6px;font-size:11px;color:var(--navy);font-weight:600">${p.type||f.geometry.type}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;color:var(--muted)">${f.geometry.type}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;text-align:right">${p.longueur_m_est!=null?p.longueur_m_est+' m':'—'}</td><td style="padding:4px 6px"><span class="cert ${(p.certitude||'').indexOf('élev')>=0?'high':(p.certitude||'').indexOf('faible')>=0?'low':'med'}">${p.certitude||'—'}</span></td>${valCell}</tr>`;
+    const dout=/à vérifier|à écarter|à qualifier/.test(p.type||'');
+    return `<tr style="border-top:1px solid var(--line)${dout?';opacity:.72':''}"><td style="padding:4px 6px;font-family:var(--mono);font-size:10px">${i+1}</td><td style="padding:4px 6px;font-size:11px;color:${dout?'var(--muted)':'var(--navy)'};font-weight:600">${p.type||f.geometry.type}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;color:var(--muted)">${f.geometry.type}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;text-align:right">${p.longueur_m_est!=null?p.longueur_m_est+' m':'—'}</td><td style="padding:4px 6px"><span class="cert ${(p.certitude||'').indexOf('élev')>=0?'high':(p.certitude||'').indexOf('faible')>=0?'low':'med'}">${p.certitude||'—'}</span></td>${valCell}</tr>`;
   }).join('');
   irBody.innerHTML=`
     <div class="img-result-section"><h4>Couche SIG extraite · ${gj.features.length} entité(s)${(meta&&meta.date_photo)?' · prise de vue '+meta.date_photo:''}</h4>
@@ -3115,14 +3121,9 @@ function extraireOuvrages(im,bbox,sens){
     if(valid)props._features=agg;
     feats.push({type:'Feature',geometry:{type:'LineString',coordinates:pts},properties:props});
   };
-  // Modèle actif ? (régression logistique entraînée sur les validations). Sonde avec un vecteur complet.
-  const SEED=0.65,GROW=0.45;
-  const modelActif=(typeof scoreOuvrage==='function')&&scoreOuvrage({sd:30,gran:15,cv:0.8,net:60,wf:0.9,persist:5,Lm:95,sat:18,rmb:-15,larg:6,len:120,landReach:0.9})!=null;
-  // 1) Longitudinaux : on classe CHAQUE segment du trait (radiométrie + géométrie transversale).
-  //    Sans modèle : on chaîne les segments contigus de MÊME classe heuristique.
-  //    Avec modèle (dernier cran d'itération) : on chaîne par SCORE — un run est gardé s'il contient une
-  //    GRAINE à haut score (≥0.65) et on l'ÉTEND aux voisins au-dessus d'un seuil bas (≥0.45), récupérant
-  //    ainsi les tronçons que le 1ᵉʳ passage avait rejetés/déclassés (changement de classe, longueur courte).
+  // 1) Longitudinaux : on classe CHAQUE segment du trait (radiométrie + géométrie transversale), puis on
+  //    CHAÎNE les segments contigus de même classe en candidats. Ces candidats (granularité = celle du
+  //    corpus d'apprentissage) sont ensuite NOTÉS et triés par le modèle en aval (affinerOuvragesParModele).
   for(const l of lines){
     const segs=[];
     for(let i=1;i<l.length;i++){
@@ -3133,27 +3134,15 @@ function extraireOuvrages(im,bbox,sens){
       const gr=granulariteBande(im,l[i-1],l[i]);
       const cl=classifieOuvrage(s,tr,gr);
       const fv=s?{sd:s.sd,gran:gr,cv:tr.largeurCV,net:tr.netteteBord,wf:tr.waterFrac,persist:tr.persistanceTerrePx,Lm:s.Lm,sat:s.sat,rmb:s.r-s.b,larg:(tr.largeurPx||0)*mPerPx,len:lenM,landReach:tr.landReach}:null;
-      segs.push({cl,fv,lenM,p0:i-1,p1:i,sc:(modelActif&&fv)?scoreOuvrage(fv):0});
+      segs.push({cl,fv,lenM,p0:i-1,p1:i});
     }
-    if(modelActif){
-      let k=0;
-      while(k<segs.length){
-        if(segs[k].sc<GROW){k++;continue;}
-        let m=k;while(m+1<segs.length&&segs[m+1].sc>=GROW)m++;
-        const run=segs.slice(k,m+1),totLen=run.reduce((a,x)=>a+x.lenM,0);
-        let best=run[0];for(const x of run)if(x.sc>best.sc)best=x;
-        if(best.sc>=SEED&&totLen>=Math.max(20,minM*0.6))pushRun(l,run,best.cl.type,'modèle (régression logistique) · graine + extension');
-        k=m+1;
-      }
-    }else{
-      let k=0;
-      while(k<segs.length){
-        const t=segs[k].cl.type;let m=k;
-        while(m+1<segs.length&&segs[m+1].cl.type===t)m++;
-        const run=segs.slice(k,m+1),totLen=run.reduce((a,x)=>a+x.lenM,0);
-        if(totLen>=minM)pushRun(l,run,t,'rectitude + radiométrie + transversale · segments chaînés');
-        k=m+1;
-      }
+    let k=0;
+    while(k<segs.length){
+      const t=segs[k].cl.type;let m=k;
+      while(m+1<segs.length&&segs[m+1].cl.type===t)m++;
+      const run=segs.slice(k,m+1),totLen=run.reduce((a,x)=>a+x.lenM,0);
+      if(totLen>=minM)pushRun(l,run,t,'rectitude + radiométrie + transversale · segments chaînés');
+      k=m+1;
     }
   }
   // Passe 2 : combler les discontinuités entre ouvrages quasi-colinéaires et proches
@@ -3208,10 +3197,25 @@ function entrainerModeleOuvrages(){
   _ouvrModel={w,b,mean,std,n,npos,nneg,acc:ok/n};
 }
 function scoreOuvrage(f){if(!_ouvrModel)return null;const v=_vecOuvr(f);if(!v)return null;let z=_ouvrModel.b;for(let j=0;j<OUVR_FK.length;j++)z+=_ouvrModel.w[j]*((v[j]-_ouvrModel.mean[j])/_ouvrModel.std[j]);return 1/(1+Math.exp(-z));}
-function appliquerModeleOuvrages(feats){
-  if(!_ouvrModel)return;
-  for(const f of feats){const p=f&&f.properties;if(!p||!p._features)continue;const s=scoreOuvrage(p._features);if(s==null)continue;
-    p.proba_ouvrage=+s.toFixed(2);p.certitude=(s>=0.66?'élevée':s>=0.4?'modérée':'faible')+' (modèle)';}
+// Affine les candidats HEURISTIQUES avec le modèle (granularité = celle du corpus → notation fiable,
+// pas d'hallucination sur des segments bruts). Trois niveaux : ≥0.65 = ouvrage ; 0.40–0.65 = à vérifier
+// (affiché, grisé, validable) ; <0.40 = rejet (masqué). Sans modèle : candidats inchangés.
+function affinerOuvragesParModele(feats){
+  if(!_ouvrModel)return feats;
+  const out=[];
+  for(const f of feats){const p=f&&f.properties;
+    if(!p||!p._features){out.push(f);continue;}
+    const s=scoreOuvrage(p._features);
+    if(s==null){out.push(f);continue;}
+    p.proba_ouvrage=+s.toFixed(2);
+    if(s>=0.65){
+      if(!/(enrochement|perré|digue|épi)/.test(p.type||'')){p.type='ouvrage probable (modèle)';p.classe_suggeree=p.type;}
+      p.certitude='élevée (modèle)';out.push(f);
+    }else if(s>=0.40){
+      p.type='forme à vérifier (modèle)';p.classe_suggeree=p.type;p.certitude='modérée (modèle)';out.push(f);
+    } // s<0.40 : écarté par le modèle (non affiché)
+  }
+  return out;
 }
 window.validerOuvrage=function(idx,y){
   const gj=_lastSigGeojson;if(!gj||!gj.features||!gj.features[idx])return;
@@ -3257,7 +3261,9 @@ function apprentissageStatutHTML(){
 }
 function majApprentissageUI(){
   if(typeof _lastSigGeojson==='undefined'||!_lastSigGeojson||typeof imgRoutineActive==='undefined'||imgRoutineActive!=='ouvrages')return;
-  appliquerModeleOuvrages(_lastSigGeojson.features);
+  // Re-trier depuis l'ensemble des candidats heuristiques (et non le set déjà filtré), pour que
+  // la mise à jour du modèle puisse re-promouvoir/écarter sans perte progressive d'entités.
+  if(_lastSigCandidates)_lastSigGeojson.features=affinerOuvragesParModele(_lastSigCandidates.slice());
   if(typeof _lastSigBbox!=='undefined'&&_lastSigBbox)afficherSig(_lastSigGeojson,_lastSigBbox,_lastSigMeta);
 }
 
@@ -3280,7 +3286,8 @@ window.lancerExtractionSIG=async function(){
     // de ~2,5 m/px ; la caractérisation radiométrique (largeur/texture) n'est alors plus fiable.
     if(imgRoutineActive==='ouvrages'){const mpp=metresParPixel(b,im.w);
       if(mpp>2.5)aiNote=`Résolution ≈ ${mpp.toFixed(1)} m/px : un ouvrage (~5-15 m) est quasi sous-pixellaire — resserrez l'emprise (visez < 1 m/px) pour une caractérisation fiable. `;
-      appliquerModeleOuvrages(feats);}
+      _lastSigCandidates=feats.slice();feats=affinerOuvragesParModele(feats);
+      if(_ouvrModel){const nO=feats.filter(f=>/(enrochement|perré|digue|ouvrage)/.test(f.properties.type||'')).length,nV=feats.filter(f=>/à vérifier/.test(f.properties.type||'')).length;aiNote+=`Modèle actif : ${nO} ouvrage(s), ${nV} à vérifier (rejets masqués). `;}}
     if(feats.length&&document.getElementById('sig-ai-check')?.checked){
       irBody.textContent='Contrôle IA (2ᵉ passe)…';document.getElementById('ir-badge').textContent='Contrôle IA…';
       const before=feats.length;feats=await controleIA(im,feats,b,imgRoutineActive);
