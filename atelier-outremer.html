@@ -2940,13 +2940,14 @@ function keepSeaComponents(mask,w,h){const lab=new Int32Array(w*h);let cur=0;con
 function nodataMask(im){const {data,w,h}=im;const nd=new Uint8Array(w*h);for(let i=0,p=0;p<w*h;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];if((r>248&&g>248&&b>248)||(r<7&&g<7&&b<7))nd[p]=1;}return nd;}
 // Masque d'eau par NDWI sur l'IRC (R=PIR, B=vert visible) : NDWI=(Vert−PIR)/(Vert+PIR). L'eau absorbe
 // le PIR → forte valeur, MÊME en haut-fond turquoise → le trait se cale au contact sable/eau.
-function _waterMaskNDWI(ir,sens){const {data,w,h}=ir,n=w*h;const nd=nodataMask(ir);const wi=new Float32Array(n);let lo=1e9,hi=-1e9;
+function _waterMaskNDWI(ir,sens,raw){const {data,w,h}=ir,n=w*h;const nd=nodataMask(ir);const wi=new Float32Array(n);let lo=1e9,hi=-1e9;
   for(let i=0,p=0;p<n;i+=4,p++){const NIR=data[i],Gv=data[i+2];const v=(Gv-NIR)/(Gv+NIR+1);wi[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;}
   let thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);
   const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p])?1:0;
-  return fillWaterHoles(keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h),w,h,0.004);}
-function computeWaterMask(im,sens,imIRC){
-  if(imIRC&&imIRC.data&&imIRC.w===im.w&&imIRC.h===im.h)return _waterMaskNDWI(imIRC,sens);   // télédétection PIR si dispo
+  const sea=keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h);
+  return raw?sea:fillWaterHoles(sea,w,h,0.004);}   // raw = sans bouchage (les structures détachées restent des « trous »)
+function computeWaterMask(im,sens,imIRC,raw){
+  if(imIRC&&imIRC.data&&imIRC.w===im.w&&imIRC.h===im.h)return _waterMaskNDWI(imIRC,sens,raw);   // télédétection PIR si dispo
   const {data,w,h}=im,n=w*h;const nd=nodataMask(im);const wi=new Float32Array(n);const veg=new Uint8Array(n);let lo=1e9,hi=-1e9;
   for(let i=0,p=0;p<n;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];
     // Indice "cyan" normalisé pour l'eau côtière tropicale : qu'elle soit bleu profond ou turquoise
@@ -2962,7 +2963,8 @@ function computeWaterMask(im,sens,imIRC){
   const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p]&&!veg[p])?1:0;
   // denoise → ouverture (supprime rivières/tendrils) → garde mer + grands plans d'eau (lagons/atolls)
   // → bouche les petits trous enclavés (bateaux, taches d'herbier/écume) pour ne pas tracer de faux îlots.
-  return fillWaterHoles(keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h),w,h,0.004);}
+  const sea=keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h);
+  return raw?sea:fillWaterHoles(sea,w,h,0.004);}
 // Bouche les composantes NON-eau entièrement enclavées dans l'eau et de petite taille (bateaux, herbiers,
 // écume) → évite les contours/îlots parasites dans le plan d'eau. Les grandes îles réelles sont conservées.
 function fillWaterHoles(m,w,h,maxFrac){const n=w*h,reached=new Uint8Array(n),st=[];
@@ -3208,6 +3210,26 @@ function _detecterArrierePlage(im,water,imIRC,nd,bbox,mPerPx,minM){
         out.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:pr});}
       k=m+1;}}
   return out;}
+// Brise-lames DÉTACHÉS : structures non-eau ENCLAVÉES dans le plan d'eau, nettement ALLONGÉES (ACP),
+// longues et étroites → au large, parallèles à la côte. Détectées sur le masque RAW (sans bouchage).
+function _detecterBriseLames(im,sens,imIRC,bbox,mPerPx,minM){
+  const w=im.w,h=im.h,sea=computeWaterMask(im,sens,imIRC,true),n=w*h,reached=new Uint8Array(n),st=[],out=[];
+  const pushIf=p=>{if(!sea[p]&&!reached[p]){reached[p]=1;st.push(p);}};
+  for(let x=0;x<w;x++){pushIf(x);pushIf((h-1)*w+x);}for(let y=0;y<h;y++){pushIf(y*w);pushIf(y*w+w-1);}
+  while(st.length){const p=st.pop(),x=p%w,y=(p-x)/w;if(x>0)pushIf(p-1);if(x<w-1)pushIf(p+1);if(y>0)pushIf(p-w);if(y<h-1)pushIf(p+w);}
+  const lab=new Int32Array(n);
+  for(let p0=0;p0<n;p0++){if(sea[p0]||reached[p0]||lab[p0])continue;const comp=[p0];lab[p0]=1;let qi=0;
+    while(qi<comp.length){const p=comp[qi++],x=p%w,y=(p-x)/w;const nb=[];if(x>0)nb.push(p-1);if(x<w-1)nb.push(p+1);if(y>0)nb.push(p-w);if(y<h-1)nb.push(p+w);for(const r of nb)if(!sea[r]&&!reached[r]&&!lab[r]){lab[r]=1;comp.push(r);}}
+    const A=comp.length;if(A<10||A>0.05*n)continue;                       // ni bruit, ni grande île
+    let mxc=0,myc=0;for(const q of comp){mxc+=q%w;myc+=(q-(q%w))/w;}mxc/=A;myc/=A;
+    let sxx=0,syy=0,sxy=0;for(const q of comp){const x=q%w-mxc,y=(q-(q%w))/w-myc;sxx+=x*x;syy+=y*y;sxy+=x*y;}sxx/=A;syy/=A;sxy/=A;
+    const trc=sxx+syy,det=sxx*syy-sxy*sxy,disc=Math.sqrt(Math.max(0,trc*trc/4-det)),l1=trc/2+disc,l2=trc/2-disc;
+    if(l2<=0.4||l1/l2<6)continue;                                          // doit être nettement allongé
+    const ang=0.5*Math.atan2(2*sxy,sxx-syy),ux=Math.cos(ang),uy=Math.sin(ang);
+    let tmin=1e9,tmax=-1e9,pa=null,pb=null;for(const q of comp){const x=q%w,y=(q-(q%w))/w,t=(x-mxc)*ux+(y-myc)*uy;if(t<tmin){tmin=t;pa=[x,y];}if(t>tmax){tmax=t;pb=[x,y];}}
+    const coords=[pxToGeo(pa[0],pa[1],w,h,bbox),pxToGeo(pb[0],pb[1],w,h,bbox)],lenM=geoLenM(coords,bbox),widM=Math.sqrt(Math.max(0,l2))*2*mPerPx;
+    if(lenM>=minM&&widM<=25)out.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:'brise-lames probable (ouvrage détaché) à vérifier',classe_suggeree:'brise-lames',methode:'structure linéaire détachée entourée d eau · axe principal (ACP)',certitude:'à vérifier',longueur_m_est:Math.round(lenM)}});}
+  return out;}
 function extraireOuvrages(im,bbox,sens,imIRC){
   // Photo-interprétation côtière : un littoral naturel est sinueux ; un ouvrage longitudinal
   // rectilinéarise la côte. La rectitude ne suffit pas (beachrock, route ressemblent) → on
@@ -3270,6 +3292,8 @@ function extraireOuvrages(im,bbox,sens,imIRC){
   feats=consoliderOuvrages(feats,bbox);
   // Passe 2bis : ouvrages EN RETRAIT (arrière-plage), via le bord landward de la plage
   feats=feats.concat(_detecterArrierePlage(im,water,imIRC,nd,bbox,mPerPx,minM));
+  // Passe 2ter : brise-lames DÉTACHÉS (structures allongées entourées d'eau)
+  feats=feats.concat(_detecterBriseLames(im,sens,imIRC,bbox,mPerPx,minM));
   // 2) Transversaux (épis) : saillies étroites de la base, CÔTÉ MER uniquement — un épi/groyne avance
   //    dans l'eau ; on écarte les saillies pointant vers la terre. Le côté mer est donné par le masque d'eau.
   for(const l of lines){for(let j=1;j<l.length-1;j++){const a=l[j-1],P=l[j],b=l[j+1];
@@ -3627,6 +3651,7 @@ function _styleSig(p){p=p||{};
   if(p.classe_rivage==='sable')return {color:'#e6b800',weight:3,opacity:.95};        // plage sable/eau (jaune sable)
   if(p.classe_rivage==='bati')return {color:'#d23b3b',weight:3,opacity:.95};         // bâti/enrochement au contact mer (rouge)
   if(p.classe_rivage==='vegetation')return {color:'#2e7d32',weight:3,opacity:.9};    // front végétal/mangrove (vert)
+  if(/brise-lames/.test(p.type||''))return {color:'#00897b',weight:4,opacity:.95,dashArray:'10,5'};   // brise-lames détaché (sarcelle)
   if(/retrait|arrière/.test(p.type||''))return {color:'#8e44ad',weight:3,opacity:.9,dashArray:'8,4'};  // ouvrage en retrait (violet)
   if(/beachrock/.test(p.type||''))return {color:'#c8861e',weight:3,opacity:.9};     // estran rocheux naturel (ocre)
   if(/limite végétation/.test(p.type||''))return {color:'#2e7d32',weight:2,opacity:.85,dashArray:'7,4'}; // haut de plage (vert)
