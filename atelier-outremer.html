@@ -2614,6 +2614,15 @@ function esriOrthoUrl(b){return `https://services.arcgisonline.com/ArcGIS/rest/s
 // Ortho INFRAROUGE COULEUR IGN (canaux : R=proche-infrarouge, G=rouge visible, B=vert visible) →
 // permet la télédétection (NDWI eau, NDVI végétation) à résolution sous-métrique sur le domaine IGN.
 function ircOrthoUrl(b){return `https://data.geopf.fr/wms-r/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=ORTHOIMAGERY.ORTHOPHOTOS.IRC&STYLES=&CRS=CRS:84&BBOX=${b.w.toFixed(6)},${b.s.toFixed(6)},${b.e.toFixed(6)},${b.n.toFixed(6)}&WIDTH=1280&HEIGHT=1280&FORMAT=image/jpeg`;}
+// Sentinel-2 NDWI (service Esri public, sans clé) : indice d'eau (eau = clair). 10 m → grossier, mais en
+// UNION il ne fait qu'ajouter de l'eau (envelope). Sert de source complémentaire robuste (multi-temporel).
+function sentinelNdwiUrl(b){const rr=encodeURIComponent('{"rasterFunction":"NDWI Raw"}');return `https://sentinel.arcgis.com/arcgis/rest/services/Sentinel2/ImageServer/exportImage?bbox=${b.w.toFixed(6)},${b.s.toFixed(6)},${b.e.toFixed(6)},${b.n.toFixed(6)}&bboxSR=4326&imageSR=4326&size=512,512&format=jpgpng&renderingRule=${rr}&f=image`;}
+function _construireS2Mask(s2,w,h,sens){const {data,sw,sh}=({data:s2.data,sw:s2.w,sh:s2.h});const vals=new Float32Array(sw*sh);let lo=1e9,hi=-1e9;
+  for(let p=0;p<sw*sh;p++){const v=data[p*4];vals[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;}
+  if(hi-lo<12)return null;                                   // image plate (nuages/uniforme) → inexploitable
+  const thr=otsu(vals,lo,hi)-(sens-50)*0.01*(hi-lo);          // eau = clair (NDWI élevé)
+  const m=new Uint8Array(w*h);for(let y=0;y<h;y++){const sy=Math.min(sh-1,(y/h*sh)|0);for(let x=0;x<w;x++){const sx=Math.min(sw-1,(x/w*sw)|0);if(vals[sy*sw+sx]>thr)m[y*w+x]=1;}}
+  return m;}
 function _chargerSourceImg(lat,lng,nom,src){
   lat=parseFloat(lat);lng=parseFloat(lng);window._lastSite={lat,lng,nom,src};
   const sizeM=+(document.getElementById('sig-emprise')?.value||800);
@@ -2946,24 +2955,25 @@ function _waterMaskNDWI(ir,sens,raw){const {data,w,h}=ir,n=w*h;const nd=nodataMa
   const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p])?1:0;
   const sea=keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h);
   return raw?sea:fillWaterHoles(sea,w,h,0.004);}   // raw = sans bouchage (les structures détachées restent des « trous »)
-function computeWaterMask(im,sens,imIRC,raw){
-  if(imIRC&&imIRC.data&&imIRC.w===im.w&&imIRC.h===im.h)return _waterMaskNDWI(imIRC,sens,raw);   // télédétection PIR si dispo
-  const {data,w,h}=im,n=w*h;const nd=nodataMask(im);const wi=new Float32Array(n);const veg=new Uint8Array(n);let lo=1e9,hi=-1e9;
+// Masque d'eau RGB (indice cyan) — composantes mer connectées, SANS bouchage (sera unioné puis nettoyé).
+function _waterMaskRGB(im,sens){const {data,w,h}=im,n=w*h;const nd=nodataMask(im);const wi=new Float32Array(n);const veg=new Uint8Array(n);let lo=1e9,hi=-1e9;
   for(let i=0,p=0;p<n;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];
-    // Indice "cyan" normalisé pour l'eau côtière tropicale : qu'elle soit bleu profond ou turquoise
-    // peu profonde, l'eau a le vert ET le bleu supérieurs au rouge. L'ancien indice (b-r)+0.5(b-g)
-    // PÉNALISAIT le vert → ratait les lagons turquoise. Les ratios (et non les écarts bruts) limitent
-    // la sensibilité aux ombres et à l'éclairement.
     const v=(g-r)/(g+r+8)+(b-r)/(b+r+8);wi[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;
-    // Exclusion végétation / ombre de canopée : la végétation (même à l'ombre) garde le vert > bleu
-    // (chlorophylle), alors que l'eau a le bleu >= vert. Écarte les ombres sous couvert que l'ancien
-    // indice de bleu classait massivement en « eau » à l'intérieur des terres (faux ouvrages).
     if(b<g-6)veg[p]=1;}
   let thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);
   const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p]&&!veg[p])?1:0;
-  // denoise → ouverture (supprime rivières/tendrils) → garde mer + grands plans d'eau (lagons/atolls)
-  // → bouche les petits trous enclavés (bateaux, taches d'herbier/écume) pour ne pas tracer de faux îlots.
-  const sea=keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h);
+  return keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h);}
+// Masque d'eau = UNION de toutes les sources disponibles (RGB cyan ∪ IRC NDWI ∪ Sentinel-2 NDWI), puis
+// mer connectée + bouchage. Logique « l'eau avance plus que l'inverse » : on prend l'ENVELOPPE maximale
+// d'eau (trait le plus prudent côté terre). Le masque Sentinel (fetch réseau) est mis en cache par emprise.
+let _s2WaterCache=null;
+function computeWaterMask(im,sens,imIRC,raw){
+  const w=im.w,h=im.h,n=w*h;
+  const masks=[_waterMaskRGB(im,sens)];
+  if(imIRC&&imIRC.data&&imIRC.w===w&&imIRC.h===h)masks.push(_waterMaskNDWI(imIRC,sens,true));
+  if(_s2WaterCache&&_s2WaterCache.length===n)masks.push(_s2WaterCache);
+  const u=new Uint8Array(n);for(const mk of masks)for(let p=0;p<n;p++)if(mk[p])u[p]=1;
+  const sea=keepSeaComponents(u,w,h);
   return raw?sea:fillWaterHoles(sea,w,h,0.004);}
 // Bouche les composantes NON-eau entièrement enclavées dans l'eau et de petite taille (bateaux, herbiers,
 // écume) → évite les contours/îlots parasites dans le plan d'eau. Les grandes îles réelles sont conservées.
@@ -3447,10 +3457,14 @@ window.lancerExtractionSIG=async function(){
     // (végétation). Repli silencieux sur le RGB seul si l'IRC est absent (étranger) ou mal aligné.
     let imIRC=null;try{irBody.textContent='Imagerie infrarouge (PIR)…';const ircImg=await loadImageURL(ircOrthoUrl(b));const cand=drawCV(ircImg);
       if(cand&&cand.w===im.w&&cand.h===im.h){let ndCnt=0;const ndm=nodataMask(cand);for(let p=0;p<ndm.length;p++)ndCnt+=ndm[p];if(ndCnt/ndm.length<0.6)imIRC=cand;}}catch(e){imIRC=null;}
+    // Sentinel-2 NDWI ajouté à l'UNION du masque d'eau (« l'eau avance ») — best-effort, cache par emprise.
+    _s2WaterCache=null;const s2key=b.w.toFixed(4)+','+b.s.toFixed(4)+','+b.e.toFixed(4)+','+b.n.toFixed(4)+'|'+im.w;
+    if(window._s2cache&&window._s2cache.key===s2key)_s2WaterCache=window._s2cache.mask;
+    else{try{irBody.textContent='Sentinel-2 (NDWI)…';const s2img=await loadImageURL(sentinelNdwiUrl(b));const s2=drawCV(s2img);const mk=_construireS2Mask(s2,im.w,im.h,sens);if(mk){_s2WaterCache=mk;window._s2cache={key:s2key,mask:mk};}}catch(e){_s2WaterCache=null;}}
     _lastSigImage=im;_lastSigIRC=imIRC;_lastSigSens=sens;_lastSigRoutine=imgRoutineActive;   // pour la re-détection ciblée par secteur
     irBody.textContent="Traitement de l'image…";
     let feats=(imgRoutineActive==='trait_cote')?extraireTraitDeCote(im,b,sens,imIRC):extraireOuvrages(im,b,sens,imIRC);
-    let aiNote=imIRC?'Télédétection IRC (PIR) active : eau par NDWI, végétation par NDVI. ':'';
+    let aiNote=(imIRC?'Télédétection IRC (PIR) : eau NDWI + végétation NDVI. ':'')+(_s2WaterCache?'Sentinel-2 NDWI ajouté à l’union (eau max). ':'');
     // Garde-fou de résolution : un ouvrage (perré/digue ~5-15 m) devient sous-pixellaire au-delà
     // de ~2,5 m/px ; la caractérisation radiométrique (largeur/texture) n'est alors plus fiable.
     if(imgRoutineActive==='ouvrages'){const mpp=metresParPixel(b,im.w);
