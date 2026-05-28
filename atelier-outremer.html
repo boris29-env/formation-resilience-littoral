@@ -3039,6 +3039,55 @@ function classifieOuvrage(s,tr,gr){
   return {type,certitude:cert,rugosite:Math.round(sd),teinte,
     largeurPx:tr?tr.largeurPx:null,bords,contact_eau:contact,granularite:Math.round(granu)};
 }
+// Passe 2 — consolidation : relie les ouvrages détectés quasi-colinéaires dont les extrémités sont
+// proches (tampon de recherche), pour combler les discontinuités d'une même structure. Conservateur :
+// gap court + faible écart angulaire (colinéarité), sinon on risquerait de fusionner des ouvrages distincts.
+function _fusionPropsOuvrage(pa,pb){
+  const fa=pa._features,fb=pb._features,la=pa.longueur_m_est||1,lb=pb.longueur_m_est||1;
+  let f=null;
+  if(fa&&fb){f={};for(const k in fa)f[k]=(fa[k]*la+fb[k]*lb)/(la+lb);}
+  else f=fa||fb||null;
+  const type=la>=lb?pa.type:pb.type;
+  const props={type,classe_suggeree:type,methode:'rectitude + radiométrie + transversale · chaînés + consolidés (passe 2)',
+    rugosite:f?Math.round(f.sd):pa.rugosite,teinte:(la>=lb?pa.teinte:pb.teinte),granularite:f?Math.round(f.gran):pa.granularite,
+    largeur_m_est:f?Math.round(f.larg):pa.largeur_m_est,
+    bords:f?((f.cv<0.35&&f.net>40)?'réguliers (parallèles)':(f.cv>0.6?'irréguliers (dentelés)':'diffus')):pa.bords,
+    contact_eau:f?(f.wf>0.35):pa.contact_eau,certitude:(la>=lb?pa.certitude:pb.certitude),
+    n_segments:(pa.n_segments||1)+(pb.n_segments||1)};
+  if(f)props._features=f;
+  return props;
+}
+function consoliderOuvrages(feats,bbox){
+  const OUV=/(enrochement|perré|digue)/;
+  const items=feats.map(f=>({coords:f.geometry.coordinates.slice(),props:f.properties,ouv:OUV.test(f.properties.type||'')}));
+  const bufferM=25,maxAng=Math.cos(30*Math.PI/180);
+  const udir=(c,end)=>{const n=c.length;if(n<2)return [0,0];const a=end?c[n-2]:c[1],b=end?c[n-1]:c[0];let dx=b[0]-a[0],dy=b[1]-a[1];const L=Math.hypot(dx,dy)||1;return [dx/L,dy/L];};
+  let merged=true;
+  while(merged){merged=false;
+    for(let i=0;i<items.length&&!merged;i++){if(!items[i].ouv)continue;
+      for(let j=i+1;j<items.length&&!merged;j++){if(!items[j].ouv)continue;
+        const A=items[i],B=items[j];
+        for(const ae of [true,false])for(const be of [true,false]){
+          const pa=ae?A.coords[A.coords.length-1]:A.coords[0];
+          const pb=be?B.coords[B.coords.length-1]:B.coords[0];
+          if(geoLenM([pa,pb],bbox)>bufferM)continue;
+          const dA=udir(A.coords,ae),dB=udir(B.coords,be);
+          const oA=ae?dA:[-dA[0],-dA[1]],oB=be?dB:[-dB[0],-dB[1]]; // directions sortantes
+          if(-(oA[0]*oB[0]+oA[1]*oB[1])<maxAng)continue;           // sortantes ~opposées = colinéaire
+          let gx=pb[0]-pa[0],gy=pb[1]-pa[1];const gl=Math.hypot(gx,gy);
+          if(gl>1e-9){gx/=gl;gy/=gl;if(oA[0]*gx+oA[1]*gy<maxAng)continue;} // le trou suit l'axe de A
+          const ca=ae?A.coords:A.coords.slice().reverse();
+          const cb=be?B.coords.slice().reverse():B.coords;
+          A.coords=ca.concat(cb);A.props=_fusionPropsOuvrage(A.props,B.props);
+          A.props.longueur_m_est=Math.round(geoLenM(A.coords,bbox));
+          if(A.props._features)A.props._features.len=A.props.longueur_m_est;
+          items.splice(j,1);merged=true;break;
+        }
+      }
+    }
+  }
+  return items.map(it=>({type:'Feature',geometry:{type:'LineString',coordinates:it.coords},properties:it.props}));
+}
 function extraireOuvrages(im,bbox,sens){
   // Photo-interprétation côtière : un littoral naturel est sinueux ; un ouvrage longitudinal
   // rectilinéarise la côte. La rectitude ne suffit pas (beachrock, route ressemblent) → on
@@ -3049,7 +3098,7 @@ function extraireOuvrages(im,bbox,sens){
   const lines=shorelinesFromMask(water,im.w,im.h,nd,Math.max(1,2/mPerPx)); // tolérance DP ≈ 2 m
   if(!lines.length)return [];
   const minM=Math.max(20,55-(sens-50)*0.5);
-  const feats=[];
+  let feats=[];
   // 1) Longitudinaux : on classe CHAQUE segment du trait par radiométrie + géométrie transversale,
   //    puis on CHAÎNE les segments contigus de même classe → un ouvrage est restitué sur toute sa
   //    longueur (et non par tronçons). Chaque entité porte son vecteur de caractéristiques (_features)
@@ -3087,6 +3136,8 @@ function extraireOuvrages(im,bbox,sens){
       k=m+1;
     }
   }
+  // Passe 2 : combler les discontinuités entre ouvrages quasi-colinéaires et proches
+  feats=consoliderOuvrages(feats,bbox);
   // 2) Transversaux : saillies étroites (épis)
   for(const l of lines){for(let j=1;j<l.length-1;j++){const a=l[j-1],P=l[j],b=l[j+1];
     const base=Math.hypot(b[0]-a[0],b[1]-a[1])*mPerPx,d=_perp(P,a,b)*mPerPx;
