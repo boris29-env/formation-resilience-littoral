@@ -2979,11 +2979,14 @@ function _classeBordCote(im,water,a,b){const s=sampleBand(im,a,b);if(!s)return '
 function extraireTraitDeCote(im,bbox,sens){
   const nd=nodataMask(im);
   const water=computeWaterMask(im,sens);
-  const mPerPx=metresParPixel(bbox,im.w),epsPx=Math.max(1,2/mPerPx);
+  const mPerPx=metresParPixel(bbox,im.w),epsPx=Math.max(1,3.5/mPerPx);   // DP ≈ 3,5 m → trait plus propre
+  // Pour la LIGNE elle-même : ouverture supplémentaire du masque d'eau → on supprime les fines poches
+  // d'eau/estran qui font divaguer le trait vers l'intérieur ; la ligne suit le sable au bord de l'eau.
+  const waterLisse=openMask(water,im.w,im.h,2);
   const feats=[];
   // 1) LIGNE D'EAU, segmentée : trait de côte naturel vs BEACHROCK (estran rocheux, étiqueté à part).
-  const lines=shorelinesFromMask(water,im.w,im.h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,8);
-  for(const raw of lines){const l=smoothChaikin(raw,2);
+  const lines=shorelinesFromMask(waterLisse,im.w,im.h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,8);
+  for(const raw of lines){const l=smoothChaikin(raw,3);
     const cls=[];for(let i=1;i<l.length;i++)cls.push(_classeBordCote(im,water,l[i-1],l[i]));
     let k=0;while(k<cls.length){const t=cls[k];let m=k;while(m+1<cls.length&&cls[m+1]===t)m++;
       const coords=[];for(let pi=k;pi<=m+1;pi++)coords.push(pxToGeo(l[pi][0],l[pi][1],im.w,im.h,bbox));
