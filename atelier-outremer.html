@@ -2611,6 +2611,9 @@ function ignOrthoUrl(b){return `https://data.geopf.fr/wms-r/wms?SERVICE=WMS&VERS
 // Esri World Imagery (satellite global, souvent plus net que l'ortho IGN en outre-mer). Export en
 // géographique (EPSG:4326) → cohérent avec notre géoréférencement linéaire lon/lat. CORS autorisé.
 function esriOrthoUrl(b){return `https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=${b.w.toFixed(6)},${b.s.toFixed(6)},${b.e.toFixed(6)},${b.n.toFixed(6)}&bboxSR=4326&imageSR=4326&size=1280,1280&format=jpg&f=image`;}
+// Ortho INFRAROUGE COULEUR IGN (canaux : R=proche-infrarouge, G=rouge visible, B=vert visible) →
+// permet la télédétection (NDWI eau, NDVI végétation) à résolution sous-métrique sur le domaine IGN.
+function ircOrthoUrl(b){return `https://data.geopf.fr/wms-r/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=ORTHOIMAGERY.ORTHOPHOTOS.IRC&STYLES=&CRS=CRS:84&BBOX=${b.w.toFixed(6)},${b.s.toFixed(6)},${b.e.toFixed(6)},${b.n.toFixed(6)}&WIDTH=1280&HEIGHT=1280&FORMAT=image/jpeg`;}
 function _chargerSourceImg(lat,lng,nom,src){
   lat=parseFloat(lat);lng=parseFloat(lng);window._lastSite={lat,lng,nom,src};
   const sizeM=+(document.getElementById('sig-emprise')?.value||800);
@@ -2755,7 +2758,7 @@ window.lancerAnalyse=async function(mode){
 };
 
 /* ---- Sortie SIG : parsing GeoJSON, table attributaire, carte, export ---- */
-let _lastSigGeojson=null,_lastSigBbox=null,_lastSigCandidates=null,_lastSigImage=null,_lastSigSens=50,_lastSigRoutine=null;
+let _lastSigGeojson=null,_lastSigBbox=null,_lastSigCandidates=null,_lastSigImage=null,_lastSigIRC=null,_lastSigSens=50,_lastSigRoutine=null;
 function extractJsonObject(txt){
   if(!txt)return null;
   let s=txt.trim().replace(/^```(?:json|geojson)?/i,'').replace(/```$/,'').trim();
@@ -2935,7 +2938,16 @@ function keepSeaComponents(mask,w,h){const lab=new Int32Array(w*h);let cur=0;con
 // Pixels "no-data" de l'ortho (dalles blanches hors couverture, ou noir total) :
 // à exclure pour ne pas tracer le bord de dalle ni créer de faux ouvrages.
 function nodataMask(im){const {data,w,h}=im;const nd=new Uint8Array(w*h);for(let i=0,p=0;p<w*h;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];if((r>248&&g>248&&b>248)||(r<7&&g<7&&b<7))nd[p]=1;}return nd;}
-function computeWaterMask(im,sens){const {data,w,h}=im,n=w*h;const nd=nodataMask(im);const wi=new Float32Array(n);const veg=new Uint8Array(n);let lo=1e9,hi=-1e9;
+// Masque d'eau par NDWI sur l'IRC (R=PIR, B=vert visible) : NDWI=(Vert−PIR)/(Vert+PIR). L'eau absorbe
+// le PIR → forte valeur, MÊME en haut-fond turquoise → le trait se cale au contact sable/eau.
+function _waterMaskNDWI(ir,sens){const {data,w,h}=ir,n=w*h;const nd=nodataMask(ir);const wi=new Float32Array(n);let lo=1e9,hi=-1e9;
+  for(let i=0,p=0;p<n;i+=4,p++){const NIR=data[i],Gv=data[i+2];const v=(Gv-NIR)/(Gv+NIR+1);wi[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;}
+  let thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);
+  const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p])?1:0;
+  return fillWaterHoles(keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h),w,h,0.004);}
+function computeWaterMask(im,sens,imIRC){
+  if(imIRC&&imIRC.data&&imIRC.w===im.w&&imIRC.h===im.h)return _waterMaskNDWI(imIRC,sens);   // télédétection PIR si dispo
+  const {data,w,h}=im,n=w*h;const nd=nodataMask(im);const wi=new Float32Array(n);const veg=new Uint8Array(n);let lo=1e9,hi=-1e9;
   for(let i=0,p=0;p<n;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];
     // Indice "cyan" normalisé pour l'eau côtière tropicale : qu'elle soit bleu profond ou turquoise
     // peu profonde, l'eau a le vert ET le bleu supérieurs au rouge. L'ancien indice (b-r)+0.5(b-g)
@@ -2982,31 +2994,37 @@ function _pxNearWater(water,w,h,x,y,R){x=Math.round(x);y=Math.round(y);const st=
   return false;}
 // Logigramme du trait de côte (côtes sans marée) : on classe le CONTACT terre/mer selon la nature du
 // rivage côté TERRE, par priorité : sable (plage/eau) › bâti/enrochement/autre › front végétal (mangrove).
-function _classeRivage(im,water,a,b){
-  const {data,w,h}=im;const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L;
+function _classeRivage(im,water,a,b,imIRC){
+  const {data,w,h}=im;const ircOK=imIRC&&imIRC.data&&imIRC.w===w&&imIRC.h===h;const idata=ircOK?imIRC.data:null;
+  const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L;
   const wAt=(x,y)=>{x=Math.round(x);y=Math.round(y);return(x<0||y<0||x>=w||y>=h)?0:(water[y*w+x]?1:0);};
   const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;let wp=0,wn=0;for(let o=4;o<=20;o+=2){wp+=wAt(mx+nx*o,my+ny*o);wn+=wAt(mx-nx*o,my-ny*o);}
   const landSign=(wp>=wn)?-1:1;                                  // côté terre = opposé à la mer
-  let sr=0,sg=0,sb=0,sL=0,cnt=0;const Ls=[];const N=Math.max(4,Math.round(L));
+  let sr=0,sg=0,sb=0,sL=0,cnt=0,sNIR=0,sRv=0;const N=Math.max(4,Math.round(L));
   for(let i=0;i<=N;i++){const px=a[0]+dx*i/N,py=a[1]+dy*i/N;
-    for(let o=3;o<=12;o+=2){const x=Math.round(px+nx*o*landSign),y=Math.round(py+ny*o*landSign);if(x<0||y<0||x>=w||y>=h)continue;if(water[y*w+x])continue;const idx=(y*w+x)*4;const r=data[idx],g=data[idx+1],bl=data[idx+2];const Lum=0.299*r+0.587*g+0.114*bl;sr+=r;sg+=g;sb+=bl;sL+=Lum;Ls.push(Lum);cnt++;}}
+    for(let o=3;o<=12;o+=2){const x=Math.round(px+nx*o*landSign),y=Math.round(py+ny*o*landSign);if(x<0||y<0||x>=w||y>=h)continue;if(water[y*w+x])continue;const idx=(y*w+x)*4;const r=data[idx],g=data[idx+1],bl=data[idx+2];const Lum=0.299*r+0.587*g+0.114*bl;sr+=r;sg+=g;sb+=bl;sL+=Lum;if(idata){sNIR+=idata[idx];sRv+=idata[idx+1];}cnt++;}}
   if(cnt<3)return 'indetermine';
   const rr=sr/cnt,gg=sg/cnt,bb=sb/cnt,Lm=sL/cnt;
   const sat=Math.max(rr,gg,bb)-Math.min(rr,gg,bb);
+  // Avec PIR (IRC) : NDVI franc → végétation/mangrove ; sinon repli sur l'indice de vert RGB.
+  if(ircOK){const NIR=sNIR/cnt,Rv=sRv/cnt,ndvi=(NIR-Rv)/(NIR+Rv+1);
+    if(ndvi>0.12)return 'vegetation';
+    if(Lm>=135&&sat<60&&gg-bb<18&&rr>=bb-8)return 'sable';      // sable : faible PIR (non-végétal) + clair/neutre
+    return 'bati';}
   if(gg-bb>12&&gg>=rr-10)return 'vegetation';                   // front végétal / mangrove (vert) — non ambigu
   if(Lm>=140&&sat<55&&gg-bb<16&&rr>=bb-6)return 'sable';        // sable : clair, chaud/neutre (non bleuté), non vert
   return 'bati';                                                // bâti / enrochement / rocher / autre (gris, sombre, structuré)
 }
 const _RIVAGE_LBL={sable:'trait de côte · plage (sable/eau)',bati:'trait de côte · bâti / enrochement (au contact mer)',vegetation:'trait de côte · front végétal / mangrove',indetermine:'trait de côte (indéterminé)'};
-function extraireTraitDeCote(im,bbox,sens){
+function extraireTraitDeCote(im,bbox,sens,imIRC){
   const nd=nodataMask(im);
-  const water=computeWaterMask(im,sens);
+  const water=computeWaterMask(im,sens,imIRC);     // NDWI (PIR) si IRC dispo → trait au contact sable/eau
   const mPerPx=metresParPixel(bbox,im.w),epsPx=Math.max(1,3/mPerPx);
   const waterLisse=openMask(water,im.w,im.h,2);   // supprime les fines poches → le trait suit le bord franc
   const feats=[];
   const lines=shorelinesFromMask(waterLisse,im.w,im.h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,8);
   for(const raw of lines){const l=smoothChaikin(raw,3);
-    const cls=[];for(let i=1;i<l.length;i++)cls.push(_classeRivage(im,water,l[i-1],l[i]));
+    const cls=[];for(let i=1;i<l.length;i++)cls.push(_classeRivage(im,water,l[i-1],l[i],imIRC));
     let k=0;while(k<cls.length){const t=cls[k];let m=k;while(m+1<cls.length&&cls[m+1]===t)m++;
       const coords=[];for(let pi=k;pi<=m+1;pi++)coords.push(pxToGeo(l[pi][0],l[pi][1],im.w,im.h,bbox));
       const lenM=geoLenM(coords,bbox);
@@ -3162,12 +3180,12 @@ function consoliderOuvrages(feats,bbox){
   }
   return items.map(it=>({type:'Feature',geometry:{type:'LineString',coordinates:it.coords},properties:it.props}));
 }
-function extraireOuvrages(im,bbox,sens){
+function extraireOuvrages(im,bbox,sens,imIRC){
   // Photo-interprétation côtière : un littoral naturel est sinueux ; un ouvrage longitudinal
   // rectilinéarise la côte. La rectitude ne suffit pas (beachrock, route ressemblent) → on
   // classe chaque forme par sa radiométrie (rugosité/teinte/luminance) en proposant une classe.
   const nd=nodataMask(im);
-  const water=computeWaterMask(im,sens);
+  const water=computeWaterMask(im,sens,imIRC);     // NDWI (PIR) si IRC dispo
   const mPerPx=metresParPixel(bbox,im.w);
   // Base de recherche = le TRAIT DE CÔTE (même génération que le module trait de côte : les contours
   // mer/terre les plus longs). Les ouvrages longitudinaux sont des SECTEURS le long de cette trace ;
@@ -3370,9 +3388,14 @@ window.lancerExtractionSIG=async function(){
     const img=await loadImageCV();
     const im=drawCV(img);
     const sens=+(document.getElementById('sig-sens')?.value||50);
-    _lastSigImage=im;_lastSigSens=sens;_lastSigRoutine=imgRoutineActive;   // pour la re-détection ciblée par secteur
-    let feats=(imgRoutineActive==='trait_cote')?extraireTraitDeCote(im,b,sens):extraireOuvrages(im,b,sens);
-    let aiNote='';
+    // Télédétection : récupère l'ortho IRC (PIR) de l'IGN pour la même emprise → NDWI (eau) + NDVI
+    // (végétation). Repli silencieux sur le RGB seul si l'IRC est absent (étranger) ou mal aligné.
+    let imIRC=null;try{irBody.textContent='Imagerie infrarouge (PIR)…';const ircImg=await loadImageURL(ircOrthoUrl(b));const cand=drawCV(ircImg);
+      if(cand&&cand.w===im.w&&cand.h===im.h){let ndCnt=0;const ndm=nodataMask(cand);for(let p=0;p<ndm.length;p++)ndCnt+=ndm[p];if(ndCnt/ndm.length<0.6)imIRC=cand;}}catch(e){imIRC=null;}
+    _lastSigImage=im;_lastSigIRC=imIRC;_lastSigSens=sens;_lastSigRoutine=imgRoutineActive;   // pour la re-détection ciblée par secteur
+    irBody.textContent="Traitement de l'image…";
+    let feats=(imgRoutineActive==='trait_cote')?extraireTraitDeCote(im,b,sens,imIRC):extraireOuvrages(im,b,sens,imIRC);
+    let aiNote=imIRC?'Télédétection IRC (PIR) active : eau par NDWI, végétation par NDVI. ':'';
     // Garde-fou de résolution : un ouvrage (perré/digue ~5-15 m) devient sous-pixellaire au-delà
     // de ~2,5 m/px ; la caractérisation radiométrique (largeur/texture) n'est alors plus fiable.
     if(imgRoutineActive==='ouvrages'){const mpp=metresParPixel(b,im.w);
@@ -3656,7 +3679,7 @@ function _dejaPresent(f){const cs=f.geometry.coordinates;if(!Array.isArray(cs[0]
 function _ouvrageDepuisTrace(geo){
   if(!geo||geo.length<2||!_lastSigImage||!_lastSigBbox)return null;
   const im=_lastSigImage,bb=_lastSigBbox,mPerPx=metresParPixel(bb,im.w);
-  const water=(window.__lastWater&&window.__lastWaterSens===_lastSigSens)?window.__lastWater:(window.__lastWater=computeWaterMask(im,_lastSigSens||50),window.__lastWaterSens=_lastSigSens,window.__lastWater);
+  const water=(window.__lastWater&&window.__lastWaterSens===_lastSigSens)?window.__lastWater:(window.__lastWater=computeWaterMask(im,_lastSigSens||50,_lastSigIRC),window.__lastWaterSens=_lastSigSens,window.__lastWater);
   const toPx=c=>[ (c[0]-bb.w)/(bb.e-bb.w)*im.w, (bb.n-c[1])/(bb.n-bb.s)*im.h ];
   const pxs=geo.map(toPx);let agg=null,wsum=0,totLen=0;
   for(let i=1;i<pxs.length;i++){const a=pxs[i-1],b=pxs[i];const s=sampleBand(im,a,b);if(!s)continue;
@@ -3708,7 +3731,7 @@ window.chercherDansSecteurs=function(){
     if(!_lastSigImage||!_lastSigBbox){alert('Lancez d’abord une extraction « Ouvrages » (ou « Trait de côte ») : l’orthophoto doit avoir été analysée pour pouvoir re-chercher dedans.');return;}
     _hint('Recherche ciblée en cours…');
     const sensB=Math.min(100,(_lastSigSens||50)+30);   // sensibilité poussée localement
-    let cand=(_lastSigRoutine==='trait_cote')?extraireTraitDeCote(_lastSigImage,_lastSigBbox,sensB):extraireOuvrages(_lastSigImage,_lastSigBbox,sensB);
+    let cand=(_lastSigRoutine==='trait_cote')?extraireTraitDeCote(_lastSigImage,_lastSigBbox,sensB,_lastSigIRC):extraireOuvrages(_lastSigImage,_lastSigBbox,sensB,_lastSigIRC);
     // Restreint à la proximité immédiate des secteurs ET à l'emprise actuellement visible de la carte.
     const vb=mapInstance&&mapInstance.getBounds&&mapInstance.getBounds();
     const dansVue=f=>{if(!vb)return true;const cs=f.geometry.coordinates,pts=Array.isArray(cs[0])?cs:[cs];return pts.some(p=>vb.contains([p[1],p[0]]));};
