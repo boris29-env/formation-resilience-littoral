@@ -3112,9 +3112,13 @@ function extraireOuvrages(im,bbox,sens){
   const nd=nodataMask(im);
   const water=computeWaterMask(im,sens);
   const mPerPx=metresParPixel(bbox,im.w);
-  const lines=shorelinesFromMask(water,im.w,im.h,nd,Math.max(1,2/mPerPx)); // tolérance DP ≈ 2 m
+  // Base de recherche = le TRAIT DE CÔTE (même génération que le module trait de côte : les contours
+  // mer/terre les plus longs). Les ouvrages longitudinaux sont des SECTEURS le long de cette trace ;
+  // ils se superposent donc au trait de côte. Limiter aux plus longs écarte les bords courts parasites.
+  const lines=shorelinesFromMask(water,im.w,im.h,nd,Math.max(1,2/mPerPx)).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,8);
   if(!lines.length)return [];
   const minM=Math.max(20,55-(sens-50)*0.5);
+  const _wmask=(x,y)=>{x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=im.w||y>=im.h)return 0;return water[y*im.w+x]?1:0;};
   let feats=[];
   // Émet une entité ouvrage à partir d'un « run » de segments contigus (indices de points p0..p1),
   // avec agrégation pondérée par longueur du vecteur de caractéristiques (_features).
@@ -3132,6 +3136,9 @@ function extraireOuvrages(im,bbox,sens){
     if(valid)props._features=agg;
     feats.push({type:'Feature',geometry:{type:'LineString',coordinates:pts},properties:props});
   };
+  // 0) Trait de côte (base de recherche) — version lissée, émise comme couche de fond pour la superposition.
+  for(const l of lines){const sl=smoothChaikin(l,2);const coords=sl.map(p=>pxToGeo(p[0],p[1],im.w,im.h,bbox));
+    feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:'trait de côte (base de recherche)',methode:'segmentation mer/terre (Otsu) + contour lissé',certitude:'base',longueur_m_est:Math.round(geoLenM(coords,bbox)),_base:true}});}
   // 1) Longitudinaux : on classe CHAQUE segment du trait (radiométrie + géométrie transversale), puis on
   //    CHAÎNE les segments contigus de même classe en candidats. Ces candidats (granularité = celle du
   //    corpus d'apprentissage) sont ensuite NOTÉS et triés par le modèle en aval (affinerOuvragesParModele).
@@ -3158,11 +3165,18 @@ function extraireOuvrages(im,bbox,sens){
   }
   // Passe 2 : combler les discontinuités entre ouvrages quasi-colinéaires et proches
   feats=consoliderOuvrages(feats,bbox);
-  // 2) Transversaux : saillies étroites (épis)
+  // 2) Transversaux (épis) : saillies étroites de la base, CÔTÉ MER uniquement — un épi/groyne avance
+  //    dans l'eau ; on écarte les saillies pointant vers la terre. Le côté mer est donné par le masque d'eau.
   for(const l of lines){for(let j=1;j<l.length-1;j++){const a=l[j-1],P=l[j],b=l[j+1];
     const base=Math.hypot(b[0]-a[0],b[1]-a[1])*mPerPx,d=_perp(P,a,b)*mPerPx;
-    if(d>=12&&base<=Math.min(20,0.8*d)){const mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];
-      feats.push({type:'Feature',geometry:{type:'LineString',coordinates:[pxToGeo(mid[0],mid[1],im.w,im.h,bbox),pxToGeo(P[0],P[1],im.w,im.h,bbox)]},properties:{type:'épi probable (ouvrage transversal)',methode:'saillie du trait de côte',certitude:'faible',longueur_m_est:Math.round(d)}});}}
+    if(d>=12&&base<=Math.min(20,0.8*d)){
+      const mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+      const dx=b[0]-a[0],dy=b[1]-a[1],Ln=Math.hypot(dx,dy)||1,nx=-dy/Ln,ny=dx/Ln;
+      let wPos=0,wNeg=0;for(let o=6;o<=28;o+=4){wPos+=_wmask(mid[0]+nx*o,mid[1]+ny*o);wNeg+=_wmask(mid[0]-nx*o,mid[1]-ny*o);}
+      const projP=(P[0]-mid[0])*nx+(P[1]-mid[1])*ny,seaPos=wPos>=wNeg;   // apex du côté mer ?
+      if((seaPos&&projP>0)||(!seaPos&&projP<0))
+        feats.push({type:'Feature',geometry:{type:'LineString',coordinates:[pxToGeo(mid[0],mid[1],im.w,im.h,bbox),pxToGeo(P[0],P[1],im.w,im.h,bbox)]},properties:{type:'épi probable (ouvrage transversal)',methode:'saillie du trait de côte, côté mer',certitude:'faible',longueur_m_est:Math.round(d)}});
+    }}
   }
   return feats;
 }
@@ -3306,8 +3320,10 @@ window.lancerExtractionSIG=async function(){
       if(_ouvrModel){const nO=feats.filter(f=>/(enrochement|perré|digue|ouvrage)/.test(f.properties.type||'')).length,nV=feats.filter(f=>/à vérifier/.test(f.properties.type||'')).length;aiNote+=`Modèle actif : ${nO} ouvrage(s), ${nV} à vérifier (rejets masqués). `;}}
     if(feats.length&&document.getElementById('sig-ai-check')?.checked){
       irBody.textContent='Contrôle IA (2ᵉ passe)…';document.getElementById('ir-badge').textContent='Contrôle IA…';
-      const before=feats.length;feats=await controleIA(im,feats,b,imgRoutineActive);
-      aiNote+=`Contrôle IA : ${feats.length}/${before} entité(s) retenue(s).`;
+      const baseF=feats.filter(f=>f.properties&&f.properties._base),aCheck=feats.filter(f=>!(f.properties&&f.properties._base)); // garder le trait de côte de base hors du contrôle
+      const before=aCheck.length;const kept=await controleIA(im,aCheck,b,imgRoutineActive);
+      feats=baseF.concat(kept);
+      aiNote+=`Contrôle IA : ${kept.length}/${before} entité(s) retenue(s).`;
     }
     const T=TERRITOIRES[TERR_ACTIF]||{};
     let pd=null;
@@ -3503,7 +3519,7 @@ function _construireSigLayer(){
   (_lastSigGeojson.features||[]).forEach((f,i)=>{if(f.properties)f.properties._idx=i;});
   _sigMapLayer=L.geoJSON(_lastSigGeojson,{
     style:f=>_styleSig(f&&f.properties),
-    onEachFeature:(f,layer)=>{const p=f.properties||{},i=p._idx,trait=/trait de côte/.test(p.type||''),appr=!!p._features||trait;
+    onEachFeature:(f,layer)=>{const p=f.properties||{},i=p._idx,trait=/trait de côte/.test(p.type||''),appr=(!!p._features||trait)&&!p._base;
       const etat=p._label===1?' · <b style="color:#1a8a4a">✓ validé</b>':p._label===0?' · <b style="color:#c0392b">✗ invalidé</b>':'';
       const lblOK=trait?'✓ correct':'✓ ouvrage',lblNO=trait?'✗ erroné':'✗ pas un ouvrage';
       const btns=appr?`<div style="margin-top:6px;display:flex;gap:6px">
@@ -3579,7 +3595,7 @@ window.chercherDansSecteurs=function(){
     // Restreint à la proximité immédiate des secteurs ET à l'emprise actuellement visible de la carte.
     const vb=mapInstance&&mapInstance.getBounds&&mapInstance.getBounds();
     const dansVue=f=>{if(!vb)return true;const cs=f.geometry.coordinates,pts=Array.isArray(cs[0])?cs:[cs];return pts.some(p=>vb.contains([p[1],p[0]]));};
-    cand=cand.filter(f=>_enSecteur(f)&&dansVue(f)&&!_dejaPresent(f));
+    cand=cand.filter(f=>!(f.properties&&f.properties._base)&&_enSecteur(f)&&dansVue(f)&&!_dejaPresent(f));
     // Dans un secteur dessiné, l'utilisateur AFFIRME qu'il y a quelque chose → on surface tous les
     // candidats de la zone (sans laisser le modèle les écarter), en les marquant pour validation.
     cand.forEach(f=>{const p=f.properties;
