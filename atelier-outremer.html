@@ -3552,10 +3552,21 @@ function _dessineSecteurs(){if(!mapInstance||!window.L)return;const L=window.L;_
     else lyr=L.polyline(s.coords.map(p=>[p[1],p[0]]),{color:'#c026d3',weight:3,dashArray:'5,5'});
     lyr.addTo(mapInstance);_secteurLayers.push(lyr);}}
 window.effacerSecteurs=function(){_secteurs=[];_saveSecteurs();_dessineSecteurs();_hint('Secteurs effacés.');};
-function _secteurBbox(s){if(s.kind==='rect'){const a=s.coords[0],b=s.coords[1];return {w:Math.min(a[0],b[0]),e:Math.max(a[0],b[0]),s:Math.min(a[1],b[1]),n:Math.max(a[1],b[1])};}
-  let w=1e9,e=-1e9,so=1e9,n=-1e9;for(const p of s.coords){w=Math.min(w,p[0]);e=Math.max(e,p[0]);so=Math.min(so,p[1]);n=Math.max(n,p[1]);}const mx=0.0008;return {w:w-mx,e:e+mx,s:so-mx,n:n+mx};}
+const _SECT_BUF_RECT=20,_SECT_BUF_LINE=55;   // marge rectangle (fine) / tolérance tracé (approximatif), en mètres
+function _mPerDeg(lat){return {mlat:111320,mlng:111320*Math.cos(lat*Math.PI/180)};}
+function _segDistM(p,a,b,sc){const px=p[0]*sc.mlng,py=p[1]*sc.mlat,ax=a[0]*sc.mlng,ay=a[1]*sc.mlat,bx=b[0]*sc.mlng,by=b[1]*sc.mlat;
+  const dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy||1;let t=((px-ax)*dx+(py-ay)*dy)/L2;t=Math.max(0,Math.min(1,t));
+  return Math.hypot(px-(ax+t*dx),py-(ay+t*dy));}
+// Proximité IMMÉDIATE : rectangle = intérieur (+ marge fine) ; tracé = à moins de _SECT_BUF_LINE de la
+// ligne elle-même (distance au segment, pas à sa bounding box).
 function _enSecteur(f){if(!_secteurs||!_secteurs.length||!f||!f.geometry)return false;const cs=f.geometry.coordinates,pts=Array.isArray(cs[0])?cs:[cs];
-  for(const s of _secteurs){const bb=_secteurBbox(s);for(const p of pts){if(p[0]>=bb.w&&p[0]<=bb.e&&p[1]>=bb.s&&p[1]<=bb.n)return true;}}return false;}
+  for(const s of _secteurs){
+    if(s.kind==='rect'){const a=s.coords[0],b=s.coords[1],w=Math.min(a[0],b[0]),e=Math.max(a[0],b[0]),so=Math.min(a[1],b[1]),n=Math.max(a[1],b[1]);
+      const sc=_mPerDeg((so+n)/2),mx=_SECT_BUF_RECT/sc.mlng,my=_SECT_BUF_RECT/sc.mlat;
+      for(const p of pts)if(p[0]>=w-mx&&p[0]<=e+mx&&p[1]>=so-my&&p[1]<=n+my)return true;
+    }else{const sc=_mPerDeg(s.coords[0]?s.coords[0][1]:0);
+      for(const p of pts)for(let i=1;i<s.coords.length;i++)if(_segDistM(p,s.coords[i-1],s.coords[i],sc)<_SECT_BUF_LINE)return true;}
+  }return false;}
 function _dejaPresent(f){const cs=f.geometry.coordinates;if(!Array.isArray(cs[0]))return false;const a=cs[0],b=cs[cs.length-1];const close=(p,q)=>Math.abs(p[0]-q[0])<2e-4&&Math.abs(p[1]-q[1])<2e-4;
   for(const g of (_lastSigGeojson.features||[])){if(!g.geometry)continue;const gc=g.geometry.coordinates;if(!Array.isArray(gc[0]))continue;const ga=gc[0],gb=gc[gc.length-1];if((close(a,ga)&&close(b,gb))||(close(a,gb)&&close(b,ga)))return true;}return false;}
 window.chercherDansSecteurs=function(){
@@ -3565,7 +3576,10 @@ window.chercherDansSecteurs=function(){
     _hint('Recherche ciblée en cours…');
     const sensB=Math.min(100,(_lastSigSens||50)+30);   // sensibilité poussée localement
     let cand=(_lastSigRoutine==='trait_cote')?extraireTraitDeCote(_lastSigImage,_lastSigBbox,sensB):extraireOuvrages(_lastSigImage,_lastSigBbox,sensB);
-    cand=cand.filter(f=>_enSecteur(f)&&!_dejaPresent(f));
+    // Restreint à la proximité immédiate des secteurs ET à l'emprise actuellement visible de la carte.
+    const vb=mapInstance&&mapInstance.getBounds&&mapInstance.getBounds();
+    const dansVue=f=>{if(!vb)return true;const cs=f.geometry.coordinates,pts=Array.isArray(cs[0])?cs:[cs];return pts.some(p=>vb.contains([p[1],p[0]]));};
+    cand=cand.filter(f=>_enSecteur(f)&&dansVue(f)&&!_dejaPresent(f));
     // Dans un secteur dessiné, l'utilisateur AFFIRME qu'il y a quelque chose → on surface tous les
     // candidats de la zone (sans laisser le modèle les écarter), en les marquant pour validation.
     cand.forEach(f=>{const p=f.properties;
