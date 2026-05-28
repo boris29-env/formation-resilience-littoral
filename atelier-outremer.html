@@ -617,7 +617,7 @@ svg.house{width:100%;max-width:290px;height:auto}
               <button class="layer-btn" onclick="dessinerSecteur('rect')" title="Dessiner un rectangle : zone où chercher davantage">▭ Secteur</button>
               <button class="layer-btn" onclick="dessinerSecteur('line')" title="Tracer une ligne le long d'un ouvrage/côte manquant">⟋ Tracé</button>
               <button class="layer-btn" id="btn-sect-fin" style="display:none" onclick="terminerTrace()">Terminer le tracé</button>
-              <button class="layer-btn" onclick="marquerOuvrage()" title="Affirmer que le tracé / le rectangle est un ouvrage (exemple positif pour le modèle)">✔ Ouvrage ici</button>
+              <button class="layer-btn" onclick="marquerOuvrage()" title="Affirmer que le tracé/rectangle est un ouvrage (mode Ouvrages) ou un trait de côte (mode Trait de côte)">✔ Marquer ici</button>
               <button class="layer-btn" onclick="chercherDansSecteurs()" title="Re-détecter dans les secteurs, seuils abaissés">🔍 Chercher ici</button>
               <button class="layer-btn" onclick="effacerSecteurs()" title="Effacer les secteurs dessinés">✕ Secteurs</button>
               <span id="annot-hint" style="font-size:10px;color:var(--muted);flex-basis:100%"></span>
@@ -3282,7 +3282,10 @@ function apprentissageStatutHTML(){
   const all=_allLabels(),n=all.length,pos=all.filter(r=>r.y).length;
   const etat=_ouvrModel?`<b style="color:var(--teal)">modèle actif</b> · exactitude ${Math.round(_ouvrModel.acc*100)}% (n=${_ouvrModel.n})`
     :`amorce heuristique <span style="color:var(--muted)">(modèle dès 12 exemples avec les 2 classes)</span>`;
-  const partage=_fbWriteOk===true?'<span style="color:#1a8a4a">✓ partagé (Firebase)</span>':_fbWriteOk===false?'<span style="color:#c0392b">✗ local seulement (Firebase refuse l’écriture)</span>':'<span style="color:var(--muted)">local (partage non encore testé)</span>';
+  const partage=_fbWriteOk===true?'<span style="color:#1a8a4a">✓ partagé (Firebase)</span>'
+    :_fbWriteOk===false?'<span style="color:#c0392b">✗ local seulement (écriture refusée)</span>'
+    :(window._FB&&window._FB.ready&&window._FB.ready())?'<span style="color:#1a8a4a">✓ synchro Firebase active</span>'
+    :'<span style="color:var(--muted)">local (Firebase hors ligne)</span>';
   return `<div style="margin-top:10px;padding:8px 10px;border:1px dashed var(--line);border-radius:7px;background:var(--soft);font-size:11px">
     <b>Apprentissage</b> — ${n} validation(s) : ${pos} ouvrage(s) / ${n-pos} rejet(s). État : ${etat}. Stockage : ${partage}.
     Validez ✓ / ✗ les entités ci-dessous ; le modèle (régression logistique) se recalcule et est partagé via Firebase.
@@ -3608,24 +3611,34 @@ function _coastlineDansRect(s){const a=s.coords[0],b=s.coords[1],w=Math.min(a[0]
     let run=[];for(const p of f.geometry.coordinates){if(inR(p))run.push(p);else{if(run.length>=2){const o=_ouvrageDepuisTrace(run);if(o)out.push(o);}run=[];}}
     if(run.length>=2){const o=_ouvrageDepuisTrace(run);if(o)out.push(o);}}
   return out;}
-// « C'est un ouvrage ici » : l'utilisateur AFFIRME qu'une portion du littoral est un ouvrage (trace ⟋
-// ou rectangle ▭ sur la portion de trait de côte). On crée l'entité + un exemple POSITIF pour le modèle.
+// « Marquer ici » contextuel : en mode Ouvrages → ouvrage confirmé + exemple POSITIF du modèle ;
+// en mode Trait de côte → ajoute la portion tracée comme trait de côte (complète la couche).
 window.marquerOuvrage=function(){
   try{
-    if(!_secteurs.length){alert('Tracez l’ouvrage (⟋ Tracé) ou cadrez-le (▭ Secteur), puis « ✔ Ouvrage ici ».');return;}
+    if(!_secteurs.length){alert('Tracez (⟋ Tracé) ou cadrez (▭ Secteur) la zone, puis « ✔ Marquer ici ».');return;}
     if(!_lastSigImage||!_lastSigBbox){alert('Lancez d’abord une extraction (l’orthophoto doit être en mémoire).');return;}
+    const trait=(_lastSigRoutine==='trait_cote');
     let added=[];
-    for(const s of _secteurs){if(s.kind==='line'){const o=_ouvrageDepuisTrace(s.coords);if(o)added.push(o);}else added=added.concat(_coastlineDansRect(s));}
-    if(!added.length){alert('Impossible de créer un ouvrage : tracé trop court, ou aucun trait de côte dans le rectangle (utilisez plutôt ⟋ Tracé en suivant l’ouvrage).');return;}
-    added.forEach(f=>{const p=f.properties;p.type='ouvrage confirmé (manuel)';p.classe_suggeree=p.type;p.certitude='confirmé';p.methode='marqué manuellement sur la carte';p._label=1;
-      if(p._features){const rec={f:p._features,y:1,type:p.type,site:(_lastSigMeta&&_lastSigMeta.site)||'',sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now()+Math.random()};_ouvrLabelsLocal.push(rec);
-        if(window._FB&&window._FB.gpush)window._FB.gpush(OUVR_FB_PATH,rec).then(()=>{_fbWriteOk=true;}).catch(()=>{_fbWriteOk=false;});}});
-    _saveLocalLabels();entrainerModeleOuvrages();
+    for(const s of _secteurs){
+      if(trait){if(s.kind==='line'&&s.coords.length>=2)added.push({type:'Feature',geometry:{type:'LineString',coordinates:s.coords.slice()},properties:{}});}
+      else{if(s.kind==='line'){const o=_ouvrageDepuisTrace(s.coords);if(o)added.push(o);}else added=added.concat(_coastlineDansRect(s));}
+    }
+    if(!added.length){alert(trait?'Tracez le trait de côte manquant avec ⟋ Tracé (le rectangle sert surtout aux ouvrages).':'Impossible de créer un ouvrage : tracé trop court, ou aucun trait de côte dans le rectangle (suivez l’ouvrage avec ⟋ Tracé).');return;}
+    if(trait){
+      added.forEach(f=>{f.properties={type:'trait de côte (manuel)',methode:'tracé manuellement sur la carte',certitude:'confirmé',longueur_m_est:Math.round(geoLenM(f.geometry.coordinates,_lastSigBbox)),_label:1};
+        _traitCorrections.push({coords:f.geometry.coordinates,y:1,manuel:true,site:(_lastSigMeta&&_lastSigMeta.site)||'',ts:Date.now()});});
+      _saveTrait();
+    }else{
+      added.forEach(f=>{const p=f.properties;p.type='ouvrage confirmé (manuel)';p.classe_suggeree=p.type;p.certitude='confirmé';p.methode='marqué manuellement sur la carte';p._label=1;
+        if(p._features){const rec={f:p._features,y:1,type:p.type,site:(_lastSigMeta&&_lastSigMeta.site)||'',sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now()+Math.random()};_ouvrLabelsLocal.push(rec);
+          if(window._FB&&window._FB.gpush)window._FB.gpush(OUVR_FB_PATH,rec).then(()=>{_fbWriteOk=true;}).catch(()=>{_fbWriteOk=false;});}});
+      _saveLocalLabels();entrainerModeleOuvrages();
+    }
     _lastSigGeojson.features=(_lastSigGeojson.features||[]).concat(added);
     if(_lastSigCandidates)_lastSigCandidates=_lastSigCandidates.concat(added);
     _construireSigLayer();if(_lastSigBbox)afficherSig(_lastSigGeojson,_lastSigBbox,_lastSigMeta);
-    _hint(added.length+' ouvrage(s) confirmé(s) et appris (exemple positif). Effacez le secteur si besoin.');
-    alert(added.length+' ouvrage(s) confirmé(s) et ajouté(s) comme exemple positif pour le modèle.');
+    const msg=added.length+(trait?' segment(s) de trait de côte ajouté(s).':' ouvrage(s) confirmé(s) et appris (exemple positif).');
+    _hint(msg);alert(msg);
   }catch(err){alert('Erreur : '+(err&&err.message||err));}
 };
 window.chercherDansSecteurs=function(){
