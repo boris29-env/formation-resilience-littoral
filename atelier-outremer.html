@@ -3180,6 +3180,34 @@ function consoliderOuvrages(feats,bbox){
   }
   return items.map(it=>({type:'Feature',geometry:{type:'LineString',coordinates:it.coords},properties:it.props}));
 }
+// Masque "sable" : non-eau, non-végétal (NDVI bas si PIR dispo, sinon vert RGB), clair et neutre/chaud.
+function _sandMask(im,water,imIRC){
+  const {data,w,h}=im,n=w*h;const ircOK=imIRC&&imIRC.data&&imIRC.w===w&&imIRC.h===h;const id=ircOK?imIRC.data:null;const m=new Uint8Array(n);
+  for(let i=0,p=0;p<n;i+=4,p++){if(water[p])continue;const r=data[i],g=data[i+1],b=data[i+2];const Lm=0.299*r+0.587*g+0.114*b,sat=Math.max(r,g,b)-Math.min(r,g,b);
+    let veg;if(id){const NIR=id[i],Rv=id[i+1];veg=((NIR-Rv)/(NIR+Rv+1))>0.12;}else veg=(g-b>12&&g>=r-10);
+    if(!veg&&Lm>=135&&sat<60&&r>=b-8)m[p]=1;}
+  return majority(m,w,h);}
+// Ouvrages EN RETRAIT (arrière-plage) : bord LANDWARD de la plage où le côté terre est une STRUCTURE
+// (pas d'eau, peu de végétation) → perré/mur derrière la plage, que la seule ligne d'eau ne voit pas.
+function _detecterArrierePlage(im,water,imIRC,nd,bbox,mPerPx,minM){
+  const {w,h}=im,sand=_sandMask(im,water,imIRC),out=[];const id=(imIRC&&imIRC.data&&imIRC.w===w)?imIRC.data:null;
+  const sAt=(x,y)=>{x=Math.round(x);y=Math.round(y);return(x<0||y<0||x>=w||y>=h)?0:(sand[y*w+x]?1:0);};
+  const Rpx=Math.max(8,70/mPerPx);   // l'arrière-plage doit être PROCHE de la mer (sinon = sol nu intérieur)
+  const lines=shorelinesFromMask(sand,w,h,nd,Math.max(1,2/mPerPx)).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,10);
+  for(const l of lines){const segs=[];
+    for(let i=1;i<l.length;i++){const a=l[i-1],b=l[i],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;
+      let sp=0,sn=0;for(let o=2;o<=10;o+=2){sp+=sAt(mx+nx*o,my+ny*o);sn+=sAt(mx-nx*o,my-ny*o);}
+      const other=(sp>=sn)?-1:1;let wo=0,nveg=0,cnt=0;
+      for(let o=3;o<=12;o+=2){const x=Math.round(mx+nx*o*other),y=Math.round(my+ny*o*other);if(x<0||y<0||x>=w||y>=h)continue;wo+=water[y*w+x]?1:0;if(id){const idx=(y*w+x)*4;if((id[idx]-id[idx+1])/(id[idx]+id[idx+1]+1)>0.12)nveg++;}cnt++;}
+      segs.push({p0:i-1,p1:i,bati:(cnt>2&&wo===0&&nveg<cnt*0.4&&_pxNearWater(water,w,h,mx,my,Rpx))});}
+    let k=0;while(k<segs.length){if(!segs[k].bati){k++;continue;}let m=k;while(m+1<segs.length&&segs[m+1].bati)m++;const run=segs.slice(k,m+1);
+      const coords=[];for(let pi=run[0].p0;pi<=run[run.length-1].p1;pi++)coords.push(pxToGeo(l[pi][0],l[pi][1],w,h,bbox));const lenM=geoLenM(coords,bbox);
+      if(lenM>=minM){let agg=null,wsum=0;for(const x of run){const s=sampleBand(im,l[x.p0],l[x.p1]);if(!s)continue;const tr=analyseTransversale(im,water,l[x.p0],l[x.p1]),gr=granulariteBande(im,l[x.p0],l[x.p1]),lm=geoLenM([pxToGeo(l[x.p0][0],l[x.p0][1],w,h,bbox),pxToGeo(l[x.p1][0],l[x.p1][1],w,h,bbox)],bbox);const fv={sd:s.sd,gran:gr,cv:tr.largeurCV,net:tr.netteteBord,wf:tr.waterFrac,persist:tr.persistanceTerrePx,Lm:s.Lm,sat:s.sat,rmb:s.r-s.b,larg:(tr.largeurPx||0)*mPerPx,len:lm,landReach:tr.landReach};if(!agg){agg={};for(const kk in fv)agg[kk]=0;}const ww=lm||1;wsum+=ww;for(const kk in fv)agg[kk]+=fv[kk]*ww;}
+        if(agg){for(const kk in agg)agg[kk]/=(wsum||1);agg.len=lenM;}
+        const pr={type:'ouvrage en retrait (arrière-plage) à vérifier',classe_suggeree:'ouvrage en retrait',methode:'bord arrière de plage (sable→structure) · télédétection',certitude:'à vérifier',longueur_m_est:Math.round(lenM),n_segments:run.length};if(agg)pr._features=agg;
+        out.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:pr});}
+      k=m+1;}}
+  return out;}
 function extraireOuvrages(im,bbox,sens,imIRC){
   // Photo-interprétation côtière : un littoral naturel est sinueux ; un ouvrage longitudinal
   // rectilinéarise la côte. La rectitude ne suffit pas (beachrock, route ressemblent) → on
@@ -3240,6 +3268,8 @@ function extraireOuvrages(im,bbox,sens,imIRC){
   }
   // Passe 2 : combler les discontinuités entre ouvrages quasi-colinéaires et proches
   feats=consoliderOuvrages(feats,bbox);
+  // Passe 2bis : ouvrages EN RETRAIT (arrière-plage), via le bord landward de la plage
+  feats=feats.concat(_detecterArrierePlage(im,water,imIRC,nd,bbox,mPerPx,minM));
   // 2) Transversaux (épis) : saillies étroites de la base, CÔTÉ MER uniquement — un épi/groyne avance
   //    dans l'eau ; on écarte les saillies pointant vers la terre. Le côté mer est donné par le masque d'eau.
   for(const l of lines){for(let j=1;j<l.length-1;j++){const a=l[j-1],P=l[j],b=l[j+1];
@@ -3307,6 +3337,7 @@ function affinerOuvragesParModele(feats,relaxed){
   const out=[];
   for(const f of feats){const p=f&&f.properties;
     if(!p||!p._features){out.push(f);continue;}
+    if(/retrait|arrière/.test(p.type||'')){const s=scoreOuvrage(p._features);if(s!=null)p.proba_ouvrage=+s.toFixed(2);out.push(f);continue;}  // ouvrage en retrait : faible contact eau → préservé (le modèle bord-de-mer le rejetterait à tort)
     let s=scoreOuvrage(p._features);
     if(s==null){out.push(f);continue;}
     if(typeof _enSecteur==='function'&&_enSecteur(f))s=Math.min(1,s+0.12);   // bonus : zone signalée par l'utilisateur (« cherche davantage ici »)
@@ -3596,6 +3627,7 @@ function _styleSig(p){p=p||{};
   if(p.classe_rivage==='sable')return {color:'#e6b800',weight:3,opacity:.95};        // plage sable/eau (jaune sable)
   if(p.classe_rivage==='bati')return {color:'#d23b3b',weight:3,opacity:.95};         // bâti/enrochement au contact mer (rouge)
   if(p.classe_rivage==='vegetation')return {color:'#2e7d32',weight:3,opacity:.9};    // front végétal/mangrove (vert)
+  if(/retrait|arrière/.test(p.type||''))return {color:'#8e44ad',weight:3,opacity:.9,dashArray:'8,4'};  // ouvrage en retrait (violet)
   if(/beachrock/.test(p.type||''))return {color:'#c8861e',weight:3,opacity:.9};     // estran rocheux naturel (ocre)
   if(/limite végétation/.test(p.type||''))return {color:'#2e7d32',weight:2,opacity:.85,dashArray:'7,4'}; // haut de plage (vert)
   if(p.proba_ouvrage!=null){const s=p.proba_ouvrage;return s>=0.66?{color:'#c0392b',weight:4,opacity:.95}:s>=0.4?{color:'#e08e0b',weight:3,opacity:.9,dashArray:'6,4'}:{color:'#8a8a8a',weight:2,opacity:.8,dashArray:'3,5'};}
