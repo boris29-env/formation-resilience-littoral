@@ -2824,7 +2824,7 @@ function afficherSig(gj,bbox,meta){
         `<button onclick="validerOuvrage(${i},0)" title="Invalider : pas un ouvrage" style="border:1px solid ${p._label===0?'#c0392b':'var(--line)'};background:${p._label===0?'#c0392b':'#fff'};color:${p._label===0?'#fff':'#c0392b'};border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer;font-weight:700">✗</button>`+
         (p.proba_ouvrage!=null?` <span style="font-family:var(--mono);font-size:9.5px;color:var(--muted)">p=${p.proba_ouvrage}</span>`:'')+
       `</td>`:`<td style="padding:4px 6px;color:var(--muted);font-size:10px">—</td>`):'';
-    const dout=/à vérifier|à écarter|à qualifier/.test(p.type||'');
+    const dout=p._label===0||/à vérifier|à écarter|à qualifier/.test(p.type||'');
     return `<tr style="border-top:1px solid var(--line)${dout?';opacity:.72':''}"><td style="padding:4px 6px;font-family:var(--mono);font-size:10px">${i+1}</td><td style="padding:4px 6px;font-size:11px;color:${dout?'var(--muted)':'var(--navy)'};font-weight:600">${p.type||f.geometry.type}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;color:var(--muted)">${f.geometry.type}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;text-align:right">${p.longueur_m_est!=null?p.longueur_m_est+' m':'—'}</td><td style="padding:4px 6px"><span class="cert ${(p.certitude||'').indexOf('élev')>=0?'high':(p.certitude||'').indexOf('faible')>=0?'low':'med'}">${p.certitude||'—'}</span></td>${valCell}</tr>`;
   }).join('');
   irBody.innerHTML=`
@@ -3221,12 +3221,14 @@ function affinerOuvragesParModele(feats,relaxed){
     if(s==null){out.push(f);continue;}
     if(typeof _enSecteur==='function'&&_enSecteur(f))s=Math.min(1,s+0.12);   // bonus : zone signalée par l'utilisateur (« cherche davantage ici »)
     p.proba_ouvrage=+s.toFixed(2);
+    if(p._label===0){out.push(f);continue;}   // invalidé par l'utilisateur → conservé (grisé via le style), prime sur le modèle
+    if(p._label===1){out.push(f);continue;}   // validé → conservé
     if(s>=SEEDth){
       if(!/(enrochement|perré|digue|épi)/.test(p.type||'')){p.type='ouvrage probable (modèle)';p.classe_suggeree=p.type;}
       p.certitude='élevée (modèle)';out.push(f);
     }else if(s>=DOUBTth){
       p.type='forme à vérifier (modèle)';p.classe_suggeree=p.type;p.certitude='modérée (modèle)';out.push(f);
-    } // s<seuil : écarté par le modèle (non affiché)
+    } // s<seuil et non annoté : écarté par le modèle (non affiché)
   }
   return out;
 }
@@ -3490,9 +3492,10 @@ function _saveSecteurs(){try{localStorage.setItem('ouvr_secteurs',JSON.stringify
 function _saveTrait(){try{localStorage.setItem('trait_corr',JSON.stringify(_traitCorrections));}catch(e){}}
 function _hint(t){const el=document.getElementById('annot-hint');if(el)el.textContent=t||'';}
 function _styleSig(p){p=p||{};
+  if(p._label===0)return {color:'#9aa0a6',weight:2,opacity:.55,dashArray:'2,6'};   // invalidé → grisé
   if(p.proba_ouvrage!=null){const s=p.proba_ouvrage;return s>=0.66?{color:'#c0392b',weight:4,opacity:.95}:s>=0.4?{color:'#e08e0b',weight:3,opacity:.9,dashArray:'6,4'}:{color:'#8a8a8a',weight:2,opacity:.8,dashArray:'3,5'};}
   if(/trait de côte/.test(p.type||''))return {color:'#0E7C86',weight:3,opacity:.9};
-  if(/à vérifier|à écarter|à qualifier/.test(p.type||''))return {color:'#8a8a8a',weight:2,opacity:.8,dashArray:'3,5'};
+  if(/à vérifier|à écarter|à qualifier/.test(p.type||''))return {color:'#e08e0b',weight:3,opacity:.9,dashArray:'6,4'};
   return {color:'#c0392b',weight:3,opacity:.9};}
 function _construireSigLayer(){
   if(!mapInstance||!window.L||!_lastSigGeojson)return;const L=window.L;
@@ -3556,19 +3559,26 @@ function _enSecteur(f){if(!_secteurs||!_secteurs.length||!f||!f.geometry)return 
 function _dejaPresent(f){const cs=f.geometry.coordinates;if(!Array.isArray(cs[0]))return false;const a=cs[0],b=cs[cs.length-1];const close=(p,q)=>Math.abs(p[0]-q[0])<2e-4&&Math.abs(p[1]-q[1])<2e-4;
   for(const g of (_lastSigGeojson.features||[])){if(!g.geometry)continue;const gc=g.geometry.coordinates;if(!Array.isArray(gc[0]))continue;const ga=gc[0],gb=gc[gc.length-1];if((close(a,ga)&&close(b,gb))||(close(a,gb)&&close(b,ga)))return true;}return false;}
 window.chercherDansSecteurs=function(){
-  if(!_secteurs.length){alert('Dessinez d’abord un secteur (▭ Secteur ou ⟋ Tracé).');return;}
-  if(!_lastSigImage||!_lastSigBbox){alert('Lancez d’abord une extraction (l’orthophoto doit être chargée).');return;}
-  _hint('Recherche ciblée…');
-  const sensB=Math.min(100,(_lastSigSens||50)+25);
-  let extra=(_lastSigRoutine==='trait_cote')?extraireTraitDeCote(_lastSigImage,_lastSigBbox,sensB):extraireOuvrages(_lastSigImage,_lastSigBbox,sensB);
-  if(_lastSigRoutine!=='trait_cote')extra=affinerOuvragesParModele(extra,true);   // seuils abaissés + bonus secteur
-  extra=extra.filter(f=>_enSecteur(f)&&!_dejaPresent(f));
-  if(!extra.length){_hint('Aucune nouvelle détection dans les secteurs — élargissez la zone ou augmentez la sensibilité.');return;}
-  extra.forEach(f=>{f.properties.methode=(f.properties.methode||'')+' · secteur ciblé';});
-  _lastSigGeojson.features=(_lastSigGeojson.features||[]).concat(extra);
-  if(_lastSigCandidates)_lastSigCandidates=_lastSigCandidates.concat(extra);
-  _construireSigLayer();if(_lastSigBbox)afficherSig(_lastSigGeojson,_lastSigBbox,_lastSigMeta);
-  _hint(extra.length+' entité(s) trouvée(s) dans les secteurs.');
+  try{
+    if(!_secteurs.length){alert('Dessinez d’abord un secteur (▭ Secteur ou ⟋ Tracé), puis « Chercher ici ».');return;}
+    if(!_lastSigImage||!_lastSigBbox){alert('Lancez d’abord une extraction « Ouvrages » (ou « Trait de côte ») : l’orthophoto doit avoir été analysée pour pouvoir re-chercher dedans.');return;}
+    _hint('Recherche ciblée en cours…');
+    const sensB=Math.min(100,(_lastSigSens||50)+30);   // sensibilité poussée localement
+    let cand=(_lastSigRoutine==='trait_cote')?extraireTraitDeCote(_lastSigImage,_lastSigBbox,sensB):extraireOuvrages(_lastSigImage,_lastSigBbox,sensB);
+    cand=cand.filter(f=>_enSecteur(f)&&!_dejaPresent(f));
+    // Dans un secteur dessiné, l'utilisateur AFFIRME qu'il y a quelque chose → on surface tous les
+    // candidats de la zone (sans laisser le modèle les écarter), en les marquant pour validation.
+    cand.forEach(f=>{const p=f.properties;
+      if(p._features&&typeof scoreOuvrage==='function'){const s=scoreOuvrage(p._features);if(s!=null)p.proba_ouvrage=+Math.min(1,s+0.12).toFixed(2);
+        if(!(p.proba_ouvrage>=0.65&&/(enrochement|perré|digue|épi)/.test(p.type||''))){p.type='forme à vérifier (secteur ciblé)';p.classe_suggeree=p.type;p.certitude='à valider';}}
+      p.methode=(p.methode||'')+' · secteur ciblé';});
+    if(!cand.length){_hint('');alert('Aucune nouvelle forme linéaire dans le secteur — élargissez la zone (l’ouvrage est peut-être trop court ou peu net pour la résolution).');return;}
+    _lastSigGeojson.features=(_lastSigGeojson.features||[]).concat(cand);
+    if(_lastSigCandidates)_lastSigCandidates=_lastSigCandidates.concat(cand);
+    _construireSigLayer();if(_lastSigBbox)afficherSig(_lastSigGeojson,_lastSigBbox,_lastSigMeta);
+    _hint(cand.length+' entité(s) ajoutée(s) dans le secteur — validez ✓/✗.');
+    alert(cand.length+' entité(s) trouvée(s) et ajoutée(s) dans le(s) secteur(s). À valider sur la carte.');
+  }catch(err){_hint('');alert('Erreur pendant la recherche ciblée : '+(err&&err.message||err));}
 };
 window.telechargerSigGeojson=function(){
   if(!_lastSigGeojson){alert('Aucune couche SIG à exporter.');return;}
