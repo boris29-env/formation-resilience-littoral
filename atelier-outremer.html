@@ -2941,7 +2941,19 @@ function computeWaterMask(im,sens){const {data,w,h}=im,n=w*h;const nd=nodataMask
   let thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);
   const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p]&&!veg[p])?1:0;
   // denoise → ouverture (supprime rivières/tendrils) → garde mer + grands plans d'eau (lagons/atolls)
-  return keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h);}
+  // → bouche les petits trous enclavés (bateaux, taches d'herbier/écume) pour ne pas tracer de faux îlots.
+  return fillWaterHoles(keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h),w,h,0.004);}
+// Bouche les composantes NON-eau entièrement enclavées dans l'eau et de petite taille (bateaux, herbiers,
+// écume) → évite les contours/îlots parasites dans le plan d'eau. Les grandes îles réelles sont conservées.
+function fillWaterHoles(m,w,h,maxFrac){const n=w*h,reached=new Uint8Array(n),st=[];
+  const pushIf=p=>{if(!m[p]&&!reached[p]){reached[p]=1;st.push(p);}};
+  for(let x=0;x<w;x++){pushIf(x);pushIf((h-1)*w+x);}for(let y=0;y<h;y++){pushIf(y*w);pushIf(y*w+w-1);}
+  while(st.length){const p=st.pop(),x=p%w,y=(p-x)/w;if(x>0)pushIf(p-1);if(x<w-1)pushIf(p+1);if(y>0)pushIf(p-w);if(y<h-1)pushIf(p+w);}
+  const res=m.slice(),lab=new Int32Array(n),maxA=(maxFrac||0.004)*n;
+  for(let p0=0;p0<n;p0++){if(m[p0]||reached[p0]||lab[p0])continue;const comp=[p0];lab[p0]=1;let qi=0;
+    while(qi<comp.length){const p=comp[qi++],x=p%w,y=(p-x)/w;const nb=[];if(x>0)nb.push(p-1);if(x<w-1)nb.push(p+1);if(y>0)nb.push(p-w);if(y<h-1)nb.push(p+w);for(const r of nb)if(!m[r]&&!reached[r]&&!lab[r]){lab[r]=1;comp.push(r);}}
+    if(comp.length<=maxA)for(const q of comp)res[q]=1;}
+  return res;}
 // epsPx : tolérance de simplification Douglas-Peucker en PIXELS. À haute résolution une tolérance
 // fixe de 1 px conserve le bruit pixellaire et fragmente le trait en micro-segments (la rectitude
 // d'un ouvrage devient indétectable) ; les appelants la calculent donc en mètres (≈2 m) via la
@@ -2988,7 +3000,8 @@ function extraireTraitDeCote(im,bbox,sens){
     const l=smoothChaikin(raw,2);let run=[];
     const flush=()=>{if(run.length>=2){const coords=run.map(p=>pxToGeo(p[0],p[1],im.w,im.h,bbox)),lenM=geoLenM(coords,bbox);
       if(lenM>=20)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:'limite végétation (haut de plage, indicatif)',methode:'limite végétation RGB près du rivage',certitude:'indicatif',longueur_m_est:Math.round(lenM),_base:true}});}run=[];};
-    for(const p of l){if(_pxNearWater(water,im.w,im.h,p[0],p[1],Rpx))run.push(p);else flush();}flush();
+    for(const p of l){const xi=Math.round(p[0]),yi=Math.round(p[1]);const land=(xi>=0&&yi>=0&&xi<im.w&&yi<im.h)?!water[yi*im.w+xi]:true;
+      if(land&&_pxNearWater(water,im.w,im.h,p[0],p[1],Rpx))run.push(p);else flush();}flush();
   }
   return feats;
 }
