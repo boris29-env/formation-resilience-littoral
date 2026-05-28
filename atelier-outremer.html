@@ -2901,10 +2901,16 @@ function keepSeaComponents(mask,w,h){const lab=new Int32Array(w*h);let cur=0;con
 // à exclure pour ne pas tracer le bord de dalle ni créer de faux ouvrages.
 function nodataMask(im){const {data,w,h}=im;const nd=new Uint8Array(w*h);for(let i=0,p=0;p<w*h;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];if((r>248&&g>248&&b>248)||(r<7&&g<7&&b<7))nd[p]=1;}return nd;}
 function computeWaterMask(im,sens){const {data,w,h}=im,n=w*h;const nd=nodataMask(im);const wi=new Float32Array(n);const veg=new Uint8Array(n);let lo=1e9,hi=-1e9;
-  for(let i=0,p=0;p<n;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];const v=(b-r)+0.5*(b-g);wi[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;
-    // Indice de végétation RGB (le PIR n'étant pas disponible) : vert dominant et nettement
-    // supérieur au bleu → végétation. Exclue de l'eau pour écarter les faux positifs en forêt.
-    if(g>r && (g-b)>18 && g>45)veg[p]=1;}
+  for(let i=0,p=0;p<n;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];
+    // Indice "cyan" normalisé pour l'eau côtière tropicale : qu'elle soit bleu profond ou turquoise
+    // peu profonde, l'eau a le vert ET le bleu supérieurs au rouge. L'ancien indice (b-r)+0.5(b-g)
+    // PÉNALISAIT le vert → ratait les lagons turquoise. Les ratios (et non les écarts bruts) limitent
+    // la sensibilité aux ombres et à l'éclairement.
+    const v=(g-r)/(g+r+8)+(b-r)/(b+r+8);wi[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;
+    // Exclusion végétation / ombre de canopée : la végétation (même à l'ombre) garde le vert > bleu
+    // (chlorophylle), alors que l'eau a le bleu >= vert. Écarte les ombres sous couvert que l'ancien
+    // indice de bleu classait massivement en « eau » à l'intérieur des terres (faux ouvrages).
+    if(b<g-6)veg[p]=1;}
   let thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);
   const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p]&&!veg[p])?1:0;
   // denoise → ouverture (supprime rivières/tendrils) → garde mer + grands plans d'eau (lagons/atolls)
