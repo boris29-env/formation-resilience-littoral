@@ -3099,10 +3099,30 @@ function extraireOuvrages(im,bbox,sens){
   if(!lines.length)return [];
   const minM=Math.max(20,55-(sens-50)*0.5);
   let feats=[];
-  // 1) Longitudinaux : on classe CHAQUE segment du trait par radiométrie + géométrie transversale,
-  //    puis on CHAÎNE les segments contigus de même classe → un ouvrage est restitué sur toute sa
-  //    longueur (et non par tronçons). Chaque entité porte son vecteur de caractéristiques (_features)
-  //    pour l'apprentissage supervisé (validation humaine → régression logistique).
+  // Émet une entité ouvrage à partir d'un « run » de segments contigus (indices de points p0..p1),
+  // avec agrégation pondérée par longueur du vecteur de caractéristiques (_features).
+  const pushRun=(l,run,type,methode)=>{
+    const totLen=run.reduce((a,x)=>a+x.lenM,0);
+    const pts=[];for(let pi=run[0].p0;pi<=run[run.length-1].p1;pi++)pts.push(pxToGeo(l[pi][0],l[pi][1],im.w,im.h,bbox));
+    const valid=run.every(x=>x.fv);const agg={};
+    if(valid){let wsum=0;for(const key in run[0].fv)agg[key]=0;for(const x of run){const wgt=x.lenM||1;wsum+=wgt;for(const key in x.fv)agg[key]+=x.fv[key]*wgt;}for(const key in agg)agg[key]/=(wsum||1);agg.len=totLen;}
+    const cl0=run[0].cl;
+    const bords=valid?((agg.cv<0.35&&agg.net>40)?'réguliers (parallèles)':(agg.cv>0.6?'irréguliers (dentelés)':'diffus')):cl0.bords;
+    const props={type,classe_suggeree:type,methode,
+      rugosite:valid?Math.round(agg.sd):cl0.rugosite,teinte:cl0.teinte,granularite:valid?Math.round(agg.gran):cl0.granularite,
+      largeur_m_est:valid?Math.round(agg.larg):(cl0.largeurPx!=null?Math.round(cl0.largeurPx*mPerPx):null),
+      bords,contact_eau:valid?(agg.wf>0.35):cl0.contact_eau,certitude:cl0.certitude,longueur_m_est:Math.round(totLen),n_segments:run.length};
+    if(valid)props._features=agg;
+    feats.push({type:'Feature',geometry:{type:'LineString',coordinates:pts},properties:props});
+  };
+  // Modèle actif ? (régression logistique entraînée sur les validations). Sonde avec un vecteur complet.
+  const SEED=0.65,GROW=0.45;
+  const modelActif=(typeof scoreOuvrage==='function')&&scoreOuvrage({sd:30,gran:15,cv:0.8,net:60,wf:0.9,persist:5,Lm:95,sat:18,rmb:-15,larg:6,len:120,landReach:0.9})!=null;
+  // 1) Longitudinaux : on classe CHAQUE segment du trait (radiométrie + géométrie transversale).
+  //    Sans modèle : on chaîne les segments contigus de MÊME classe heuristique.
+  //    Avec modèle (dernier cran d'itération) : on chaîne par SCORE — un run est gardé s'il contient une
+  //    GRAINE à haut score (≥0.65) et on l'ÉTEND aux voisins au-dessus d'un seuil bas (≥0.45), récupérant
+  //    ainsi les tronçons que le 1ᵉʳ passage avait rejetés/déclassés (changement de classe, longueur courte).
   for(const l of lines){
     const segs=[];
     for(let i=1;i<l.length;i++){
@@ -3113,27 +3133,27 @@ function extraireOuvrages(im,bbox,sens){
       const gr=granulariteBande(im,l[i-1],l[i]);
       const cl=classifieOuvrage(s,tr,gr);
       const fv=s?{sd:s.sd,gran:gr,cv:tr.largeurCV,net:tr.netteteBord,wf:tr.waterFrac,persist:tr.persistanceTerrePx,Lm:s.Lm,sat:s.sat,rmb:s.r-s.b,larg:(tr.largeurPx||0)*mPerPx,len:lenM,landReach:tr.landReach}:null;
-      segs.push({cl,fv,lenM,p0:i-1,p1:i});
+      segs.push({cl,fv,lenM,p0:i-1,p1:i,sc:(modelActif&&fv)?scoreOuvrage(fv):0});
     }
-    let k=0;
-    while(k<segs.length){
-      const t=segs[k].cl.type;let m=k;
-      while(m+1<segs.length&&segs[m+1].cl.type===t)m++;
-      const run=segs.slice(k,m+1),totLen=run.reduce((a,x)=>a+x.lenM,0);
-      if(totLen>=minM){
-        const pts=[];for(let pi=run[0].p0;pi<=run[run.length-1].p1;pi++)pts.push(pxToGeo(l[pi][0],l[pi][1],im.w,im.h,bbox));
-        const valid=run.every(x=>x.fv);const agg={};
-        if(valid){let wsum=0;for(const key in run[0].fv)agg[key]=0;for(const x of run){const wgt=x.lenM||1;wsum+=wgt;for(const key in x.fv)agg[key]+=x.fv[key]*wgt;}for(const key in agg)agg[key]/=(wsum||1);agg.len=totLen;}
-        const cl0=run[0].cl;
-        const bords=valid?((agg.cv<0.35&&agg.net>40)?'réguliers (parallèles)':(agg.cv>0.6?'irréguliers (dentelés)':'diffus')):cl0.bords;
-        const props={type:t,classe_suggeree:t,methode:'rectitude + radiométrie + transversale · segments chaînés',
-          rugosite:valid?Math.round(agg.sd):cl0.rugosite,teinte:cl0.teinte,granularite:valid?Math.round(agg.gran):cl0.granularite,
-          largeur_m_est:valid?Math.round(agg.larg):(cl0.largeurPx!=null?Math.round(cl0.largeurPx*mPerPx):null),
-          bords,contact_eau:valid?(agg.wf>0.35):cl0.contact_eau,certitude:cl0.certitude,longueur_m_est:Math.round(totLen),n_segments:run.length};
-        if(valid)props._features=agg;
-        feats.push({type:'Feature',geometry:{type:'LineString',coordinates:pts},properties:props});
+    if(modelActif){
+      let k=0;
+      while(k<segs.length){
+        if(segs[k].sc<GROW){k++;continue;}
+        let m=k;while(m+1<segs.length&&segs[m+1].sc>=GROW)m++;
+        const run=segs.slice(k,m+1),totLen=run.reduce((a,x)=>a+x.lenM,0);
+        let best=run[0];for(const x of run)if(x.sc>best.sc)best=x;
+        if(best.sc>=SEED&&totLen>=Math.max(20,minM*0.6))pushRun(l,run,best.cl.type,'modèle (régression logistique) · graine + extension');
+        k=m+1;
       }
-      k=m+1;
+    }else{
+      let k=0;
+      while(k<segs.length){
+        const t=segs[k].cl.type;let m=k;
+        while(m+1<segs.length&&segs[m+1].cl.type===t)m++;
+        const run=segs.slice(k,m+1),totLen=run.reduce((a,x)=>a+x.lenM,0);
+        if(totLen>=minM)pushRun(l,run,t,'rectitude + radiométrie + transversale · segments chaînés');
+        k=m+1;
+      }
     }
   }
   // Passe 2 : combler les discontinuités entre ouvrages quasi-colinéaires et proches
