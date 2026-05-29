@@ -3452,7 +3452,7 @@ window.lancerExtractionSIG=async function(){
     _lastSigImage=im;_lastSigIRC=imIRC;_lastSigSens=sens;_lastSigRoutine=imgRoutineActive;   // pour la re-détection ciblée par secteur
     irBody.textContent="Traitement de l'image…";
     let feats=(imgRoutineActive==='trait_cote')?extraireTraitDeCote(im,b,sens,imIRC):extraireOuvrages(im,b,sens,imIRC);
-    let aiNote=(imIRC?’Télédétection IRC (PIR) : eau NDWI + végétation NDVI. ‘:’’);
+    let aiNote=(imIRC?'Télédétection IRC (PIR) : eau NDWI + végétation NDVI. ':'');
     // Garde-fou de résolution : un ouvrage (perré/digue ~5-15 m) devient sous-pixellaire au-delà
     // de ~2,5 m/px ; la caractérisation radiométrique (largeur/texture) n'est alors plus fiable.
     if(imgRoutineActive==='ouvrages'){const mpp=metresParPixel(b,im.w);
