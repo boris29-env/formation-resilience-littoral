@@ -3011,7 +3011,7 @@ function _classeRivage(im,water,a,b,imIRC){
   if(Lm>=140&&sat<55&&gg-bb<16&&rr>=bb-6)return 'sable';        // sable : clair, chaud/neutre (non bleuté), non vert
   return 'bati';                                                // bâti / enrochement / rocher / autre (gris, sombre, structuré)
 }
-const _RIVAGE_LBL={sable:'trait de côte · plage (sable/eau)',bati:'trait de côte · bâti / enrochement (au contact mer)',vegetation:'trait de côte · front végétal / mangrove',indetermine:'trait de côte (indéterminé)'};
+const _RIVAGE_LBL={sable:'trait de côte · plage (sable/eau)',bati:'trait de côte · ouvrage de protection ou bâti (au contact mer)',vegetation:'trait de côte · front végétal / mangrove',indetermine:'trait de côte (indéterminé)'};
 function extraireTraitDeCote(im,bbox,sens,imIRC){
   const nd=nodataMask(im);
   const water=computeWaterMask(im,sens,imIRC);     // NDWI (PIR) si IRC dispo → trait au contact sable/eau
@@ -3273,6 +3273,13 @@ function extraireOuvrages(im,bbox,sens,imIRC){
       const cl=classifieOuvrage(s,tr,gr,mPerPx);
       const fv=s?{sd:s.sd,gran:gr,cv:tr.largeurCV,net:tr.netteteBord,wf:tr.waterFrac,persist:tr.persistanceTerrePx,Lm:s.Lm,sat:s.sat,rmb:s.r-s.b,larg:(tr.largeurPx||0)*mPerPx,len:lenM,landReach:tr.landReach}:null;
       segs.push({cl,fv,lenM,p0:i-1,p1:i});
+    }
+    // Absorbe les courtes sections ambiguës (<15 m, "à qualifier") encadrées par le même type d'ouvrage
+    const OUV_re=/(enrochement|perré|digue)/;
+    for(let ki=1;ki<segs.length-1;ki++){
+      const prev=segs[ki-1],cur=segs[ki],nxt=segs[ki+1];
+      if(!OUV_re.test(cur.cl.type)&&OUV_re.test(prev.cl.type)&&prev.cl.type===nxt.cl.type&&cur.lenM<15)
+        cur.cl={...cur.cl,type:prev.cl.type,substitue_tc:true};
     }
     let k=0;
     while(k<segs.length){
