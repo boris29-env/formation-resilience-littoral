@@ -658,6 +658,8 @@ svg.house{width:100%;max-width:290px;height:auto}
               <button class="layer-btn" id="btn-ign" onclick="switchLayer('ign')">Plan IGN</button>
               <button class="layer-btn" id="btn-ortho" onclick="switchLayer('ortho')">Ortho IGN</button>
               <button class="layer-btn" id="btn-esri" onclick="switchLayer('esri')">Satellite Esri</button>
+              <span class="mcb-label" style="margin-left:14px;border-left:1px solid var(--line);padding-left:14px">Veille</span>
+              <button class="layer-btn" id="btn-veille-s2" onclick="toggleVeilleS2()" title="Vecteurs d'alerte Sentinel-2 (changements détectés entre deux périodes, à réexploiter en très haute résolution)">🛰 Sentinel-2 <span id="veille-s2-count" style="opacity:.7;margin-left:3px"></span></button>
             </div>
             <div class="map-ctrl-bar" id="annot-bar" style="flex-wrap:wrap;gap:6px">
               <span class="mcb-label">Annotation</span>
@@ -1404,6 +1406,8 @@ const CV_MAX=8;
 let mapInstance=null,layerOSM=null,layerIGN=null,layerOrtho=null;
 let layerEvents=null,layerSites=null;
 const loadedLayers=[];
+// Lot B1 — veille Sentinel-2 : couche d'alertes chargée depuis data/alerts/{territoire}.geojson.
+let _veilleS2Layer=null,_veilleS2Data=null,_veilleS2Visible=false;
 
 /* ============================================================
    INITIALISATION SÉLECTEUR
@@ -1493,6 +1497,53 @@ function initMap(T,key){
   });
   mapInstance.on('click',_annotMapClick);   // dessin des secteurs d'annotation
   if(typeof _dessineSecteurs==='function')_dessineSecteurs();
+  // Lot B1 — précharge silencieuse des alertes Sentinel-2 (affiche le compteur même si la couche
+  // n'est pas activée). Échec silencieux si fichier absent : la veille reste optionnelle.
+  chargerVeilleSentinel(key);
+}
+
+/* ============================================================
+   LOT B1 — VEILLE SENTINEL-2 (alertes de changement)
+   Lit data/alerts/{territoire}.geojson, produit hors ligne par
+   tools/sentinel_veille_GEE.py (réf. méth. 7.14). Le navigateur affiche
+   uniquement, ne calcule pas. Aucun serveur permanent.
+============================================================ */
+async function chargerVeilleSentinel(key){
+  const btn=document.getElementById('btn-veille-s2');const cnt=document.getElementById('veille-s2-count');
+  if(_veilleS2Layer&&mapInstance){mapInstance.removeLayer(_veilleS2Layer);_veilleS2Layer=null;}
+  _veilleS2Data=null;_veilleS2Visible=false;if(btn)btn.classList.remove('active');if(cnt)cnt.textContent='';
+  try{
+    const r=await fetch('data/alerts/'+key+'.geojson',{cache:'no-cache'});
+    if(!r.ok){if(cnt)cnt.textContent='—';return;}
+    _veilleS2Data=await r.json();
+    const n=(_veilleS2Data.features||[]).length;
+    if(cnt)cnt.textContent=n?'('+n+')':'(0)';
+    if(btn){const m=_veilleS2Data.metadata||{};btn.title="Veille Sentinel-2 — "+(n?n+' alerte(s)':'aucune alerte enregistrée')+'\nSource : '+(m.source||'Copernicus Sentinel-2')+(m.periode_reference?'\nRéf : '+m.periode_reference+'\nCur : '+m.periode_courante:'')+'\nGénéré : '+(m.date_generation||'jamais (lancer tools/sentinel_veille_GEE.py)');}
+  }catch(e){if(cnt)cnt.textContent='—';console.warn('Veille Sentinel-2 indisponible :',e);}
+}
+window.toggleVeilleS2=function(){
+  if(!mapInstance||!window.L){alert('Carte non initialisée.');return;}
+  const btn=document.getElementById('btn-veille-s2');
+  if(_veilleS2Visible){if(_veilleS2Layer)mapInstance.removeLayer(_veilleS2Layer);_veilleS2Visible=false;btn.classList.remove('active');return;}
+  if(!_veilleS2Data||!(_veilleS2Data.features||[]).length){alert("Aucune alerte de veille pour ce territoire.\n\nPour rafraîchir : exécuter `tools/sentinel_veille_GEE.py --territoire "+TERR_ACTIF+" --periode_ref 2020 --periode_cur 2025` (voir tools/README.md).");return;}
+  const L=window.L;
+  _veilleS2Layer=L.geoJSON(_veilleS2Data,{
+    style:f=>{const p=f.properties||{};const isRecul=/recul/.test(p.alerte_type||'');const isAvancee=/avancee|avancée/.test(p.alerte_type||'');const col=isRecul?'#c0392b':(isAvancee?'#0E7C86':'#e67e22');const w=p.priorite==='haute'?4:(p.priorite==='moyenne'?3:2);return {color:col,weight:w,opacity:.9,dashArray:'8,4',fillColor:col,fillOpacity:.18};},
+    onEachFeature:(f,layer)=>{const p=f.properties||{};const m=_veilleS2Data.metadata||{};
+      const col=/recul/.test(p.alerte_type||'')?'#c0392b':(/avancee|avancée/.test(p.alerte_type||'')?'#0E7C86':'#e67e22');
+      layer.bindPopup(`<div style="font-family:var(--sans);max-width:280px">
+        <div style="background:${col};color:#fff;padding:5px 9px;font-weight:700;font-size:12px;border-radius:4px 4px 0 0">Alerte Sentinel-2 · ${p.alerte_type||'changement'}</div>
+        <div style="padding:8px;font-size:11.5px;line-height:1.55">
+          <b>Magnitude :</b> ~${p.magnitude_m||'?'} m<br>
+          <b>Priorité :</b> ${p.priorite||'—'}<br>
+          <b>Période :</b> ${p.periode_ref||'?'} → ${p.periode_cur||'?'}<br>
+          ${p.secteur_nom?'<b>Secteur :</b> '+p.secteur_nom+'<br>':''}
+          ${p.note?'<div style="color:var(--muted);margin-top:5px;font-style:italic">'+p.note+'</div>':''}
+          <div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);color:var(--muted);font-size:10px">À réexploiter en très haute résolution (ortho IGN ou Esri) dans la section « Analyse d'images ». Source : ${m.source||'Sentinel-2'} · ${m.licence||''}.</div>
+        </div></div>`,{maxWidth:300});
+    }
+  }).addTo(mapInstance);
+  _veilleS2Visible=true;btn.classList.add('active');
 }
 window.switchLayer=function(type){
   if(!mapInstance||!window._mapLayers)return;

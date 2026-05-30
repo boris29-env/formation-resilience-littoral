@@ -1,0 +1,18 @@
+{
+  "type": "FeatureCollection",
+  "name": "veille_sentinel2",
+  "metadata": {
+    "territoire": "stmartin",
+    "source": "Sentinel-2 SR Harmonized (Copernicus)",
+    "licence": "Données ouvertes Copernicus",
+    "periode_reference": null,
+    "periode_courante": null,
+    "ndwi_seuil": 0.0,
+    "resolution_m": 10,
+    "magnitude_min_m": 20,
+    "date_generation": null,
+    "outil": "tools/sentinel_veille_GEE.py",
+    "statut": "vide — aucun run effectué. Voir tools/README.md pour rafraîchir."
+  },
+  "features": []
+}
