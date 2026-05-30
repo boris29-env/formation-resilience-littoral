@@ -1032,6 +1032,9 @@ const EVENTS_DOMMAGEABLES={
    7.13 (asymétrie documentaire entre territoires).
    La plateforme alimente la décision, elle ne la prescrit pas.
 ============================================================ */
+// A2.1 — territoires microtidaux pour lesquels INSeaPTION recommande deux indicateurs distincts
+// (ligne de stabilité + pied de plage). SPM est mésotidal → un seul trait, indicateur de marée requis.
+const _TERRITOIRES_SANS_MAREE=new Set(['pf','nc','wallis','stmartin','stbarth']);
 const _LICENCES_IMG={
   ign:{nom:'IGN Géoplateforme (BD ORTHO, RGE ALTI)',licence:'Licence ouverte Etalab 2.0',commercial:'autorisé'},
   esri:{nom:'Esri World Imagery',licence:'Conditions Esri ArcGIS Online',commercial:'à vérifier selon usage'},
@@ -2772,7 +2775,13 @@ function construireImageModule(){
             <option value="ORTHOIMAGERY.ORTHOPHOTOS.1980-1995|1987|image/png">BD Ortho 1980-1995 (~1987) — surtout métropole</option>
             <option value="ORTHOIMAGERY.ORTHOPHOTOS.1950-1965|1957|image/png">BD Ortho 1950-1965 (~1957) — surtout métropole</option>
           </select>
-          <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:4px">Régression multi-dates (LRR, façon DSAS/MobiTC) + incertitude. Travaillez à ~1:10 000 (emprise 2 km).</div>
+          <label style="margin-top:8px">Seuil de stabilité NSM (INSeaPTION)</label>
+          <select id="sig-evol-seuil" style="width:100%;font-size:12.5px;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)">
+            <option value="4.5" selected>± 4,5 m (recommandé INSeaPTION — Moorea)</option>
+            <option value="2.5">± 2,5 m (côte très exposée, ortho ≤ 0,2 m/px)</option>
+            <option value="10">± 10 m (longue période, archives anciennes)</option>
+          </select>
+          <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:4px">Régression multi-dates (LRR, DSAS) + NSM (mouvement net) + EPR (taux). Classification stable/accrétion/érosion par |NSM| ≷ seuil (réf. méth. 7.4 et 7.6).</div>
         </div>
         <div id="sig-mnt-ctrl" style="display:none;margin-top:8px;border-top:1px dashed var(--line);padding-top:8px">
           <label>Seuil de submersion (altitude, MNT IGN)</label>
@@ -3347,6 +3356,11 @@ function extraireTraitDeCote(im,bbox,sens,imIRC){
   const water=computeWaterMask(im,sens,imIRC);     // NDWI (PIR) si IRC dispo → trait au contact sable/eau
   const mPerPx=metresParPixel(bbox,im.w),epsPx=Math.max(1,2/mPerPx);   // DP ≈ 2 m (fidèle)
   const waterLisse=openMask(water,im.w,im.h,1);   // ouverture légère : nettoie sans déformer le trait
+  // A2.2 — Incertitude positionnelle minimale : au moins un pixel de la source (réf. méth. 7.5).
+  // Sur côtes sans marée, on ajoute l'incertitude saisonnière du jet de rive (jusqu'à ~2 m, AR6).
+  const incertM=+(mPerPx).toFixed(2);
+  const sansMaree=_TERRITOIRES_SANS_MAREE.has(TERR_ACTIF);
+  const incertJet=sansMaree?2.0:null;
   const feats=[];
   const lines=shorelinesFromMask(waterLisse,im.w,im.h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,8);
   for(const raw of lines){const l=smoothChaikin(raw,2);
@@ -3354,10 +3368,61 @@ function extraireTraitDeCote(im,bbox,sens,imIRC){
     let k=0;while(k<cls.length){const t=cls[k];let m=k;while(m+1<cls.length&&cls[m+1]===t)m++;
       const coords=[];for(let pi=k;pi<=m+1;pi++)coords.push(pxToGeo(l[pi][0],l[pi][1],im.w,im.h,bbox));
       const lenM=geoLenM(coords,bbox);
-      if(lenM>=12)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:_RIVAGE_LBL[t]||'trait de côte',classe_rivage:t,methode:'contact mer/terre classé (sable › bâti/enrochement › végétation)',certitude:'modérée',longueur_m_est:Math.round(lenM)}});
+      // A2.1 — Indicateur INSeaPTION : sur côte naturelle (sable) → c'est le PIED DE PLAGE ;
+      // sur bâti/végétation → c'est la LIGNE DE STABILITÉ (base ouvrage ou limite externe végétation).
+      const indicateur=(t==='sable')?'pied_de_plage':'ligne_de_stabilite';
+      if(lenM>=12)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:_RIVAGE_LBL[t]||'trait de côte',classe_rivage:t,indicateur_inseaption:indicateur,methode:'contact mer/terre classé (sable › bâti/enrochement › végétation)',certitude:'modérée',longueur_m_est:Math.round(lenM),incertitude_positionnelle_m:incertM,incertitude_jet_de_rive_m:incertJet}});
       k=m+1;}
   }
+  // A2.1 — Pour les territoires sans marée (PF, NC, Wallis), on ajoute en plus la LIGNE DE STABILITÉ
+  // sur les portions de plage : c'est le bord LANDWARD du sable (limite externe végétation OU base
+  // bâti). Cela donne le second indicateur INSeaPTION recommandé sur côtes microtidales.
+  if(sansMaree){
+    try{
+      const hauts=_extraireHautDePlage(im,water,imIRC,nd,bbox,mPerPx,incertM);
+      for(const f of hauts)feats.push(f);
+    }catch(e){console.warn('Haut de plage indisponible :',e);}
+  }
   return feats;
+}
+// A2.1 — Extrait la ligne de stabilité « haut de plage » : bord LANDWARD du masque de sable, classé
+// selon ce qui le borde (végétation = ligne de stabilité naturelle ; bâti = ligne de stabilité
+// artificialisée). Réf. méth. 7.4 (protocole INSeaPTION, validé sur Tautira, Tahiamanu, Moorea, Aratika).
+function _extraireHautDePlage(im,water,imIRC,nd,bbox,mPerPx,incertM){
+  const w=im.w,h=im.h;
+  const sand=_sandMask(im,water,imIRC);
+  // shorelinesFromMask sur le masque sable → contours de la zone sableuse (bord eau + bord terre)
+  const epsPx=Math.max(1,2/mPerPx);
+  const linesSand=shorelinesFromMask(sand,w,h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,8);
+  const id=(imIRC&&imIRC.data&&imIRC.w===w)?imIRC.data:null;
+  const wAt=(x,y)=>{x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=w||y>=h)return 0;return water[y*w+x]?1:0;};
+  const out=[];
+  for(const raw of linesSand){const l=smoothChaikin(raw,2);
+    // Pour chaque segment, déterminer si c'est le bord MER (côté water) ou le bord TERRE.
+    // On garde uniquement les segments dont le côté NORMAL est « non-eau » (= bord landward).
+    const tags=[];
+    for(let i=1;i<l.length;i++){const a=l[i-1],b=l[i],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;
+      // Lequel des deux côtés est eau ? (= côté mer, à écarter)
+      let wp=0,wn=0;for(let o=3;o<=10;o+=2){wp+=wAt(mx+nx*o,my+ny*o);wn+=wAt(mx-nx*o,my-ny*o);}
+      const cotePos=(wp<wn);  // si wp<wn alors le côté + est landward (peu d'eau)
+      // Sur ce côté landward, classer : végétation (NDVI haut) ou bâti (NDVI bas, non-eau)
+      let nveg=0,cnt=0;const off=cotePos?+1:-1;
+      for(let o=3;o<=12;o+=2){const x=Math.round(mx+nx*o*off),y=Math.round(my+ny*o*off);if(x<0||y<0||x>=w||y>=h)continue;
+        if(id){const idx=(y*w+x)*4;if((id[idx]-id[idx+1])/(id[idx]+id[idx+1]+1)>0.12)nveg++;}else{const idx=(y*w+x)*4;const g=im.data[idx+1],b=im.data[idx+2];if(g-b>10)nveg++;}
+        cnt++;}
+      // On n'émet que si le côté landward est franchement non-eau (vrai bord de plage, pas le bord mer)
+      const cotemer=Math.max(wp,wn)>=3;
+      tags.push({i0:i-1,i1:i,keep:cotemer&&cnt>2,nature:(nveg>cnt*0.4)?'stab_naturelle':'stab_artificialisee'});
+    }
+    // Chaîner les segments à garder par même nature
+    let k=0;while(k<tags.length){if(!tags[k].keep){k++;continue;}let m=k;while(m+1<tags.length&&tags[m+1].keep&&tags[m+1].nature===tags[k].nature)m++;
+      const coords=[];for(let pi=tags[k].i0;pi<=tags[m].i1;pi++)coords.push(pxToGeo(l[pi][0],l[pi][1],w,h,bbox));
+      const lenM=geoLenM(coords,bbox);
+      if(lenM>=15){const nat=tags[k].nature;const lbl=nat==='stab_naturelle'?'ligne de stabilité · haut de plage (limite externe végétation)':'ligne de stabilité · haut de plage (base bâti/ouvrage)';
+        out.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:lbl,classe_rivage:nat,indicateur_inseaption:'ligne_de_stabilite',methode:'bord landward du masque sable (protocole INSeaPTION pour côtes microtidales)',certitude:'modérée',longueur_m_est:Math.round(lenM),incertitude_positionnelle_m:incertM,incertitude_jet_de_rive_m:null}});}
+      k=m+1;}
+  }
+  return out;
 }
 
 /* --- Ouvrages : longitudinaux (rectitude du trait de côte) + transversaux (saillies = épis) --- */
@@ -3656,6 +3721,35 @@ let _ouvrLabelsFb=[],_ouvrLabelsLocal=[],_ouvrModel=null,_apprLocalInit=false,_a
 function _loadLocalLabels(){try{const s=localStorage.getItem('ouvr_labels');_ouvrLabelsLocal=s?JSON.parse(s):[];}catch(e){_ouvrLabelsLocal=[];}}
 function _saveLocalLabels(){try{localStorage.setItem('ouvr_labels',JSON.stringify(_ouvrLabelsLocal));}catch(e){}}
 function _allLabels(){const seen={},out=[];for(const r of _ouvrLabelsLocal.concat(_ouvrLabelsFb)){if(!r||!r.f)continue;if(r.ts){if(seen[r.ts])continue;seen[r.ts]=1;}out.push(r);}return out;}
+// A3.2 — Gouvernance du corpus d'apprentissage partagé (réf. méth. 7.8).
+// (1) operator_id : déjà capturé via `r.sess` (identifiant de session/opérateur).
+// (2) Quorum spatial : un label « partagé » exige ≥2 sessions distinctes ayant annoté des features
+//     proches (vecteur radiométrique similaire). Tant que le quorum n'est pas atteint, le label
+//     reste LOCAL et n'influence pas le modèle des autres sessions, mais entraîne le modèle local.
+// (3) Jeu de test gelé : 20 % aléatoire stable (hash du ts) tenu hors entraînement pour mesurer
+//     la performance et détecter une dérive à chaque ré-entraînement.
+function _opSig(r){return (r&&r.sess)||'_inconnu';}
+// Échelles typiques par feature pour normalisation distance corpus (z-score grossier).
+const _OUVR_SCALES={sd:50,gran:50,cv:0.3,net:30,wf:0.3,persist:30,Lm:50,sat:50,rmb:50,larg:50,len:50,landReach:0.3};
+function _vecDist(a,b){let s=0;for(const k of OUVR_FK){const va=+a[k]||0,vb=+b[k]||0;s+=Math.abs(va-vb)/(_OUVR_SCALES[k]||1);}return s/OUVR_FK.length;}
+function _quorumValide(labels){
+  // Un label partagé n'est promu que s'il est corroboré par ≥1 AUTRE opérateur sur un vecteur proche.
+  // Implémentation simple O(n²) — acceptable pour corpus de quelques centaines.
+  const out=[];
+  for(const r of labels){
+    if(!r||!r.f)continue;
+    // Si le label vient de la session locale courante (annotation immédiate), on lui fait confiance.
+    if(r.sess&&window._FB&&window._FB.session&&r.sess===window._FB.session()){out.push(r);continue;}
+    const sigSelf=_opSig(r);
+    let corrobore=false;
+    for(const r2 of labels){if(!r2||r2===r||_opSig(r2)===sigSelf||r2.y!==r.y)continue;if(_vecDist(r.f,r2.f)<0.30){corrobore=true;break;}}   // distance normalisée < 30% → vecteur radiométrique « proche »
+    if(corrobore)out.push(r);
+  }
+  return out;
+}
+function _hash32(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function _estDansJeuTest(r){if(!r||!r.ts)return false;return (_hash32(String(r.ts))%5)===0;}   // 20 % stables (hash modulo 5)
+function _splitTrainTest(labels){const train=[],test=[];for(const r of labels){(_estDansJeuTest(r)?test:train).push(r);}return {train,test};}
 function initApprentissageOuvrages(){
   if(!_apprLocalInit){_apprLocalInit=true;_loadLocalLabels();_loadSecteurs();entrainerModeleOuvrages();}
   if(window._FB&&window._FB.glisten&&!_apprFbInit){_apprFbInit=true;
@@ -3668,8 +3762,11 @@ function initApprentissageOuvrages(){
 }
 function _vecOuvr(f){const v=[];for(const k of OUVR_FK){const x=f?f[k]:null;if(x==null||isNaN(x))return null;v.push(+x);}return v;}
 function entrainerModeleOuvrages(){
+  const allLab=_allLabels();
+  const valides=_quorumValide(allLab);   // A3.2 — quorum spatial entre opérateurs
+  const {train,test}=_splitTrainTest(valides);   // A3.2 — jeu de test gelé (20 % stables)
   const X=[],Y=[];
-  for(const r of _allLabels()){const v=_vecOuvr(r.f);if(v){X.push(v);Y.push(r.y?1:0);}}
+  for(const r of train){const v=_vecOuvr(r.f);if(v){X.push(v);Y.push(r.y?1:0);}}
   const n=X.length,F=OUVR_FK.length,npos=Y.reduce((a,b)=>a+b,0),nneg=n-npos;
   if(n<12||npos<3||nneg<3){_ouvrModel=null;return;}
   const mean=new Array(F).fill(0),std=new Array(F).fill(0);
@@ -3680,8 +3777,13 @@ function entrainerModeleOuvrages(){
   for(let it=0;it<iters;it++){const gw=new Array(F).fill(0);let gb=0;
     for(let i=0;i<n;i++){let z=b;for(let j=0;j<F;j++)z+=w[j]*Z[i][j];const p=1/(1+Math.exp(-z)),e=p-Y[i];for(let j=0;j<F;j++)gw[j]+=e*Z[i][j];gb+=e;}
     for(let j=0;j<F;j++)w[j]-=lr*(gw[j]/n+lam*w[j]);b-=lr*gb/n;}
-  let ok=0;for(let i=0;i<n;i++){let z=b;for(let j=0;j<F;j++)z+=w[j]*Z[i][j];if(((1/(1+Math.exp(-z)))>=0.5?1:0)===Y[i])ok++;}
-  _ouvrModel={w,b,mean,std,n,npos,nneg,acc:ok/n};
+  // Précision train (in-sample)
+  let okTrain=0;for(let i=0;i<n;i++){let z=b;for(let j=0;j<F;j++)z+=w[j]*Z[i][j];if(((1/(1+Math.exp(-z)))>=0.5?1:0)===Y[i])okTrain++;}
+  // A3.2 — Précision sur le JEU DE TEST GELÉ : signal de dérive du modèle. Distincte de train.
+  let okTest=0,nTest=0;const ops=new Set();
+  for(const r of test){const v=_vecOuvr(r.f);if(!v)continue;nTest++;let z=b;for(let j=0;j<F;j++)z+=w[j]*((v[j]-mean[j])/std[j]);if(((1/(1+Math.exp(-z)))>=0.5?1:0)===(r.y?1:0))okTest++;}
+  for(const r of allLab)ops.add(_opSig(r));
+  _ouvrModel={w,b,mean,std,n,npos,nneg,acc:okTrain/n,acc_test:nTest>0?okTest/nTest:null,n_test:nTest,n_total_labels:allLab.length,n_valides_quorum:valides.length,n_operateurs:ops.size};
 }
 function scoreOuvrage(f){if(!_ouvrModel)return null;const v=_vecOuvr(f);if(!v)return null;let z=_ouvrModel.b;for(let j=0;j<OUVR_FK.length;j++)z+=_ouvrModel.w[j]*((v[j]-_ouvrModel.mean[j])/_ouvrModel.std[j]);return 1/(1+Math.exp(-z));}
 // Affine les candidats HEURISTIQUES avec le modèle (granularité = celle du corpus → notation fiable,
@@ -3741,15 +3843,24 @@ window.importerLabelsOuvrages=function(input){
 };
 function apprentissageStatutHTML(){
   const all=_allLabels(),n=all.length,pos=all.filter(r=>r.y).length;
-  const etat=_ouvrModel?`<b style="color:var(--teal)">modèle actif</b> · exactitude ${Math.round(_ouvrModel.acc*100)}% (n=${_ouvrModel.n})`
+  const M=_ouvrModel;
+  // A3.2 — affichage de la gouvernance du corpus : opérateurs distincts, quorum, jeu de test gelé.
+  const gouvHtml=M?`<div style="margin-top:6px;padding:6px 8px;background:#fff;border:1px solid var(--line);border-radius:5px;font-size:10.5px;line-height:1.5;color:var(--muted)">
+    <b style="color:var(--navy)">Gouvernance</b> · ${M.n_operateurs||1} opérateur(s) distinct(s) · ${M.n_valides_quorum} label(s) validé(s) par quorum (≥2 opérateurs sur features proches) · jeu de test gelé : ${M.n_test} label(s) hors entraînement · <b>exactitude test</b> ${M.acc_test!=null?Math.round(M.acc_test*100)+'%':'—'} <span style="color:var(--muted)">(signal de dérive)</span>
+    </div>`:'';
+  const etat=M?`<b style="color:var(--teal)">modèle actif (raffineur)</b> · entraînement ${Math.round(M.acc*100)}% (n=${M.n})`
     :`amorce heuristique <span style="color:var(--muted)">(modèle dès 12 exemples avec les 2 classes)</span>`;
   const partage=_fbWriteOk===true?'<span style="color:#1a8a4a">✓ partagé (Firebase)</span>'
     :_fbWriteOk===false?'<span style="color:#c0392b">✗ local seulement (écriture refusée)</span>'
     :(window._FB&&window._FB.ready&&window._FB.ready())?'<span style="color:#1a8a4a">✓ synchro Firebase active</span>'
     :'<span style="color:var(--muted)">local (Firebase hors ligne)</span>';
+  // A3.3 — bandeau clair : le modèle est un RAFFINEUR, jamais un détecteur autonome.
+  const raffineurNote=`<div style="margin-top:6px;padding:6px 9px;background:#EAF4F5;border-left:3px solid var(--teal);border-radius:0 5px 5px 0;font-size:10.5px;color:var(--navy);line-height:1.5"><b>Le modèle est un RAFFINEUR, pas un détecteur autonome.</b> Il note des candidats issus de l'heuristique (rectitude + radiométrie). Les modèles de vision (Sonnet, modèles de fondation) servent au <i>contrôle de plausibilité</i>, pas à la détection autonome en faible résolution (réf. méth. 7.9).</div>`;
   return `<div style="margin-top:10px;padding:8px 10px;border:1px dashed var(--line);border-radius:7px;background:var(--soft);font-size:11px">
     <b>Apprentissage</b> — ${n} validation(s) : ${pos} ouvrage(s) / ${n-pos} rejet(s). État : ${etat}. Stockage : ${partage}.
     Validez ✓ / ✗ les entités ci-dessous ; le modèle (régression logistique) se recalcule et est partagé via Firebase.
+    ${gouvHtml}
+    ${raffineurNote}
     <input type="file" id="ouvr-import" accept=".json,application/json" style="display:none" onchange="importerLabelsOuvrages(this)">
     <button onclick="document.getElementById('ouvr-import').click()" style="margin-left:6px;background:#fff;border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer">Importer un corpus</button>
     <button onclick="exporterLabelsOuvrages()" style="margin-left:4px;background:#fff;border:1px solid var(--line);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer">Exporter</button></div>`;
@@ -3823,7 +3934,12 @@ function maskAt(mask,w,h,x,y){x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=w|
 
 function linesToSegs(lines){const s=[];for(const l of lines)for(let i=1;i<l.length;i++)s.push([l[i-1],l[i]]);return s;}
 // Taux d'évolution par régression linéaire multi-dates (LRR, façon DSAS) le long de transects.
-function computeLRR(dated,refLines,maskR,w,h,bbox){
+// A2.3 + A2.4 — Statistiques d'évolution normalisées (réf. méth. 7.4 INSeaPTION, 7.6 DSAS).
+// Pour chaque transect : NSM (mouvement net entre la date la plus ancienne et la plus récente) +
+// EPR (taux annuel = NSM/intervalle) + LRR (régression linéaire si ≥3 dates) avec incertitude.
+// Classification stable / accrétion / érosion selon |NSM| ≷ seuil_m (4,5 m INSeaPTION par défaut).
+function computeLRR(dated,refLines,maskR,w,h,bbox,seuilNSMm){
+  if(seuilNSMm==null)seuilNSMm=4.5;   // seuil INSeaPTION par défaut (réf. 7.4)
   const mPerPx=((bbox.e-bbox.w)*111320*Math.cos((bbox.s+bbox.n)/2*Math.PI/180))/w;
   const stepPx=Math.max(8,Math.round(40/mPerPx));
   const Lpx=Math.max(15,Math.round(160/mPerPx));
@@ -3846,9 +3962,18 @@ function computeLRR(dated,refLines,maskR,w,h,bbox){
       if(n>=3){let sse=0,sst=0;for(const p of pts){const pred=myy+slope*(p[0]-mxx);sse+=(p[1]-pred)*(p[1]-pred);sst+=(p[1]-myy)*(p[1]-myy);}r2=sst>1e-9?1-sse/sst:0;const se=Math.sqrt(Math.max(0,sse/(n-2))/sxx);ci=1.96*se;signif=Math.abs(slope)>ci;}
       else{const dt=Math.abs(pts[1][0]-pts[0][0])||1;ci=(mPerPx*2)/dt;signif=Math.abs(rate)>ci;}
       rates.push(rate);
-      const ymin=Math.min(...pts.map(p=>p[0]));const oldP=pts.find(p=>p[0]===ymin);
+      const ymin=Math.min(...pts.map(p=>p[0]));const ymax=Math.max(...pts.map(p=>p[0]));
+      const oldP=pts.find(p=>p[0]===ymin),newP=pts.find(p=>p[0]===ymax);
+      // NSM = mouvement net (ancien → récent) le long de la normale, en mètres (DSAS).
+      // Convention : positif = accrétion (avancée vers le large), négatif = érosion (recul).
+      const nsm=newP[1]-oldP[1];
+      const intervalle=ymax-ymin||1;
+      // EPR = taux par les points extrêmes (DSAS) ; LRR = pente de régression si n≥3.
+      const epr=nsm/intervalle;
+      // Classification par NSM avec seuil INSeaPTION (réf. méth. 7.4) — pas par taux annuel.
+      const typeEvol=nsm<-seuilNSMm?'érosion (NSM)':nsm>seuilNSMm?'accrétion (NSM)':'stable (NSM)';
       const oldPx=[P[0]+Nx*(oldP[1]/mPerPx),P[1]+Ny*(oldP[1]/mPerPx)];
-      feats.push({type:'Feature',geometry:{type:'LineString',coordinates:[pxToGeo(oldPx[0],oldPx[1],w,h,bbox),pxToGeo(P[0],P[1],w,h,bbox)]},properties:{type:rate<-0.1?'érosion':rate>0.1?'accrétion':'stable',taux_m_an:+rate.toFixed(2),n_dates:n,r2:r2!=null?+r2.toFixed(2):null,incertitude_m_an:ci!=null?+ci.toFixed(2):null,significatif:!!signif,methode:n>=3?'LRR':'EPR'}});
+      feats.push({type:'Feature',geometry:{type:'LineString',coordinates:[pxToGeo(oldPx[0],oldPx[1],w,h,bbox),pxToGeo(P[0],P[1],w,h,bbox)]},properties:{type:typeEvol,classe_evolution:typeEvol.split(' ')[0],NSM_m:+nsm.toFixed(2),EPR_m_an:+epr.toFixed(2),LRR_m_an:+rate.toFixed(2),seuil_NSM_m:seuilNSMm,intervalle_ans:intervalle,n_dates:n,r2:r2!=null?+r2.toFixed(2):null,incertitude_m_an:ci!=null?+ci.toFixed(2):null,significatif:!!signif,methode:n>=3?'LRR (DSAS) + NSM (INSeaPTION)':'EPR + NSM'}});
     }
   }
   return {feats,rates};
@@ -3874,8 +3999,9 @@ window.lancerEvolution=async function(){
     for(const hl of HIST){irBody.textContent='Trait de côte '+hl.year+'…';
       try{const im=drawCV(await loadImageURL(ignLayerUrl(hl.layer,b,hl.fmt)));const sh=shorelinesFromMask(computeWaterMask(im,sens),im.w,im.h,nodataMask(im));if(sh.length){dated.push({year:hl.year,segs:linesToSegs(sh)});datesUsed.push(hl.year);}}catch(e){}}
     if(dated.length<2){irBody.className='img-result-body';irBody.innerHTML='<em>Une seule date exploitable (pas de couverture historique ici). Évolution impossible.</em>';if(btnS)btnS.disabled=false;return;}
-    irBody.textContent='Calcul des taux (régression)…';
-    const {feats,rates}=computeLRR(dated,shoreR,maskR,W,H,b);
+    irBody.textContent='Calcul des taux (régression) + classification INSeaPTION…';
+    const seuilNSM=+(document.getElementById('sig-evol-seuil')?.value||4.5);
+    const {feats,rates}=computeLRR(dated,shoreR,maskR,W,H,b,seuilNSM);
     const T=TERRITOIRES[TERR_ACTIF]||{};const yrs=datesUsed.slice().sort((a,b)=>a-b);
     const meta={site:document.getElementById('img-site').value.trim()||T.nom||'',dates:yrs,date_ancienne:yrs[0],date_recente:(pd&&pd.date_photo)||yearR,intervalle_ans:yrs[yrs.length-1]-yrs[0]};
     feats.forEach(f=>{f.properties.dates=yrs.join('/');f.properties.date_recente=(pd&&pd.date_photo)||yearR;});
