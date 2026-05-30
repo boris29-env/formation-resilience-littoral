@@ -2618,12 +2618,14 @@ function construireImageModule(){
           <span id="sig-cumul-count" style="font-size:12px;font-weight:600;color:var(--navy)">Couche cumulée : 0</span>
           <span style="display:flex;gap:6px;flex-wrap:wrap">
             <button onclick="cumulSurCarte()" style="background:var(--navy);color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer">Carte</button>
-            <button onclick="telechargerCumul()" style="background:var(--teal);color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer">GeoJSON</button>
+            <button onclick="telechargerCumul()" style="background:var(--teal);color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer" title="GeoJSON enrichi (Cerema + métadonnées)">GeoJSON</button>
             <button onclick="telechargerCumulCSV()" style="background:var(--teal);color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer">CSV</button>
+            <button onclick="telechargerCumulGpkg(false)" style="background:#1a8a5a;color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer" title="GeoPackage OGC, schéma Cerema 2017, WGS84">GeoPackage</button>
+            <button onclick="telechargerCumulGpkg(true)" style="background:#1a8a5a;color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer" title="GeoPackage reprojeté dans le référentiel local du territoire (RGSPM06/RGAF09/RGNC91-93/RGPF/RGWF96)">GPKG · CRS local</button>
             <button onclick="viderCumul()" style="background:var(--terra);color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer">Vider</button>
           </span>
         </div>
-        <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:4px">Trait de côte + ouvrages s'ajoutent ici (couverture exhaustive du territoire).</div>
+        <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:4px">Trait de côte + ouvrages s'ajoutent ici. Export aligné typologie Cerema 2017 ; GeoPackage charge proj4/sql.js depuis CDN à la demande.</div>
       </div>
       <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:7px;line-height:1.5">Traitement local (navigateur), géoréférencement pixel→WGS84 exact · Résultats indicatifs, à valider sur le terrain</div>
     </div>
@@ -2995,7 +2997,7 @@ function afficherSig(gj,bbox,meta){
     </div>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
       <button onclick="chargerSigSurCarte()" style="background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Afficher sur la carte</button>
-      <button onclick="telechargerSigGeojson()" style="background:var(--teal);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Télécharger .geojson</button>
+      <button onclick="telechargerSigGeojson()" style="background:var(--teal);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Télécharger .geojson</button> <button onclick="telechargerSigGpkg(false)" style="background:#1a8a5a;color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer" title="GeoPackage OGC, schéma Cerema 2017">.gpkg</button> <button onclick="telechargerSigGpkg(true)" style="background:#1a8a5a;color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer" title="GeoPackage reprojeté dans le CRS local du territoire">.gpkg · CRS local</button>
     </div>`;
   return gj.features.length;
 }
@@ -3726,7 +3728,7 @@ function renderEvolution(feats,rates,bbox,meta){
     </div>
     <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
       <button onclick="chargerSigSurCarte()" style="background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Transects sur la carte</button>
-      <button onclick="telechargerSigGeojson()" style="background:var(--teal);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Télécharger .geojson</button>
+      <button onclick="telechargerSigGeojson()" style="background:var(--teal);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Télécharger .geojson</button> <button onclick="telechargerSigGpkg(false)" style="background:#1a8a5a;color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer" title="GeoPackage OGC, schéma Cerema 2017">.gpkg</button> <button onclick="telechargerSigGpkg(true)" style="background:#1a8a5a;color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer" title="GeoPackage reprojeté dans le CRS local du territoire">.gpkg · CRS local</button>
     </div>`;
 }
 
@@ -3781,7 +3783,7 @@ function renderMNT(feats,meta,thr,surfHa,G){
   </div>
   <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
     <button onclick="chargerSigSurCarte()" style="background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Limite sur la carte</button>
-    <button onclick="telechargerSigGeojson()" style="background:var(--teal);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Télécharger .geojson</button>
+    <button onclick="telechargerSigGeojson()" style="background:var(--teal);color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer">Télécharger .geojson</button> <button onclick="telechargerSigGpkg(false)" style="background:#1a8a5a;color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer" title="GeoPackage OGC, schéma Cerema 2017">.gpkg</button> <button onclick="telechargerSigGpkg(true)" style="background:#1a8a5a;color:#fff;border:none;border-radius:7px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer" title="GeoPackage reprojeté dans le CRS local du territoire">.gpkg · CRS local</button>
   </div>`;
 }
 let _lastSigMeta={};
@@ -3975,6 +3977,174 @@ function _enrichirMetaExport(fc){
   };
   return out;
 }
+
+/* ============================================================
+   LOT A4 — INTEROPÉRABILITÉ : GEOPACKAGE + REPROJECTION + CEREMA
+   Réf. méthodologique : 7.6 (DSAS / NSM-EPR), 7.7 (spécification Cerema 2017
+   sur les ouvrages littoraux), 7.10 (référentiels géodésiques ultramarins),
+   7.11 (réseau national des observatoires du trait de côte).
+   Toutes les dépendances (proj4, sql.js) sont chargées paresseusement depuis
+   un CDN ; si l'accès réseau échoue, l'export GeoJSON reste utilisable.
+============================================================ */
+// Charge une ressource externe à la demande (CDN), une seule fois par session.
+function _lazyScript(url,globalKey){
+  if(globalKey&&window[globalKey])return Promise.resolve(window[globalKey]);
+  if(window['_loading_'+globalKey])return window['_loading_'+globalKey];
+  const p=new Promise((resolve,reject)=>{
+    const s=document.createElement('script');s.src=url;s.async=true;
+    s.onload=()=>resolve(globalKey?window[globalKey]:true);
+    s.onerror=()=>reject(new Error('Chargement échoué : '+url));
+    document.head.appendChild(s);
+  });
+  if(globalKey)window['_loading_'+globalKey]=p;
+  return p;
+}
+// Définitions proj4 pour les référentiels locaux des six COM (réf. 7.10).
+// Wallis-et-Futuna : code EPSG à confirmer localement ; UTM 1S provisoire en attendant.
+const _PROJ4_DEFS={
+  4326:'+proj=longlat +datum=WGS84 +no_defs',
+  4467:'+proj=utm +zone=21 +ellps=GRS80 +units=m +no_defs',                                          // SPM (RGSPM06)
+  5490:'+proj=utm +zone=20 +ellps=GRS80 +units=m +no_defs',                                          // Antilles (RGAF09)
+  3163:'+proj=lcc +lat_1=-20.66666666666667 +lat_2=-22.33333333333333 +lat_0=-21.5 +lon_0=166 +x_0=400000 +y_0=300000 +ellps=GRS80 +units=m +no_defs',  // NC (RGNC91-93 Lambert)
+  3297:'+proj=utm +zone=6 +south +ellps=GRS80 +units=m +no_defs',                                    // PF Société (RGPF UTM 6S)
+  3296:'+proj=utm +zone=5 +south +ellps=GRS80 +units=m +no_defs',                                    // PF Tuamotu Ouest
+  3298:'+proj=utm +zone=7 +south +ellps=GRS80 +units=m +no_defs',                                    // PF Marquises
+  32701:'+proj=utm +zone=1 +south +ellps=WGS84 +units=m +no_defs'                                    // Wallis (provisoire UTM 1S WGS84)
+};
+const _EPSG_TERR={spm:4467,stmartin:5490,stbarth:5490,nc:3163,pf:3297,wallis:32701};
+// Hook public pour qu'un opérateur local puisse rectifier la projection de Wallis sans toucher
+// au code (réf. 7.10 : code EPSG à confirmer localement). Usage : setProjectionTerritoire('wallis', 5879, '+proj=...')
+window.setProjectionTerritoire=function(key,epsg,proj4def){_EPSG_TERR[key]=epsg;if(proj4def)_PROJ4_DEFS[epsg]=proj4def;};
+
+async function _proj4(){
+  // proj4 a 'EPSG:4326' intégré nativement → on teste un EPSG LOCAL pour gater l'enregistrement
+  if(window.proj4&&window.proj4.defs('EPSG:3163'))return window.proj4;
+  if(!window.proj4)await _lazyScript('https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.10.0/proj4.js','proj4');
+  for(const [code,def] of Object.entries(_PROJ4_DEFS)){if(!window.proj4.defs('EPSG:'+code))window.proj4.defs('EPSG:'+code,def);}
+  return window.proj4;
+}
+async function _reprojeterFC(fc,codeEPSG){
+  if(!codeEPSG||codeEPSG===4326)return fc;
+  const proj4=await _proj4();const t=proj4('EPSG:4326','EPSG:'+codeEPSG);
+  const tr=g=>{if(!g)return g;
+    if(g.type==='Point')return {type:'Point',coordinates:t.forward(g.coordinates)};
+    if(g.type==='LineString')return {type:'LineString',coordinates:g.coordinates.map(c=>t.forward(c))};
+    if(g.type==='Polygon')return {type:'Polygon',coordinates:g.coordinates.map(r=>r.map(c=>t.forward(c)))};
+    if(g.type==='MultiLineString')return {type:'MultiLineString',coordinates:g.coordinates.map(l=>l.map(c=>t.forward(c)))};
+    if(g.type==='MultiPolygon')return {type:'MultiPolygon',coordinates:g.coordinates.map(p=>p.map(r=>r.map(c=>t.forward(c))))};
+    return g;};
+  const out=JSON.parse(JSON.stringify(fc));out.features=out.features.map(f=>({...f,geometry:tr(f.geometry)}));
+  if(out.metadata)out.metadata.referentiel_export='EPSG:'+codeEPSG;
+  out.crs={type:'name',properties:{name:'urn:ogc:def:crs:EPSG::'+codeEPSG}};
+  return out;
+}
+// Aligne notre typologie interne sur le schéma national Cerema 2017 (réf. 7.7) :
+// catégorie, classe, type, orientation, longueur, années, visibilité, hauteur, substitue_tc.
+function _propsCerema(p){
+  if(!p)return {};const t=(p.type||'').toLowerCase();
+  let cat=null,cls=null,typ=null,ori=null;
+  if(/enrochement longitudinal/.test(t)){cat='Ouvrages de protection';cls='Ouvrage se substituant au trait de côte';typ='Enrochement longitudinal';ori='longitudinal';}
+  else if(/mur de soutènement/.test(t)){cat='Ouvrages de protection';cls='Ouvrage se substituant au trait de côte';typ='Mur de soutènement';ori='longitudinal';}
+  else if(/perré/.test(t)){cat='Ouvrages de protection';cls='Ouvrage se substituant au trait de côte';typ='Perré';ori='longitudinal';}
+  else if(/digue/.test(t)){cat='Ouvrages de protection';cls='Ouvrage se substituant au trait de côte';typ='Digue côtière';ori='longitudinal';}
+  else if(/brise-lames/.test(t)){cat='Ouvrages de protection';cls='Ouvrage de lutte contre l\'érosion';typ='Brise-lames';ori='longitudinal détaché';}
+  else if(/épi/.test(t)){cat='Ouvrages de protection';cls='Ouvrage de lutte contre l\'érosion';typ='Épi';ori='transversal';}
+  else if(/jetée|môle/.test(t)){cat='Autres aménagements';cls='Infrastructure portuaire et de navigation';typ='Jetée';}
+  else if(/quai/.test(t)){cat='Autres aménagements';cls='Infrastructure portuaire et de navigation';typ='Quai';}
+  else if(/cale/.test(t)){cat='Autres aménagements';cls='Infrastructure portuaire et de navigation';typ='Cale';}
+  else if(/retrait|arrière/.test(t)){cat='Ouvrages de protection';cls='Ouvrage en retrait de plage';typ='Perré ou mur en retrait';ori='longitudinal';}
+  else if(/trait de côte/.test(t)){cat='Trait de côte';cls='Trait de côte';typ=p.classe_rivage?('Trait de côte ('+p.classe_rivage+')'):'Trait de côte';}
+  else if(/zone basse/.test(t)){cat='Zonage altimétrique';cls='Zone basse (MNT)';typ='Limite ≤ seuil';}
+  // pas de correspondance : on conserve les propriétés natives sans préfixe Cerema
+  if(!cat)return p;
+  const annee=p.date_photo?(''+p.date_photo).substring(0,4):null;
+  return Object.assign({},p,{
+    cerema_categorie:cat, cerema_classe:cls, cerema_type:typ, cerema_orientation:ori,
+    cerema_longueur_m:p.longueur_m_est||p.longueur_m||null,
+    cerema_substitue_tc:!!p.substitue_tc,
+    cerema_visibilite:'visible (image)',
+    cerema_annee_apparition:annee, cerema_annee_disparition:null,
+    cerema_hauteur_m:null  // pas estimable sans MNT/stéréo (futur Lot B3)
+  });
+}
+// Construit un GeoPackage minimal conforme OGC 12-128r19 à partir d'un FeatureCollection.
+// Une seule table de features, géométries mixtes (LineString/Point/Polygon).
+async function _construireGeoPackage(fc,options){
+  options=options||{};const epsg=options.epsg||4326;const tableName=(options.tableName||'sig_features').replace(/[^a-z0-9_]/gi,'_');
+  if(!window.initSqlJs)await _lazyScript('https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.11.0/sql-wasm.js','initSqlJs');
+  const SQL=await window.initSqlJs({locateFile:f=>'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.11.0/'+f});
+  const db=new SQL.Database();
+  // PRAGMA d'identification GeoPackage (magic number ASCII 'GPKG' = 1196444487 ; v1.3 = 10300)
+  db.run("PRAGMA application_id = 1196444487;");
+  db.run("PRAGMA user_version = 10300;");
+  // Tables système GeoPackage minimales
+  db.run(`CREATE TABLE gpkg_spatial_ref_sys (srs_name TEXT NOT NULL, srs_id INTEGER NOT NULL PRIMARY KEY, organization TEXT NOT NULL, organization_coordsys_id INTEGER NOT NULL, definition TEXT NOT NULL, description TEXT);`);
+  db.run(`INSERT INTO gpkg_spatial_ref_sys VALUES ('Undefined Cartesian',-1,'NONE',-1,'undefined','undefined');`);
+  db.run(`INSERT INTO gpkg_spatial_ref_sys VALUES ('Undefined Geographic',0,'NONE',0,'undefined','undefined');`);
+  db.run(`INSERT INTO gpkg_spatial_ref_sys VALUES ('WGS 84',4326,'EPSG',4326,'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["degree",0.0174532925199433]]','longitude/latitude WGS84');`);
+  if(epsg!==4326&&epsg!==-1&&epsg!==0){
+    const def=(_PROJ4_DEFS[epsg]||'').replace(/'/g,"''");
+    db.run(`INSERT INTO gpkg_spatial_ref_sys VALUES ('EPSG ${epsg}',${epsg},'EPSG',${epsg},'${def}','projection locale au territoire (réf. méth. 7.10)');`);
+  }
+  db.run(`CREATE TABLE gpkg_contents (table_name TEXT NOT NULL PRIMARY KEY, data_type TEXT NOT NULL, identifier TEXT, description TEXT, last_change DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')), min_x DOUBLE, min_y DOUBLE, max_x DOUBLE, max_y DOUBLE, srs_id INTEGER);`);
+  db.run(`CREATE TABLE gpkg_geometry_columns (table_name TEXT NOT NULL PRIMARY KEY, column_name TEXT NOT NULL, geometry_type_name TEXT NOT NULL, srs_id INTEGER NOT NULL, z TINYINT NOT NULL, m TINYINT NOT NULL);`);
+  db.run(`CREATE TABLE gpkg_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT, md_scope TEXT NOT NULL DEFAULT 'dataset', md_standard_uri TEXT NOT NULL, mime_type TEXT NOT NULL DEFAULT 'text/xml', metadata TEXT NOT NULL DEFAULT '');`);
+  db.run(`CREATE TABLE gpkg_metadata_reference (reference_scope TEXT NOT NULL, table_name TEXT, column_name TEXT, row_id_value INTEGER, timestamp DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')), md_file_id INTEGER NOT NULL, md_parent_id INTEGER);`);
+  // Colonnes d'attributs : union de toutes les propriétés (hors _privées)
+  const allKeys=new Set();fc.features.forEach(f=>Object.keys(f.properties||{}).forEach(k=>{if(!k.startsWith('_'))allKeys.add(k);}));
+  const cols=Array.from(allKeys);
+  const colDefs=cols.map(c=>`"${c.replace(/"/g,'')}" TEXT`).join(', ');
+  db.run(`CREATE TABLE "${tableName}" (fid INTEGER PRIMARY KEY AUTOINCREMENT, geom BLOB${cols.length?', '+colDefs:''});`);
+  // Bbox global pour gpkg_contents
+  let minx=Infinity,miny=Infinity,maxx=-Infinity,maxy=-Infinity;
+  const updE=(c)=>{if(c[0]<minx)minx=c[0];if(c[0]>maxx)maxx=c[0];if(c[1]<miny)miny=c[1];if(c[1]>maxy)maxy=c[1];};
+  const visit=(g)=>{if(!g)return;if(g.type==='Point')updE(g.coordinates);else if(g.type==='LineString')g.coordinates.forEach(updE);else if(g.type==='Polygon')g.coordinates.forEach(r=>r.forEach(updE));else if(g.type==='MultiLineString')g.coordinates.forEach(l=>l.forEach(updE));else if(g.type==='MultiPolygon')g.coordinates.forEach(p=>p.forEach(r=>r.forEach(updE)));};
+  fc.features.forEach(f=>visit(f.geometry));
+  // Encodage WKB et GeoPackageBinary
+  const wkbPoint=(c)=>{const buf=new ArrayBuffer(21);const v=new DataView(buf);v.setUint8(0,1);v.setUint32(1,1,true);v.setFloat64(5,c[0],true);v.setFloat64(13,c[1],true);return new Uint8Array(buf);};
+  const wkbLine=(coords)=>{const n=coords.length;const buf=new ArrayBuffer(9+16*n);const v=new DataView(buf);v.setUint8(0,1);v.setUint32(1,2,true);v.setUint32(5,n,true);for(let i=0;i<n;i++){v.setFloat64(9+i*16,coords[i][0],true);v.setFloat64(9+i*16+8,coords[i][1],true);}return new Uint8Array(buf);};
+  const wkbPoly=(rings)=>{let len=9;for(const r of rings)len+=4+16*r.length;const buf=new ArrayBuffer(len);const v=new DataView(buf);v.setUint8(0,1);v.setUint32(1,3,true);v.setUint32(5,rings.length,true);let o=9;for(const r of rings){v.setUint32(o,r.length,true);o+=4;for(const c of r){v.setFloat64(o,c[0],true);v.setFloat64(o+8,c[1],true);o+=16;}}return new Uint8Array(buf);};
+  const wkb=(g)=>{if(!g)return null;if(g.type==='Point')return wkbPoint(g.coordinates);if(g.type==='LineString')return wkbLine(g.coordinates);if(g.type==='Polygon')return wkbPoly(g.coordinates);return null;};
+  // Header GeoPackageBinary : 'GP' + version(0) + flags(0x01 = LE byteOrder, sans envelope) + srs_id(LE int32)
+  const gpkgBin=(g,srs)=>{const w=wkb(g);if(!w)return null;const h=new ArrayBuffer(8);const dv=new DataView(h);dv.setUint8(0,0x47);dv.setUint8(1,0x50);dv.setUint8(2,0);dv.setUint8(3,0x01);dv.setInt32(4,srs,true);const out=new Uint8Array(h.byteLength+w.byteLength);out.set(new Uint8Array(h),0);out.set(w,h.byteLength);return out;};
+  // Insertion des features
+  const colsListSql=cols.length?(', '+cols.map(c=>`"${c.replace(/"/g,'')}"`).join(', ')):'';
+  const placeholders='?'+(cols.length?(', '+cols.map(()=>'?').join(', ')):'');
+  const stmt=db.prepare(`INSERT INTO "${tableName}" (geom${colsListSql}) VALUES (${placeholders});`);
+  for(const f of fc.features){const gb=gpkgBin(f.geometry,epsg);const vals=[gb||null].concat(cols.map(c=>{const v=(f.properties||{})[c];return v==null?null:(typeof v==='object'?JSON.stringify(v):String(v));}));stmt.run(vals);}
+  stmt.free();
+  // Enregistrement dans gpkg_contents et gpkg_geometry_columns
+  const ident=tableName.replace(/'/g,"''"),desc='Plateforme Recomposition spatiale des littoraux ultramarins · donnée indicative (réf. mission IGEDD-IGA 014917-02A)';
+  const sx=isFinite(minx)?minx:0,sy=isFinite(miny)?miny:0,ex=isFinite(maxx)?maxx:0,ey=isFinite(maxy)?maxy:0;
+  db.run(`INSERT INTO gpkg_contents (table_name, data_type, identifier, description, min_x, min_y, max_x, max_y, srs_id) VALUES ('${tableName}','features','${ident}','${desc}',${sx},${sy},${ex},${ey},${epsg});`);
+  db.run(`INSERT INTO gpkg_geometry_columns (table_name, column_name, geometry_type_name, srs_id, z, m) VALUES ('${tableName}','geom','GEOMETRY',${epsg},0,0);`);
+  // Métadonnées de catalogue (A4.3) : sérialisation JSON dans gpkg_metadata
+  if(fc.metadata){const md=JSON.stringify(fc.metadata).replace(/'/g,"''");db.run(`INSERT INTO gpkg_metadata (md_scope, md_standard_uri, mime_type, metadata) VALUES ('dataset','urn:plateforme:outremer:methodologie','application/json','${md}');`);db.run(`INSERT INTO gpkg_metadata_reference (reference_scope, table_name, md_file_id) VALUES ('table','${tableName}',1);`);}
+  const bytes=db.export();db.close();return bytes;
+}
+async function _telechargerGpkg(fc,nomFichier,reprojeter){
+  try{
+    const epsg=reprojeter?(_EPSG_TERR[TERR_ACTIF]||4326):4326;
+    // Pipeline : enrichir → reprojeter (si demandé) → aligner Cerema → composer GeoPackage
+    let prep=_enrichirMetaExport(fc);
+    if(reprojeter&&epsg!==4326)prep=await _reprojeterFC(prep,epsg);
+    prep={type:'FeatureCollection',features:prep.features.map(f=>({...f,properties:_propsCerema(f.properties||{})})),metadata:prep.metadata,crs:prep.crs};
+    const bytes=await _construireGeoPackage(prep,{epsg,tableName:'sig_outremer'});
+    const blob=new Blob([bytes],{type:'application/geopackage+sqlite3'});
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=nomFichier;a.click();URL.revokeObjectURL(url);
+  }catch(e){alert("Export GeoPackage indisponible (réseau ou navigateur) : "+e.message+"\nL'export GeoJSON reste disponible et porte les mêmes attributs Cerema.");console.error(e);}
+}
+window.telechargerSigGpkg=function(reprojeter){
+  if(!_lastSigGeojson){alert('Aucune couche SIG à exporter.');return;}
+  const stamp=new Date().toLocaleDateString('fr-FR').replace(/\//g,'-');
+  _telechargerGpkg(_lastSigGeojson,`extraction_sig_${(_lastSigMeta.site||TERR_ACTIF||'site').replace(/\s+/g,'_')}_${stamp}${reprojeter?'_localCRS':''}.gpkg`,reprojeter);
+};
+window.telechargerCumulGpkg=function(reprojeter){
+  if(!_sigCumul.features.length){alert('Couche cumulée vide.');return;}
+  const stamp=new Date().toLocaleDateString('fr-FR').replace(/\//g,'-');
+  _telechargerGpkg(_sigCumul,'sig_cumul_'+(TERR_ACTIF||'territoire')+'_'+stamp+(reprojeter?'_localCRS':'')+'.gpkg',reprojeter);
+};
+
 window.telechargerSigGeojson=function(){
   if(!_lastSigGeojson){alert('Aucune couche SIG à exporter.');return;}
   const fc=_enrichirMetaExport(_lastSigGeojson);
