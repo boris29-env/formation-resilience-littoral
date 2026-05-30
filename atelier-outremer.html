@@ -115,6 +115,37 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15p
 .prerog-panel .pfooter{margin-top:10px;font-size:11px;color:var(--muted);font-style:italic}
 .faible-donnee{background:#FFF8E1;border:1px solid #FFE082;border-left:4px solid #f9a825;border-radius:0 7px 7px 0;padding:10px 14px;margin:14px 0;font-size:12px;line-height:1.5;color:#5a4400}
 .faible-donnee b{color:#3d2f00;font-weight:700;display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+/* A1 — Scoring : panneaux familles, climat, méthode */
+.aec-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:8px}
+.aec-card{background:#fff;border:1px solid var(--line);border-radius:7px;padding:10px 12px}
+.aec-card .aec-k{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.aec-card .aec-t{font-family:var(--serif);font-size:14px;font-weight:600;color:var(--navy);margin-bottom:6px}
+.aec-card .aec-score{font-family:var(--serif);font-size:28px;color:var(--navy);font-weight:600;line-height:1;margin-bottom:6px}
+.aec-card ul{margin:4px 0 0 0;padding:0;list-style:none;font-size:11.5px;line-height:1.5}
+.aec-card ul li{padding:2px 0;border-top:1px dotted var(--line)}
+.aec-card ul li:first-child{border-top:0}
+.aec-card .aec-foot{margin-top:6px;font-size:10.5px;color:var(--muted);font-style:italic;line-height:1.45}
+.aec-alea{border-left:3px solid #c0392b}
+.aec-enjeu{border-left:3px solid #B07E1B}
+.aec-cap{border-left:3px solid var(--teal)}
+.aec-warn{background:#f5f0e6;border:1px solid #e0d5b8;border-radius:6px;padding:8px 11px;margin-top:10px;font-size:11.5px;color:#5a4500;line-height:1.5}
+.climat-panel .cp-block{background:#fff;border:1px solid var(--line);border-radius:7px;padding:10px 12px;margin-bottom:8px}
+.climat-panel .cp-k{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--navy);margin-bottom:6px;font-weight:700}
+.climat-panel .tr-row{display:grid;grid-template-columns:60px 130px 1fr;gap:8px;padding:3px 0;font-size:11.5px;border-top:1px dotted var(--line)}
+.climat-panel .tr-row:first-of-type{border-top:0}
+.climat-panel .tr-row .tr-h{font-weight:700;color:var(--navy);font-family:var(--mono);font-size:11px}
+.climat-panel .tr-row .tr-v{color:#c0392b;font-weight:600}
+.climat-panel .tr-row .tr-n{color:var(--muted);font-size:10.5px}
+.climat-panel .cp-region-slr{font-family:var(--serif);font-size:18px;color:#c0392b;font-weight:600;margin:4px 0}
+.climat-panel .cp-note{font-size:11px;color:var(--muted);line-height:1.5;font-style:italic}
+.climat-panel .cp-src{font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.5;border-top:1px solid var(--line);padding-top:5px}
+.climat-panel .cp-warn{background:#FFF3E0;border:1px solid #FFCC80;border-radius:6px;padding:7px 11px;font-size:11px;color:#7a4a00;margin-top:4px}
+.pm-intro{background:var(--soft);border-left:3px solid var(--navy);padding:8px 12px;font-size:11.5px;line-height:1.55;border-radius:0 6px 6px 0;margin-bottom:10px}
+.pm-rows{display:flex;flex-direction:column;gap:6px}
+.pmrow{background:#fff;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:11.5px;display:grid;grid-template-columns:1fr auto;grid-template-areas:'head head' 'w s';gap:4px 12px}
+.pmrow-head{grid-area:head}
+.pmrow-w{grid-area:w;font-size:11px}
+.pmrow-s{grid-area:s;font-size:11px;color:var(--muted);text-align:right;align-self:center}
 .src-note{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:14px;padding-top:10px;border-top:1px solid var(--line);line-height:1.6}
 .src-note b{color:var(--navy);font-weight:500}
 section.ps{margin-bottom:76px;scroll-margin-top:72px}
@@ -693,6 +724,12 @@ svg.house{width:100%;max-width:290px;height:auto}
           <div class="callout"><div class="ck">En une phrase</div><div id="synth-out"></div></div>
         </div>
       </div>
+      <!-- A1.4 — séparation aléa / enjeu / capacité (sans agrégation compensatoire) -->
+      <div class="dc" style="margin-top:20px"><h4>Aléa · Enjeu · Capacité d'adaptation</h4><div id="panneau-familles"></div></div>
+      <!-- A1.5 — projection climatique régionalisée par territoire -->
+      <div class="dc" style="margin-top:14px"><h4>Projection climatique de référence</h4><div id="panneau-climat"></div></div>
+      <!-- A1.1 + A1.2 + A1.3 — méthode du score, pondérations ajustables, sensibilité ±30% -->
+      <details class="dc" style="margin-top:14px"><summary style="cursor:pointer;font-family:var(--serif);font-size:18px;color:var(--navy);font-weight:600;margin-bottom:8px">Méthode du score · pondérations &amp; sensibilité (audit)</summary><div id="panneau-methode"></div></details>
     </section>
 
     <!-- OUTILS -->
@@ -1415,6 +1452,7 @@ function chargerTerritoire(key){
   const fr=document.getElementById('terr-facts');fr.innerHTML='';T.facts.forEach(f=>{const d=document.createElement('div');d.className='fact-box';d.innerHTML=`<div class="fn">${f.n}</div><div class="fl">${f.l}</div>`;fr.appendChild(d);});
   document.getElementById('terr-vigil-content').innerHTML=T.vigilance.split(' · ').map(s=>`<p style="margin-bottom:3px">· ${s}</p>`).join('');
   _construireBandeauPrerogatives(key);   // A5.1 — bandeau de prérogatives et licences
+  _pondLoad();                            // A1.2 — pondérations persistées par territoire
   document.getElementById('terr-src').innerHTML=`<b>Sources :</b> ${(T.sources||'').replace(/Lettre de commande réf\.?\s*014917-02[^·]*·\s*/gi,'')}`;
   // Initialiser la carte
   setTimeout(()=>initMap(T,key),100);
@@ -1581,6 +1619,151 @@ const NS='http://www.w3.org/2000/svg';
 function eln(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;}
 function fc(s){return MAT[Math.round(Math.max(0,Math.min(3,s)))]||MAT[0];}
 function axSc(ax){let sum=0,n=0;ax.q.forEach((q,qi)=>{const v=answers[ax.id+'_'+qi];if(v!==undefined){sum+=v;n++;}});return n?{score:sum/n,answered:n}:{score:0,answered:0};}
+
+/* ============================================================
+   LOT A1 — SCORING : TRANSPARENCE, PONDÉRATIONS, SENSIBILITÉ,
+   SÉPARATION ALÉA/ENJEU/CAPACITÉ, PROJECTION CLIMATIQUE
+   Réf. méthodologique : 7.1 (handbook OCDE/JRC, indicateurs composites :
+   théorie, normalisation, pondération, agrégation, sensibilité),
+   7.2 (critique de l'indice CVI : ne pas mélanger aléa et vulnérabilité),
+   7.3 (TRACC décret 2026-23 + GIEC AR6 SROCC projections SLR régionalisées).
+============================================================ */
+// État des pondérations par axe (1.0 par défaut = neutre, mais affiché comme un CHOIX).
+// Persistance localStorage par territoire ; journal d'audit horodaté pour traçabilité.
+const _POND_DEF=Object.fromEntries(ALL.map(ax=>[ax.id,1.0]));
+let _ponderations=Object.assign({},_POND_DEF);
+let _pondJournal=[];   // [{ts, terr, axId, ancien, nouveau, who}]
+function _pondKey(){return 'pond_'+(TERR_ACTIF||'default');}
+function _pondLoad(){
+  try{const raw=localStorage.getItem(_pondKey());if(raw){const obj=JSON.parse(raw);_ponderations=Object.assign({},_POND_DEF,obj.w||{});_pondJournal=obj.j||[];}else{_ponderations=Object.assign({},_POND_DEF);_pondJournal=[];}}catch(e){_ponderations=Object.assign({},_POND_DEF);_pondJournal=[];}
+}
+function _pondSave(){try{localStorage.setItem(_pondKey(),JSON.stringify({w:_ponderations,j:_pondJournal.slice(-50)}));}catch(e){}}
+function _pondReset(){const old=Object.assign({},_ponderations);_ponderations=Object.assign({},_POND_DEF);_pondJournal.push({ts:Date.now(),terr:TERR_ACTIF,axId:'*',ancien:JSON.stringify(old),nouveau:'défaut (1.0)',who:GRP_ACTIF||'?'});_pondSave();_construirePanneauMethode();if(typeof updateDiag==='function'&&TERR_ACTIF)updateDiag(TERRITOIRES[TERR_ACTIF]);}
+window._ponderationsSet=function(axId,val){const v=Math.max(0.5,Math.min(1.5,+val||1));const old=_ponderations[axId];if(old===v)return;_ponderations[axId]=v;_pondJournal.push({ts:Date.now(),terr:TERR_ACTIF,axId,ancien:old.toFixed(2),nouveau:v.toFixed(2),who:GRP_ACTIF||'?'});_pondSave();_construirePanneauMethode();if(TERR_ACTIF)updateDiag(TERRITOIRES[TERR_ACTIF]);};
+window._ponderationsReset=_pondReset;
+
+// Score pondéré d'un axe : la pondération est appliquée comme un FACTEUR DE PERTINENCE LOCALE
+// (multiplicatif puis borné [0,3]) ; la pondération neutre 1.0 ne change rien.
+function axScWeighted(ax,wOverride){const base=axSc(ax);if(!base.answered)return base;const w=wOverride!=null?wOverride:(_ponderations[ax.id]||1);return {score:Math.max(0,Math.min(3,base.score*w)),answered:base.answered,scoreBrut:base.score,poids:w};}
+// Enveloppe de sensibilité (réf. 7.1) : perturbe chaque pondération ±delta indépendamment et
+// calcule, pour chaque axe, les scores min, médian et max obtenus → robustesse du classement.
+function sensibiliteAxe(ax,delta){
+  delta=delta||0.3;const samples=[];
+  const wCur=_ponderations[ax.id]||1;
+  for(const d of [-delta,-delta/2,0,+delta/2,+delta]){const w=Math.max(0.5,Math.min(1.5,wCur*(1+d)));samples.push(axScWeighted(ax,w).score);}
+  samples.sort((a,b)=>a-b);
+  return {min:samples[0],med:samples[Math.floor(samples.length/2)],max:samples[samples.length-1],delta};
+}
+
+// Données climatiques par territoire (réf. 7.3).
+// Aucune valeur locale n'est inventée : on cite la trajectoire NATIONALE TRACC (décret 2026-23) en
+// indiquant explicitement « déclinaison ultramarine à confirmer » ; pour le niveau marin, on
+// renvoie aux fourchettes AR6 mondiales et à la nuance régionale documentée par le SROCC.
+const _CLIMAT_TRACC={
+  source:'Décret n° 2026-23 et arrêté du 23 janvier 2026, inscription au Code de l\'environnement',
+  national:[
+    {horizon:'2030',valeur:'+2,0 °C',note:'au-dessus de la période préindustrielle (France hexagonale)'},
+    {horizon:'2050',valeur:'+2,7 °C',note:''},
+    {horizon:'2100',valeur:'+4,0 °C',note:'trajectoire de référence pour l\'adaptation'}
+  ],
+  note_ultramarine:'Déclinaisons ultramarines en cours de définition — à confirmer auprès du MTECT et de Météo-France ; la TRACC France hexagonale sert de référence par défaut, à charge pour chaque territoire d\'adopter la sienne dès publication.'
+};
+const _CLIMAT_REGIONS={
+  pacifique:{
+    nom:'Pacifique tropical (PF, NC, Wallis-et-Futuna)',
+    slr_2100_likely:'+0,5 à +0,7 m (SSP2-4.5) ; jusqu\'à +0,8 à +1,0 m (SSP5-8.5)',
+    note:'Le Pacifique tropical connaît une élévation supérieure à la moyenne mondiale. Valeurs à affiner à partir du marégraphe le plus proche (PSMSL) et des projections régionalisées du portail NASA Sea Level Change / catalogue AR6 Sea Level Projections.',
+    aleas_specifiques:['Cyclones intenses (intensification documentée par AR6)','Blanchissement et perte de coraux','Lentille d\'eau douce sur atolls','Sécheresses cycliques']
+  },
+  caraibes:{
+    nom:'Antilles du Nord (Saint-Martin, Saint-Barthélemy)',
+    slr_2100_likely:'+0,5 à +0,7 m (SSP2-4.5) ; jusqu\'à +0,8 à +1,0 m (SSP5-8.5)',
+    note:'L\'élévation est proche de la moyenne mondiale. Reconstruction post-Irma 2017 → fréquence d\'actualisation élevée des données d\'aléa cyclonique.',
+    aleas_specifiques:['Ouragans majeurs (catégorie 5 atteinte, Irma 2017)','Houle cyclonique','Submersion marine','Érosion accélérée des plages']
+  },
+  atlantique:{
+    nom:'Atlantique Nord froid (Saint-Pierre-et-Miquelon)',
+    slr_2100_likely:'+0,4 à +0,6 m (SSP2-4.5) ; +0,6 à +0,9 m (SSP5-8.5)',
+    note:'Seul territoire mésotidal des six COM (marée d\'amplitude métrique). Marégraphe REFMAR du SHOM. Saisonnalité forte (enneigement, glace de mer).',
+    aleas_specifiques:['Tempêtes hivernales','Érosion du cordon sableux de l\'isthme','Submersion à hautes marées d\'équinoxe']
+  }
+};
+// Données GIEC AR6 mondiales (réf. 7.3, table 9.9 du WG1) : citables, non inventées.
+const _CLIMAT_AR6_MONDE={
+  source:'GIEC AR6 WG1 (2021), table 9.9 — fourchettes likely à 2100 :',
+  ranges:[
+    {scenario:'SSP1-1.9',valeur:'+0,28 à +0,55 m'},
+    {scenario:'SSP2-4.5',valeur:'+0,44 à +0,76 m'},
+    {scenario:'SSP3-7.0',valeur:'+0,55 à +0,90 m'},
+    {scenario:'SSP5-8.5',valeur:'+0,63 à +1,01 m (jusqu\'à +1,60 m en trajectoire basse confiance)'}
+  ]
+};
+function _regionDuTerritoire(key){const T=TERRITOIRES[key]||{};return T.region||(key==='spm'?'atlantique':((['pf','nc','wallis'].includes(key))?'pacifique':'caraibes'));}
+
+// Familles aléa / enjeu / capacité (réf. 7.2 : pas d'agrégation compensatoire).
+// La capacité d'adaptation correspond aux 6 axes FOUND+MODS existants (score quantitatif).
+// L'aléa et l'enjeu sont DESCRIPTIFS : on ne tente pas de les noter, on les présente côte à côte.
+function _construirePanneauFamilles(T){
+  const host=document.getElementById('panneau-familles');if(!host||!T)return;
+  const pr=_PREROGATIVES[TERR_ACTIF]||{};const reg=_CLIMAT_REGIONS[_regionDuTerritoire(TERR_ACTIF)]||{};
+  const aleaItems=[
+    `Régime de marée : ${pr.maree||'—'}`,
+    `Observatoire du trait de côte : ${pr.observatoire||'—'}`,
+    `Événement de référence : ${T.event_passe?T.event_passe.titre:'—'}`,
+    `Aléas régionaux dominants : ${(reg.aleas_specifiques||[]).slice(0,3).join(' · ')}`
+  ];
+  const enjeuItems=(T.facts||[]).slice(0,4).map(f=>`${f.n} ${f.l}`);
+  const capScores=ALL.map(ax=>axScWeighted(ax));
+  const capDone=capScores.filter(s=>s.answered).length;
+  const capMoy=capDone?(capScores.reduce((a,s)=>a+(s.answered?s.score:0),0)/capDone).toFixed(1):'—';
+  host.innerHTML=`<div class="aec-grid">
+    <div class="aec-card aec-alea"><div class="aec-k">Aléa</div><div class="aec-t">Ce qui menace</div><ul>${aleaItems.map(s=>`<li>${s}</li>`).join('')}</ul><div class="aec-foot">Voir « Projection climatique » ci-dessous pour la trajectoire de référence (TRACC) et la fourchette d'élévation marine régionalisée.</div></div>
+    <div class="aec-card aec-enjeu"><div class="aec-k">Enjeu</div><div class="aec-t">Ce qui est exposé</div><ul>${enjeuItems.map(s=>`<li>${s}</li>`).join('')}</ul><div class="aec-foot">Inventaire des biens exposés par destination : à consolider via le tableau de bord territorial (Cerema, observatoires).</div></div>
+    <div class="aec-card aec-cap"><div class="aec-k">Capacité d'adaptation</div><div class="aec-t">Ce qui est mobilisable</div><div class="aec-score">${capMoy}<span style="font-size:11px;color:var(--muted);font-weight:400"> / 3 (${capDone}/${ALL.length} axes renseignés)</span></div><ul>${ALL.map((ax,i)=>`<li><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${ax.color};margin-right:5px"></span><b>${ax.label}</b> · ${capScores[i].answered?capScores[i].score.toFixed(1):'—'}</li>`).join('')}</ul></div>
+    </div>
+    <div class="aec-warn"><b>Lecture.</b> Les trois familles sont présentées séparément, sans score unique compensatoire (réf. méth. 7.2 : la critique de l'indice de vulnérabilité côtière repose précisément sur ce mélange). Un score de capacité élevé ne compense pas un aléa fort.</div>`;
+}
+function _construirePanneauClimat(T){
+  const host=document.getElementById('panneau-climat');if(!host||!T)return;
+  const reg=_CLIMAT_REGIONS[_regionDuTerritoire(TERR_ACTIF)]||{};
+  const trBlock=_CLIMAT_TRACC.national.map(r=>`<div class="tr-row"><span class="tr-h">${r.horizon}</span><span class="tr-v">${r.valeur}</span><span class="tr-n">${r.note||''}</span></div>`).join('');
+  const ar6Block=_CLIMAT_AR6_MONDE.ranges.map(r=>`<div class="tr-row"><span class="tr-h">${r.scenario}</span><span class="tr-v">${r.valeur}</span></div>`).join('');
+  host.innerHTML=`<div class="climat-panel">
+    <div class="cp-block">
+      <div class="cp-k">Trajectoire de réchauffement de référence (TRACC, France)</div>
+      ${trBlock}
+      <div class="cp-src">Source : ${_CLIMAT_TRACC.source}.<br><b>Outre-mer :</b> ${_CLIMAT_TRACC.note_ultramarine}</div>
+    </div>
+    <div class="cp-block">
+      <div class="cp-k">Région océanique : ${reg.nom||'—'}</div>
+      <div class="cp-region-slr">${reg.slr_2100_likely||'—'}</div>
+      <div class="cp-note">${reg.note||''}</div>
+    </div>
+    <div class="cp-block">
+      <div class="cp-k">Fourchettes mondiales likely à 2100 (référence GIEC AR6)</div>
+      ${ar6Block}
+      <div class="cp-src">${_CLIMAT_AR6_MONDE.source} La déclinaison régionale au marégraphe local est à consulter via le portail NASA Sea Level Change (catalogue AR6 Sea Level Projections) et le réseau PSMSL.</div>
+    </div>
+    <div class="cp-warn">⚠ Aucune moyenne mondiale n'est affichée comme valeur locale. Les fourchettes régionales ci-dessus sont indicatives ; pour un usage opérationnel, consultez le marégraphe le plus proche.</div>
+    </div>`;
+}
+function _construirePanneauMethode(){
+  const host=document.getElementById('panneau-methode');if(!host)return;
+  const rows=ALL.map(ax=>{const w=_ponderations[ax.id]||1;const base=axSc(ax);const wScore=base.answered?Math.max(0,Math.min(3,base.score*w)).toFixed(2):'—';const sens=base.answered?sensibiliteAxe(ax,0.3):null;return `
+    <div class="pmrow">
+      <div class="pmrow-head"><span style="display:inline-block;width:9px;height:9px;background:${ax.color};border-radius:50%;margin-right:6px"></span><b>${ax.label}</b> <span style="font-size:10.5px;color:var(--muted);margin-left:6px">${ax.q.length} questions, score = moyenne des réponses 0-3</span></div>
+      <div class="pmrow-w">Pondération&nbsp;: <input type="range" min="0.5" max="1.5" step="0.05" value="${w}" oninput="this.nextElementSibling.textContent=(+this.value).toFixed(2)" onchange="_ponderationsSet('${ax.id}',this.value)" style="width:140px;vertical-align:middle"><span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--navy);margin-left:6px">${w.toFixed(2)}</span></div>
+      <div class="pmrow-s">Score pondéré : <b>${wScore}</b> ${sens?`<span style="color:var(--muted);font-size:10.5px;margin-left:8px">enveloppe ±30 % : [${sens.min.toFixed(2)} – ${sens.max.toFixed(2)}], médiane ${sens.med.toFixed(2)}</span>`:''}</div>
+    </div>`;}).join('');
+  const jrn=_pondJournal.slice(-5).reverse().map(j=>`<li><span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${new Date(j.ts).toLocaleString('fr-FR')}</span> · ${j.axId==='*'?'<i>reset</i>':'<b>'+(ALL.find(a=>a.id===j.axId)||{}).label+'</b> : '+j.ancien+' → '+j.nouveau}</li>`).join('');
+  host.innerHTML=`<div class="pm-intro">Adossé au cadre OCDE/JRC de construction des indicateurs composites (Nardo et al., 2008). La pondération <b>1,00</b> est un <b>choix méthodologique</b> (égalité a priori), pas une neutralité. Vous pouvez l'ajuster dans [0,5 – 1,5] selon la pertinence locale ; tout changement est journalisé pour audit.</div>
+    <div class="pm-rows">${rows}</div>
+    <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+      <button onclick="_ponderationsReset()" style="background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer">Réinitialiser à 1,00</button>
+      <span style="font-size:10.5px;color:var(--muted)">Persistance : navigateur local · clé : ${_pondKey()}</span>
+    </div>
+    ${jrn?`<details style="margin-top:10px"><summary style="cursor:pointer;font-size:11px;color:var(--navy);font-weight:600">Journal des ajustements (5 derniers)</summary><ul style="margin:6px 0 0 14px;padding:0;font-size:11px;line-height:1.6">${jrn}</ul></details>`:''}`;
+}
 function scById(ss){const o={};ALL.forEach((ax,i)=>o[ax.id]=ss[i]);return o;}
 function svgT(x,y,cls,s,anc){const t=eln('text',{x,y,class:cls});if(anc)t.setAttribute('text-anchor',anc);t.textContent=s;return t;}
 function drawHouse(ss){const h=document.getElementById('house');while(h.firstChild)h.removeChild(h.firstChild);const sx=scById(ss);
@@ -1589,7 +1772,8 @@ function drawHouse(ss){const h=document.getElementById('house');while(h.firstChi
   [['conn',20,174],['plan',156,174]].forEach(f=>{const[id,x,y]=f,sc=sx[id];h.appendChild(eln('rect',{x,y,width:112,height:44,rx:3,fill:fc(sc.score),stroke:'#fff','stroke-width':2}));h.appendChild(svgT(x+56,y+18,'brickLab',id==='conn'?'Connaissance':'Droit local','middle'));h.appendChild(svgT(x+56,y+32,'brickVal',sc.answered?'niv. '+sc.score.toFixed(1):'—','middle'));});
   h.appendChild(eln('line',{x1:20,y1:230,x2:290,y2:230,stroke:'#B9C6CE','stroke-width':1.5}));h.appendChild(svgT(20,245,'zoneLab','Socle commun'));h.appendChild(svgT(290,245,'zoneLab','Modules','end'));}
 
-function updateDiag(T){const ss=ALL.map(ax=>axSc(ax));drawHouse(ss);
+function updateDiag(T){const ss=ALL.map(ax=>axScWeighted(ax));drawHouse(ss);
+  _construirePanneauMethode();_construirePanneauFamilles(T);_construirePanneauClimat(T);
   const sd=document.getElementById('scores-disp');sd.innerHTML='';
   ALL.forEach((ax,i)=>{const line=document.createElement('div');line.className='sl';line.innerHTML=`<span class="sld" style="background:${ax.color}"></span><span class="sln">${ax.label}</span><span class="slv">${ss[i].answered?ss[i].score.toFixed(1):'—'}</span>`;sd.appendChild(line);});
   const done=Object.keys(answers).length,total=ALL.reduce((a,ax)=>a+ax.q.length,0);document.getElementById('compl-txt').textContent=done+' / '+total+' renseignés';
