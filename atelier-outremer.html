@@ -169,6 +169,44 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15p
 .fa-foot{margin-top:14px;padding-top:10px;border-top:1px solid var(--line);font-size:10.5px;color:var(--muted);font-style:italic;line-height:1.6}
 .fa-btn-site{background:#FFF3E0;padding:2px 7px;border-radius:3px;margin:1px;display:inline-block;border:1px solid #FFCC80;cursor:pointer;font-size:10.5px;color:#7a4a00;font-family:var(--sans)}
 .fa-btn-site:hover{background:#FFE0B2}
+/* Récit délibératif — atelier d'écriture (pas formulaire). Le pré-rempli est typographiquement
+   distinct du texte approprié : frontière toujours visible (dispositif anti-tutelle). */
+#recit-host{margin-top:6px}
+.recit-lieu{margin-bottom:32px;padding:22px;background:#fafaf7;border-left:3px solid var(--navy);border-radius:0 8px 8px 0}
+.recit-lieu-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;margin-bottom:14px}
+.recit-lieu h3{font-family:var(--serif);font-size:24px;color:var(--navy);margin:0;letter-spacing:-.01em}
+.recit-lieu-desc{font-size:12px;color:var(--muted);font-style:italic;line-height:1.5;margin-bottom:4px;width:100%}
+.recit-arches{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+.recit-arche{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--line);padding:4px 10px;border-radius:5px;font-size:11.5px;cursor:pointer;font-family:var(--sans);color:var(--ink);user-select:none}
+.recit-arche input{margin:0;accent-color:var(--navy)}
+.recit-arche.principal{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:600}
+.recit-arche.secondaire{border-style:dashed;color:var(--muted)}
+.recit-moment{margin-top:18px}
+.recit-moment-k{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.recit-moment-titre{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--navy);margin-bottom:9px;line-height:1.3}
+.recit-prop-label{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#9a9a9a;margin-bottom:4px;display:inline-block;padding:1px 6px;background:#ececea;border-radius:3px}
+.recit-prop-label.approprie{color:#fff;background:var(--teal)}
+.recit-texte{width:100%;min-height:90px;border:1px dashed #c8c5be;border-radius:6px;padding:12px 14px;font-family:var(--serif);font-size:14.5px;line-height:1.75;color:#8a8a85;background:#fff;resize:vertical;box-sizing:border-box;font-style:italic}
+.recit-texte.approprie{color:var(--ink);border:1px solid var(--navy);background:#fff;font-style:normal}
+.recit-texte:focus{outline:none;border-color:var(--teal);border-style:solid}
+.recit-branches{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.recit-branche{margin:0;padding:9px 13px;border:1px dashed var(--line);border-radius:6px;background:#fff;font-size:13px}
+.recit-branche[open]{border-style:solid;border-color:var(--navy);background:#fcfbf8}
+.recit-branche summary{font-family:var(--serif);font-weight:600;color:var(--navy);cursor:pointer;font-size:14px;list-style:none}
+.recit-branche summary::-webkit-details-marker{display:none}
+.recit-branche summary::before{content:'▸ ';color:var(--teal);font-weight:400}
+.recit-branche[open] summary::before{content:'▾ '}
+.recit-branche-corps{margin-top:10px;font-size:12.5px;line-height:1.65;color:var(--ink)}
+.recit-branche-corps .b-sect{margin-top:5px}
+.recit-branche-corps .b-sect b{color:var(--navy)}
+.recit-branche-add{display:inline-block;margin-top:6px;font-size:11px;color:var(--muted);font-style:italic}
+.recit-fin{margin-top:24px;padding:16px;background:#f4f1ea;border-left:3px solid var(--terra);border-radius:0 7px 7px 0}
+.recit-fin-titre{font-family:var(--serif);font-size:16px;color:var(--navy);font-weight:600;margin-bottom:8px}
+.recit-fin .recit-texte{min-height:60px;background:#fffef9}
+.recit-export-row{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);text-align:right}
+.recit-export-btn{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+.recit-export-btn:hover{background:#0E2A47}
+.recit-intro-note{padding:10px 14px;background:#fff3e0;border-left:3px solid #f9a825;border-radius:0 6px 6px 0;font-size:11.5px;line-height:1.55;color:#7a4a00;margin-bottom:18px}
 .src-note{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:14px;padding-top:10px;border-top:1px solid var(--line);line-height:1.6}
 .src-note b{color:var(--navy);font-weight:500}
 section.ps{margin-bottom:76px;scroll-margin-top:72px}
@@ -644,6 +682,7 @@ svg.house{width:100%;max-width:290px;height:auto}
       <a href="#sec-passe">Voix du passé</a>
       <a href="#sec-cas">Analyse territoriale</a>
       <a href="#sec-diag-inst">Tableau de bord</a>
+      <a href="#sec-recit">Récit délibératif</a>
       <a href="#sec-image">Analyse d'images</a>
       <a href="#sec-climat">Voix du climat</a>
       <a href="#sec-debrief">Débriefing IA</a>
@@ -777,6 +816,16 @@ svg.house{width:100%;max-width:290px;height:auto}
       <div class="sec-hd"><span class="sec-num">06 bis</span><h2 class="sec-title">Tableau de bord territorial</h2></div>
       <div class="sec-intro">La collectivité renseigne et fait vivre cet outil à son rythme. Il lui appartient. Il sert à fiabiliser la monographie territoriale et à recenser les projets en cours. Structuré par grandes thématiques : connaissance, planification, foncier, habitat, financement, gouvernance.</div>
       <div id="cas5-container"></div>
+    </section>
+
+    <!-- RÉCIT DÉLIBÉRATIF — atelier d'écriture, lieu par lieu, sans recommandation -->
+    <section class="ps" id="sec-recit">
+      <div class="sec-hd"><span class="sec-num">06 ter</span><h2 class="sec-title">Récit délibératif</h2></div>
+      <div class="sec-intro">Atelier d'écriture pour mettre en récit les choix d'aménagement de votre littoral, lieu par lieu, selon une trame en quatre moments (mémoire · ce que l'on sait et ignore · éventail des avenirs · qui décide). Le texte en gris est une <b>proposition issue de la monographie, à valider, amender ou réécrire</b>. Aucune branche d'avenir n'est recommandée ; aucun score n'est calculé. Le document final est un support de délibération, présentable à l'assemblée comme le travail propre du territoire.</div>
+      <div id="recit-host"></div>
+      <div class="recit-export-row">
+        <button onclick="exporterRecit()" class="recit-export-btn">Télécharger le document de délibération (.txt)</button>
+      </div>
     </section>
 
     <!-- ANALYSE D'IMAGES CÔTIÈRES -->
@@ -1499,7 +1548,7 @@ function chargerTerritoire(key){
   // Initialiser la carte
   setTimeout(()=>initMap(T,key),100);
   construireEventCards(key);
-  construireDiag(T);construireFiches(T);construireVoixPasse(T);construireCas(T);construireCas5(T);setTimeout(()=>construireImageModule(),50);construireCvGrid(T);
+  construireDiag(T);construireFiches(T);construireVoixPasse(T);construireCas(T);construireCas5(T);_construireRecit(T);setTimeout(()=>construireImageModule(),50);construireCvGrid(T);
   setTimeout(()=>initConsent(),500);
 }
 
@@ -5212,6 +5261,294 @@ window.afficherSyntheseTerritoriale=function(){
   document.getElementById('fa-body').innerHTML=html;
   _faActuelle={synthese:true,fiches,territoire:T.nom||TERR_ACTIF};
   document.getElementById('fa-overlay').classList.add('open');
+};
+
+/* ============================================================
+   RÉCIT DÉLIBÉRATIF — atelier d'écriture sans recommandation
+   Réf. : note de conception « Outil de récit délibératif » (typologie 9
+   archétypes, trame 4 moments). Principes : non-ingérence, égalité des
+   six territoires, appropriation. Le pré-rempli est typographiquement
+   distinct du texte approprié ; aucun score, aucun classement, aucune
+   recommandation ; document de sortie en récit, fin ouverte.
+============================================================ */
+const _ARCH_RECIT={
+  ile_efface:{nom:"L'île qui s'efface",
+    declencheur:"atolls ou îles basses dont des secteurs sont menacés de disparition à terme",
+    tension:"que faire d'un lieu dont la pérennité physique n'est pas assurée à long terme",
+    vigilance:"Ne pas présumer la disparition. Les travaux disponibles montrent que de nombreuses îles récifales sont stables ou en expansion. L'éventail doit refléter cette incertitude.",
+    branches:[
+      {nom:"Observer et documenter",suppose:"Une chaîne de suivi (terrain, satellite, marégraphe) capable de qualifier la trajectoire réelle.",implique:"Un calendrier d'observation et des seuils explicites qui déclencheraient un changement de posture.",releve:"Pays / collectivité avec les opérateurs scientifiques disponibles."},
+      {nom:"Renforcer en place",suppose:"Que la défense (ouvrages, solutions fondées sur la nature) soit techniquement et financièrement soutenable dans la durée.",implique:"Un engagement d'entretien long, et l'acceptation que la défense a des limites physiques.",releve:"Pays / collectivité, avec arbitrage des dépositaires coutumiers le cas échéant."},
+      {nom:"Préparer un repli ordonné",suppose:"Un foncier de report disponible et acceptable, et un dialogue construit avec les habitants concernés.",implique:"Un calendrier long, une politique de logement, et la question de ce que l'on fait du lieu quitté.",releve:"Pays / collectivité ; État pour les volets sécurité et risques ; instances coutumières si terres coutumières."},
+      {nom:"Envisager une recomposition d'ensemble",suppose:"Que la question dépasse le lieu et concerne plusieurs sites ou un archipel entier.",implique:"Un projet de réorganisation spatiale à concevoir, à l'échelle pertinente.",releve:"Pays / collectivité, en concertation large."}
+    ]},
+  bourg_deplacer:{nom:"Le bourg à déplacer",
+    declencheur:"un bourg ou une partie de bourg doit être déplacé",
+    tension:"comment et quand déplacer un habitat, et ce qu'on fait du lieu quitté",
+    vigilance:"Sobriété de ton. Le déplacement d'un habitat touche à l'intime ; le récit montre sans dramatiser, sous peine d'instrumentalisation affective.",
+    branches:[
+      {nom:"Maintenir et protéger",suppose:"Une protection durable techniquement réaliste et acceptée.",implique:"Un coût d'entretien dans la durée, et l'acceptation que la protection a des limites.",releve:"Pays / collectivité ; État sur risques."},
+      {nom:"Déplacer progressivement",suppose:"Un foncier de report, une politique de logement, et la volonté des habitants.",implique:"Un calendrier long, des phases, et l'organisation de la transition.",releve:"Pays / collectivité ; État (Fonds Barnier le cas échéant) ; habitants."},
+      {nom:"Rebâtir ailleurs et libérer le lieu",suppose:"La construction d'un nouveau bourg conçu comme tel, pas seulement un report d'habitations.",implique:"Un projet urbain complet et l'usage à venir du lieu quitté.",releve:"Pays / collectivité, avec concertation."},
+      {nom:"Garder le lieu pour d'autres usages",suppose:"Que le lieu, libéré de son habitat permanent, accueille des usages compatibles (mémoire, agriculture, biodiversité).",implique:"Une vocation à définir collectivement et à inscrire dans le document d'urbanisme.",releve:"Pays / collectivité."}
+    ]},
+  equipement_relocaliser:{nom:"L'équipement à relocaliser",
+    declencheur:"un équipement structurant exposé conditionne tout le territoire",
+    tension:"maintenir, protéger ou déplacer un ouvrage dont dépend la vie du territoire (route, piste, port, réseau)",
+    vigilance:"Le moment « qui décide » est ici décisif, car la maîtrise d'ouvrage d'un équipement structurant est souvent partagée entre plusieurs autorités.",
+    branches:[
+      {nom:"Maintenir et reprendre épisodiquement",suppose:"Une capacité d'intervention rapide et un budget de reprise prévisible.",implique:"Acceptation d'épisodes de coupure et coût récurrent.",releve:"Maître d'ouvrage de l'équipement, le plus souvent État ou collectivité."},
+      {nom:"Protéger lourdement",suppose:"Un ouvrage de protection dimensionné pour la durée et l'aggravation des forçages.",implique:"Investissement initial et entretien lourd.",releve:"Maître d'ouvrage ; État sur risques."},
+      {nom:"Déplacer ou doubler l'équipement",suppose:"Un emplacement alternatif viable et une faisabilité technique.",implique:"Projet d'infrastructure complet et continuité de service à organiser.",releve:"Maître d'ouvrage, État, et services concernés."},
+      {nom:"Transformer l'usage",suppose:"Que la fonction puisse être assurée autrement (déplacement modal, redondance, mutualisation).",implique:"Une révision de la stratégie d'aménagement.",releve:"Pays / collectivité."}
+    ]},
+  littoral_pression:{nom:"Le littoral sous pression",
+    declencheur:"le littoral exposé concentre de forts intérêts économiques",
+    tension:"arbitrer entre la valeur économique d'un linéaire et son exposition croissante",
+    vigilance:"Ne pas opposer frontalement économie et adaptation : il existe des trajectoires de transformation qui concilient les deux.",
+    branches:[
+      {nom:"Maintenir et compenser",suppose:"Une compensation financière et assurantielle des dommages prévisibles.",implique:"Un coût croissant et des seuils à se fixer.",releve:"Pays / collectivité ; acteurs économiques ; assureurs."},
+      {nom:"Adapter les usages",suppose:"Que les activités économiques puissent évoluer (saisonnalité, formes mobiles, hauteurs).",implique:"Un dialogue avec les acteurs et une révision des règles locales.",releve:"Pays / collectivité ; acteurs économiques."},
+      {nom:"Transformer le linéaire",suppose:"Un projet de reconversion partielle (espaces publics, équipements légers, renaturation).",implique:"Investissement long et arbitrage politique fort.",releve:"Pays / collectivité, avec concertation."},
+      {nom:"Repli sélectif",suppose:"Un foncier d'accueil pour les activités qui souhaitent se déplacer.",implique:"Une politique d'aménagement parallèle.",releve:"Pays / collectivité."}
+    ]},
+  foncier_denouer:{nom:"Le foncier à dénouer",
+    declencheur:"coutume, indivision ou bande des cinquante pas géométriques rendent le foncier complexe",
+    tension:"comment agir sur un littoral dont le statut foncier n'autorise pas les outils de droit commun",
+    vigilance:"Ce n'est pas un obstacle technique mais un cadre de droit à respecter. Le statut foncier est une donnée première, pas un verrou à forcer.",
+    branches:[
+      {nom:"Dialoguer pour ouvrir des accords",suppose:"Un dialogue formel et durable avec les dépositaires du foncier (autorités coutumières, indivisions, agence des cinquante pas).",implique:"Du temps long et une parole partagée.",releve:"Dépositaires fonciers en premier ; collectivité / Pays en facilitation ; État pour cadre."},
+      {nom:"Outiller le droit local",suppose:"La construction d'un cadre juridique adapté (droits d'usage, conventions, contrats de réserve).",implique:"Un travail législatif ou réglementaire local.",releve:"Pays / collectivité ; instances coutumières le cas échéant."},
+      {nom:"Respecter le statu quo",suppose:"L'acceptation que certains lieux ne soient pas mobilisables, et l'orientation des projets ailleurs.",implique:"Une stratégie spatiale qui prend acte du cadre foncier.",releve:"Pays / collectivité, en concertation."},
+      {nom:"Expérimenter par site pilote",suppose:"Un accord local sur un site précis, qui serve de précédent.",implique:"Documenter l'expérience et en tirer des règles.",releve:"Dépositaires fonciers et collectivité."}
+    ]},
+  littoral_defend:{nom:"Le littoral qu'on défend",
+    declencheur:"un enjeu jugé non déplaçable que le territoire choisit de protéger dans la durée, par ouvrage ou par solution fondée sur la nature",
+    tension:"comment défendre durablement un lieu, à quel coût, par quels moyens, et jusqu'à quand",
+    vigilance:"Dire lucidement ce qu'une défense suppose dans le temps long (entretien, reprise, limites), sans la présenter ni comme une solution miracle ni comme une impasse.",
+    branches:[
+      {nom:"Défense par ouvrages durs",suppose:"Un dimensionnement aux forçages aggravés et un budget d'entretien long.",implique:"Effets sur la dynamique sédimentaire et limites physiques connues.",releve:"Maître d'ouvrage ; État sur PPRL."},
+      {nom:"Solutions fondées sur la nature",suppose:"Des conditions écologiques favorables (mangroves, dunes, récifs, herbiers).",implique:"Un suivi écologique et un temps long avant pleine efficacité.",releve:"Pays / collectivité ; opérateurs environnementaux."},
+      {nom:"Défense mixte et temporaire",suppose:"Une combinaison d'ouvrages et de nature, avec un horizon explicite.",implique:"Un calendrier de réévaluation, et un plan de bascule possible.",releve:"Pays / collectivité ; État."},
+      {nom:"Préparer la fin de la défense",suppose:"L'acceptation qu'aucune défense ne tient indéfiniment.",implique:"Un récit de transition pour le moment où la défense ne sera plus tenable.",releve:"Pays / collectivité, en concertation."}
+    ]},
+  territoire_reorganise:{nom:"Le territoire qui se réorganise",
+    declencheur:"la difficulté n'est pas un point isolé mais une logique d'ensemble, appelant à repenser l'implantation de plusieurs fonctions à l'échelle d'une île ou d'un archipel",
+    tension:"comment recomposer l'organisation spatiale d'un territoire entier plutôt que traiter site par site",
+    vigilance:"Veiller à ne pas dépasser le niveau de connaissance disponible ; une réorganisation d'ensemble suppose une vision que tous les territoires n'ont pas encore.",
+    branches:[
+      {nom:"Recomposer site par site (à droit constant)",suppose:"Une accumulation de décisions locales cohérentes.",implique:"Risque de manquer de cohérence globale.",releve:"Pays / collectivité, par instruction."},
+      {nom:"Schéma d'ensemble à l'échelle de l'île ou de l'archipel",suppose:"Une connaissance suffisante pour arbitrer entre fonctions et lieux.",implique:"Un document d'orientation territoriale et une délibération politique de fond.",releve:"Pays / collectivité ; État sur certains volets."},
+      {nom:"Mutualiser les fonctions",suppose:"Une concentration des équipements et services dans les sites les moins exposés.",implique:"Une révision de l'accessibilité et du maillage.",releve:"Pays / collectivité ; communes."},
+      {nom:"Garder le maillage actuel",suppose:"Que la dispersion soit jugée préférable malgré l'exposition.",implique:"Acceptation d'une vulnérabilité distribuée.",releve:"Pays / collectivité, en concertation."}
+    ]},
+  territoire_veille:{nom:"Le territoire qui veille",
+    declencheur:"l'exposition est réelle mais la connaissance manque encore ; la décision responsable est d'observer et de documenter avant d'agir",
+    tension:"comment se doter d'une connaissance suffisante avant de s'engager dans des choix irréversibles",
+    vigilance:"Ne pas instrumentaliser la veille comme report indéfini : se donner des seuils explicites de passage à l'action.",
+    branches:[
+      {nom:"Construire une chaîne d'observation locale",suppose:"Des moyens techniques modestes mais constants (caméras côtières, points de mesure, signalements).",implique:"Du temps long, et la formation d'un porteur local.",releve:"Pays / collectivité ; appui possible BRGM, Cerema, observatoires."},
+      {nom:"S'allier à un dispositif existant",suppose:"Un opérateur scientifique partenaire (OBLIC, observatoires nationaux, Digital Earth Pacific, Carib-Coast).",implique:"Une convention et un protocole partagé.",releve:"Pays / collectivité ; opérateur partenaire."},
+      {nom:"Veille satellitaire en source ouverte",suppose:"Des compétences techniques basiques et un canal de restitution accessible.",implique:"Une donnée actualisée mais grossière, à confirmer en très haute résolution.",releve:"Pays / collectivité ; appui ponctuel."},
+      {nom:"Définir un seuil de bascule",suppose:"Un consensus politique sur la donnée ou l'événement qui déclencherait une décision.",implique:"Un récit explicite : observer maintenant, agir quand…",releve:"Pays / collectivité, par délibération."}
+    ]},
+  memoire_identite:{nom:"La mémoire et l'identité en jeu",
+    a_part:true,
+    declencheur:"ce qui est exposé n'est pas d'abord un bien matériel mais un lieu chargé de sens (cimetière, site sacré, marae, lieu de coutume)",
+    tension:"comment agir sur un lieu qui ne se déplace pas, et dont la décision n'appartient pas à l'exécutif seul",
+    vigilance:"Primauté de la parole coutumière et communautaire. Sobriété maximale. L'exécutif recueille et porte la parole des dépositaires légitimes, il n'est pas le narrateur principal.",
+    branches:[
+      {nom:"Préserver en place",suppose:"Des moyens de protection compatibles avec le caractère du lieu.",implique:"Un engagement de soin et d'entretien à respecter dans la durée.",releve:"Dépositaires de la mémoire ; collectivité en appui."},
+      {nom:"Accompagner la transformation",suppose:"Que les dépositaires acceptent une évolution physique du lieu.",implique:"Un travail rituel et communautaire à mener avec eux.",releve:"Dépositaires en premier ; collectivité en facilitation."},
+      {nom:"Transmettre par d'autres voies",suppose:"Que la mémoire puisse vivre par la parole, l'archive, l'oralité, en parallèle du lieu physique.",implique:"Un travail de transmission documenté et partagé.",releve:"Dépositaires ; appui culturel possible."},
+      {nom:"Documenter avant exposition irréversible",suppose:"Que le lieu soit déjà menacé à court terme.",implique:"Un protocole de relevé et de mémoire conduit par et avec les dépositaires.",releve:"Dépositaires ; collectivité ; opérateurs scientifiques et culturels."}
+    ]}
+};
+// Détecte l'archétype PRINCIPAL et les SECONDAIRES pour un site donné, à partir du contexte du
+// territoire et des indications de la monographie. Tout cela reste révisable par l'exécutif.
+function _detecterArchetypes(site,T){
+  const ctx=T.prefill_ctx||{};const mono=_MONOGRAPHIE[TERR_ACTIF]||{};const pr=_PREROGATIVES[TERR_ACTIF]||{};
+  const flags={
+    ile_efface:!!ctx.ile||(['pf','wallis','nc'].includes(TERR_ACTIF)&&/atoll|motu|îlot|loyaut/i.test((site.nom||'')+' '+(site.desc||''))),
+    bourg_deplacer:!!ctx.bourg||/village|bourg|miquelon/i.test((site.nom||'')+' '+(site.desc||'')),
+    equipement_relocaliser:/route|piste|port|isthme|aéroport|réseau|équipement/i.test((site.desc||'')+' '+(site.nom||'')),
+    littoral_pression:!!ctx.pression||/touristique|économique|hôtellerie|front de mer/i.test((site.desc||'')),
+    foncier_denouer:!!ctx.foncier||!!pr.coutumier,
+    littoral_defend:/enrochement|perré|digue|brise-lames|défense|ganivelle/i.test((site.desc||'')),
+    territoire_reorganise:false,   // jugement d'ensemble : laissé au choix de l'exécutif
+    territoire_veille:!!(mono.bilan&&/LACUNE/.test(mono.bilan)),
+    memoire_identite:/cimetière|sacré|marae|coutume|tribu|mémoire|patrimoine/i.test((site.desc||''))
+  };
+  // Principal = première détection forte selon une priorité, modulée par le territoire
+  const ordre=['memoire_identite','bourg_deplacer','equipement_relocaliser','ile_efface','foncier_denouer','littoral_pression','littoral_defend','territoire_veille','territoire_reorganise'];
+  let principal=ordre.find(k=>flags[k])||'territoire_veille';
+  const secondaires=ordre.filter(k=>flags[k]&&k!==principal);
+  return {principal,secondaires};
+}
+// Premier jet (style atténué) : mémoire du lieu, à partir de la description et de l'événement passé.
+function _pretextMoment1(site,T){
+  const ev=T.event_passe||{};
+  const phr=[];
+  phr.push(`${site.nom} est ${(site.desc||'un lieu du territoire').replace(/\.$/,'')}.`);
+  if(ev.titre)phr.push(`La mémoire de ce littoral porte la trace d'événements documentés, dont ${ev.titre.toLowerCase().replace(/^l[ae]s? /,'')}.`);
+  phr.push(`Ce que ce lieu représente pour le territoire, ce qu'il a été dans le temps long, ce qu'en disent ses habitants et — le cas échéant — les autorités coutumières, reste à formuler ici par l'exécutif.`);
+  return phr.join(' ');
+}
+// Premier jet (style atténué) : ce que l'on sait, ce que l'on ignore (monographie + lacunes).
+function _pretextMoment2(site,T){
+  const mono=_MONOGRAPHIE[TERR_ACTIF]||{};const reg=_CLIMAT_REGIONS[_regionDuTerritoire(TERR_ACTIF)]||{};
+  const sus=[];
+  if(reg.slr_observe)sus.push(`l'élévation marine observée dans la région : ${reg.slr_observe}`);
+  if(mono.linéaire_km)sus.push(`le linéaire côtier total du territoire (≈ ${mono.linéaire_km} km)`);
+  if(mono.taux_reference)sus.push(`un taux d'érosion documenté de l'ordre de ${mono.taux_reference} m/an pour ce type de littoral (${mono.taux_reference_label||'monographie'})`);
+  if(site.h30||site.h50||site.h100){const hors=[site.h30?`30 ans : ${site.h30}`:null,site.h50?`50 ans : ${site.h50}`:null,site.h100?`100 ans : ${site.h100}`:null].filter(Boolean).join(' · ');sus.push(`pour ce site, une appréciation d'exposition à 30 / 50 / 100 ans : ${hors}`);}
+  const ignor=[];
+  if(mono.bilan&&/LACUNE/.test(mono.bilan))ignor.push(`la quantification fine de l'évolution du trait de côte fait défaut pour ce territoire`);
+  ignor.push(`l'ampleur précise des biens exposés par destination (à consolider via le tableau de bord territorial)`);
+  ignor.push(`la déclinaison locale de la trajectoire de réchauffement de référence`);
+  const phr=[];
+  phr.push(`Sur ce lieu, sont disponibles aujourd'hui : ${sus.join(' ; ')}.`);
+  phr.push(`Restent ouverts ou imprécis : ${ignor.join(' ; ')}.`);
+  phr.push(`L'exécutif complète et nuance ces appréciations à partir de sa connaissance propre et des sources qu'il juge légitimes.`);
+  return phr.join(' ');
+}
+// Premier jet (style atténué) : qui décide (compétences). Énonce, n'instruit pas.
+function _pretextMoment4(T){
+  const pr=_PREROGATIVES[TERR_ACTIF]||{};
+  const dec=pr.decideurs||[];
+  const phr=[];
+  phr.push(`Sur ce territoire (statut : ${T.statut||TERR_ACTIF}), les compétences se partagent comme suit, selon le cadre documenté :`);
+  dec.forEach(d=>{phr.push(`— ${d.acteur} : ${d.role}.`);});
+  if(pr.coutumier)phr.push(`Pour les lieux situés sur des terres coutumières, toute orientation engageante suppose un accord explicite des instances coutumières compétentes ; l'exécutif n'est pas le décideur unique.`);
+  phr.push(`Cette répartition est une proposition révisable. L'exécutif reste seul juge de ses propres compétences et précise ce qui, dans le cas présent, relève de lui, de l'État, ou d'autres autorités.`);
+  return phr.join(' ');
+}
+// Persistance localStorage par territoire + lieu + champ. Pas de Firebase ici : le récit est interne
+// à l'exécutif et ne doit pas remonter ailleurs sans son geste explicite (cf. principe d'appropriation).
+function _recitKey(siteNom,champ){return `recit_${TERR_ACTIF||'def'}_${(siteNom||'lieu').replace(/\W+/g,'_').slice(0,30)}_${champ}`;}
+function _recitGet(siteNom,champ){try{return localStorage.getItem(_recitKey(siteNom,champ));}catch(e){return null;}}
+function _recitSet(siteNom,champ,val){try{if(val&&val.trim())localStorage.setItem(_recitKey(siteNom,champ),val);else localStorage.removeItem(_recitKey(siteNom,champ));}catch(e){}}
+// Met à jour le statut visuel d'un textarea (gris atténué = proposition non touchée ; affirmé = appropriée).
+window._recitMaj=function(el,siteNom,champ){
+  const val=el.value;const def=el.dataset.propose||'';
+  const approprie=(val&&val.trim()&&val.trim()!==def.trim());
+  el.classList.toggle('approprie',approprie);
+  const label=el.previousElementSibling;
+  if(label&&label.classList.contains('recit-prop-label')){label.classList.toggle('approprie',approprie);label.textContent=approprie?'Texte du territoire':'Proposition à valider';}
+  _recitSet(siteNom,champ,approprie?val:'');
+};
+window._recitChange=function(siteNom){
+  // Persistance des archétypes cochés
+  const boites=document.querySelectorAll(`input[data-recit-site="${siteNom.replace(/"/g,'')}"]`);
+  const sel=[];boites.forEach(b=>{if(b.checked)sel.push(b.value);});
+  _recitSet(siteNom,'archetypes',sel.join(','));
+};
+function _construireRecit(T){
+  const host=document.getElementById('recit-host');if(!host||!T)return;
+  const sites=(T.sites||[]).slice();
+  if(!sites.length){host.innerHTML='<em style="color:var(--muted)">Aucun lieu documenté pour ce territoire. L\'exécutif peut ajouter des lieux à traiter via le tableau de bord territorial.</em>';return;}
+  const introNote=`<div class="recit-intro-note"><b>Mode d'emploi.</b> Pour chaque lieu, un archétype principal et des secondaires sont <i>pré-cochés</i> à partir de la monographie : modifiez librement. Le texte en gris est une <i>proposition à valider, amender ou réécrire</i> — dès que vous écrivez ou modifiez, le texte bascule en style affirmé (« texte du territoire »). Les avenirs sont des <i>branches à déplier</i>, jamais à classer. La sortie est un document de délibération, fin ouverte, qui s'achève sur les questions que le territoire se pose à lui-même.</div>`;
+  let html=introNote;
+  sites.forEach(site=>{
+    const {principal,secondaires}=_detecterArchetypes(site,T);
+    const archSauv=_recitGet(site.nom,'archetypes');
+    const archCoches=archSauv?archSauv.split(','):[principal,...secondaires];
+    const ev=`'${site.nom.replace(/'/g,"\\'")}'`;
+    // Pré-textes (style atténué). Si l'exécutif a déjà écrit, on charge sa version.
+    const m1=_pretextMoment1(site,T),m2=_pretextMoment2(site,T),m4=_pretextMoment4(T);
+    const v1=_recitGet(site.nom,'moment1'),v2=_recitGet(site.nom,'moment2'),v4=_recitGet(site.nom,'moment4'),vQ=_recitGet(site.nom,'questions');
+    const ta=(champ,def,saved)=>{const ap=!!(saved&&saved.trim());return `<div class="recit-prop-label ${ap?'approprie':''}">${ap?'Texte du territoire':'Proposition à valider'}</div><textarea class="recit-texte ${ap?'approprie':''}" data-propose="${def.replace(/"/g,'&quot;')}" oninput="_recitMaj(this,${ev},'${champ}')">${ap?saved:def}</textarea>`;};
+    // Archétypes (principal en navy, secondaires en pointillé). Ordre : principal puis autres.
+    const archHTML=Object.entries(_ARCH_RECIT).map(([k,a])=>{const isPrinc=archCoches[0]===k;const checked=archCoches.includes(k);const cls=isPrinc?'principal':(checked?'':'secondaire');const titre=a.a_part?a.nom+' (archétype à part)':a.nom;return `<label class="recit-arche ${checked?cls:'secondaire'}" title="${a.declencheur.replace(/"/g,'&quot;')}"><input type="checkbox" value="${k}" ${checked?'checked':''} data-recit-site="${site.nom.replace(/"/g,'&quot;')}" onchange="_recitChange(${ev})">${titre}</label>`;}).join('');
+    // Branches d'avenir des archétypes COCHÉS (union, sans recommandation, dépliables)
+    const archActifs=archCoches.filter(k=>_ARCH_RECIT[k]);
+    const branchesHTML=archActifs.map(k=>{const a=_ARCH_RECIT[k];return `<div style="margin-top:10px"><div class="recit-moment-k">${a.nom} — tension : <i>${a.tension}</i></div>${a.vigilance?'<div style="font-size:11px;color:#7a4a00;font-style:italic;background:#fff8e1;padding:6px 9px;border-radius:5px;margin:5px 0">⚠ '+a.vigilance+'</div>':''}${(a.branches||[]).map(b=>`<details class="recit-branche"><summary>${b.nom}</summary><div class="recit-branche-corps"><div class="b-sect"><b>Ce que cette branche suppose :</b> ${b.suppose}</div><div class="b-sect"><b>Ce qu'elle implique :</b> ${b.implique}</div><div class="b-sect"><b>De qui elle relève :</b> ${b.releve}</div></div></details>`).join('')}</div>`;}).join('');
+    html+=`<div class="recit-lieu">
+      <div class="recit-lieu-head"><h3>${site.nom}</h3></div>
+      <div class="recit-lieu-desc">${site.desc||''}</div>
+      <div class="recit-moment-k" style="margin-top:8px">Archétypes pré-cochés (révisables)</div>
+      <div class="recit-arches">${archHTML}</div>
+      <div class="recit-moment">
+        <div class="recit-moment-k">Moment 1</div>
+        <div class="recit-moment-titre">Le lieu et sa mémoire</div>
+        ${ta('moment1',m1,v1)}
+      </div>
+      <div class="recit-moment">
+        <div class="recit-moment-k">Moment 2</div>
+        <div class="recit-moment-titre">Ce que l'on sait, et ce que l'on ignore</div>
+        ${ta('moment2',m2,v2)}
+      </div>
+      <div class="recit-moment">
+        <div class="recit-moment-k">Moment 3</div>
+        <div class="recit-moment-titre">L'éventail des avenirs — branches à déplier, pas à classer</div>
+        <div class="recit-branche-add">Aucune branche n'est recommandée. Les déplier sert à explorer ce qu'elles supposent et ce qu'elles impliquent ; la décision reste à l'exécutif.</div>
+        <div class="recit-branches">${branchesHTML||'<em style="color:var(--muted);font-size:12px">Activez un archétype ci-dessus pour faire apparaître ses branches.</em>'}</div>
+      </div>
+      <div class="recit-moment">
+        <div class="recit-moment-k">Moment 4</div>
+        <div class="recit-moment-titre">Ce qui relève de nous, ce qui relève d'un autre</div>
+        ${ta('moment4',m4,v4)}
+      </div>
+      <div class="recit-fin">
+        <div class="recit-fin-titre">Les questions que le territoire se pose à lui-même</div>
+        ${ta('questions',"Ce qui reste ouvert sur ce lieu, à formuler ici par l'exécutif. Le document de délibération s'achève sur ces questions — pas sur une conclusion.",vQ)}
+      </div>
+    </div>`;
+  });
+  host.innerHTML=html;
+}
+window.exporterRecit=function(){
+  const T=TERRITOIRES[TERR_ACTIF]||{};const sites=T.sites||[];if(!sites.length){alert('Aucun lieu à exporter.');return;}
+  const pr=_PREROGATIVES[TERR_ACTIF]||{};
+  const sep='='.repeat(72),sub='-'.repeat(72);
+  const lines=[
+    `DOCUMENT DE DÉLIBÉRATION — ${T.nom||TERR_ACTIF}`,
+    sep,
+    `Statut : ${T.statut||''}`,
+    `Date : ${new Date().toLocaleDateString('fr-FR')}`,
+    '',
+    `Ce document est un support de délibération interne au territoire. Il ne formule`,
+    `aucune recommandation. Il s'achève sur les questions que le territoire se pose à`,
+    `lui-même. La forme suit une trame en quatre moments, identique pour chaque lieu :`,
+    `mémoire · ce que l'on sait et ignore · éventail des avenirs · qui décide.`,
+    '',sep,''
+  ];
+  sites.forEach(site=>{
+    const {principal,secondaires}=_detecterArchetypes(site,T);
+    const archSauv=_recitGet(site.nom,'archetypes');
+    const archCoches=archSauv?archSauv.split(','):[principal,...secondaires];
+    const formatChamp=(champ,def)=>{const v=_recitGet(site.nom,champ);if(v&&v.trim())return v.trim();return '['+def.trim()+']  [proposition non amendée]';};
+    lines.push('LIEU : '+site.nom);lines.push(sub);
+    if(site.desc)lines.push('  '+site.desc);
+    if(archCoches.length){const noms=archCoches.map(k=>_ARCH_RECIT[k]&&_ARCH_RECIT[k].nom).filter(Boolean);if(noms.length)lines.push('  Archétypes retenus : '+noms.join(' · '));}
+    lines.push('');
+    lines.push('  MOMENT 1 — Le lieu et sa mémoire');
+    lines.push('  '+formatChamp('moment1',_pretextMoment1(site,T)).split('\n').join('\n  '));
+    lines.push('');
+    lines.push('  MOMENT 2 — Ce que l\'on sait et ce que l\'on ignore');
+    lines.push('  '+formatChamp('moment2',_pretextMoment2(site,T)).split('\n').join('\n  '));
+    lines.push('');
+    lines.push('  MOMENT 3 — Éventail des avenirs (branches explorées, non classées)');
+    archCoches.forEach(k=>{const a=_ARCH_RECIT[k];if(!a)return;
+      lines.push('    Archétype : '+a.nom);
+      lines.push('      Tension : '+a.tension);
+      if(a.vigilance)lines.push('      Vigilance : '+a.vigilance);
+      (a.branches||[]).forEach(b=>{lines.push('      ▸ '+b.nom);lines.push('         Suppose : '+b.suppose);lines.push('         Implique : '+b.implique);lines.push('         Relève de : '+b.releve);});
+    });
+    lines.push('');
+    lines.push('  MOMENT 4 — Ce qui relève de nous, ce qui relève d\'un autre');
+    lines.push('  '+formatChamp('moment4',_pretextMoment4(T)).split('\n').join('\n  '));
+    lines.push('');
+    lines.push('  LES QUESTIONS QUE LE TERRITOIRE SE POSE À LUI-MÊME');
+    const q=_recitGet(site.nom,'questions');
+    lines.push('  '+(q&&q.trim()?q.trim():'[à formuler par l\'exécutif]'));
+    lines.push('');lines.push(sep);lines.push('');
+  });
+  lines.push('');
+  lines.push('Gabarit : plateforme « Recomposition spatiale des littoraux ultramarins ».');
+  lines.push('Le présent document est le travail propre du territoire.');
+  const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`recit_deliberation_${TERR_ACTIF}_${new Date().toLocaleDateString('fr-FR').replace(/\//g,'-')}.txt`;a.click();URL.revokeObjectURL(url);
 };
 window.genererBandesRecul=function(){
   const cone=document.getElementById('bande-mode-cone')?.checked;
