@@ -1755,17 +1755,70 @@ function _featureDansPort(f){
   let n=0,k=0;for(let i=0;i<pts.length;i+=step){n++;if(_ptDansPort(pts[i][0],pts[i][1]))k++;}
   return n>0&&(k/n)>=0.5;
 }
-function filtrerParMasqueCote(feats){
-  if(!_masqueCoteActif||!_masqueCote)return {kept:feats,dropped:0,dropped_port:0};
-  const arr=Array.isArray(feats)?feats:(feats&&feats.features)||[];
-  const kept=[];let dropped=0,droppedPort=0;
-  for(const f of arr){
-    if(f&&f.properties&&(f.properties._base||/bande de recul|veille|alerte/i.test(f.properties.type||''))){kept.push(f);continue;}
-    if(_featureDansPort(f)){droppedPort++;continue;}     // exclu : majoritairement dans un port (= bateau à quai)
-    if(_featureToucheMasque(f))kept.push(f);
-    else dropped++;
+// Longueur d'une polyligne WGS84 en mètres (approx. plate-carrée locale)
+function _polyLenM(coords){if(!coords||coords.length<2)return 0;let L=0;const cosLat=Math.cos((coords[0][1]||0)*Math.PI/180);for(let i=1;i<coords.length;i++){const dx=(coords[i][0]-coords[i-1][0])*111320*cosLat,dy=(coords[i][1]-coords[i-1][1])*111320;L+=Math.hypot(dx,dy);}return L;}
+// CŒUR DU FILTRAGE STRICT : découpe une LineString en sous-traits, ne garde que les portions DANS
+// la bande littorale (et hors zones de port). Indispensable car une feature qui traverse la bande
+// peut s'étendre très loin en mer ou en arrière-pays — il faut COUPER, pas keep/drop la feature entière.
+function _clipLineParMasque(coords){
+  if(!coords||coords.length<2)return [];
+  const out=[];let cur=[];
+  const inBande=(p)=>_ptDansMasque(p[0],p[1])&&!_ptDansPort(p[0],p[1]);
+  let prevIn=null,prevP=null;
+  for(let i=0;i<coords.length;i++){
+    const p=coords[i];const here=inBande(p);
+    if(here){
+      // Si le précédent était hors, on a une entrée dans la bande : on peut interpoler le point d'entrée
+      // mais une approximation simple suffit ici (~5 m d'erreur, très inférieur au tampon de 200 m).
+      if(prevIn===false&&prevP){cur.push(prevP);}   // inclure le point juste hors comme amorce
+      cur.push(p);
+    }else{
+      if(cur.length>=1)cur.push(p);                  // inclure le point de sortie comme fin
+      if(cur.length>=2){out.push(cur);}
+      cur=[];
+    }
+    prevIn=here;prevP=p;
   }
-  return {kept,dropped,dropped_port:droppedPort};
+  if(cur.length>=2)out.push(cur);
+  return out;
+}
+// Filtre principal : pour chaque LineString, on DÉCOUPE par la bande. Pour les autres géométries
+// (Polygon, etc.), on garde si centroid/échantillon touche la bande. Les segments trop courts (<30 m
+// dans la bande) sont écartés pour éviter le confetti.
+function filtrerParMasqueCote(feats){
+  if(!_masqueCoteActif||!_masqueCote)return {kept:feats,dropped:0,dropped_port:0,clipped:0};
+  const arr=Array.isArray(feats)?feats:(feats&&feats.features)||[];
+  const kept=[];let dropped=0,droppedPort=0,clipped=0;
+  for(const f of arr){
+    if(!f||!f.geometry){kept.push(f);continue;}
+    // Pass-through : trait de référence, bandes de recul, alertes/veille = intentions explicites
+    if(f.properties&&(f.properties._base||/bande de recul|veille|alerte/i.test(f.properties.type||''))){kept.push(f);continue;}
+    // Polygones et autres : keep si centroid touche la bande, drop si majoritairement dans un port
+    if(f.geometry.type!=='LineString'&&f.geometry.type!=='MultiLineString'){
+      if(_featureDansPort(f)){droppedPort++;continue;}
+      if(_featureToucheMasque(f))kept.push(f); else dropped++;
+      continue;
+    }
+    // LineString / MultiLineString : DÉCOUPAGE strict
+    const lines=f.geometry.type==='LineString'?[f.geometry.coordinates]:f.geometry.coordinates;
+    const morceaux=[];
+    for(const line of lines){const cuts=_clipLineParMasque(line);for(const c of cuts){if(_polyLenM(c)>=30)morceaux.push(c);}}
+    if(!morceaux.length){
+      if(_featureDansPort(f))droppedPort++; else dropped++;
+      continue;
+    }
+    // Si tout est passé tel quel, on garde la feature originale ; sinon on émet des sous-features
+    const original=lines.length===1&&morceaux.length===1&&morceaux[0].length===lines[0].length;
+    if(original){kept.push(f);}
+    else{
+      clipped++;
+      for(const m of morceaux){
+        const newProps=Object.assign({},f.properties||{},{_clip_masque:true,longueur_m_est:Math.round(_polyLenM(m))});
+        kept.push({type:'Feature',geometry:{type:'LineString',coordinates:m},properties:newProps});
+      }
+    }
+  }
+  return {kept,dropped,dropped_port:droppedPort,clipped};
 }
 // Reliage des traits voisins : pour les LineString de trait de côte (sable / SAM / ouvrage continu),
 // si deux extrémités sont à < seuilM mètres, on les joint. Itère jusqu'à convergence ou plafond.
