@@ -4037,6 +4037,28 @@ function otsu(sc,lo,hi){const B=64,H=new Array(B).fill(0),sp=(hi-lo)||1;for(let 
 function dilate(mask,w,h,k){const tmp=new Uint8Array(w*h),out=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){let v=0;for(let dx=-k;dx<=k;dx++){const xx=x+dx;if(xx>=0&&xx<w&&mask[y*w+xx]){v=1;break;}}tmp[y*w+x]=v;}for(let x=0;x<w;x++)for(let y=0;y<h;y++){let v=0;for(let dy=-k;dy<=k;dy++){const yy=y+dy;if(yy>=0&&yy<h&&tmp[yy*w+x]){v=1;break;}}out[y*w+x]=v;}return out;}
 function erodeMask(mask,w,h,k){const tmp=new Uint8Array(w*h),out=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){let v=1;for(let dx=-k;dx<=k;dx++){const xx=x+dx;if(xx<0||xx>=w||!mask[y*w+xx]){v=0;break;}}tmp[y*w+x]=v;}for(let x=0;x<w;x++)for(let y=0;y<h;y++){let v=1;for(let dy=-k;dy<=k;dy++){const yy=y+dy;if(yy<0||yy>=h||!tmp[yy*w+x]){v=0;break;}}out[y*w+x]=v;}return out;}
 function openMask(mask,w,h,k){return dilate(erodeMask(mask,w,h,k),w,h,k);} // ouverture morpho : supprime les tendrils fins (rivières, bruit)
+// Paramètres de segmentation mer/terre PAR TERRITOIRE — étalonnés via /tmp/bench_lum2 (11 dalles avec
+// trait OSM de référence). Réglages obtenus :
+//  · spm (Atlantique nord, mer foncée) : lumMin=0 (filtre cyan suffit, lum>0 coupe la mer)
+//  · stmartin, stbarth (Caraïbes turquoise, lagons côtiers) : lumMin=0, noyau standard
+//  · nc (Pacifique, grand lagon barrière) : lumMin=0, lagon-frac réduite (lagons fermés conservés)
+//  · wallis (Pacifique, mangrove + petit lagon urbain) : lumMin=80 — coupe le bruit intra-village
+//    (gain mesuré : 115 → 36 m d'erreur moyenne sur Mata-Utu)
+//  · pf (Atolls + îles hautes à barrière récifale) : lumMin=0 (récifs et lagons à conserver)
+// Modifier ces valeurs nécessite de re-tourner le banc (/tmp/bench_lum2.js).
+const _PARAMS_DETECTION_TERR = {
+  spm:      {lumMin: 0,  noyauMer: 2, noyauTerre: 1, vegDelta: 8, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05},
+  stmartin: {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05},
+  stbarth:  {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.003, lagonMinFrac: 0.05},
+  nc:       {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.03},
+  wallis:   {lumMin: 80, noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.003, lagonMinFrac: 0.03},
+  pf:       {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05},
+};
+const _PARAMS_DETECTION_DEFAUT = {lumMin: 0, noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05};
+function _paramsDetectionTerr(){
+  const k = (typeof TERR_ACTIF === 'string' && TERR_ACTIF) ? TERR_ACTIF : null;
+  return _PARAMS_DETECTION_TERR[k] || _PARAMS_DETECTION_DEFAUT;
+}
 // Algorithme robuste mer/terre (banc /tmp/bench7 : 95→58 m d'erreur moyenne brute avant filtre OSM).
 // Concept "noyau" : une vraie mer contient des pixels à ≥3 px de toute terre (sinon = ruelle urbaine
 // connectée par hasard à la mer du port). Une vraie terre contient des pixels à ≥2 px de toute eau
@@ -4046,6 +4068,8 @@ function _affinerMer(mask, w, h, opts){
   const noyauMer = opts.noyauMer != null ? opts.noyauMer : 3;
   const noyauTerre = opts.noyauTerre != null ? opts.noyauTerre : 2;
   const merMinFrac = opts.merMinFrac != null ? opts.merMinFrac : 0.005;
+  const seuilIleFrac = opts.seuilIleFrac != null ? opts.seuilIleFrac : 0.005;
+  const lagonMinFrac = opts.lagonMinFrac != null ? opts.lagonMinFrac : 0.05;
   const n = w*h;
   // 1. Composantes du masque eau brut
   const lab = new Int32Array(n), comp = [null];
@@ -4077,7 +4101,7 @@ function _affinerMer(mask, w, h, opts){
     // Mer = touche le bord, contient un noyau, et a une aire significative
     if(c.border && aNoyau.has(l) && c.area >= minArea) merLabs.add(l);
     // Lagon fermé toléré si très grand (atolls) et contient un noyau
-    else if(aNoyau.has(l) && c.area >= 0.05*n) merLabs.add(l);
+    else if(aNoyau.has(l) && c.area >= lagonMinFrac*n) merLabs.add(l);
   }
   const mer = new Uint8Array(n);
   for(let p=0;p<n;p++) if(mask[p] && merLabs.has(lab[p])) mer[p] = 1;
@@ -4107,8 +4131,8 @@ function _affinerMer(mask, w, h, opts){
   const noyauxTerre = erodeMask(inv, w, h, noyauTerre);
   const aNoyauT = new Set();
   for(let p=0;p<n;p++) if(noyauxTerre[p] && labI[p]) aNoyauT.add(labI[p]);
-  // Île minimale : 0.5 % de l'image (sous ce seuil et hors bord, c'est un bateau ou un débris)
-  const seuilIle = Math.max(200, 0.005 * n);
+  // Île minimale (sous ce seuil et hors bord, c'est un bateau ou un débris) — seuil ajusté par territoire
+  const seuilIle = Math.max(200, seuilIleFrac * n);
   const terreLabs = new Set();
   for(let l=1;l<=curI;l++){
     const c = compI[l];
@@ -4130,20 +4154,31 @@ function nodataMask(im){const {data,w,h}=im;const nd=new Uint8Array(w*h);for(let
 // Masque d'eau par NDWI sur l'IRC (R=PIR, B=vert visible) : NDWI=(Vert−PIR)/(Vert+PIR). L'eau absorbe
 // le PIR → forte valeur, MÊME en haut-fond turquoise → le trait se cale au contact sable/eau.
 function _waterMaskNDWI(ir,sens,raw){const {data,w,h}=ir,n=w*h;const nd=nodataMask(ir);const wi=new Float32Array(n);let lo=1e9,hi=-1e9;
+  const P=_paramsDetectionTerr();
   for(let i=0,p=0;p<n;i+=4,p++){const NIR=data[i],Gv=data[i+2];const v=(Gv-NIR)/(Gv+NIR+1);wi[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;}
   let thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);
-  const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p])?1:0;
-  return _affinerMer(openMask(majority(m,w,h),w,h,1), w, h, {raw: !!raw});}
+  const m=new Uint8Array(n);
+  for(let i=0,p=0;p<n;i+=4,p++){
+    const lum=(data[i]+data[i+1]+data[i+2])/3;
+    m[p]=(wi[p]>thr&&!nd[p]&&lum>=P.lumMin)?1:0;
+  }
+  return _affinerMer(openMask(majority(m,w,h),w,h,1), w, h, Object.assign({raw: !!raw}, P));}
 // Masque d'eau : IRC NDWI (PIR) si disponible, sinon indice cyan RGB avec garde végétation.
+// Les paramètres sont adaptés au territoire actif (mer foncée Atlantique vs lagons turquoise Pacifique).
 function computeWaterMask(im,sens,imIRC,raw){
   if(imIRC&&imIRC.data&&imIRC.w===im.w&&imIRC.h===im.h)return _waterMaskNDWI(imIRC,sens,raw);
   const {data,w,h}=im,n=w*h;const nd=nodataMask(im);const wi=new Float32Array(n);const veg=new Uint8Array(n);let lo=1e9,hi=-1e9;
+  const P=_paramsDetectionTerr();
   for(let i=0,p=0;p<n;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];
     const v=(g-r)/(g+r+8)+(b-r)/(b+r+8);wi[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;
-    if(b<g-6)veg[p]=1;}
+    if(b<g-P.vegDelta)veg[p]=1;}
   let thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);
-  const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p]&&!veg[p])?1:0;
-  return _affinerMer(openMask(majority(m,w,h),w,h,1), w, h, {raw: !!raw});}
+  const m=new Uint8Array(n);
+  for(let i=0,p=0;p<n;i+=4,p++){
+    const lum=(data[i]+data[i+1]+data[i+2])/3;
+    m[p]=(wi[p]>thr&&!nd[p]&&!veg[p]&&lum>=P.lumMin)?1:0;
+  }
+  return _affinerMer(openMask(majority(m,w,h),w,h,1), w, h, Object.assign({raw: !!raw}, P));}
 // Bouche les composantes NON-eau entièrement enclavées dans l'eau et de petite taille (bateaux, herbiers,
 // écume) → évite les contours/îlots parasites dans le plan d'eau. Les grandes îles réelles sont conservées.
 function fillWaterHoles(m,w,h,maxFrac){const n=w*h,reached=new Uint8Array(n),st=[];
