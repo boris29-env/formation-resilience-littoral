@@ -4047,14 +4047,14 @@ function openMask(mask,w,h,k){return dilate(erodeMask(mask,w,h,k),w,h,k);} // ou
 //  · pf (Atolls + îles hautes à barrière récifale) : lumMin=0 (récifs et lagons à conserver)
 // Modifier ces valeurs nécessite de re-tourner le banc (/tmp/bench_lum2.js).
 const _PARAMS_DETECTION_TERR = {
-  spm:      {lumMin: 0,  noyauMer: 2, noyauTerre: 1, vegDelta: 8, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05},
-  stmartin: {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05},
-  stbarth:  {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.003, lagonMinFrac: 0.05},
-  nc:       {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.03},
-  wallis:   {lumMin: 80, noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.003, lagonMinFrac: 0.03},
-  pf:       {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05},
+  spm:      {lumMin: 0,  noyauMer: 2, noyauTerre: 1, vegDelta: 8, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005},
+  stmartin: {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005},
+  stbarth:  {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.003, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005},
+  nc:       {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.03, seuilTerreBordFrac: 0.02},
+  wallis:   {lumMin: 80, noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.003, lagonMinFrac: 0.03, seuilTerreBordFrac: 0.02},
+  pf:       {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.05},
 };
-const _PARAMS_DETECTION_DEFAUT = {lumMin: 0, noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05};
+const _PARAMS_DETECTION_DEFAUT = {lumMin: 0, noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005};
 function _paramsDetectionTerr(){
   const k = (typeof TERR_ACTIF === 'string' && TERR_ACTIF) ? TERR_ACTIF : null;
   return _PARAMS_DETECTION_TERR[k] || _PARAMS_DETECTION_DEFAUT;
@@ -4133,12 +4133,17 @@ function _affinerMer(mask, w, h, opts){
   for(let p=0;p<n;p++) if(noyauxTerre[p] && labI[p]) aNoyauT.add(labI[p]);
   // Île minimale (sous ce seuil et hors bord, c'est un bateau ou un débris) — seuil ajusté par territoire
   const seuilIle = Math.max(200, seuilIleFrac * n);
+  // Mode "terre principale unique" : pour les territoires à récifs (PF, NC, Wallis…), un récif barrière
+  // touchant le bord est une fausse-terre. On ne garde que la plus grande composante non-eau de bord
+  // (= terre principale) + les petites îles compactes. Les autres composantes de bord deviennent eau.
+  const seuilTerreBordFrac = opts.seuilTerreBordFrac != null ? opts.seuilTerreBordFrac : 0.0005;
+  const seuilTerreBordPx = Math.max(80, seuilTerreBordFrac * n);
   const terreLabs = new Set();
   for(let l=1;l<=curI;l++){
     const c = compI[l];
     if(!c) continue;
-    // Terre = touche le bord, OU contient un noyau ET assez grande pour être une île
-    if(c.border || (aNoyauT.has(l) && c.area >= seuilIle)) terreLabs.add(l);
+    // Terre = touche le bord AVEC une aire significative, OU contient un noyau ET assez grande pour être une île
+    if((c.border && c.area >= seuilTerreBordPx) || (aNoyauT.has(l) && c.area >= seuilIle)) terreLabs.add(l);
   }
   const out = new Uint8Array(n);
   for(let p=0;p<n;p++){
