@@ -6160,11 +6160,18 @@ window.traiterTousSites=async function(){
   const T=TERRITOIRES[TERR_ACTIF]||{};const sites=((T.imgDir&&T.imgDir.length?T.imgDir:(T.sites||[]))).filter(s=>s.lat!=null);
   if(!sites.length){alert('Aucun site géolocalisé pour ce territoire.');return;}
   const btn=document.getElementById('img-batch-btn'),btn2=document.getElementById('img-sig-btn');
-  // Deuxième clic = arrêt
   if(btn&&btn.dataset.running==='1'){_batchStop=true;btn.textContent='Arrêt…';return;}
+  // ATTENDRE QUE LE MASQUE CÔTIER SOIT CHARGÉ avant de démarrer. Sinon les premières
+  // extractions sont ajoutées au cumul sans filtre (race condition au démarrage du territoire).
+  if(_masqueCoteActif&&typeof _masqueCotePromise!=='undefined'&&_masqueCotePromise&&!_masqueCote){
+    const irBody0=document.getElementById('ir-body');
+    if(irBody0){irBody0.className='img-result-body loading';irBody0.textContent='🛡 Attente du masque côtier (filtrage strict)…';}
+    try{await _masqueCotePromise;}catch(e){}
+  }
+  // VIDER LE CUMUL au lancement du batch pour ne pas mélanger avec d'anciennes extractions polluées.
+  _sigCumul={type:'FeatureCollection',name:'sig_cumul',features:[]};refreshCumulBar();
   const sizeM=+(document.getElementById('sig-emprise')?.value||800),sens=+(document.getElementById('sig-sens')?.value||50);
   const N=+(document.getElementById('sig-grille')?.value||3),half=(N-1)/2;
-  // Génère la grille de tuiles autour de chaque site, dédupliquée
   const dLatM=1/111320;const tiles=new Map();
   for(const s of sites){const dLngM=1/(111320*Math.max(0.2,Math.cos(s.lat*Math.PI/180)));
     for(let dj=-half;dj<=half;dj++)for(let di=-half;di<=half;di++){
@@ -6181,18 +6188,28 @@ window.traiterTousSites=async function(){
     if(_batchStop)break;
     if(btn)btn.textContent='⏹ Arrêter ('+(done+1)+'/'+total+')';
     irBody.className='img-result-body loading';irBody.textContent='Couverture du territoire : tuile '+(done+1)+'/'+total+'…';
-    await new Promise(r=>setTimeout(r,0)); // rend la main à l'UI (pas de gel pendant le batch)
+    await new Promise(r=>setTimeout(r,0));
     try{
       const b=bboxAutour(t.lat,t.lng,sizeM);
       const img=await loadImageURL(ignOrthoUrl(b));
       const im=drawCV(img);
-      const feats=extraireTraitDeCote(im,b,sens).concat(extraireOuvrages(im,b,sens));
+      let feats=extraireTraitDeCote(im,b,sens).concat(extraireOuvrages(im,b,sens));
+      // PRÉ-FILTRAGE par bande côtière AVANT addToCumul : on évite même de polluer le cumul.
+      if(_masqueCoteActif&&_masqueCote&&typeof filtrerParMasqueCote==='function'){
+        const r=filtrerParMasqueCote(feats);feats=r.kept;
+      }
       if(feats.length){const pd=await photoDateIGN(b);stampPhotoDate(feats,pd);addToCumul(feats,{site:T.nom||TERR_ACTIF});added+=feats.length;}
     }catch(e){fails++;}
     done++;
   }
+  // FILTRAGE FINAL DOUBLE après la boucle : assure une couche cumulée propre quoi qu'il arrive.
+  if(_masqueCoteActif&&_masqueCote&&typeof filtrerParMasqueCote==='function'){
+    const before=_sigCumul.features.length;const r=filtrerParMasqueCote(_sigCumul.features);
+    if(r.dropped+r.dropped_port+r.clipped>0){_sigCumul.features=r.kept;refreshCumulBar();
+      console.log('[batch] filtrage final : '+before+' → '+r.kept.length+' (dropped='+r.dropped+', port='+r.dropped_port+', clip='+r.clipped+')');}
+  }
   irBody.className='img-result-body';
-  irBody.innerHTML=`<div class="img-result-section"><h4>Couverture du territoire — ${_batchStop?'interrompue':'terminée'}</h4><p style="font-size:12px;color:var(--muted)">${done}/${total} tuile(s) traitée(s)${fails?' ('+fails+' en échec)':''}, <b>${added} entité(s)</b> dans la couche cumulée (avec date de prise de vue IGN). « Carte » / « Télécharger » ci-dessous.</p></div>`;
+  irBody.innerHTML=`<div class="img-result-section"><h4>Couverture du territoire — ${_batchStop?'interrompue':'terminée'}</h4><p style="font-size:12px;color:var(--muted)">${done}/${total} tuile(s) traitée(s)${fails?' ('+fails+' en échec)':''}, <b>${_sigCumul.features.length} entité(s)</b> dans la couche cumulée (filtre côtier ±30 m strict). « Carte » / « Télécharger » ci-dessous.</p></div>`;
   if(btn){btn.dataset.running='';btn.textContent='🧭 Traiter tout le territoire (couverture)';}
   if(btn2)btn2.disabled=false;refreshCumulBar();
 };
