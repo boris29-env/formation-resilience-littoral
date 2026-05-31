@@ -206,6 +206,18 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15p
 .recit-export-row{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);text-align:right}
 .recit-export-btn{background:var(--navy);color:#fff;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans)}
 .recit-export-btn:hover{background:#0E2A47}
+/* Appropriation in-place : pré-rempli en gris hachuré → texte affirmé dès qu'on tape.
+   Pattern : la collectivité s'approprie sans tout réécrire. Persistance localStorage par territoire. */
+.appr-prop{color:#8a8a85;font-style:italic;background:linear-gradient(180deg,transparent 0,transparent 88%,#d8d3c5 88%,#d8d3c5 100%);padding:0 3px;border-radius:2px;cursor:text;transition:background .15s}
+.appr-prop:hover{background:#f4f1ea}
+.appr-approprie{color:var(--ink);background:#fffef9;font-style:normal;padding:0 3px;border-radius:2px;border-bottom:1px solid var(--teal);cursor:text}
+.appr-prop[contenteditable]:focus,.appr-approprie[contenteditable]:focus{outline:1px dashed var(--teal);background:#fff;font-style:normal;color:var(--ink)}
+.appr-statut{cursor:pointer;user-select:none;position:relative}
+.appr-statut::after{content:' ⟲';font-size:.7em;opacity:.4}
+.appr-statut:hover::after{opacity:1}
+.appr-reset-btn{background:none;border:1px solid var(--line);border-radius:5px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;font-family:var(--sans)}
+.appr-reset-btn:hover{background:var(--soft);color:var(--navy)}
+.appr-bandeau{padding:8px 12px;background:#eef4f5;border-left:3px solid var(--teal);border-radius:0 6px 6px 0;font-size:11.5px;line-height:1.55;color:var(--navy);margin-bottom:12px}
 .recit-intro-note{padding:10px 14px;background:#fff3e0;border-left:3px solid #f9a825;border-radius:0 6px 6px 0;font-size:11.5px;line-height:1.55;color:#7a4a00;margin-bottom:18px}
 .src-note{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:14px;padding-top:10px;border-top:1px solid var(--line);line-height:1.6}
 .src-note b{color:var(--navy);font-weight:500}
@@ -2399,7 +2411,38 @@ function updateLiveBoard(val){const host=document.getElementById('fb-board-conte
 /* ============================================================
    FICHES OUTILS
 ============================================================ */
-function construireFiches(T){const host=document.getElementById('fiches-outils');host.innerHTML='';T.fiches.forEach(f=>{const div=document.createElement('div');div.className='fiche';div.innerHTML=`<div class="fh" style="background:${f.color}"><span class="fht">${f.titre}</span><span class="fhp">${f.prio}</span></div><div class="fb2">${f.outils.map(o=>`<div class="tr"><div class="trk"><div class="trn">${o.nom}</div><span class="trs ${o.statut}">${stLbl(o.statut)}</span></div><div class="trd">${o.desc}</div></div>`).join('')}</div>`;host.appendChild(div);});}
+function construireFiches(T){
+  const host=document.getElementById('fiches-outils');host.innerHTML='';
+  // Bandeau d'usage
+  const b=document.createElement('div');b.className='appr-bandeau';
+  b.innerHTML='<b>Cette analyse est appropriable.</b> Le texte en gris est une <i>proposition</i> issue de la monographie ; cliquez pour la personnaliser. Les statuts (éligible / actif / présent…) se cyclent au clic. Vos modifications sont enregistrées dans votre navigateur et apparaissent en couleur affirmée. Vous pouvez tout restaurer.';
+  host.appendChild(b);
+  const modules=[];
+  (T.fiches||[]).forEach((f,fi)=>{
+    const div=document.createElement('div');div.className='fiche';
+    const mod='fiches_'+fi;modules.push(mod);
+    let outilsHTML='';
+    (f.outils||[]).forEach((o,oi)=>{
+      outilsHTML+=`<div class="tr">
+        <div class="trk">
+          <div class="trn">${_apprHTML(mod,'o'+oi+'_nom',o.nom)}</div>
+          ${_apprStatutHTML(mod,'o'+oi,o.statut)}
+        </div>
+        <div class="trd">${_apprHTML(mod,'o'+oi+'_desc',o.desc)}</div>
+      </div>`;
+    });
+    div.innerHTML=`<div class="fh" style="background:${f.color}">
+      <span class="fht">${_apprHTML(mod,'titre',f.titre)}</span>
+      <span class="fhp">${_apprHTML(mod,'prio',f.prio)}</span>
+    </div>
+    <div class="fb2">${outilsHTML}</div>`;
+    host.appendChild(div);
+  });
+  // Bouton restauration global pour les fiches
+  const reset=document.createElement('div');reset.style.cssText='text-align:right;margin-top:14px';
+  reset.innerHTML=`<button class="appr-reset-btn" onclick="_apprResetModules(${JSON.stringify(modules)})">↺ Restaurer toutes les propositions de fiches</button>`;
+  host.appendChild(reset);
+}
 function stLbl(s){return{go:'éligible',cond:'conditionnel',exist:'présent',actif:'actif',nc:'cadre spécifique',needed:'à construire'}[s]||s;}
 
 /* ============================================================
@@ -2493,12 +2536,19 @@ function construireCas(T){const host=document.getElementById('cas-container');ho
   host.appendChild(mkCas('cas3','Analyse n° 3','Foncier, gouvernance et acceptabilité',
     "Le foncier est le verrou propre à chaque collectivité (coutume, indivision, rareté, occupations sans titre) ; il commande la faisabilité de toute relocalisation. Qui décide, avec qui, selon quelles règles ?",
     coutHtml+`<div class="fdr-axe"><div class="fdr-axe-head">🤝 Parties prenantes et qui décide</div><div class="fdr-axe-body"><ul><li><strong>Population exposée</strong> : premiers concernés.</li><li><strong>Propriétaires / occupants</strong> : titres, indivision, baux.</li><li><strong>Acteurs économiques du littoral</strong>.</li>${T.coutume?'<li><strong>Instances coutumières</strong> : accord préalable indispensable sur terres coutumières.</li>':''}<li><strong>Répartition des compétences</strong> : ${T.statut.split(',')[0]} — l'aménagement relève selon les cas de la collectivité, du Pays ou de l'État.</li></ul></div></div>`,false));
-  // ANALYSE 4 — Feuille de route et indicateurs
-  const fdrHtml=T.fdr_axes.map(ax=>`<div class="fdr-axe"><div class="fdr-axe-head">${ax.icon} ${ax.titre}</div><div class="fdr-axe-body"><ul>${ax.items.map(i=>`<li>${i}</li>`).join('')}</ul></div></div>`).join('');
-  const indHtml=`<div class="ind-grid">${T.indicateurs.map(ind=>`<div class="ind-card"><div class="ic-lbl">${ind.lbl}</div><div class="ic-val">${ind.val}</div><div class="ic-desc">${ind.desc}</div></div>`).join('')}</div>`;
+  // ANALYSE 4 — Feuille de route et indicateurs (appropriables)
+  const fdrHtml=(T.fdr_axes||[]).map((ax,ai)=>{
+    const mod='fdr_'+ai;
+    return `<div class="fdr-axe"><div class="fdr-axe-head">${ax.icon} ${_apprHTML(mod,'titre',ax.titre)}</div><div class="fdr-axe-body"><ul>${(ax.items||[]).map((it,ii)=>`<li>${_apprHTML(mod,'item'+ii,it)}</li>`).join('')}</ul></div></div>`;
+  }).join('');
+  const indHtml=`<div class="ind-grid">${(T.indicateurs||[]).map((ind,ii)=>{const mod='ind_'+ii;return `<div class="ind-card"><div class="ic-lbl">${_apprHTML(mod,'lbl',ind.lbl)}</div><div class="ic-val">${_apprHTML(mod,'val',ind.val)}</div><div class="ic-desc">${_apprHTML(mod,'desc',ind.desc)}</div></div>`;}).join('')}</div>`;
+  // Modules à réinitialiser pour cas4
+  const modulesCas4=(T.fdr_axes||[]).map((_,i)=>'fdr_'+i).concat((T.indicateurs||[]).map((_,i)=>'ind_'+i));
+  const bandeau='<div class="appr-bandeau" style="margin-bottom:8px"><b>Cette analyse est appropriable.</b> Cliquez sur les libellés des axes, les actions, ou les indicateurs pour les personnaliser. Vos modifications restent dans votre navigateur, et le tableau bascule en couleur affirmée.</div>';
+  const resetBtn=`<div style="text-align:right;margin-top:12px"><button class="appr-reset-btn" onclick='_apprResetModules(${JSON.stringify(modulesCas4)})'>↺ Restaurer la feuille de route et les indicateurs d\'origine</button></div>`;
   host.appendChild(mkCas('cas4','Analyse n° 4','Feuille de route et indicateurs',
     "Séquencement des actions (12 mois / 3 ans / 10 ans) propre au territoire, et indicateurs de suivi. Les outils mobilisables — et ceux à <b>transposer/créer</b> faute de cadre métropolitain applicable — sont détaillés en section « Outils ».",
-    fdrHtml+indHtml+`<div class="src-note"><b>Source :</b> ${T.cas4_src}</div>`,false));
+    bandeau+fdrHtml+indHtml+resetBtn+`<div class="src-note"><b>Source :</b> ${T.cas4_src}</div>`,false));
 }
 
 /* ============================================================
@@ -5752,6 +5802,63 @@ function _pretextMoment4(T){
 }
 // Persistance localStorage par territoire + lieu + champ. Pas de Firebase ici : le récit est interne
 // à l'exécutif et ne doit pas remonter ailleurs sans son geste explicite (cf. principe d'appropriation).
+/* ============================================================
+   APPROPRIATION IN-PLACE — bibliothèque générique
+   Pattern : la collectivité s'approprie les analyses pré-remplies sans tout
+   réécrire. Le texte d'origine reste visible en gris hachuré (proposition),
+   et bascule en texte affirmé (encadré teal) dès qu'on tape. Persistance
+   localStorage par territoire + module + champ. Un bouton « ↺ Restaurer »
+   permet de revenir aux propositions d'origine d'un module entier.
+============================================================ */
+function _apprKey(module,champ){return `appr_${TERR_ACTIF||'def'}_${module}_${String(champ).replace(/\W+/g,'_').slice(0,40)}`;}
+function _apprGet(module,champ){try{return localStorage.getItem(_apprKey(module,champ));}catch(e){return null;}}
+function _apprSet(module,champ,val){try{if(val&&val.trim())localStorage.setItem(_apprKey(module,champ),val);else localStorage.removeItem(_apprKey(module,champ));}catch(e){}}
+// Retourne la valeur effective (appropriée si modifiée, sinon proposition d'origine).
+function _apprVal(module,champ,defaut){const v=_apprGet(module,champ);return (v&&v.trim())?v:defaut;}
+// Génère un élément HTML contenteditable avec typo distincte selon l'état.
+// opts : {tag:'span'|'div'|'p', cls:'classes additionnelles', multi:true|false (multi-ligne)}
+function _apprHTML(module,champ,defaut,opts){
+  opts=opts||{};
+  const stored=_apprGet(module,champ);
+  const approprie=!!(stored&&stored.trim());
+  const valeur=approprie?stored:String(defaut||'');
+  const tag=opts.tag||'span';
+  const cls=(approprie?'appr-approprie':'appr-prop')+(opts.cls?' '+opts.cls:'');
+  const enc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const tip=approprie?'Texte du territoire (modifié) — éditez ou videz pour restaurer la proposition':'Proposition à valider — cliquez pour personnaliser';
+  return `<${tag} contenteditable="true" class="${cls}" data-appr-mod="${module}" data-appr-ch="${enc(champ)}" data-appr-def="${enc(defaut)}" oninput="_apprMaj(this)" onblur="_apprMaj(this)" title="${tip}">${enc(valeur)}</${tag}>`;
+}
+window._apprMaj=function(el){
+  const module=el.dataset.apprMod,champ=el.dataset.apprCh,defaut=el.dataset.apprDef||'';
+  const val=(el.innerText||'').trim();
+  const approprie=val&&val!==defaut.trim();
+  el.classList.toggle('appr-prop',!approprie);
+  el.classList.toggle('appr-approprie',!!approprie);
+  el.title=approprie?'Texte du territoire (modifié) — éditez ou videz pour restaurer la proposition':'Proposition à valider — cliquez pour personnaliser';
+  _apprSet(module,champ,approprie?val:'');
+};
+// Cycle un statut d'outil (clic → cycle next dans l'ordre logique). Persistance distincte.
+const _APPR_STATUTS_CYCLE=['needed','cond','exist','actif','go','nc'];
+function _apprStatutHTML(module,champ,defaut){
+  const stored=_apprGet(module,champ+'_statut');const s=stored||defaut;
+  return `<span class="trs ${s} appr-statut" data-appr-mod="${module}" data-appr-ch="${champ}_statut" data-appr-def="${defaut}" onclick="_apprStatutCycle(this)" title="Cliquez pour cycler le statut">${typeof stLbl==='function'?stLbl(s):s}</span>`;
+}
+window._apprStatutCycle=function(el){
+  const module=el.dataset.apprMod,champ=el.dataset.apprCh,defaut=el.dataset.apprDef||'needed';
+  const stored=_apprGet(module,champ);const cur=stored||defaut;
+  const idx=_APPR_STATUTS_CYCLE.indexOf(cur);const next=_APPR_STATUTS_CYCLE[(idx+1)%_APPR_STATUTS_CYCLE.length];
+  // Maj visuelle + persistance (vide si on revient à la valeur d'origine)
+  _APPR_STATUTS_CYCLE.forEach(s=>el.classList.remove(s));el.classList.add(next);
+  el.textContent=typeof stLbl==='function'?stLbl(next):next;
+  _apprSet(module,champ,next===defaut?'':next);
+};
+// Restaure tous les champs d'un ou plusieurs modules.
+window._apprResetModules=function(modules){
+  if(!Array.isArray(modules))modules=[modules];
+  if(!confirm('Restaurer les propositions d\'origine pour : '+modules.join(', ')+' ?'))return;
+  try{const keys=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k||!k.startsWith('appr_'+(TERR_ACTIF||'def')+'_'))continue;for(const m of modules)if(k.startsWith('appr_'+(TERR_ACTIF||'def')+'_'+m+'_')){keys.push(k);break;}}keys.forEach(k=>localStorage.removeItem(k));}catch(e){}
+  if(TERR_ACTIF&&typeof chargerTerritoire==='function')chargerTerritoire(TERR_ACTIF);
+};
 function _recitKey(siteNom,champ){return `recit_${TERR_ACTIF||'def'}_${(siteNom||'lieu').replace(/\W+/g,'_').slice(0,30)}_${champ}`;}
 function _recitGet(siteNom,champ){try{return localStorage.getItem(_recitKey(siteNom,champ));}catch(e){return null;}}
 function _recitSet(siteNom,champ,val){try{if(val&&val.trim())localStorage.setItem(_recitKey(siteNom,champ),val);else localStorage.removeItem(_recitKey(siteNom,champ));}catch(e){}}
