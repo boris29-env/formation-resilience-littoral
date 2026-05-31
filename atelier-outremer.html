@@ -3160,6 +3160,8 @@ function updateSigUi(){
   const mntCtrl=document.getElementById('sig-mnt-ctrl');if(mntCtrl)mntCtrl.style.display=isMnt?'block':'none';
   const sigBtn=document.getElementById('img-sig-btn');if(sigBtn)sigBtn.textContent=isEvol?'📈 Calculer le taux d\'évolution (m/an)':isMnt?'📐 Calculer les zones basses (MNT)':'🗺️ Extraire la couche SIG (GeoJSON)';
   const sl=document.getElementById('sig-sens-label');if(sl)sl.textContent=(imgRoutineActive==='ouvrages')?'Sensibilité de détection (bords / droites)':'Sensibilité de détection (mer / terre)';
+  // Contrôle IA : pertinent uniquement pour les ouvrages (filtre de faux positifs). Masqué ailleurs.
+  const aiCheck=document.getElementById('sig-ai-check');if(aiCheck&&aiCheck.closest('label'))aiCheck.closest('label').style.display=(imgRoutineActive==='ouvrages')?'flex':'none';
   // L'extraction SIG est possible sur tous les onglets → l'emprise est toujours proposée.
   // Source URL → emprise automatique ; photo → saisie manuelle.
   let urlBbox=null;
@@ -3660,18 +3662,41 @@ function _classeRivage(im,water,a,b,imIRC){
   return 'bati';                                                // bâti / enrochement / rocher / autre (gris, sombre, structuré)
 }
 const _RIVAGE_LBL={sable:'trait de côte · plage (sable/eau)',bati:'trait de côte · ouvrage de protection ou bâti (au contact mer)',vegetation:'trait de côte · front végétal / mangrove',indetermine:'trait de côte (indéterminé)'};
+// Masque d'eau NETTOYÉ pour la LIGNE DE RÉFÉRENCE du trait de côte. Sur les lagons coralliens
+// (Saint-Barthélemy, atolls), le masque brut alterne eau profonde / haut-fond turquoise / patch de
+// récif → son contour serpente à travers chaque récif et produit un trait fractal inexploitable.
+// On lisse à l'ÉCHELLE MÉTRIQUE : fermeture (comble chenaux de récif) + ouverture (retire récifs
+// isolés et tendrils) + bouchage agressif des patchs enclavés → on ne garde que le littoral de l'île.
+function _masqueTraitPropre(im,sens,imIRC,mPerPx){
+  const W=im.w,H=im.h;
+  let w=computeWaterMask(im,sens,imIRC,true);                 // composantes mer, sans bouchage
+  const kClose=Math.max(1,Math.min(14,Math.round(18/mPerPx)));// ferme les chenaux de récif (~18 m, plafonné)
+  const kOpen=Math.max(1,Math.min(10,Math.round(10/mPerPx))); // retire récifs isolés / tendrils (~10 m)
+  w=erodeMask(dilate(w,W,H,kClose),W,H,kClose);               // fermeture morphologique
+  w=dilate(erodeMask(w,W,H,kOpen),W,H,kOpen);                 // ouverture morphologique
+  w=keepSeaComponents(w,W,H);
+  w=fillWaterHoles(w,W,H,0.05);                               // avale les patchs de récif (< 5 % image)
+  return w;
+}
+// Indice de fragmentation : nb de contours significatifs du masque brut. Élevé = lagon corallien.
+function _fragmentationMasque(im,sens,imIRC,nd){
+  const raw=computeWaterMask(im,sens,imIRC,true);
+  return shorelinesFromMask(raw,im.w,im.h,nd,1.5).length;
+}
 function extraireTraitDeCote(im,bbox,sens,imIRC){
   const nd=nodataMask(im);
-  const water=computeWaterMask(im,sens,imIRC);     // NDWI (PIR) si IRC dispo → trait au contact sable/eau
+  const water=computeWaterMask(im,sens,imIRC);     // masque par-pixel : sert à CLASSER le rivage
   const mPerPx=metresParPixel(bbox,im.w),epsPx=Math.max(1,2/mPerPx);   // DP ≈ 2 m (fidèle)
-  const waterLisse=openMask(water,im.w,im.h,1);   // ouverture légère : nettoie sans déformer le trait
-  // A2.2 — Incertitude positionnelle minimale : au moins un pixel de la source (réf. méth. 7.5).
-  // Sur côtes sans marée, on ajoute l'incertitude saisonnière du jet de rive (jusqu'à ~2 m, AR6).
+  // Le CONTOUR de référence vient du masque nettoyé (anti-fractal sur lagon corallien).
+  const waterTrace=_masqueTraitPropre(im,sens,imIRC,mPerPx);
+  const fragmente=_fragmentationMasque(im,sens,imIRC,nd)>60;   // littoral très découpé (récifs)
   const incertM=+(mPerPx).toFixed(2);
   const sansMaree=_TERRITOIRES_SANS_MAREE.has(TERR_ACTIF);
   const incertJet=sansMaree?2.0:null;
   const feats=[];
-  const lines=shorelinesFromMask(waterLisse,im.w,im.h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,8);
+  // On ne garde que les littoraux PRINCIPAUX (île / motu) : top 4 par longueur, longueur min 60 m.
+  const minRunM=fragmente?60:30;
+  const lines=shorelinesFromMask(waterTrace,im.w,im.h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,4);
   for(const raw of lines){const l=smoothChaikin(raw,2);
     const cls=[];for(let i=1;i<l.length;i++)cls.push(_classeRivage(im,water,l[i-1],l[i],imIRC));
     let k=0;while(k<cls.length){const t=cls[k];let m=k;while(m+1<cls.length&&cls[m+1]===t)m++;
@@ -3680,13 +3705,12 @@ function extraireTraitDeCote(im,bbox,sens,imIRC){
       // A2.1 — Indicateur INSeaPTION : sur côte naturelle (sable) → c'est le PIED DE PLAGE ;
       // sur bâti/végétation → c'est la LIGNE DE STABILITÉ (base ouvrage ou limite externe végétation).
       const indicateur=(t==='sable')?'pied_de_plage':'ligne_de_stabilite';
-      if(lenM>=12)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:_RIVAGE_LBL[t]||'trait de côte',classe_rivage:t,indicateur_inseaption:indicateur,methode:'contact mer/terre classé (sable › bâti/enrochement › végétation)',certitude:'modérée',longueur_m_est:Math.round(lenM),incertitude_positionnelle_m:incertM,incertitude_jet_de_rive_m:incertJet}});
+      if(lenM>=minRunM)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:_RIVAGE_LBL[t]||'trait de côte',classe_rivage:t,indicateur_inseaption:indicateur,methode:'contour mer/terre nettoyé (échelle métrique) + classé (sable › bâti/enrochement › végétation)',certitude:'modérée',longueur_m_est:Math.round(lenM),incertitude_positionnelle_m:incertM,incertitude_jet_de_rive_m:incertJet}});
       k=m+1;}
   }
-  // A2.1 — Pour les territoires sans marée (PF, NC, Wallis), on ajoute en plus la LIGNE DE STABILITÉ
-  // sur les portions de plage : c'est le bord LANDWARD du sable (limite externe végétation OU base
-  // bâti). Cela donne le second indicateur INSeaPTION recommandé sur côtes microtidales.
-  if(sansMaree){
+  // A2.1 — Ligne de stabilité « haut de plage » sur côtes sans marée. DÉSACTIVÉE si le littoral est
+  // trop fragmenté (lagon corallien) : la sortie serait du bruit. Sinon, seuils relevés.
+  if(sansMaree&&!fragmente){
     try{
       const hauts=_extraireHautDePlage(im,water,imIRC,nd,bbox,mPerPx,incertM);
       for(const f of hauts)feats.push(f);
@@ -3702,7 +3726,7 @@ function _extraireHautDePlage(im,water,imIRC,nd,bbox,mPerPx,incertM){
   const sand=_sandMask(im,water,imIRC);
   // shorelinesFromMask sur le masque sable → contours de la zone sableuse (bord eau + bord terre)
   const epsPx=Math.max(1,2/mPerPx);
-  const linesSand=shorelinesFromMask(sand,w,h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,8);
+  const linesSand=shorelinesFromMask(sand,w,h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,4);
   const id=(imIRC&&imIRC.data&&imIRC.w===w)?imIRC.data:null;
   const wAt=(x,y)=>{x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=w||y>=h)return 0;return water[y*w+x]?1:0;};
   const out=[];
@@ -3727,7 +3751,7 @@ function _extraireHautDePlage(im,water,imIRC,nd,bbox,mPerPx,incertM){
     let k=0;while(k<tags.length){if(!tags[k].keep){k++;continue;}let m=k;while(m+1<tags.length&&tags[m+1].keep&&tags[m+1].nature===tags[k].nature)m++;
       const coords=[];for(let pi=tags[k].i0;pi<=tags[m].i1;pi++)coords.push(pxToGeo(l[pi][0],l[pi][1],w,h,bbox));
       const lenM=geoLenM(coords,bbox);
-      if(lenM>=15){const nat=tags[k].nature;const lbl=nat==='stab_naturelle'?'ligne de stabilité · haut de plage (limite externe végétation)':'ligne de stabilité · haut de plage (base bâti/ouvrage)';
+      if(lenM>=40){const nat=tags[k].nature;const lbl=nat==='stab_naturelle'?'ligne de stabilité · haut de plage (limite externe végétation)':'ligne de stabilité · haut de plage (base bâti/ouvrage)';
         out.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:lbl,classe_rivage:nat,indicateur_inseaption:'ligne_de_stabilite',methode:'bord landward du masque sable (protocole INSeaPTION pour côtes microtidales)',certitude:'modérée',longueur_m_est:Math.round(lenM),incertitude_positionnelle_m:incertM,incertitude_jet_de_rive_m:null}});}
       k=m+1;}
   }
@@ -4307,7 +4331,10 @@ window.lancerExtractionSIG=async function(){
       if(mpp>2.5)aiNote=`Résolution ≈ ${mpp.toFixed(1)} m/px : un ouvrage (~5-15 m) est quasi sous-pixellaire — resserrez l'emprise (visez < 1 m/px) pour une caractérisation fiable. `;
       _lastSigCandidates=feats.slice();feats=affinerOuvragesParModele(feats);
       if(_ouvrModel){const nO=feats.filter(f=>/(enrochement|perré|digue|ouvrage)/.test(f.properties.type||'')).length,nV=feats.filter(f=>/à vérifier/.test(f.properties.type||'')).length;aiNote+=`Modèle actif : ${nO} ouvrage(s), ${nV} à vérifier (rejets masqués). `;}}
-    if(feats.length&&document.getElementById('sig-ai-check')?.checked){
+    // Le contrôle IA (2ᵉ passe vision) ne s'applique qu'aux OUVRAGES : sur le trait de côte, filtrer
+    // une géométrie bruitée segment par segment est inopérant — le bon levier est un masque propre
+    // (fait en amont) ou une segmentation profonde (bouton « Segmentation profonde » de la carte).
+    if(feats.length&&imgRoutineActive==='ouvrages'&&document.getElementById('sig-ai-check')?.checked){
       irBody.textContent='Contrôle IA (2ᵉ passe)…';document.getElementById('ir-badge').textContent='Contrôle IA…';
       const baseF=feats.filter(f=>f.properties&&f.properties._base),aCheck=feats.filter(f=>!(f.properties&&f.properties._base)); // garder le trait de côte de base hors du contrôle
       const before=aCheck.length;const kept=await controleIA(im,aCheck,b,imgRoutineActive);
