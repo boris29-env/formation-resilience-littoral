@@ -1806,11 +1806,13 @@ function filtrerParMasqueCote(feats){
   const kept=[];let dropped=0,droppedPort=0,clipped=0;
   for(const f of arr){
     if(!f||!f.geometry){kept.push(f);continue;}
-    // Pass-through : trait de référence, bandes de recul, alertes/veille = intentions explicites
-    if(f.properties&&(f.properties._base||/bande de recul|veille|alerte/i.test(f.properties.type||''))){kept.push(f);continue;}
-    // Polygones et autres : keep si centroid touche la bande, drop si majoritairement dans un port
+    // PLUS DE PASS-THROUGH : les features _base et bandes de recul/veille/alerte sont TOUTES soumises
+    // au filtre. Une intention explicite n'autorise pas un artefact hors zone — c'est strict.
+    // Seules exceptions : les bandes de recul (Polygon) restent affichables même si elles débordent,
+    // car elles sont CALCULÉES depuis un trait dans la bande (recul landward est légitime).
     if(f.geometry.type!=='LineString'&&f.geometry.type!=='MultiLineString'){
       if(_featureDansPort(f)){droppedPort++;continue;}
+      // Polygones : keep si centroïde touche la bande (bande de recul = oui par construction)
       if(_featureToucheMasque(f))kept.push(f); else dropped++;
       continue;
     }
@@ -3927,9 +3929,7 @@ function afficherSig(gj,bbox,meta){
     const out={type:'Feature',geometry:ng,properties:p};
     return out;
   }).filter(Boolean);
-  // Reliage des traits voisins (seuil 30 m) AVANT le filtre masque : récupère les segments qui
-  // auraient été perdus par les ruptures de masque, et donne un trait continu plus lisible.
-  if(typeof _relierTraitsVoisins==='function')_feats=_relierTraitsVoisins(_feats,30);
+  // (Reliage désactivé sur demande : les segments restent indépendants, le clip côtier suffit.)
   // Filtre masque côtier + zones de port (bateaux à quai écartés).
   if(typeof _masqueCoteActif!=='undefined'&&_masqueCoteActif&&typeof filtrerParMasqueCote==='function'){
     const r=filtrerParMasqueCote(_feats);_feats=r.kept;_dropMasq=r.dropped;_dropPort=r.dropped_port;
