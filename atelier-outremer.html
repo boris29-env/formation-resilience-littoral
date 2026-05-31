@@ -146,6 +146,24 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15p
 .pmrow-head{grid-area:head}
 .pmrow-w{grid-area:w;font-size:11px}
 .pmrow-s{grid-area:s;font-size:11px;color:var(--muted);text-align:right;align-self:center}
+/* Fiche-action site exposé (boucler la chaîne décision) */
+.fa-section{margin-bottom:14px}
+.fa-section:last-child{margin-bottom:0}
+.fa-k{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;font-weight:700}
+.fa-h1{font-family:var(--serif);font-size:22px;color:var(--navy);font-weight:600;line-height:1.2}
+.fa-sub-site{color:var(--muted);font-size:12px;margin-top:3px;line-height:1.5}
+.fa-urg{display:inline-block;color:#fff;font-weight:600;padding:5px 11px;border-radius:5px;font-size:12px;margin-top:8px}
+.fa-line{font-size:12.5px;line-height:1.55;padding:3px 0;border-top:1px dotted var(--line)}
+.fa-section .fa-line:first-of-type,.fa-section .fa-action:first-of-type{border-top:0}
+.fa-warn{background:#FFF3E0;border:1px solid #FFCC80;border-left:3px solid #f9a825;border-radius:0 5px 5px 0;padding:7px 11px;margin-top:8px;font-size:11.5px;color:#7a4a00;line-height:1.5}
+.fa-action{display:flex;gap:10px;padding:7px 0;border-top:1px dotted var(--line);font-size:12px;line-height:1.55}
+.fa-n{background:var(--navy);color:#fff;font-family:var(--mono);font-size:10px;font-weight:700;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.fa-action-t{font-weight:600;color:var(--navy);font-size:12.5px}
+.fa-prio{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-left:5px;background:var(--soft);padding:1px 5px;border-radius:3px}
+.fa-action-d{color:var(--ink);font-size:11.5px;margin-top:2px}
+.fa-foot{margin-top:14px;padding-top:10px;border-top:1px solid var(--line);font-size:10.5px;color:var(--muted);font-style:italic;line-height:1.6}
+.fa-btn-site{background:#FFF3E0;padding:2px 7px;border-radius:3px;margin:1px;display:inline-block;border:1px solid #FFCC80;cursor:pointer;font-size:10.5px;color:#7a4a00;font-family:var(--sans)}
+.fa-btn-site:hover{background:#FFE0B2}
 .src-note{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:14px;padding-top:10px;border-top:1px solid var(--line);line-height:1.6}
 .src-note b{color:var(--navy);font-weight:500}
 section.ps{margin-bottom:76px;scroll-margin-top:72px}
@@ -813,6 +831,23 @@ svg.house{width:100%;max-width:290px;height:auto}
       <button class="cv-send" id="cv-send" onclick="sendCv()">Envoyer</button>
     </div>
     <div class="cv-modal-footer"><span id="cv-counter">0/8</span><em>GIEC AR6 (2021) · SROCC (2019) · TRACC décret 2026-23</em></div>
+  </div>
+</div>
+
+<!-- FICHE-ACTION SITE EXPOSÉ (Lot « boucler la chaîne décision ») -->
+<div class="cv-overlay" id="fa-overlay">
+  <div class="cv-modal" style="position:relative;max-width:760px">
+    <div class="cv-modal-head" id="fa-modal-head" style="background:var(--navy)">
+      <div class="cv-eyebrow">Fiche-action · site exposé</div>
+      <div class="cv-modal-title" id="fa-title">—</div>
+      <div class="cv-modal-sub" id="fa-sub">—</div>
+    </div>
+    <button class="cv-close" onclick="fermerFicheAction()">×</button>
+    <div class="cv-modal-body" id="fa-body"></div>
+    <div class="cv-modal-footer">
+      <span style="display:flex;gap:6px"><button onclick="exporterFicheAction()" style="background:var(--teal);color:#fff;border:none;border-radius:5px;padding:4px 9px;font-size:11px;cursor:pointer">Télécharger (.txt)</button> <button onclick="window.print()" style="background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:4px 9px;font-size:11px;cursor:pointer">Imprimer</button></span>
+      <em>Aide indicative · ne crée aucune obligation (réf. IGEDD-IGA 014917-02A)</em>
+    </div>
   </div>
 </div>
 
@@ -4859,12 +4894,179 @@ function _croisementEnjeux(bandes){
   const arr=Object.values(buckets).sort((a,b)=>(a.horizon-b.horizon)||(a.distance_m-b.distance_m));
   if(!arr.length)return '';
   const rows=arr.map(b=>`<tr><td style="padding:2px 6px;font-weight:600">${b.horizon} ans</td><td style="padding:2px 6px;color:var(--muted)">${b.taux_label}</td><td style="padding:2px 6px;text-align:right">${b.distance_m.toFixed(0)} m</td><td style="padding:2px 6px;text-align:right;color:#c0392b;font-weight:600">${b.sites.size}</td><td style="padding:2px 6px;text-align:right;color:#B07E1B;font-weight:600">${b.events.size}</td></tr>`).join('');
-  // Liste des sites les plus exposés (par horizon minimal)
+  // Liste des sites les plus exposés (par horizon minimal) — chaque site est CLIQUABLE
+  // → ouvre la fiche-action automatique (« boucler la chaîne décision »).
   const sitesParHor={};for(const b of arr){for(const s of b.sites){if(!(s in sitesParHor)||sitesParHor[s]>b.horizon)sitesParHor[s]=b.horizon;}}
   const sitesSort=Object.entries(sitesParHor).sort(([,a],[,b])=>a-b);
-  const dossier=sitesSort.length?'<div style="margin-top:6px;padding-top:5px;border-top:1px dotted var(--line);font-size:10.5px"><b>Sites exposés (horizon minimal) :</b> '+sitesSort.slice(0,8).map(([n,h])=>`<span style="background:#FFF3E0;padding:1px 5px;border-radius:3px;margin:1px;display:inline-block">${n} (${h} ans)</span>`).join(' ')+(sitesSort.length>8?` <span style="color:var(--muted)">+ ${sitesSort.length-8} autre(s)</span>`:'')+'</div>':'';
+  window._croisementEnjeuxLast=sitesSort;   // pour la synthèse territoriale
+  const esc=s=>(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  const dossier=sitesSort.length?'<div style="margin-top:6px;padding-top:5px;border-top:1px dotted var(--line);font-size:10.5px"><b>Sites exposés (horizon minimal) :</b> '+sitesSort.slice(0,8).map(([n,h])=>`<button class="fa-btn-site" onclick="afficherFicheAction('${esc(n)}',${h})" title="Ouvrir la fiche-action automatique pour ${esc(n)}">${n} (${h} ans) →</button>`).join(' ')+(sitesSort.length>8?` <span style="color:var(--muted)">+ ${sitesSort.length-8} autre(s)</span>`:'')+`  <button class="fa-btn-site" style="background:var(--navy);color:#fff;border-color:var(--navy);font-weight:600" onclick="afficherSyntheseTerritoriale()" title="Synthèse pour tous les sites exposés (export COPIL)">📋 Synthèse territoriale</button></div>`:'';
   return `<div style="margin-top:6px"><b>Croisement enjeux × bandes</b><table style="width:100%;font-size:10.5px;border-collapse:collapse;margin-top:3px"><thead><tr style="border-bottom:1px solid var(--line);color:var(--muted);font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em"><th style="padding:2px 6px;text-align:left">Horizon</th><th style="padding:2px 6px;text-align:left">Taux</th><th style="padding:2px 6px;text-align:right">Distance</th><th style="padding:2px 6px;text-align:right">Sites</th><th style="padding:2px 6px;text-align:right">Événements</th></tr></thead><tbody>${rows}</tbody></table>${dossier}</div>`;
 }
+
+/* ============================================================
+   FICHES-ACTION SITE EXPOSÉ — boucler la chaîne décision
+   Pour chaque site qui tombe dans une bande de recul, on génère
+   automatiquement une fiche structurée mobilisant : prérogatives du
+   territoire (qui décide), outils localement disponibles (T.fiches),
+   régime coutumier le cas échéant, séquence d'actions hiérarchisée.
+   Le financement n'est PAS développé (à instruire via le tableau de
+   bord territorial — données précises manquantes).
+============================================================ */
+function _genererFicheAction(siteNom,horizonMin){
+  const T=TERRITOIRES[TERR_ACTIF]||{};
+  const pr=_PREROGATIVES[TERR_ACTIF]||{};
+  const site=(T.sites||[]).find(s=>s.nom===siteNom);
+  if(!site)return null;
+  const urg=horizonMin<=30?{lbl:'court terme',sub:'≤ 12 mois',col:'#c0392b'}:horizonMin<=50?{lbl:'moyen terme',sub:'3 à 5 ans',col:'#e67e22'}:{lbl:'long terme',sub:'planification ≥ 10 ans',col:'#8e6a3e'};
+  const coutumier=!!pr.coutumier;
+  // Outils mobilisables sur ce territoire : prioriser ceux qui sont actifs / éligibles / présents
+  const outilsActifs=[],outilsConditionnels=[];
+  (T.fiches||[]).forEach(fiche=>{(fiche.outils||[]).forEach(o=>{const item=Object.assign({},o,{categorie:fiche.titre});if(['actif','go','exist'].includes(o.statut))outilsActifs.push(item);else if(['cond','needed','nc'].includes(o.statut))outilsConditionnels.push(item);});});
+  const desc_site=[site.h30?{horizon:30,texte:site.h30}:null,site.h50?{horizon:50,texte:site.h50}:null,site.h100?{horizon:100,texte:site.h100}:null].filter(Boolean);
+  // Séquence d'actions standardisée + amendée selon contexte
+  const actions=[];
+  if(coutumier)actions.push({prio:'préalable',titre:'Engager le dialogue coutumier',desc:"Toute décision de recomposition touchant des terres coutumières relève des instances coutumières (conseils, Sénat coutumier en NC ; royaumes à Wallis). Solliciter l'avis compétent AVANT tout autre acte."});
+  actions.push({prio:urg.lbl,titre:"Inscrire au document d'urbanisme local",desc:"Réviser ou compléter le document d'urbanisme applicable pour qualifier le site comme zone exposée et encadrer la constructibilité (selon le statut : "+(pr.decideurs?(pr.decideurs.find(d=>/collectivité|pays|nouvelle-calédonie/i.test(d.acteur))||{}).role||'compétence locale':'compétence locale')+")."});
+  if(horizonMin<=30){actions.push({prio:'court terme',titre:'Suivi rapproché de l\'évolution',desc:'Actualiser l\'analyse imagerie tous les 6 mois (veille Sentinel-2 — bouton 🛰 sur la carte — et ortho HR si disponible). Mobiliser une expertise géomorphologue locale.'});}
+  actions.push({prio:'continu',titre:'Concertation avec la population exposée',desc:'Co-construire le scénario de recomposition avec habitants, propriétaires, acteurs économiques. Documenter le processus dans le tableau de bord territorial.'});
+  actions.push({prio:'instruction',titre:'Inventaire des biens exposés par destination',desc:"Recenser les biens (habitat, activité, équipements, biens culturels et coutumiers) tombant dans la bande d'exposition retenue. Croiser avec l'inventaire des ouvrages historisés."});
+  actions.push({prio:'instruction',titre:'Évaluer les financements mobilisables',desc:'Consulter la section « Outils mobilisables » et le tableau de bord territorial pour identifier les sources potentielles. La plateforme ne préchiffre pas les coûts (donnée à instruire au cas par cas).'});
+  return {site,horizonMin,urg,decideurs:pr.decideurs||[],coutumier,outilsActifs,outilsConditionnels,desc_site,actions,territoire:T.nom||TERR_ACTIF,statut_territoire:T.statut,referentiel:pr.referentiel};
+}
+function _renderFicheAction(f){
+  return `<div class="fa-section">
+    <div class="fa-k">Site exposé</div>
+    <div class="fa-h1">${f.site.nom}</div>
+    <div class="fa-sub-site">${f.site.desc||''}</div>
+    <div class="fa-urg" style="background:${f.urg.col}">Exposition dès ${f.horizonMin} ans · ${f.urg.lbl} (${f.urg.sub})</div>
+  </div>
+  ${f.desc_site.length?`<div class="fa-section">
+    <div class="fa-k">Évolution d'exposition documentée du territoire</div>
+    ${f.desc_site.map(d=>`<div class="fa-line"><b>${d.horizon} ans :</b> ${d.texte}</div>`).join('')}
+  </div>`:''}
+  <div class="fa-section">
+    <div class="fa-k">Qui décide</div>
+    ${f.decideurs.map(d=>`<div class="fa-line"><strong>${d.acteur}</strong> · ${d.role}</div>`).join('')}
+    ${f.coutumier?'<div class="fa-warn"><strong>⚠ Terre coutumière.</strong> La décision de recomposition relève des instances coutumières. La plateforme cartographie l\'exposition ; elle ne se substitue pas à cet arbitrage.</div>':''}
+  </div>
+  <div class="fa-section">
+    <div class="fa-k">Séquence d'actions recommandées</div>
+    ${f.actions.map((a,i)=>`<div class="fa-action"><span class="fa-n">${i+1}</span><div><div class="fa-action-t">${a.titre}<span class="fa-prio">${a.prio}</span></div><div class="fa-action-d">${a.desc}</div></div></div>`).join('')}
+  </div>
+  <div class="fa-section">
+    <div class="fa-k">Outils mobilisables sur ce territoire</div>
+    ${f.outilsActifs.length?f.outilsActifs.slice(0,6).map(o=>`<div class="fa-line"><strong>${o.nom}</strong> <span style="color:var(--muted);font-size:10.5px">— ${o.categorie}</span><br><span style="color:var(--ink);font-size:11.5px">${o.desc}</span></div>`).join(''):'<div class="fa-line" style="color:var(--muted)">Aucun outil signalé comme actif ou éligible dans la fiche territoriale. Consulter le tableau de bord territorial.</div>'}
+    ${f.outilsConditionnels.length?'<details style="margin-top:6px"><summary style="cursor:pointer;color:var(--muted);font-size:11px">+ '+f.outilsConditionnels.length+' outil(s) conditionnel(s) ou à construire</summary>'+f.outilsConditionnels.slice(0,5).map(o=>`<div class="fa-line" style="font-size:11px;color:var(--muted)"><strong>${o.nom}</strong> (${o.statut}) — ${o.desc}</div>`).join('')+'</details>':''}
+  </div>
+  <div class="fa-section">
+    <div class="fa-k">Coordonnées</div>
+    <div class="fa-line"><b>Localisation :</b> ${(+f.site.lat).toFixed(5)}° / ${(+f.site.lng).toFixed(5)}° (WGS84)</div>
+    <div class="fa-line"><b>Référentiel local recommandé pour export :</b> ${f.referentiel||'WGS84'}</div>
+    <div class="fa-line"><b>Territoire :</b> ${f.territoire} · ${f.statut_territoire||''}</div>
+  </div>
+  <div class="fa-foot">Fiche-action générée automatiquement à partir des bandes de recul et des fiches outils du territoire. Aide à la décision indicative — ne crée aucune obligation. Réf. : Cerema (cartographie des ouvrages, méthodes trait de côte) ; rapport IGEDD-IGA 014917-02A (août 2025) ; protocole INSeaPTION pour les côtes microtidales. Le préchiffrage économique n'est pas fourni (donnée à instruire au cas par cas).</div>`;
+}
+let _faActuelle=null;
+window.afficherFicheAction=function(siteNom,horizonMin){
+  const f=_genererFicheAction(siteNom,horizonMin);
+  if(!f){alert("Site « "+siteNom+" » introuvable dans la liste du territoire (T.sites).");return;}
+  _faActuelle=f;
+  document.getElementById('fa-modal-head').style.background=f.urg.col;
+  document.getElementById('fa-title').textContent=f.site.nom;
+  document.getElementById('fa-sub').textContent=f.territoire+(f.coutumier?' · terre coutumière (décision coutumière)':'');
+  document.getElementById('fa-body').innerHTML=_renderFicheAction(f);
+  document.getElementById('fa-overlay').classList.add('open');
+};
+window.fermerFicheAction=function(){document.getElementById('fa-overlay').classList.remove('open');_faActuelle=null;};
+window.exporterFicheAction=function(){
+  if(!_faActuelle){alert('Aucune fiche-action active.');return;}
+  // Mode synthèse : exporte toutes les fiches concaténées
+  if(_faActuelle.synthese){
+    const sep2='='.repeat(64);
+    const parts=[`SYNTHÈSE TERRITORIALE — ${_faActuelle.territoire}`,sep2,`${_faActuelle.fiches.length} site(s) exposé(s) identifié(s) par croisement avec les bandes de recul prospectives.`,'',`Date : ${new Date().toLocaleDateString('fr-FR')}`,sep2,''];
+    _faActuelle.fiches.forEach((f,i)=>{
+      parts.push(`### SITE ${i+1}/${_faActuelle.fiches.length} : ${f.site.nom}`);
+      parts.push(`Exposition : ${f.horizonMin} ans (${f.urg.lbl}, ${f.urg.sub})`);
+      if(f.site.desc)parts.push(`Description : ${f.site.desc}`);
+      parts.push(`Action prioritaire : ${f.actions[0].titre}`);
+      if(f.coutumier)parts.push(`/!\\ Terre coutumière — préalable coutumier obligatoire.`);
+      parts.push(`Décident : ${f.decideurs.map(d=>d.acteur).join(' · ')}`);
+      parts.push(`Outils actifs : ${f.outilsActifs.slice(0,3).map(o=>o.nom).join(' · ')||'(aucun signalé)'}`);
+      parts.push('');
+    });
+    parts.push(sep2);
+    parts.push(`Aide à la décision indicative. Ne crée aucune obligation.`);
+    parts.push(`Réf. : Cerema · IGEDD-IGA 014917-02A (août 2025).`);
+    parts.push(`Financement : à instruire site par site (non préchiffré).`);
+    const blob=new Blob([parts.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`synthese_territoriale_${TERR_ACTIF}.txt`;a.click();URL.revokeObjectURL(url);
+    return;
+  }
+  const f=_faActuelle;
+  const sep='-'.repeat(64);
+  const lines=[
+    `FICHE-ACTION SITE EXPOSÉ — ${f.territoire}`,
+    '='.repeat(64),'',
+    `Site         : ${f.site.nom}`,
+    `Description  : ${f.site.desc||''}`,
+    `Localisation : ${(+f.site.lat).toFixed(5)}° / ${(+f.site.lng).toFixed(5)}° (WGS84)`,
+    `Référentiel  : ${f.referentiel||''}`,
+    `Statut terr. : ${f.statut_territoire||''}`,
+    `Exposition   : ${f.horizonMin} ans (${f.urg.lbl}, ${f.urg.sub})`,
+    '',
+    `ÉVOLUTION D'EXPOSITION DOCUMENTÉE`,sep,
+    ...f.desc_site.map(d=>`  ${d.horizon} ans : ${d.texte}`),
+    '',
+    `QUI DÉCIDE`,sep,
+    ...f.decideurs.map(d=>`  ${d.acteur}\n     ${d.role}`),
+    f.coutumier?`\n  /!\\ TERRE COUTUMIÈRE — décision relevant des instances coutumières.`:'',
+    '',
+    `SÉQUENCE D'ACTIONS RECOMMANDÉES`,sep,
+    ...f.actions.map((a,i)=>`  ${i+1}. [${a.prio}] ${a.titre}\n     ${a.desc}`),
+    '',
+    `OUTILS MOBILISABLES SUR CE TERRITOIRE`,sep,
+    ...(f.outilsActifs.length?f.outilsActifs.slice(0,6).map(o=>`  - ${o.nom} (${o.categorie})\n     ${o.desc}`):['  (Aucun outil signalé comme actif. Voir tableau de bord territorial.)']),
+    f.outilsConditionnels.length?`\n  + ${f.outilsConditionnels.length} outil(s) conditionnel(s) — voir fiche territoriale.`:'',
+    '','='.repeat(64),
+    `Fiche générée le ${new Date().toLocaleDateString('fr-FR')} par la plateforme.`,
+    `Aide à la décision indicative. Ne crée aucune obligation.`,
+    `Réf. : Cerema · IGEDD-IGA 014917-02A (août 2025) · INSeaPTION.`,
+    `Financement : à instruire au cas par cas (non préchiffré ici).`
+  ];
+  const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`fiche_action_${f.site.nom.replace(/\s+/g,'_')}_${TERR_ACTIF}.txt`;a.click();URL.revokeObjectURL(url);
+};
+// Synthèse territoriale : agrège toutes les fiches-action des sites exposés.
+window.afficherSyntheseTerritoriale=function(){
+  const sitesSort=window._croisementEnjeuxLast||[];
+  if(!sitesSort.length){alert("Lance d'abord la génération des bandes (avec croisement enjeux) pour disposer de la liste des sites exposés.");return;}
+  const fiches=sitesSort.map(([n,h])=>_genererFicheAction(n,h)).filter(Boolean);
+  if(!fiches.length){alert('Aucune fiche générable.');return;}
+  // Construire un body de synthèse listant toutes les fiches en compact
+  const T=TERRITOIRES[TERR_ACTIF]||{};
+  const html=`<div class="fa-section"><div class="fa-k">Synthèse territoriale · sites exposés</div>
+    <div class="fa-h1">${T.nom||TERR_ACTIF}</div>
+    <div class="fa-sub-site">${fiches.length} site(s) exposé(s) identifié(s) par croisement avec les bandes de recul prospectives.</div></div>
+    ${fiches.map(f=>`<div class="fa-section" style="border-left:3px solid ${f.urg.col};padding-left:11px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap">
+        <div><b style="color:var(--navy);font-size:14px">${f.site.nom}</b> <span style="font-size:11px;color:var(--muted)">— ${f.site.desc||''}</span></div>
+        <span style="background:${f.urg.col};color:#fff;font-size:11px;padding:2px 7px;border-radius:4px;font-weight:600">${f.horizonMin} ans · ${f.urg.lbl}</span>
+      </div>
+      <div style="margin-top:6px;font-size:11.5px;line-height:1.55">
+        <div><b>Action prioritaire :</b> ${f.actions[0].titre}${f.coutumier?' <span style="color:#c0392b">(préalable coutumier)</span>':''}</div>
+        <div><b>Décident :</b> ${f.decideurs.map(d=>d.acteur).join(' · ')}</div>
+        <div><b>Outils actifs :</b> ${f.outilsActifs.slice(0,3).map(o=>o.nom).join(' · ')||'<i style="color:var(--muted)">aucun signalé</i>'}</div>
+        <div style="margin-top:3px"><button class="fa-btn-site" onclick="fermerFicheAction();setTimeout(()=>afficherFicheAction('${(f.site.nom||'').replace(/'/g,"\\'")}',${f.horizonMin}),200)">Ouvrir la fiche complète →</button></div>
+      </div></div>`).join('')}
+    <div class="fa-foot">Synthèse pour COPIL territorial. Aide à la décision indicative — ne crée aucune obligation. Le préchiffrage économique n'est pas fourni (à instruire site par site).</div>`;
+  document.getElementById('fa-modal-head').style.background='var(--navy)';
+  document.getElementById('fa-title').textContent='Synthèse territoriale';
+  document.getElementById('fa-sub').textContent=`${fiches.length} site(s) exposé(s) · ${T.nom||TERR_ACTIF}`;
+  document.getElementById('fa-body').innerHTML=html;
+  _faActuelle={synthese:true,fiches,territoire:T.nom||TERR_ACTIF};
+  document.getElementById('fa-overlay').classList.add('open');
+};
 window.genererBandesRecul=function(){
   const cone=document.getElementById('bande-mode-cone')?.checked;
   const multih=document.getElementById('bande-mode-multih')?.checked;
