@@ -722,6 +722,7 @@ svg.house{width:100%;max-width:290px;height:auto}
               <span class="mcb-label" style="margin-left:14px;border-left:1px solid var(--line);padding-left:14px">Veille</span>
               <button class="layer-btn" id="btn-veille-s2" onclick="toggleVeilleS2()" title="Vecteurs d'alerte Sentinel-2 (changements détectés entre deux périodes, à réexploiter en très haute résolution)">🛰 Sentinel-2 <span id="veille-s2-count" style="opacity:.7;margin-left:3px"></span></button>
               <button class="layer-btn" id="btn-seg-deep" onclick="toggleSegDeep()" title="Segmentation profonde Prithvi-EO-2.0 (NASA/IBM) sur Sentinel-2 — raffineur de contrôle, utile en l'absence d'archives THR (Wallis, Polynésie hors sites pilotes)">🧠 Segmentation profonde <span id="seg-deep-count" style="opacity:.7;margin-left:3px"></span></button>
+              <button class="layer-btn" id="btn-masque-cote" onclick="toggleMasqueCote()" title="Bande littorale OSM ±500 m utilisée pour filtrer les extractions hors zone côtière">🛡 Bande littorale</button>
             </div>
             <div class="map-ctrl-bar" id="annot-bar" style="flex-wrap:wrap;gap:6px">
               <span class="mcb-label">Annotation</span>
@@ -1586,6 +1587,8 @@ function initMap(T,key){
   chargerVeilleSentinel(key);
   // Lot B2 — précharge silencieuse de la segmentation profonde (raffineur de contrôle)
   chargerSegmentationDeep(key);
+  // Masque côtier : charge la bande littorale (OSM ±500 m) → filtre tout ce qui est trop loin du trait
+  chargerMasqueCote(key);
 }
 
 /* ============================================================
@@ -1674,6 +1677,91 @@ window.toggleSegDeep=function(){
     }
   }).addTo(mapInstance);
   _segDeepVisible=true;btn.classList.add('active');
+};
+
+/* ============================================================
+   MASQUE CÔTIER — bande littorale OSM ±500 m
+   Filtre par construction toutes les extractions (trait de côte, ouvrages,
+   bandes, SAM…) pour ne garder que ce qui touche la vraie bande littorale.
+   Élimine les artefacts dans l'arrière-pays et en pleine mer. Source : OSM
+   coastline via Overpass, tampon 500 m calculé en projection UTM locale,
+   simplifié à 50 m (≪ tampon → pas de perte sensible).
+============================================================ */
+let _masqueCote=null, _masqueCoteKey=null, _masqueCoteVisible=false, _masqueCoteLayer=null;
+let _masqueCoteActif=true;   // ON par défaut : sécurité géographique
+async function chargerMasqueCote(key){
+  _masqueCote=null;_masqueCoteKey=null;
+  if(_masqueCoteLayer&&mapInstance){mapInstance.removeLayer(_masqueCoteLayer);_masqueCoteLayer=null;}
+  const btn=document.getElementById('btn-masque-cote');if(btn){btn.classList.remove('active');btn.title='Masque côtier en chargement…';}
+  try{
+    const r=await fetch('data/masque_cote/'+key+'.geojson',{cache:'no-cache'});
+    if(!r.ok){if(btn)btn.title='Masque côtier indisponible pour ce territoire.';return;}
+    const d=await r.json();
+    _masqueCote=d;_masqueCoteKey=key;
+    // Bbox global du multipolygone (cache pour test rapide)
+    const env=_envBbox(d.features[0].geometry);_masqueCote._env=env;
+    if(btn){const m=d.metadata||{};btn.title='Masque côtier · OSM coastline ±'+(m.tampon_m||500)+' m\n'+(m.longueur_coastline_km||'?')+' km de côte · '+(m.surface_bande_km2||'?')+' km² de bande\nGénéré : '+(m.date_generation||'?');btn.classList.toggle('active',_masqueCoteVisible);}
+  }catch(e){console.warn('Masque côtier indisponible :',e);}
+}
+// Bbox enveloppante d'une géométrie GeoJSON (Polygon ou MultiPolygon)
+function _envBbox(g){let xmin=Infinity,ymin=Infinity,xmax=-Infinity,ymax=-Infinity;const visit=arr=>{if(typeof arr[0]==='number'){if(arr[0]<xmin)xmin=arr[0];if(arr[0]>xmax)xmax=arr[0];if(arr[1]<ymin)ymin=arr[1];if(arr[1]>ymax)ymax=arr[1];}else for(const a of arr)visit(a);};visit(g.coordinates);return {xmin,ymin,xmax,ymax};}
+// Point-in-MultiPolygon (réutilise _pointInPoly déjà défini, avec sub-rings)
+function _ptDansMasque(lng,lat){
+  if(!_masqueCote||!_masqueCote.features||!_masqueCote.features[0])return true;   // pas de masque → ne filtre pas
+  const env=_masqueCote._env;
+  if(env&&(lng<env.xmin||lng>env.xmax||lat<env.ymin||lat>env.ymax))return false;  // fast reject
+  const g=_masqueCote.features[0].geometry;
+  const polys=g.type==='Polygon'?[g.coordinates]:(g.type==='MultiPolygon'?g.coordinates:[]);
+  for(const poly of polys){
+    const outer=poly[0];if(!_pointInPoly([lng,lat],outer))continue;
+    let inHole=false;for(let h=1;h<poly.length;h++){if(_pointInPoly([lng,lat],poly[h])){inHole=true;break;}}
+    if(!inHole)return true;
+  }
+  return false;
+}
+// Une feature touche-t-elle la bande littorale ? Pour LineString / Polygon : ≥1 point dedans suffit.
+function _featureToucheMasque(f){
+  if(!_masqueCoteActif||!_masqueCote)return true;
+  if(!f||!f.geometry)return true;
+  const g=f.geometry;
+  const ptsLng=(coords)=>{if(typeof coords[0]==='number')return [coords];if(Array.isArray(coords[0])&&typeof coords[0][0]==='number')return coords;const out=[];for(const c of coords)out.push(...ptsLng(c));return out;};
+  const pts=ptsLng(g.coordinates);
+  // Échantillonnage : tester 1 point sur 4 si très long (perf), avec premier+dernier toujours.
+  const step=Math.max(1,Math.floor(pts.length/40));
+  for(let i=0;i<pts.length;i+=step)if(_ptDansMasque(pts[i][0],pts[i][1]))return true;
+  if(pts.length>1&&_ptDansMasque(pts[pts.length-1][0],pts[pts.length-1][1]))return true;
+  return false;
+}
+// Filtre une FeatureCollection ou tableau de features : ne garde que ce qui touche le masque.
+// Marque les exclus avec _hors_bande=true (pour debug/affichage gris si on veut).
+function filtrerParMasqueCote(feats){
+  if(!_masqueCoteActif||!_masqueCote)return {kept:feats,dropped:0};
+  const arr=Array.isArray(feats)?feats:(feats&&feats.features)||[];
+  const kept=[];let dropped=0;
+  for(const f of arr){
+    // Toujours garder les features de base (trait de côte de référence, bande de recul intentionnelle)
+    if(f&&f.properties&&(f.properties._base||/bande de recul|veille|alerte/i.test(f.properties.type||''))){kept.push(f);continue;}
+    if(_featureToucheMasque(f))kept.push(f);
+    else dropped++;
+  }
+  return {kept,dropped};
+}
+window.toggleMasqueCote=function(){
+  if(!mapInstance||!window.L){alert('Carte non initialisée.');return;}
+  const btn=document.getElementById('btn-masque-cote');
+  if(_masqueCoteVisible){if(_masqueCoteLayer)mapInstance.removeLayer(_masqueCoteLayer);_masqueCoteVisible=false;btn.classList.remove('active');return;}
+  if(!_masqueCote){alert('Aucun masque côtier pour ce territoire (data/masque_cote/'+TERR_ACTIF+'.geojson).');return;}
+  const L=window.L;
+  _masqueCoteLayer=L.geoJSON(_masqueCote,{style:{color:'#1a8a4a',weight:1,opacity:.6,fillColor:'#1a8a4a',fillOpacity:.08,dashArray:'2,4'}}).addTo(mapInstance);
+  _masqueCoteVisible=true;btn.classList.add('active');
+};
+window.toggleMasqueCoteActif=function(){
+  _masqueCoteActif=!_masqueCoteActif;
+  const tog=document.getElementById('toggle-masque-actif');if(tog)tog.checked=_masqueCoteActif;
+  // Re-filtrer immédiatement la couche affichée
+  if(typeof _lastSigGeojson!=='undefined'&&_lastSigGeojson&&typeof _lastSigBbox!=='undefined'&&_lastSigBbox){
+    if(typeof afficherSig==='function')afficherSig(_lastSigGeojson,_lastSigBbox,_lastSigMeta);
+  }
 };
 
 /* ============================================================
@@ -3257,6 +3345,7 @@ function construireImageModule(){
         <label id="sig-sens-label">Sensibilité de détection (mer/terre)</label>
         <input type="range" id="sig-sens" min="0" max="100" value="50" style="width:100%">
         <label style="display:flex;align-items:center;gap:7px;margin-top:8px;font-family:var(--sans);text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink);cursor:pointer"><input type="checkbox" id="sig-ai-check" style="width:auto;accent-color:var(--teal)"> Contrôle IA (2ᵉ passe) — écarte les faux positifs (forêt, rivière, ombre…)</label>
+        <label style="display:flex;align-items:center;gap:7px;margin-top:6px;font-family:var(--sans);text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink);cursor:pointer" title="Filtre géographique : ne conserve que les extractions touchant la bande littorale OSM ±500 m. Sécurité par construction contre les artefacts dans l'arrière-pays ou en pleine mer."><input type="checkbox" id="toggle-masque-actif" checked onchange="toggleMasqueCoteActif()" style="width:auto;accent-color:#1a8a4a"> 🛡 Filtrer hors bande littorale (OSM ±500 m, recommandé)</label>
         <label style="margin-top:8px">Couverture « tout le territoire » (grille autour de chaque site)</label>
         <select id="sig-grille" style="width:100%;font-size:12.5px;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)">
           <option value="1">1 tuile / site (rapide)</option>
@@ -3676,6 +3765,7 @@ function afficherSig(gj,bbox,meta){
   const irBody=document.getElementById('ir-body');
   const clampPos=p=>[Math.min(Math.max(p[0],bbox.w),bbox.e),Math.min(Math.max(p[1],bbox.s),bbox.n)];
   const clampCoords=c=>(Array.isArray(c[0])?c.map(clampCoords):clampPos(c));
+  let _dropMasq=0;
   gj.features=(gj.features||[]).map(f=>{
     if(!f||!f.geometry)return null;
     const ng=normalizeGeometry(f.geometry);
@@ -3685,8 +3775,12 @@ function afficherSig(gj,bbox,meta){
     if((f.properties&&f.properties.classe_evolution==='bande_recul')||ng.type==='Polygon'){/* skip clamp */}
     else ng.coordinates=clampCoords(ng.coordinates);
     const p=f.properties||{};delete p.etat;
-    return {type:'Feature',geometry:ng,properties:p};
+    const out={type:'Feature',geometry:ng,properties:p};
+    // Masque côtier : si actif, écarter ce qui ne touche pas la bande littorale OSM ±500 m.
+    if(typeof _masqueCoteActif!=='undefined'&&_masqueCoteActif&&typeof _featureToucheMasque==='function'&&!_featureToucheMasque(out)){_dropMasq++;return null;}
+    return out;
   }).filter(Boolean);
+  if(_dropMasq>0&&irBody)console.log('[masque côtier] '+_dropMasq+' feature(s) hors bande littorale masquée(s) à l\'affichage.');
   delete gj.crs;
   _lastSigGeojson=gj;_lastSigMeta=meta||{};_lastSigBbox=bbox;
   if(!gj.features.length){
@@ -5134,7 +5228,14 @@ async function photoDateIGN(b){
   }catch(e){return null;}
 }
 function stampPhotoDate(features,pd){if(!pd)return;features.forEach(f=>{f.properties=f.properties||{};if(pd.date_photo)f.properties.date_photo=pd.date_photo;if(pd.millesime)f.properties.millesime=pd.millesime;if(pd.resolution_cm)f.properties.resolution_cm=pd.resolution_cm;});}
-function addToCumul(features,meta){const d=new Date().toLocaleDateString('fr-FR');(features||[]).forEach(f=>{f.properties=f.properties||{};f.properties.site=(meta&&meta.site)||'';f.properties.date_extraction=d;_sigCumul.features.push(f);});refreshCumulBar();}
+function addToCumul(features,meta){const d=new Date().toLocaleDateString('fr-FR');
+  // Filtre par bande littorale (OSM ±500 m) si actif. Évite de polluer le cumul avec des
+  // artefacts dans l'arrière-pays ou en pleine mer.
+  let arr=features||[];let dropped=0;
+  if(typeof _masqueCoteActif!=='undefined'&&_masqueCoteActif&&typeof filtrerParMasqueCote==='function'){const r=filtrerParMasqueCote(arr);arr=r.kept;dropped=r.dropped;}
+  arr.forEach(f=>{f.properties=f.properties||{};f.properties.site=(meta&&meta.site)||'';f.properties.date_extraction=d;_sigCumul.features.push(f);});
+  if(dropped>0)console.log('[masque côtier] '+dropped+' feature(s) hors bande littorale écartée(s) du cumul.');
+  refreshCumulBar();}
 function refreshCumulBar(){const bar=document.getElementById('sig-cumul-bar');if(!bar)return;const n=_sigCumul.features.length;bar.style.display=n?'block':'none';const c=document.getElementById('sig-cumul-count');if(c)c.textContent='Couche cumulée : '+n+' entité'+(n>1?'s':'');}
 
 /* ============================================================
