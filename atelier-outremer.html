@@ -639,7 +639,6 @@ svg.house{width:100%;max-width:290px;height:auto}
       <span class="sb-label">Navigation</span>
       <a href="#hero-terr">Le territoire</a>
       <a href="#sec-carte">Carte & événements</a>
-      <a href="#sec-groupes">Domaines de compétence</a>
       <a href="#sec-diag">Diagnostic</a>
       <a href="#sec-outils">Outils</a>
       <a href="#sec-passe">Voix du passé</a>
@@ -722,12 +721,6 @@ svg.house{width:100%;max-width:290px;height:auto}
     </section>
 
     <!-- GROUPES -->
-    <section class="ps" id="sec-groupes">
-      <div class="sec-hd"><span class="sec-num">02</span><h2 class="sec-title">Les cinq domaines de compétence</h2></div>
-      <div class="sec-intro">Cinq domaines d'analyse, identiques d'un territoire à l'autre : aménagement, environnement et risques, habitat, foncier, gouvernance.</div>
-      <div id="grp-cards"></div>
-    </section>
-
     <!-- DIAGNOSTIC -->
     <section class="ps" id="sec-diag">
       <div class="sec-hd"><span class="sec-num">03</span><h2 class="sec-title">Diagnostic territorial</h2></div>
@@ -1506,7 +1499,7 @@ function chargerTerritoire(key){
   // Initialiser la carte
   setTimeout(()=>initMap(T,key),100);
   construireEventCards(key);
-  construireGroupes(T);construireDiag(T);construireFiches(T);construireVoixPasse(T);construireCas(T);construireCas5(T);setTimeout(()=>construireImageModule(),50);construireCvGrid(T);
+  construireDiag(T);construireFiches(T);construireVoixPasse(T);construireCas(T);construireCas5(T);setTimeout(()=>construireImageModule(),50);construireCvGrid(T);
   setTimeout(()=>initConsent(),500);
 }
 
