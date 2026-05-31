@@ -4047,17 +4047,56 @@ function openMask(mask,w,h,k){return dilate(erodeMask(mask,w,h,k),w,h,k);} // ou
 //  · pf (Atolls + îles hautes à barrière récifale) : lumMin=0 (récifs et lagons à conserver)
 // Modifier ces valeurs nécessite de re-tourner le banc (/tmp/bench_lum2.js).
 const _PARAMS_DETECTION_TERR = {
-  spm:      {lumMin: 0,  noyauMer: 2, noyauTerre: 1, vegDelta: 8, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005},
-  stmartin: {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005},
-  stbarth:  {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.003, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005},
-  nc:       {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.03, seuilTerreBordFrac: 0.02},
-  wallis:   {lumMin: 80, noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.003, lagonMinFrac: 0.03, seuilTerreBordFrac: 0.02},
-  pf:       {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.05},
+  spm:      {lumMin: 0,  noyauMer: 2, noyauTerre: 1, vegDelta: 8, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005, varMin: 0},
+  stmartin: {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005, varMin: 0},
+  stbarth:  {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.003, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005, varMin: 0},
+  nc:       {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.03, seuilTerreBordFrac: 0.02,   varMin: 0},
+  wallis:   {lumMin: 80, noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.003, lagonMinFrac: 0.03, seuilTerreBordFrac: 0.02,   varMin: 0},
+  // PF : filtre variance activé pour éliminer les barrières récifales (turquoise lisse) sans toucher
+  // à la terre tahitienne (urbain texturé). Banc /tmp/test_var_filter : Pirae 317 → 14 m d'erreur.
+  pf:       {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.05,   varMin: 500},
 };
-const _PARAMS_DETECTION_DEFAUT = {lumMin: 0, noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005};
+const _PARAMS_DETECTION_DEFAUT = {lumMin: 0, noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005, varMin: 0};
 function _paramsDetectionTerr(){
   const k = (typeof TERR_ACTIF === 'string' && TERR_ACTIF) ? TERR_ACTIF : null;
   return _PARAMS_DETECTION_TERR[k] || _PARAMS_DETECTION_DEFAUT;
+}
+// Image de variance de luminance par fenêtre carrée (radius px), calculée en O(W·H) via sommes
+// intégrales — sert au filtrage récif (lisse) vs terre (texturée) sur les territoires à barrière
+// récifale. Lent à pleine résolution (1024² ≈ 100 ms) mais appelé uniquement si varMin > 0.
+function _varianceImg(im, radius){
+  const {data, w, h} = im, N = w*h;
+  const lum = new Float64Array(N);
+  for(let i=0,p=0;p<N;p++,i+=4) lum[p] = (data[i]+data[i+1]+data[i+2])/3;
+  const ii = new Float64Array(N), iiSq = new Float64Array(N);
+  for(let y=0;y<h;y++){
+    let row=0, rowSq=0;
+    for(let x=0;x<w;x++){
+      const p = y*w+x;
+      row += lum[p]; rowSq += lum[p]*lum[p];
+      ii[p] = row + (y>0 ? ii[p-w] : 0);
+      iiSq[p] = rowSq + (y>0 ? iiSq[p-w] : 0);
+    }
+  }
+  function rect(x1,y1,x2,y2,arr){
+    x1=Math.max(0,x1); y1=Math.max(0,y1);
+    x2=Math.min(w-1,x2); y2=Math.min(h-1,y2);
+    let s = arr[y2*w+x2];
+    if(x1>0) s -= arr[y2*w+x1-1];
+    if(y1>0) s -= arr[(y1-1)*w+x2];
+    if(x1>0&&y1>0) s += arr[(y1-1)*w+x1-1];
+    return s;
+  }
+  const out = new Float32Array(N);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const x1=x-radius, x2=x+radius, y1=y-radius, y2=y+radius;
+    const nx = Math.min(w-1,x2)-Math.max(0,x1)+1, ny = Math.min(h-1,y2)-Math.max(0,y1)+1;
+    const k = nx*ny;
+    const s = rect(x1,y1,x2,y2,ii), sq = rect(x1,y1,x2,y2,iiSq);
+    const m = s/k;
+    out[y*w+x] = sq/k - m*m;
+  }
+  return out;
 }
 // Algorithme robuste mer/terre (banc /tmp/bench7 : 95→58 m d'erreur moyenne brute avant filtre OSM).
 // Concept "noyau" : une vraie mer contient des pixels à ≥3 px de toute terre (sinon = ruelle urbaine
@@ -4138,12 +4177,30 @@ function _affinerMer(mask, w, h, opts){
   // (= terre principale) + les petites îles compactes. Les autres composantes de bord deviennent eau.
   const seuilTerreBordFrac = opts.seuilTerreBordFrac != null ? opts.seuilTerreBordFrac : 0.0005;
   const seuilTerreBordPx = Math.max(80, seuilTerreBordFrac * n);
+  // Filtre VARIANCE : une vraie terre (urbain, bâti, parcelles agricoles) a une variance de luminance
+  // locale élevée ; un récif corallien (turquoise lisse vu sous une fine couche d'eau) a une variance
+  // faible. Pour la Polynésie en particulier, ce critère sépare la terre côtière de la barrière récifale.
+  // Désactivé par défaut (varMin=0) car la mangrove/forêt humide peut être à faible variance.
+  const varMin = opts.varMin || 0;
+  let varMap = null;
+  if(varMin > 0 && opts.im) varMap = _varianceImg(opts.im, opts.varRadius || 4);
+  function _varianceComp(labelId){
+    if(!varMap) return Infinity;
+    let s=0, k=0;
+    for(let p=0;p<varMap.length;p++){
+      if(labI[p] === labelId){ s += varMap[p]; k++; }
+    }
+    return k ? s/k : 0;
+  }
   const terreLabs = new Set();
   for(let l=1;l<=curI;l++){
     const c = compI[l];
     if(!c) continue;
     // Terre = touche le bord AVEC une aire significative, OU contient un noyau ET assez grande pour être une île
-    if((c.border && c.area >= seuilTerreBordPx) || (aNoyauT.has(l) && c.area >= seuilIle)) terreLabs.add(l);
+    if(!((c.border && c.area >= seuilTerreBordPx) || (aNoyauT.has(l) && c.area >= seuilIle))) continue;
+    // Filtre variance (PF) : rejette les composantes à variance lisse = récifs
+    if(varMin > 0 && _varianceComp(l) < varMin) continue;
+    terreLabs.add(l);
   }
   const out = new Uint8Array(n);
   for(let p=0;p<n;p++){
@@ -4167,7 +4224,7 @@ function _waterMaskNDWI(ir,sens,raw){const {data,w,h}=ir,n=w*h;const nd=nodataMa
     const lum=(data[i]+data[i+1]+data[i+2])/3;
     m[p]=(wi[p]>thr&&!nd[p]&&lum>=P.lumMin)?1:0;
   }
-  return _affinerMer(openMask(majority(m,w,h),w,h,1), w, h, Object.assign({raw: !!raw}, P));}
+  return _affinerMer(openMask(majority(m,w,h),w,h,1), w, h, Object.assign({raw: !!raw, im: ir}, P));}
 // Masque d'eau : IRC NDWI (PIR) si disponible, sinon indice cyan RGB avec garde végétation.
 // Les paramètres sont adaptés au territoire actif (mer foncée Atlantique vs lagons turquoise Pacifique).
 function computeWaterMask(im,sens,imIRC,raw){
@@ -4183,7 +4240,7 @@ function computeWaterMask(im,sens,imIRC,raw){
     const lum=(data[i]+data[i+1]+data[i+2])/3;
     m[p]=(wi[p]>thr&&!nd[p]&&!veg[p]&&lum>=P.lumMin)?1:0;
   }
-  return _affinerMer(openMask(majority(m,w,h),w,h,1), w, h, Object.assign({raw: !!raw}, P));}
+  return _affinerMer(openMask(majority(m,w,h),w,h,1), w, h, Object.assign({raw: !!raw, im: im}, P));}
 // Bouche les composantes NON-eau entièrement enclavées dans l'eau et de petite taille (bateaux, herbiers,
 // écume) → évite les contours/îlots parasites dans le plan d'eau. Les grandes îles réelles sont conservées.
 function fillWaterHoles(m,w,h,maxFrac){const n=w*h,reached=new Uint8Array(n),st=[];
