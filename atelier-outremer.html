@@ -2883,6 +2883,10 @@ function construireImageModule(){
               <select id="bande-horizon" style="width:100%;font-size:11.5px;padding:5px 7px;border:1px solid var(--line);border-radius:5px;background:#fff"><option value="30">30 ans</option><option value="50" selected>50 ans</option><option value="100">100 ans</option></select></div>
             <button onclick="genererBandesRecul()" style="background:#B65A3C;color:#fff;border:none;border-radius:5px;padding:7px 11px;font-size:11px;font-weight:600;cursor:pointer">Générer</button>
           </div>
+          <div style="display:flex;gap:14px;margin-top:6px;font-size:10.5px;color:var(--ink);flex-wrap:wrap">
+            <label style="cursor:pointer;display:flex;align-items:center;gap:4px"><input type="checkbox" id="bande-mode-cone" style="margin:0;accent-color:#B65A3C">Cône d'incertitude (P10 / médian / P90)</label>
+            <label style="cursor:pointer;display:flex;align-items:center;gap:4px"><input type="checkbox" id="bande-mode-multih" style="margin:0;accent-color:#B65A3C">Multi-horizons (30 / 50 / 100)</label>
+          </div>
           <div id="bande-info" style="margin-top:5px;font-family:var(--mono);font-size:9px;color:var(--muted);line-height:1.5">Cliquez « Calculer les taux disponibles » pour proposer un taux mesuré depuis l'extraction « Évolution » de votre territoire.</div>
         </div>
       </div>
@@ -3017,17 +3021,40 @@ function esriOrthoUrl(b){return `https://services.arcgisonline.com/ArcGIS/rest/s
 function ircOrthoUrl(b){return `https://data.geopf.fr/wms-r/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=ORTHOIMAGERY.ORTHOPHOTOS.IRC&STYLES=&CRS=CRS:84&BBOX=${b.w.toFixed(6)},${b.s.toFixed(6)},${b.e.toFixed(6)},${b.n.toFixed(6)}&WIDTH=1280&HEIGHT=1280&FORMAT=image/jpeg`;}
 // Sentinel-2 NDWI (service Esri public, sans clé) : indice d'eau (eau = clair). 10 m → grossier, mais en
 // UNION il ne fait qu'ajouter de l'eau (envelope). Sert de source complémentaire robuste (multi-temporel).
-function _chargerSourceImg(lat,lng,nom,src){
+// 2b — Test heuristique de validité d'une dalle : si la variance pixel est trop basse,
+// l'image est uniforme (dalle vide IGN hors couverture, ou nuage couvrant). Échantillonnage
+// 64×64 → coût négligeable. Réf. plan A6 (dégradés assumés, jamais de proxy silencieux).
+async function _imageEstValide(url){
+  try{
+    const img=await loadImageURL(url);
+    const c=document.createElement('canvas');c.width=64;c.height=64;
+    const ctx=c.getContext('2d');ctx.drawImage(img,0,0,64,64);
+    const d=ctx.getImageData(0,0,64,64).data;
+    let s=0,s2=0,n=0;
+    for(let i=0;i<d.length;i+=16){const v=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];s+=v;s2+=v*v;n++;}
+    const m=s/n,var_=s2/n-m*m;
+    return var_>40;   // variance > 40 = image avec contenu (sinon = dalle vide ~uniforme)
+  }catch(e){return false;}
+}
+async function _chargerSourceImg(lat,lng,nom,src){
   lat=parseFloat(lat);lng=parseFloat(lng);window._lastSite={lat,lng,nom,src};
   const sizeM=+(document.getElementById('sig-emprise')?.value||800);
   const b=bboxAutour(lat,lng,sizeM);
-  const url=(src==='esri')?esriOrthoUrl(b):ignOrthoUrl(b);
+  const urlIGN=ignOrthoUrl(b),urlEsri=esriOrthoUrl(b);
+  let url,srcEff=src;
+  // 2b — Auto-fallback : sur les territoires où l'IGN n'a aucune couverture (PF, NC, Wallis)
+  // ou si la dalle renvoyée par IGN est vide, on bascule silencieusement sur Esri. L'utilisateur
+  // voit dans le descripteur de source quelle imagerie a réellement été utilisée.
+  const territoireSansIGN=['pf','nc','wallis'].includes(TERR_ACTIF);
+  if(src==='ign'){
+    if(territoireSansIGN){srcEff='esri';}
+    else{const valide=await _imageEstValide(urlIGN);if(!valide)srcEff='esri';}
+  }
+  url=(srcEff==='esri')?urlEsri:urlIGN;
   const urlInput=document.getElementById('img-url-1');if(urlInput)urlInput.value=url;
-  // A5.3 — la licence de la source effectivement utilisée est ajoutée au descriptif (figurera
-  // dans la métadonnée des exports). Ce que la licence de la source de référence du territoire
-  // dit (ex. CC BY-NC-SA pour Géorep NC) est porté par le bandeau de prérogatives (hero).
-  const _lic=(_LICENCES_IMG[src==='esri'?'esri':'ign']||{}).licence||'';
-  const srcInput=document.getElementById('img-source');if(srcInput)srcInput.value=(src==='esri'?'Imagerie satellite Esri World Imagery':'Orthophoto IGN Géoplateforme (ORTHOIMAGERY.ORTHOPHOTOS)')+' · emprise '+sizeM+' m'+(_lic?' · licence : '+_lic:'');
+  const _lic=(_LICENCES_IMG[srcEff==='esri'?'esri':'ign']||{}).licence||'';
+  const _basc=(src==='ign'&&srcEff==='esri')?' · bascule auto IGN→Esri (IGN sans couverture)':'';
+  const srcInput=document.getElementById('img-source');if(srcInput)srcInput.value=(srcEff==='esri'?'Imagerie satellite Esri World Imagery':'Orthophoto IGN Géoplateforme (ORTHOIMAGERY.ORTHOPHOTOS)')+' · emprise '+sizeM+' m'+(_lic?' · licence : '+_lic:'')+_basc;
   const siteInput=document.getElementById('img-site');if(siteInput)siteInput.value=nom;
   imgUrl1=url;imgFile1=null;imgUrlBbox={w:b.w,e:b.e,s:b.s,n:b.n};
   const r=IMG_ROUTINES.find(r=>r.id===imgRoutineActive);
@@ -4174,7 +4201,14 @@ function _saveSecteurs(){try{localStorage.setItem('ouvr_secteurs',JSON.stringify
 function _saveTrait(){try{localStorage.setItem('trait_corr',JSON.stringify(_traitCorrections));}catch(e){}}
 function _hint(t){const el=document.getElementById('annot-hint');if(el)el.textContent=t||'';}
 function _styleSig(p){p=p||{};
-  if(p.classe_evolution==='bande_recul')return {color:'#B65A3C',weight:1.5,opacity:.9,fillColor:'#B65A3C',fillOpacity:.20,dashArray:'4,3'};
+  if(p.classe_evolution==='bande_recul'){
+    // Couleur par horizon, opacité par taux_label (P90=plus pâle, P10=plus dense)
+    const h=+(p.horizon_ans||50);
+    const col=h<=30?'#c0392b':(h<=50?'#e67e22':'#8e6a3e');   // 30 ans = rouge, 50 = orange, 100+ = brun
+    const tl=p.taux_label||'';
+    const op=/P10/.test(tl)?0.32:(/P90|prudent/.test(tl)?0.12:0.20);
+    return {color:col,weight:1.4,opacity:.85,fillColor:col,fillOpacity:op,dashArray:'4,3'};
+  }
   if(p._label===0)return {color:'#9aa0a6',weight:2,opacity:.55,dashArray:'2,6'};   // invalidé → grisé
   if(p.classe_rivage==='sable')return {color:'#e6b800',weight:3,opacity:.95};        // plage sable/eau (jaune sable)
   if(p.classe_rivage==='bati')return {color:'#d23b3b',weight:3,opacity:.95};         // bâti/enrochement au contact mer (rouge)
@@ -4609,7 +4643,7 @@ function _pxDirToMetreDir(dxPx,dyPx,bbox,w,h){
 // Génère, pour chaque trait de côte récent du cumul (ou du dernier extrait), un polygone de
 // recul = bande landward de largeur (tauxMperAn × horizonAns). La direction landward est déduite
 // du masque d'eau recalculé depuis _lastSigImage : opposée à la direction où l'eau est majoritaire.
-function _genererBandeRecul(tauxMperAn,horizonAns){
+function _genererBandeRecul(tauxMperAn,horizonAns,opts){
   if(!_lastSigImage||!_lastSigBbox){alert("Aucune image en mémoire — recharge l'image analysée d'abord.");return null;}
   const water=computeWaterMask(_lastSigImage,_lastSigSens||50,_lastSigIRC);
   const w=_lastSigImage.w,h=_lastSigImage.h,b=_lastSigBbox;
@@ -4649,22 +4683,66 @@ function _genererBandeRecul(tauxMperAn,horizonAns){
     // Construire un polygone bande : trait original + offset (en sens inverse) + fermeture
     const ring=coords.slice().concat(offset.slice().reverse()).concat([coords[0]]);
     const lenInit=Math.round(geoLenM(coords,b));
-    out.push({type:'Feature',geometry:{type:'Polygon',coordinates:[ring]},properties:{type:'bande de recul prospective ('+horizonAns+' ans)',classe_evolution:'bande_recul',taux_m_an:+tauxMperAn.toFixed(2),horizon_ans:horizonAns,distance_m:+distM.toFixed(1),methode:'projection landward du trait de côte selon taux moyen LRR (réf. méth. 7.6)',certitude:'projection',longueur_trait_m:lenInit,statut:'donnée indicative, ne crée aucune obligation'}});
+    const tauxLabel=(opts&&opts.taux_label)?opts.taux_label:'taux';
+    out.push({type:'Feature',geometry:{type:'Polygon',coordinates:[ring]},properties:{type:'bande de recul prospective ('+horizonAns+' ans, '+tauxLabel+')',classe_evolution:'bande_recul',taux_m_an:+tauxMperAn.toFixed(2),taux_label:tauxLabel,horizon_ans:horizonAns,distance_m:+distM.toFixed(1),methode:'projection landward du trait de côte selon taux moyen LRR (réf. méth. 7.6)',certitude:'projection',longueur_trait_m:lenInit,statut:'donnée indicative, ne crée aucune obligation'}});
   }
   return out;
 }
+// Point-in-polygon (ray casting) en WGS84 — approximation suffisante pour la taille des bandes
+function _pointInPoly(pt,ring){let inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];const intersect=((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi+1e-12)+xi);if(intersect)inside=!inside;}return inside;}
+// 1d — Croisement enjeux : compte les sites de T.sites et les événements historiques qui tombent dans
+// les bandes de recul, par horizon et par taux. Affichage dans bande-info.
+function _croisementEnjeux(bandes){
+  const T=TERRITOIRES[TERR_ACTIF]||{};
+  const sites=(T.sites||[]).filter(s=>s.lat&&s.lng).map(s=>({nom:s.nom,lat:+s.lat,lng:+s.lng}));
+  const events=((typeof EVENTS_DOMMAGEABLES!=='undefined'&&EVENTS_DOMMAGEABLES[TERR_ACTIF])||[]).filter(e=>e.lat&&e.lng).map(e=>({nom:e.titre,lat:+e.lat,lng:+e.lng}));
+  // Par (horizon, taux_label) : combien de sites/events dans l'UNION des bandes correspondantes
+  const buckets={};
+  for(const f of bandes){
+    if(!f.geometry||f.geometry.type!=='Polygon')continue;
+    const p=f.properties||{};const h=p.horizon_ans,tl=p.taux_label||'taux';
+    const key=h+'·'+tl;if(!buckets[key])buckets[key]={horizon:h,taux_label:tl,distance_m:p.distance_m,sites:new Set(),events:new Set()};
+    const ring=f.geometry.coordinates[0];
+    for(const s of sites)if(_pointInPoly([s.lng,s.lat],ring))buckets[key].sites.add(s.nom);
+    for(const e of events)if(_pointInPoly([e.lng,e.lat],ring))buckets[key].events.add(e.nom);
+  }
+  const arr=Object.values(buckets).sort((a,b)=>(a.horizon-b.horizon)||(a.distance_m-b.distance_m));
+  if(!arr.length)return '';
+  const rows=arr.map(b=>`<tr><td style="padding:2px 6px;font-weight:600">${b.horizon} ans</td><td style="padding:2px 6px;color:var(--muted)">${b.taux_label}</td><td style="padding:2px 6px;text-align:right">${b.distance_m.toFixed(0)} m</td><td style="padding:2px 6px;text-align:right;color:#c0392b;font-weight:600">${b.sites.size}</td><td style="padding:2px 6px;text-align:right;color:#B07E1B;font-weight:600">${b.events.size}</td></tr>`).join('');
+  // Liste des sites les plus exposés (par horizon minimal)
+  const sitesParHor={};for(const b of arr){for(const s of b.sites){if(!(s in sitesParHor)||sitesParHor[s]>b.horizon)sitesParHor[s]=b.horizon;}}
+  const sitesSort=Object.entries(sitesParHor).sort(([,a],[,b])=>a-b);
+  const dossier=sitesSort.length?'<div style="margin-top:6px;padding-top:5px;border-top:1px dotted var(--line);font-size:10.5px"><b>Sites exposés (horizon minimal) :</b> '+sitesSort.slice(0,8).map(([n,h])=>`<span style="background:#FFF3E0;padding:1px 5px;border-radius:3px;margin:1px;display:inline-block">${n} (${h} ans)</span>`).join(' ')+(sitesSort.length>8?` <span style="color:var(--muted)">+ ${sitesSort.length-8} autre(s)</span>`:'')+'</div>':'';
+  return `<div style="margin-top:6px"><b>Croisement enjeux × bandes</b><table style="width:100%;font-size:10.5px;border-collapse:collapse;margin-top:3px"><thead><tr style="border-bottom:1px solid var(--line);color:var(--muted);font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em"><th style="padding:2px 6px;text-align:left">Horizon</th><th style="padding:2px 6px;text-align:left">Taux</th><th style="padding:2px 6px;text-align:right">Distance</th><th style="padding:2px 6px;text-align:right">Sites</th><th style="padding:2px 6px;text-align:right">Événements</th></tr></thead><tbody>${rows}</tbody></table>${dossier}</div>`;
+}
 window.genererBandesRecul=function(){
+  const cone=document.getElementById('bande-mode-cone')?.checked;
+  const multih=document.getElementById('bande-mode-multih')?.checked;
   const sel=document.getElementById('bande-taux');
-  const taux=sel?+sel.value:0;
-  const horizon=+(document.getElementById('bande-horizon')?.value||50);
-  if(!taux||taux<=0){alert('Taux moyen invalide. Lancez d\'abord l\'extraction « Évolution » pour calculer un taux, ou saisissez une valeur > 0.');return;}
-  const feats=_genererBandeRecul(taux,horizon);
-  if(!feats||!feats.length)return;
-  addToCumul(feats,{site:(_lastSigMeta&&_lastSigMeta.site)||TERR_ACTIF||'',horizon_ans:horizon,taux_m_an:taux});
-  // Afficher la couche d'extraction courante mise à jour
-  if(_lastSigGeojson){_lastSigGeojson.features=(_lastSigGeojson.features||[]).concat(feats);
+  const tauxBase=sel?+sel.value:0;
+  const horizonBase=+(document.getElementById('bande-horizon')?.value||50);
+  if(!tauxBase||tauxBase<=0){alert('Taux moyen invalide. Lancez d\'abord l\'extraction « Évolution » pour calculer un taux, ou saisissez une valeur > 0.');return;}
+  // 1a — cône d'incertitude (P10 / médian / P90) issus de l'évolution mesurée
+  let tauxList=[{label:'taux',value:tauxBase}];
+  if(cone){
+    const s=_calculerTauxEvolution().erosion;
+    if(!s||s.n<2){alert("Cône d'incertitude impossible : il faut au moins 2 transects d'érosion mesurés. Lancez d'abord l'extraction « Évolution ».");return;}
+    tauxList=[{label:'P10 (optimiste)',value:s.p10},{label:'Médian',value:s.median},{label:'P90 (prudent)',value:s.p90}];
+  }
+  // 1b — multi-horizons (30 / 50 / 100 ans simultanés)
+  const horizonList=multih?[30,50,100]:[horizonBase];
+  // Produit cartésien
+  const allFeats=[];
+  for(const h of horizonList){for(const t of tauxList){const f=_genererBandeRecul(t.value,h,{taux_label:t.label});if(f)allFeats.push(...f);}}
+  if(!allFeats.length){alert('Aucune bande générée.');return;}
+  // Ordre de dessin : plus grande distance d'abord (en arrière-plan) → la plus petite par dessus
+  allFeats.sort((a,b)=>b.properties.distance_m-a.properties.distance_m);
+  addToCumul(allFeats,{site:(_lastSigMeta&&_lastSigMeta.site)||TERR_ACTIF||'',mode:(cone?'cone':'simple')+(multih?'·multi-h':'')});
+  if(_lastSigGeojson){_lastSigGeojson.features=(_lastSigGeojson.features||[]).concat(allFeats);
     if(_lastSigBbox)afficherSig(_lastSigGeojson,_lastSigBbox,_lastSigMeta);}
-  alert(feats.length+' bande(s) de recul générée(s) à l\'horizon '+horizon+' ans (taux '+taux.toFixed(2)+' m/an, distance '+(taux*horizon).toFixed(0)+' m).\nAjoutée(s) à la couche cumulée — exportable en GeoJSON/GeoPackage.');
+  // 1d — croisement enjeux affiché sous le bandeau
+  const info=document.getElementById('bande-info');
+  if(info)info.innerHTML='<b>'+allFeats.length+' bande(s) générée(s)</b> · '+(cone?'cône P10/médian/P90 ':'taux unique ')+'× '+horizonList.length+' horizon(s).'+_croisementEnjeux(allFeats);
 };
 window.proposerTauxRecul=function(){
   const s=_calculerTauxEvolution();
