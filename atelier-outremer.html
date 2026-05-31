@@ -734,7 +734,6 @@ svg.house{width:100%;max-width:290px;height:auto}
               <span class="mcb-label" style="margin-left:14px;border-left:1px solid var(--line);padding-left:14px">Veille</span>
               <button class="layer-btn" id="btn-veille-s2" onclick="toggleVeilleS2()" title="Vecteurs d'alerte Sentinel-2 (changements détectés entre deux périodes, à réexploiter en très haute résolution)">🛰 Sentinel-2 <span id="veille-s2-count" style="opacity:.7;margin-left:3px"></span></button>
               <button class="layer-btn" id="btn-seg-deep" onclick="toggleSegDeep()" title="Segmentation profonde Prithvi-EO-2.0 (NASA/IBM) sur Sentinel-2 — raffineur de contrôle, utile en l'absence d'archives THR (Wallis, Polynésie hors sites pilotes)">🧠 Segmentation profonde <span id="seg-deep-count" style="opacity:.7;margin-left:3px"></span></button>
-              <button class="layer-btn" id="btn-masque-cote" onclick="toggleMasqueCote()" title="Bande littorale OSM ±500 m utilisée pour filtrer les extractions hors zone côtière">🛡 Bande littorale</button>
             </div>
             <div class="map-ctrl-bar" id="annot-bar" style="flex-wrap:wrap;gap:6px">
               <span class="mcb-label">Annotation</span>
@@ -1698,23 +1697,21 @@ window.toggleSegDeep=function(){
    · reliage des traits voisins : segments dont les extrémités sont proches (< seuil) sont joints.
    Source : OpenStreetMap (natural=coastline + harbour/marina), Overpass.
 ============================================================ */
-let _masqueCote=null, _masqueCoteKey=null, _masqueCoteVisible=false, _masqueCoteLayer=null;
+// Masque côtier UTILISÉ EN INTERNE seulement (non affiché sur la carte) : sert à restreindre la
+// zone de recherche des extractions. Bande +200 m côté mer / +100 m côté terre, zones port exclues.
+let _masqueCote=null, _masqueCoteKey=null;
 let _masqueCoteActif=true;
-let _zonesPort=null,_zonesPortEnv=null;   // 2e feature du fichier : zones à exclure
+let _zonesPort=null,_zonesPortEnv=null;
 async function chargerMasqueCote(key){
   _masqueCote=null;_masqueCoteKey=null;_zonesPort=null;_zonesPortEnv=null;
-  if(_masqueCoteLayer&&mapInstance){mapInstance.removeLayer(_masqueCoteLayer);_masqueCoteLayer=null;}
-  const btn=document.getElementById('btn-masque-cote');if(btn){btn.classList.remove('active');btn.title='Masque côtier en chargement…';}
   try{
     const r=await fetch('data/masque_cote/'+key+'.geojson',{cache:'no-cache'});
-    if(!r.ok){if(btn)btn.title='Masque côtier indisponible pour ce territoire.';return;}
+    if(!r.ok)return;
     const d=await r.json();
     _masqueCote=d;_masqueCoteKey=key;
     if(d.features&&d.features[0]&&d.features[0].geometry)_masqueCote._env=_envBbox(d.features[0].geometry);
-    // 2e feature : zones de port à exclure (si présentes)
     const fPort=(d.features||[]).find(f=>f&&f.properties&&f.properties.type==='zone_port_exclue');
     if(fPort&&fPort.geometry){_zonesPort=fPort.geometry;_zonesPortEnv=_envBbox(fPort.geometry);}
-    if(btn){const m=d.metadata||{};const v=m.version||'v1';btn.title='Masque côtier '+v+'\n+'+(m.tampon_mer_m||500)+' m côté mer / +'+(m.tampon_terre_m||500)+' m côté terre\nbande : '+(m.surface_bande_km2||'?')+' km²\nzones port : '+(m.nb_zones_port||0)+'\nGénéré : '+(m.date_generation||'?');btn.classList.toggle('active',_masqueCoteVisible);}
   }catch(e){console.warn('Masque côtier indisponible :',e);}
 }
 function _envBbox(g){let xmin=Infinity,ymin=Infinity,xmax=-Infinity,ymax=-Infinity;const visit=arr=>{if(typeof arr[0]==='number'){if(arr[0]<xmin)xmin=arr[0];if(arr[0]>xmax)xmax=arr[0];if(arr[1]<ymin)ymin=arr[1];if(arr[1]>ymax)ymax=arr[1];}else for(const a of arr)visit(a);};visit(g.coordinates);return {xmin,ymin,xmax,ymax};}
@@ -1801,21 +1798,6 @@ function _relierTraitsVoisins(feats,seuilM){
   }
   return items;
 }
-window.toggleMasqueCote=function(){
-  if(!mapInstance||!window.L){alert('Carte non initialisée.');return;}
-  const btn=document.getElementById('btn-masque-cote');
-  if(_masqueCoteVisible){if(_masqueCoteLayer)mapInstance.removeLayer(_masqueCoteLayer);_masqueCoteVisible=false;btn.classList.remove('active');return;}
-  if(!_masqueCote){alert('Aucun masque côtier pour ce territoire.');return;}
-  const L=window.L;
-  // Bande en vert transparent, zones port en orange dashé
-  _masqueCoteLayer=L.geoJSON(_masqueCote,{
-    style:f=>{const t=f.properties&&f.properties.type;
-      if(t==='zone_port_exclue')return {color:'#e67e22',weight:1.5,opacity:.9,fillColor:'#e67e22',fillOpacity:.25,dashArray:'5,3'};
-      return {color:'#1a8a4a',weight:1,opacity:.6,fillColor:'#1a8a4a',fillOpacity:.08,dashArray:'2,4'};
-    }
-  }).addTo(mapInstance);
-  _masqueCoteVisible=true;btn.classList.add('active');
-};
 window.toggleMasqueCoteActif=function(){
   _masqueCoteActif=!_masqueCoteActif;
   const tog=document.getElementById('toggle-masque-actif');if(tog)tog.checked=_masqueCoteActif;
@@ -3444,7 +3426,7 @@ function construireImageModule(){
         <label id="sig-sens-label">Sensibilité de détection (mer/terre)</label>
         <input type="range" id="sig-sens" min="0" max="100" value="50" style="width:100%">
         <label style="display:flex;align-items:center;gap:7px;margin-top:8px;font-family:var(--sans);text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink);cursor:pointer"><input type="checkbox" id="sig-ai-check" style="width:auto;accent-color:var(--teal)"> Contrôle IA (2ᵉ passe) — écarte les faux positifs (forêt, rivière, ombre…)</label>
-        <label style="display:flex;align-items:center;gap:7px;margin-top:6px;font-family:var(--sans);text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink);cursor:pointer" title="Filtre géographique OSM : bande +500 m côté mer / +100 m côté terre + zones port exclues (bateaux à quai). Reliage automatique des traits voisins (seuil 35 m)."><input type="checkbox" id="toggle-masque-actif" checked onchange="toggleMasqueCoteActif()" style="width:auto;accent-color:#1a8a4a"> 🛡 Filtre côtier : bande +500 m mer / +100 m terre · ports exclus · reliage auto</label>
+        <label style="display:flex;align-items:center;gap:7px;margin-top:6px;font-family:var(--sans);text-transform:none;letter-spacing:0;font-size:12px;color:var(--ink);cursor:pointer" title="Filtre géographique interne OSM : bande +200 m côté mer / +100 m côté terre + zones port exclues (bateaux à quai). Reliage automatique des traits voisins (seuil 35 m). Sert à restreindre la zone de recherche — non affiché sur la carte."><input type="checkbox" id="toggle-masque-actif" checked onchange="toggleMasqueCoteActif()" style="width:auto;accent-color:#1a8a4a"> 🛡 Filtre côtier interne : bande +200 m mer / +100 m terre · ports exclus · reliage auto</label>
         <label style="margin-top:8px">Couverture « tout le territoire » (grille autour de chaque site)</label>
         <select id="sig-grille" style="width:100%;font-size:12.5px;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)">
           <option value="1">1 tuile / site (rapide)</option>

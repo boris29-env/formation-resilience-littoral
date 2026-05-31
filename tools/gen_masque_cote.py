@@ -22,9 +22,9 @@ from shapely.ops import unary_union, polygonize, transform
 from pyproj import Transformer
 
 OUT_DIR = '/home/user/formation-resilience-littoral/data/masque_cote'
-TAMPON_MER_M = 500
+TAMPON_MER_M = 200   # bande côté mer : réduite à 200 m pour resserrer la zone de recherche
 TAMPON_TERRE_M = 100
-SIMPLIF_M = 50
+SIMPLIF_M = 30       # simplification plus fine, bande plus étroite
 
 TERRITOIRES = {
     'spm':      {'bbox': (46.65, -56.50, 47.20, -56.05), 'epsg': 32621, 'nom': 'Saint-Pierre-et-Miquelon'},

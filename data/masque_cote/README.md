@@ -1,56 +1,29 @@
-# Masques côtiers — bande littorale par territoire
+# Masques côtiers v2 — filtre interne de la chaîne d'extraction
 
-Un fichier `.geojson` par territoire, contenant un **MultiPolygon de la bande littorale** (tampon ±500 m autour de la coastline OSM). Sert à **filtrer par construction** toutes les extractions de la plateforme : seuls les contours/ouvrages qui touchent cette bande sont retenus, les artefacts dans l'arrière-pays ou en pleine mer sont écartés.
+Un fichier `.geojson` par territoire, **utilisé en interne par la plateforme** pour restreindre la zone de recherche des extractions (trait de côte, ouvrages, SAM, bandes de recul). **Non affiché sur la carte** — c'est un masque d'exclusion, pas un livrable.
 
-## Effet attendu
+## Géométrie
 
-Sur les lagons coralliens (Saint-Barthélemy, Tuamotu, etc.), même si l'heuristique pixel produit des contours fractals à l'intérieur des récifs, le filtre supprime tout ce qui est trop loin du vrai littoral. Combiné avec SAM, c'est une double sécurité : précision *intra*-bande (SAM) + sécurité *extra*-bande (masque).
+Chaque fichier contient deux features :
 
-## Schéma
+1. **Bande littorale asymétrique** : +200 m côté mer / +100 m côté terre, calculée par polygonisation des coastlines OSM puis différence `terre.buffer(+200) − terre.buffer(−100)`.
+2. **Zones de port à exclure** : marinas, ports, jetées, ferries (OSM `harbour`, `leisure=marina`, `man_made=pier`, `amenity=ferry_terminal`, `industrial=port`), avec marge +20 m. Sert à ignorer les bateaux à quai et les jetées prises pour des traits.
 
-```jsonc
-{
-  "type": "FeatureCollection",
-  "name": "masque_cote_<terr>",
-  "metadata": {
-    "territoire": "stbarth",
-    "nom": "Saint-Barthélemy",
-    "source": "OpenStreetMap (natural=coastline), via Overpass API",
-    "licence": "ODbL (OpenStreetMap)",
-    "tampon_m": 500,
-    "epsg_metrique": 32620,
-    "longueur_coastline_km": 59.2,
-    "surface_bande_km2": 43.5,
-    "simplification_tolerance_m": 50,
-    "date_generation": "...",
-    "usage": "Filtrage géographique des extractions SIG..."
-  },
-  "features": [
-    { "type": "Feature",
-      "geometry": { "type": "MultiPolygon", "coordinates": [...] },
-      "properties": { "type": "bande_littorale", "tampon_m": 500 } }
-  ]
-}
-```
+## Couvertures actuelles (bandes +200/+100 m)
+
+| Territoire | Coastline | Terre | Bande | Ports | Fichier |
+|---|---|---|---|---|---|
+| Saint-Pierre-et-Miquelon | 83 ways | 231 km² | 55 km² | 47 | 52 ko |
+| Wallis-et-Futuna | 24 ways | 141 km² | 40 km² | 6 | 40 ko |
+| Nouvelle-Calédonie | 1 142 ways | 18 536 km² | 1 054 km² | 401 | 1 042 ko |
+| Saint-Martin | 210 ways | 82 km² | 30 km² | 413 | 65 ko |
+| Saint-Barthélemy | 33 ways | 20 km² | 15 km² | 6 | 21 ko |
+| Polynésie (Société) | 590 ways | 1 568 km² | 237 km² | 852 | 373 ko |
 
 ## Régénération
 
-Le script `tools/gen_masque_cote.py` (à exécuter offline avec accès internet) interroge Overpass pour les coastlines OSM dans la bbox du territoire, les projette en UTM métrique local, applique un buffer de ±500 m, simplifie à 50 m, et écrit le fichier. Régénérer pour intégrer les mises à jour OSM ou ajuster le tampon.
-
-## Couvertures actuelles
-
-| Territoire | Coastline (km) | Bande (km²) | Fichier (ko) |
-|---|---|---|---|
-| Saint-Pierre-et-Miquelon | 217 | 161 | 24 |
-| Wallis-et-Futuna | 142 | 126 | 24 |
-| Nouvelle-Calédonie (Grande Terre + Loyauté) | 3 973 | 3 097 | 460 |
-| Saint-Martin | 123 | 80 | 16 |
-| Saint-Barthélemy | 59 | 43 | 12 |
-| Polynésie française (Société) | 968 | 670 | 100 |
-
-Total : ~640 ko pour les 6 territoires. Chargé une seule fois par territoire au moment du choix.
+`tools/gen_masque_cote.py` (Overpass + shapely + pyproj). Ajuster `TAMPON_MER_M` (200 par défaut) ou `TAMPON_TERRE_M` (100) en tête de script.
 
 ## Source et licence
 
-Source : OpenStreetMap, données `natural=coastline`.
-Licence : ODbL (Open Database License) — réutilisation libre avec attribution. À mentionner dans les exports dérivés.
+OpenStreetMap, données `natural=coastline` + `harbour/marina/pier/ferry/port`. Licence ODbL.
