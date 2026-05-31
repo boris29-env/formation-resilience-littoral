@@ -660,6 +660,7 @@ svg.house{width:100%;max-width:290px;height:auto}
               <button class="layer-btn" id="btn-esri" onclick="switchLayer('esri')">Satellite Esri</button>
               <span class="mcb-label" style="margin-left:14px;border-left:1px solid var(--line);padding-left:14px">Veille</span>
               <button class="layer-btn" id="btn-veille-s2" onclick="toggleVeilleS2()" title="Vecteurs d'alerte Sentinel-2 (changements détectés entre deux périodes, à réexploiter en très haute résolution)">🛰 Sentinel-2 <span id="veille-s2-count" style="opacity:.7;margin-left:3px"></span></button>
+              <button class="layer-btn" id="btn-seg-deep" onclick="toggleSegDeep()" title="Segmentation profonde Prithvi-EO-2.0 (NASA/IBM) sur Sentinel-2 — raffineur de contrôle, utile en l'absence d'archives THR (Wallis, Polynésie hors sites pilotes)">🧠 Segmentation profonde <span id="seg-deep-count" style="opacity:.7;margin-left:3px"></span></button>
             </div>
             <div class="map-ctrl-bar" id="annot-bar" style="flex-wrap:wrap;gap:6px">
               <span class="mcb-label">Annotation</span>
@@ -1501,6 +1502,8 @@ function initMap(T,key){
   // Lot B1 — précharge silencieuse des alertes Sentinel-2 (affiche le compteur même si la couche
   // n'est pas activée). Échec silencieux si fichier absent : la veille reste optionnelle.
   chargerVeilleSentinel(key);
+  // Lot B2 — précharge silencieuse de la segmentation profonde (raffineur de contrôle)
+  chargerSegmentationDeep(key);
 }
 
 /* ============================================================
@@ -1546,6 +1549,50 @@ window.toggleVeilleS2=function(){
   }).addTo(mapInstance);
   _veilleS2Visible=true;btn.classList.add('active');
 }
+
+/* ============================================================
+   LOT B2 — SEGMENTATION PROFONDE PRITHVI-EO (raffineur de contrôle)
+   Lit data/segmentation/{territoire}.geojson, produit hors ligne par
+   tools/prithvi_segmentation.py (réf. méth. 7.9). Statut « raffineur »
+   maintenu : ne remplace pas la détection heuristique principale (A3.3).
+============================================================ */
+let _segDeepLayer=null,_segDeepData=null,_segDeepVisible=false;
+async function chargerSegmentationDeep(key){
+  const btn=document.getElementById('btn-seg-deep');const cnt=document.getElementById('seg-deep-count');
+  if(_segDeepLayer&&mapInstance){mapInstance.removeLayer(_segDeepLayer);_segDeepLayer=null;}
+  _segDeepData=null;_segDeepVisible=false;if(btn)btn.classList.remove('active');if(cnt)cnt.textContent='';
+  try{
+    const r=await fetch('data/segmentation/'+key+'.geojson',{cache:'no-cache'});
+    if(!r.ok){if(cnt)cnt.textContent='—';return;}
+    _segDeepData=await r.json();
+    const n=(_segDeepData.features||[]).length;
+    if(cnt)cnt.textContent=n?'('+n+')':'(0)';
+    if(btn){const m=_segDeepData.metadata||{};btn.title='Segmentation profonde Prithvi-EO-2.0\n'+(n?n+' contour(s)':'aucun contour')+'\nModèle : '+(m.modele||'?')+'\nSource : '+(m.source_imagerie||'?')+'\nPériode : '+(m.periode||'?')+'\nGénéré : '+(m.date_generation||'jamais (lancer tools/prithvi_segmentation.py)')+'\n\n⚠ Raffineur de contrôle, pas un détecteur autonome (réf. méth. 7.9 / A3.3).';}
+  }catch(e){if(cnt)cnt.textContent='—';console.warn('Segmentation profonde indisponible :',e);}
+}
+window.toggleSegDeep=function(){
+  if(!mapInstance||!window.L){alert('Carte non initialisée.');return;}
+  const btn=document.getElementById('btn-seg-deep');
+  if(_segDeepVisible){if(_segDeepLayer)mapInstance.removeLayer(_segDeepLayer);_segDeepVisible=false;btn.classList.remove('active');return;}
+  if(!_segDeepData||!(_segDeepData.features||[]).length){alert("Aucune segmentation profonde pour ce territoire.\n\nPour rafraîchir : exécuter `tools/prithvi_segmentation.py --territoire "+TERR_ACTIF+" --periode 2025-01-01 2025-06-30` (voir tools/README.md).\n\nC'est un RAFFINEUR de contrôle (Prithvi-EO-2.0 sur Sentinel-2 10 m), pas un détecteur autonome.");return;}
+  const L=window.L;
+  const colByClass={eau:'#2A8C8C',terre:'#8e6a3e',sable:'#e6b800',vegetation:'#2e7d32'};
+  _segDeepLayer=L.geoJSON(_segDeepData,{
+    style:f=>{const cl=(f.properties||{}).classe||'?';const c=colByClass[cl]||'#666';return {color:c,weight:1.5,opacity:.85,fillColor:c,fillOpacity:.18,dashArray:'3,4'};},
+    onEachFeature:(f,layer)=>{const p=f.properties||{};const m=_segDeepData.metadata||{};
+      layer.bindPopup(`<div style="font-family:var(--sans);max-width:260px">
+        <div style="background:${colByClass[p.classe]||'#666'};color:#fff;padding:5px 9px;font-weight:700;font-size:12px;border-radius:4px 4px 0 0">Segmentation profonde · ${p.classe||'?'}</div>
+        <div style="padding:8px;font-size:11.5px;line-height:1.55">
+          ${p.confiance!=null?'<b>Confiance :</b> '+(p.confiance*100).toFixed(0)+'%<br>':''}
+          <b>Modèle :</b> ${m.modele||'?'}<br>
+          <b>Période :</b> ${m.periode||'?'}<br>
+          ${p.methode?'<div style="color:var(--muted);margin-top:5px;font-style:italic">'+p.methode+'</div>':''}
+          <div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);color:var(--muted);font-size:10px">⚠ Raffineur de contrôle de plausibilité ; ne remplace pas la détection heuristique. Source : ${m.source_imagerie||'Sentinel-2'}.</div>
+        </div></div>`,{maxWidth:300});
+    }
+  }).addTo(mapInstance);
+  _segDeepVisible=true;btn.classList.add('active');
+};
 window.switchLayer=function(type){
   if(!mapInstance||!window._mapLayers)return;
   const L=window.L;const m=mapInstance;

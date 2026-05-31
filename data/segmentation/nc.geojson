@@ -1,0 +1,16 @@
+{
+  "type": "FeatureCollection",
+  "name": "segmentation_prithvi",
+  "metadata": {
+    "territoire": "nc",
+    "modele": "ibm-nasa-geospatial/Prithvi-EO-2.0",
+    "source_imagerie": "Sentinel-2 SR Harmonized (Copernicus)",
+    "licence_imagerie": "Données ouvertes Copernicus",
+    "licence_modele": "Apache 2.0 (à confirmer auprès du dépôt Hugging Face)",
+    "periode": null,
+    "date_generation": null,
+    "outil": "tools/prithvi_segmentation.py",
+    "statut": "vide — aucun run effectué. Voir tools/README.md."
+  },
+  "features": []
+}
