@@ -1698,21 +1698,36 @@ window.toggleSegDeep=function(){
    Source : OpenStreetMap (natural=coastline + harbour/marina), Overpass.
 ============================================================ */
 // Masque côtier UTILISÉ EN INTERNE seulement (non affiché sur la carte) : sert à restreindre la
-// zone de recherche des extractions. Bande +200 m côté mer / +100 m côté terre, zones port exclues.
+// zone de recherche des extractions. Bande ±30 m, zones de port soustraites.
 let _masqueCote=null, _masqueCoteKey=null;
 let _masqueCoteActif=true;
 let _zonesPort=null,_zonesPortEnv=null;
+let _masqueCotePromise=null;   // promesse de chargement, pour await depuis addToCumul
 async function chargerMasqueCote(key){
   _masqueCote=null;_masqueCoteKey=null;_zonesPort=null;_zonesPortEnv=null;
-  try{
-    const r=await fetch('data/masque_cote/'+key+'.geojson',{cache:'no-cache'});
-    if(!r.ok)return;
-    const d=await r.json();
-    _masqueCote=d;_masqueCoteKey=key;
-    if(d.features&&d.features[0]&&d.features[0].geometry)_masqueCote._env=_envBbox(d.features[0].geometry);
-    const fPort=(d.features||[]).find(f=>f&&f.properties&&f.properties.type==='zone_port_exclue');
-    if(fPort&&fPort.geometry){_zonesPort=fPort.geometry;_zonesPortEnv=_envBbox(fPort.geometry);}
-  }catch(e){console.warn('Masque côtier indisponible :',e);}
+  _masqueCotePromise=(async()=>{
+    try{
+      const r=await fetch('data/masque_cote/'+key+'.geojson',{cache:'no-cache'});
+      if(!r.ok)return;
+      const d=await r.json();
+      _masqueCote=d;_masqueCoteKey=key;
+      if(d.features&&d.features[0]&&d.features[0].geometry)_masqueCote._env=_envBbox(d.features[0].geometry);
+      const fPort=(d.features||[]).find(f=>f&&f.properties&&f.properties.type==='zone_port_exclue');
+      if(fPort&&fPort.geometry){_zonesPort=fPort.geometry;_zonesPortEnv=_envBbox(fPort.geometry);}
+      // Rattrapage : si des features avaient été ajoutées au cumul AVANT que le masque arrive
+      // (race condition), on re-filtre le cumul a posteriori pour purger les saletés hors bande.
+      if(typeof _sigCumul!=='undefined'&&_sigCumul.features&&_sigCumul.features.length&&_masqueCoteActif&&typeof filtrerParMasqueCote==='function'){
+        const before=_sigCumul.features.length;
+        const r2=filtrerParMasqueCote(_sigCumul.features);
+        if(r2.dropped+r2.dropped_port+r2.clipped>0){
+          _sigCumul.features=r2.kept;
+          if(typeof refreshCumulBar==='function')refreshCumulBar();
+          console.log('[masque côtier] cumul rattrapé après chargement : '+before+' → '+r2.kept.length+' (dropped='+r2.dropped+', port='+r2.dropped_port+', clipped='+r2.clipped+')');
+        }
+      }
+    }catch(e){console.warn('Masque côtier indisponible :',e);}
+  })();
+  return _masqueCotePromise;
 }
 function _envBbox(g){let xmin=Infinity,ymin=Infinity,xmax=-Infinity,ymax=-Infinity;const visit=arr=>{if(typeof arr[0]==='number'){if(arr[0]<xmin)xmin=arr[0];if(arr[0]>xmax)xmax=arr[0];if(arr[1]<ymin)ymin=arr[1];if(arr[1]>ymax)ymax=arr[1];}else for(const a of arr)visit(a);};visit(g.coordinates);return {xmin,ymin,xmax,ymax};}
 // Test point-in-MultiPolygon générique (fast reject bbox + ray casting + trous)
@@ -5369,12 +5384,20 @@ async function photoDateIGN(b){
 }
 function stampPhotoDate(features,pd){if(!pd)return;features.forEach(f=>{f.properties=f.properties||{};if(pd.date_photo)f.properties.date_photo=pd.date_photo;if(pd.millesime)f.properties.millesime=pd.millesime;if(pd.resolution_cm)f.properties.resolution_cm=pd.resolution_cm;});}
 function addToCumul(features,meta){const d=new Date().toLocaleDateString('fr-FR');
-  // Filtre par bande littorale asymétrique + zones port. Évite de polluer le cumul avec des
-  // artefacts dans l'arrière-pays, en pleine mer, ou des bateaux à quai.
-  let arr=features||[];let dropped=0,droppedPort=0;
-  if(typeof _masqueCoteActif!=='undefined'&&_masqueCoteActif&&typeof filtrerParMasqueCote==='function'){const r=filtrerParMasqueCote(arr);arr=r.kept;dropped=r.dropped;droppedPort=r.dropped_port||0;}
+  let arr=features||[];let dropped=0,droppedPort=0,clipped=0;
+  // Si le masque n'est pas encore chargé (race condition au démarrage), on AVERTIT et on marque
+  // les features comme « non filtrées au moment de l'ajout ». Le rattrapage se fera dès l'arrivée
+  // du masque dans chargerMasqueCote, qui re-filtrera le cumul.
+  if(typeof _masqueCoteActif!=='undefined'&&_masqueCoteActif){
+    if(typeof filtrerParMasqueCote==='function'&&_masqueCote){
+      const r=filtrerParMasqueCote(arr);arr=r.kept;dropped=r.dropped;droppedPort=r.dropped_port||0;clipped=r.clipped||0;
+    }else{
+      console.warn('[cumul] masque côtier pas encore chargé — features ajoutées sans filtre, rattrapage prévu');
+      arr.forEach(f=>{f.properties=f.properties||{};f.properties._a_refiltrer=true;});
+    }
+  }
   arr.forEach(f=>{f.properties=f.properties||{};f.properties.site=(meta&&meta.site)||'';f.properties.date_extraction=d;_sigCumul.features.push(f);});
-  if(dropped+droppedPort>0)console.log('[cumul] '+dropped+' hors bande · '+droppedPort+' dans port');
+  if(dropped+droppedPort+clipped>0)console.log('[cumul] '+dropped+' hors · '+droppedPort+' port · '+clipped+' clip');
   refreshCumulBar();}
 function refreshCumulBar(){const bar=document.getElementById('sig-cumul-bar');if(!bar)return;const n=_sigCumul.features.length;bar.style.display=n?'block':'none';const c=document.getElementById('sig-cumul-count');if(c)c.textContent='Couche cumulée : '+n+' entité'+(n>1?'s':'');}
 
@@ -6102,7 +6125,25 @@ window.proposerTauxRecul=function(){
       :'Aucun transect d\'érosion : lancez l\'extraction « Évolution » d\'abord pour disposer d\'un taux mesuré, ou saisissez la valeur manuellement.';
   }
 };
-window.cumulSurCarte=function(){if(!_sigCumul.features.length){alert('Couche cumulée vide.');return;}if(!mapInstance){alert('Carte non initialisée — ouvrez la section « Carte ».');return;}ajouterGeojsonLayer(JSON.stringify(_sigCumul),'SIG cumulé ('+_sigCumul.features.length+')');document.getElementById('sec-carte').scrollIntoView({behavior:'smooth'});};
+window.cumulSurCarte=function(){
+  if(!_sigCumul.features.length){alert('Couche cumulée vide.');return;}
+  if(!mapInstance){alert('Carte non initialisée — ouvrez la section « Carte ».');return;}
+  // Défense en profondeur : re-filtrer le cumul au moment de l'affichage. Évite que des
+  // saletés ajoutées par erreur (masque pas encore chargé, ancien territoire, etc.) ne s'affichent.
+  let fcAff={type:'FeatureCollection',name:'sig_cumul',features:_sigCumul.features.slice()};
+  if(_masqueCoteActif&&_masqueCote&&typeof filtrerParMasqueCote==='function'){
+    const r=filtrerParMasqueCote(fcAff.features);
+    fcAff.features=r.kept;
+    // Synchroniser le cumul réel : on purge ce qui a été écarté pour ne pas réafficher après
+    if(r.dropped+r.dropped_port+r.clipped>0){
+      _sigCumul.features=r.kept;refreshCumulBar();
+      console.log('[masque côtier] cumul purgé à l\'affichage : '+r.dropped+' hors, '+r.dropped_port+' port, '+r.clipped+' clipped');
+    }
+  }
+  if(!fcAff.features.length){alert('Couche cumulée vide après filtrage par bande littorale.');return;}
+  ajouterGeojsonLayer(JSON.stringify(fcAff),'SIG cumulé ('+fcAff.features.length+')');
+  document.getElementById('sec-carte').scrollIntoView({behavior:'smooth'});
+};
 window.telechargerCumul=function(){if(!_sigCumul.features.length){alert('Couche cumulée vide.');return;}const fc=_enrichirMetaExport(_sigCumul);const blob=new Blob([JSON.stringify(fc,null,2)],{type:'application/geo+json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='sig_cumul_'+(TERR_ACTIF||'territoire')+'_'+new Date().toLocaleDateString('fr-FR').replace(/\//g,'-')+'.geojson';a.click();URL.revokeObjectURL(url);};
 // Export CSV+WKT (import direct dans QGIS : « Add Delimited Text Layer », géométrie WKT)
 function geojsonToCSV(fc){const props=new Set();fc.features.forEach(f=>Object.keys(f.properties||{}).forEach(k=>props.add(k)));const cols=[...props];
