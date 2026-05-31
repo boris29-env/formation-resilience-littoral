@@ -125,6 +125,11 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15p
 .aec-card ul li{padding:2px 0;border-top:1px dotted var(--line)}
 .aec-card ul li:first-child{border-top:0}
 .aec-card .aec-foot{margin-top:6px;font-size:10.5px;color:var(--muted);font-style:italic;line-height:1.45}
+.aec-mono-bilan{margin-top:7px;padding:6px 9px;background:#f6f3ec;border-radius:5px;font-size:11px;line-height:1.5;color:var(--ink)}
+.aec-mono-taux{margin-top:6px;font-size:11px;line-height:1.55;color:var(--ink)}
+.aec-mono-taux b{color:var(--navy)}
+.aec-mono-seuil{margin-top:6px;padding:5px 9px;background:#FDECEA;border-left:3px solid #c0392b;border-radius:0 5px 5px 0;font-size:11px;line-height:1.5;color:#7a1f15}
+.aec-mono-src{margin-top:7px;padding-top:5px;border-top:1px dotted var(--line);font-family:var(--mono);font-size:9px;color:var(--muted);line-height:1.5}
 .aec-alea{border-left:3px solid #c0392b}
 .aec-enjeu{border-left:3px solid #B07E1B}
 .aec-cap{border-left:3px solid var(--teal)}
@@ -1083,14 +1088,14 @@ const _LICENCES_IMG={
 const _PREROGATIVES={
   spm:{
     decideurs:[
-      {acteur:'État',role:'risques (PPRL 2019), référentiels nationaux (IGN, SHOM)'},
+      {acteur:'État',role:'risques (PPRL Miquelon, arrêté 28 sept. 2018), référentiels nationaux (IGN, SHOM)'},
       {acteur:'Collectivité',role:'urbanisme et aménagement (STAU, CLU 2022)'}
     ],
     coutumier:false,
     sources_recommandees:['ign'],
     referentiel:'RGSPM06 · UTM 21N (EPSG 4467)',
     mnt:'RGE ALTI disponible (IGN)',
-    observatoire:'Non formalisé · suivi BRGM, synthèse Cerema 2023',
+    observatoire:'Non formalisé · suivi ponctuel BRGM et Cerema · Fascicule 11 Cerema (2020)',
     maree:'Mésotidal (exception parmi les six)'
   },
   wallis:{
@@ -1117,7 +1122,7 @@ const _PREROGATIVES={
     sources_recommandees:['georep_nc','esri'],
     referentiel:'RGNC91-93 · Lambert NC (EPSG 3163)',
     mnt:'Selon Géorep',
-    observatoire:'OBLIC (SGNC/DIMENC + BRGM, depuis 2013) — 77 sites pilotes',
+    observatoire:'OBLIC (SGNC/DIMENC + BRGM, depuis 2013) — 77 sites pilotes dont 35 îlots · seul observatoire formalisé des 6 COM',
     maree:'Méso à microtidal selon les côtes'
   },
   stmartin:{
@@ -1129,8 +1134,8 @@ const _PREROGATIVES={
     sources_recommandees:['ign'],
     referentiel:'RGAF09 · UTM 20N (EPSG 5490)',
     mnt:'RGE ALTI disponible (IGN)',
-    observatoire:'Non formalisé · synthèse Cerema 2023, atlas BRGM RP-65212-FR, étude Irma RP-67291-FR',
-    maree:'Microtidal'
+    observatoire:'Non formalisé · Fascicule 12 Cerema (2020), étude Irma BRGM/RP-67291-FR (2017), caméra côtière Baie Orientale depuis 2022 (Carib-Coast)',
+    maree:'Microtidal (marnage faible)'
   },
   stbarth:{
     decideurs:[
@@ -1141,7 +1146,7 @@ const _PREROGATIVES={
     sources_recommandees:['ign'],
     referentiel:'RGAF09 · UTM 20N (EPSG 5490)',
     mnt:'RGE ALTI disponible (IGN)',
-    observatoire:'Non formalisé · synthèse Cerema 2023',
+    observatoire:'Non formalisé · Fascicule 12 Cerema (2020), étude Univ. Montpellier 3 / ATE (2022) · PPRN prescrit 2017, non approuvé à mai 2026',
     maree:'Microtidal'
   },
   pf:{
@@ -1796,33 +1801,48 @@ function sensibiliteAxe(ax,delta){
 // Aucune valeur locale n'est inventée : on cite la trajectoire NATIONALE TRACC (décret 2026-23) en
 // indiquant explicitement « déclinaison ultramarine à confirmer » ; pour le niveau marin, on
 // renvoie aux fourchettes AR6 mondiales et à la nuance régionale documentée par le SROCC.
+// TRACC = trajectoire de réchauffement de référence pour l'adaptation. C'est une trajectoire de
+// TEMPÉRATURE (et non d'élévation marine — distinction explicite, monographie consolidée 6 COM).
+// Des déclinaisons territorialisées existent : la monographie donne celles des Antilles du Nord.
 const _CLIMAT_TRACC={
   source:'Décret n° 2026-23 et arrêté du 23 janvier 2026, inscription au Code de l\'environnement',
+  nature:'Trajectoire de TEMPÉRATURE (réchauffement), non d\'élévation marine. Sert à dimensionner l\'adaptation.',
   national:[
-    {horizon:'2030',valeur:'+2,0 °C',note:'au-dessus de la période préindustrielle (France hexagonale)'},
+    {horizon:'2030',valeur:'+2,0 °C',note:'France hexagonale, au-dessus de la période préindustrielle'},
     {horizon:'2050',valeur:'+2,7 °C',note:''},
-    {horizon:'2100',valeur:'+4,0 °C',note:'trajectoire de référence pour l\'adaptation'}
+    {horizon:'2100',valeur:'+4,0 °C',note:'trajectoire de référence pour l\'adaptation (hexagone)'}
   ],
-  note_ultramarine:'Déclinaisons ultramarines en cours de définition — à confirmer auprès du MTECT et de Météo-France ; la TRACC France hexagonale sert de référence par défaut, à charge pour chaque territoire d\'adopter la sienne dès publication.'
+  // Déclinaisons territoriales documentées (monographie consolidée 6 COM, fondée sur la TRACC).
+  parTerritoire:{
+    stmartin:{vals:[{horizon:'2030',valeur:'+1,4 °C'},{horizon:'2050',valeur:'+1,9 °C'},{horizon:'2100',valeur:'+2,7 °C'}],src:'Déclinaison TRACC pour Saint-Martin (monographie consolidée 6 COM).'},
+    stbarth:{vals:[{horizon:'2030',valeur:'+1,4 °C'},{horizon:'2050',valeur:'+1,9 °C'},{horizon:'2100',valeur:'+2,7 °C'}],src:'Déclinaison TRACC pour Saint-Barthélemy, identique à Saint-Martin (monographie consolidée 6 COM).'}
+  },
+  note_ultramarine:'Les Antilles du Nord disposent d\'une déclinaison TRACC chiffrée (ci-dessus). Pour SPM, Wallis-et-Futuna, Nouvelle-Calédonie et Polynésie française, la déclinaison reste à confirmer auprès du MTECT et de Météo-France ; la TRACC hexagonale sert de référence par défaut.'
 };
 const _CLIMAT_REGIONS={
   pacifique:{
     nom:'Pacifique tropical (PF, NC, Wallis-et-Futuna)',
+    slr_observe:'≈ 3 mm/an (Pacifique français)',
+    slr_observe_src:'MTECT, Chiffres clés de la mer et du littoral, éd. 2024 (fiche n° 48, source NASA, altimétrie à juin 2023).',
     slr_2100_likely:'+0,5 à +0,7 m (SSP2-4.5) ; jusqu\'à +0,8 à +1,0 m (SSP5-8.5)',
-    note:'Le Pacifique tropical connaît une élévation supérieure à la moyenne mondiale. Valeurs à affiner à partir du marégraphe le plus proche (PSMSL) et des projections régionalisées du portail NASA Sea Level Change / catalogue AR6 Sea Level Projections.',
+    note:'Le Pacifique sud a connu une élévation régionalement supérieure à la moyenne mondiale dans les décennies récentes (travaux BRGM). À Papeete, ≈ 7,5 cm observés entre 1975 et 2005 (Université d\'Hawaï). Valeurs à affiner au marégraphe le plus proche.',
     aleas_specifiques:['Cyclones intenses (intensification documentée par AR6)','Blanchissement et perte de coraux','Lentille d\'eau douce sur atolls','Sécheresses cycliques']
   },
   caraibes:{
     nom:'Antilles du Nord (Saint-Martin, Saint-Barthélemy)',
+    slr_observe:'≈ 3 mm/an (Antilles)',
+    slr_observe_src:'MTECT, Chiffres clés de la mer et du littoral, éd. 2024 (source NASA).',
     slr_2100_likely:'+0,5 à +0,7 m (SSP2-4.5) ; jusqu\'à +0,8 à +1,0 m (SSP5-8.5)',
-    note:'L\'élévation est proche de la moyenne mondiale. Reconstruction post-Irma 2017 → fréquence d\'actualisation élevée des données d\'aléa cyclonique.',
+    note:'L\'élévation est proche de la moyenne mondiale. Reconstruction post-Irma 2017 → fréquence d\'actualisation élevée des données d\'aléa cyclonique. Aucun marégraphe Refmar pérenne propre à Saint-Martin ou Saint-Barthélemy n\'est documenté.',
     aleas_specifiques:['Ouragans majeurs (catégorie 5 atteinte, Irma 2017)','Houle cyclonique','Submersion marine','Érosion accélérée des plages']
   },
   atlantique:{
     nom:'Atlantique Nord froid (Saint-Pierre-et-Miquelon)',
+    slr_observe:'4 à 5 mm/an — le plus élevé des six COM',
+    slr_observe_src:'MTECT, Chiffres clés de la mer et du littoral, éd. 2024 (source NASA) ; repris par l\'avis CESE n° 2025-11 (13 mai 2025).',
     slr_2100_likely:'+0,4 à +0,6 m (SSP2-4.5) ; +0,6 à +0,9 m (SSP5-8.5)',
-    note:'Seul territoire mésotidal des six COM (marée d\'amplitude métrique). Marégraphe REFMAR du SHOM. Saisonnalité forte (enneigement, glace de mer).',
-    aleas_specifiques:['Tempêtes hivernales','Érosion du cordon sableux de l\'isthme','Submersion à hautes marées d\'équinoxe']
+    note:'Élévation observée nettement plus rapide qu\'ailleurs (4-5 mm/an), aggravée par une subsidence post-glaciaire de 2 à 4 mm/an (≈ 0,26 m d\'ici 2100, BRGM/RP-63988-FR). Seul territoire mésotidal des six COM. Marégraphe français continu seulement depuis 2012 ; le BRGM s\'appuie sur les marégraphes canadiens voisins (1935-2014).',
+    aleas_specifiques:['Tempêtes hivernales nord-atlantiques','Érosion du cordon sableux de l\'isthme','Réduction de la protection par englacement saisonnier','Submersion par franchissement']
   }
 };
 // Données GIEC AR6 mondiales (réf. 7.3, table 9.9 du WG1) : citables, non inventées.
@@ -1835,6 +1855,93 @@ const _CLIMAT_AR6_MONDE={
     {scenario:'SSP5-8.5',valeur:'+0,63 à +1,01 m (jusqu\'à +1,60 m en trajectoire basse confiance)'}
   ]
 };
+// ============================================================
+//   MONOGRAPHIE CONSOLIDÉE — faits sourcés et traçables par territoire
+//   Source : « Monographies territoriales consolidées des six COM »
+//   (faits institutionnels, scientifiques, officiels — chaque fait sourcé).
+//   Ne retient QUE des faits vérifiables ; les lacunes sont signalées,
+//   jamais comblées. taux_reference = taux d'érosion documenté (m/an) pour
+//   amorcer les bandes de recul quand aucune extraction « Évolution » n'a
+//   été lancée ; null = aucun taux fiable disponible (ne pas inventer).
+// ============================================================
+const _MONOGRAPHIE={
+  spm:{
+    linéaire_km:'≈ 200',
+    bilan:'Majorité du littoral stable. Environ 9 à 10 % des côtes en recul à Saint-Pierre et à Langlade ; à Miquelon, l\'érosion touche près de la moitié du linéaire ; ≈ 1 % en progression. Les côtes basses d\'accumulation sont les plus sensibles.',
+    taux_mesures:[
+      {secteur:'Rocheux (Miquelon-Est)',taux:0.06,proj2100:'≈ 5 m'},
+      {secteur:'Sédimentaire central',taux:0.08,proj2100:'≈ 5 m'},
+      {secteur:'Sédimentaire',taux:0.31,proj2100:'≈ 30 m'},
+      {secteur:'Artificiel',taux:0.41,proj2100:'jusqu\'à 35 m'}
+    ],
+    taux_reference:0.31,   // côte sédimentaire meuble, valeur représentative (hors ouvrages)
+    taux_reference_label:'sédimentaire mesuré (BRGM, Miquelon-Est 1952-2012)',
+    niveaux_reference:'Niveau marin centennal de débordement 3 m → 3,7 m en 2100 ; submersion par franchissement 7 m → 7,7 m. Vagues centennales non cycloniques Hs ≈ 10 m (14 s) ; maximum cyclonique Hs 9,47 m (tempête Bill, 24 août 2009).',
+    seuil_critique:'Dès 2014, le BRGM signalait une submersion ou rupture possible de l\'isthme Miquelon-Langlade pour une élévation de l\'ordre de 0,7 m.',
+    relocalisation:'Première opération française de relocalisation préventive d\'un village. PPRL de Miquelon approuvé par arrêté préfectoral du 28 septembre 2018. Charte d\'engagement maire / CT / préfet signée le 19 janvier 2023. Nouveau village reconstruit à ≥ 10 m d\'altitude (village actuel entre 0 et 3 m). Phase 1 d\'ici 2026 : 15 premiers ménages + zone refuge pour 300 personnes. Délai global annoncé : 50 à 75 ans.',
+    sources:'Cerema, Fascicule 11 (2020, ISBN 978-2-37180-340-4) · BRGM/RP-63988-FR (2016, 99 transects, 1952-2012, marge photo-interprétation 5-10 m) · MTECT Chiffres clés 2024 · CESE n° 2025-11 (13 mai 2025).'
+  },
+  wallis:{
+    linéaire_km:null,
+    bilan:'LACUNE MAJEURE : aucun rapport public BRGM ou Cerema ne fournit de vitesse de recul du trait de côte pour Wallis-et-Futuna. Les phénomènes d\'érosion lors des grandes marées sont documentés par la presse régionale, non par une source institutionnelle quantifiée. C\'est la principale fragilité du territoire pour tout exercice d\'observation.',
+    taux_mesures:[],
+    taux_reference:null,   // aucune mesure institutionnelle — ne pas inventer
+    facteur_aggravant:'Extractions de sables marins non recensées par plusieurs opérateurs, amplifiant l\'érosion (BRGM/RP-61407-FR, 2012). Habitat très majoritairement implanté sur le littoral (rapport sénatorial n° 17-688, 2018).',
+    cadre_physique:'Uvea (Wallis) : île basaltique avec barrière corallienne fermant un lagon. Futuna et Alofi : îles hautes sans lagon protecteur, récifs frangeants étroits.',
+    sources:'BRGM/RP-61407-FR (Colin et Husson, 2012) · BRGM/RP-54936-FR (aléa sismique) · Sénat, rapport d\'information n° 17-688 (2018) · Stratégie pour la Biodiversité de Wallis et Futuna.'
+  },
+  nc:{
+    linéaire_km:'≈ 5 000',
+    composition:'Mangroves ≈ 43 %, côtes rocheuses et falaises ≈ 25 %, plages et îlots ≈ 25 % (OBLIC). Lagons inscrits au patrimoine mondial UNESCO depuis 2008.',
+    exposition:'OBLIC estime l\'exposition du littoral à l\'érosion à ≈ 71 % et à la submersion à ≈ 49 %.',
+    bilan:'OBLIC (créé en 2013) suit 77 sites pilotes dont 35 îlots ; typologie du littoral établie en 2016, cartographie finalisée en 2018. Seul observatoire formalisé des six territoires. LACUNE : taux d\'évolution site par site non repris dans ce corpus (accessibles via Géorep / Open Data NC).',
+    taux_mesures:[],
+    taux_reference:null,   // existe à l'OBLIC, non chiffré dans ce corpus
+    comparaison_nationale:'À titre de repère national, la cartographie Cerema (métropole + 5 DROM) recense ≈ 16 000 ouvrages pour ≈ 2 300 km cumulés, dont ≈ 64 % longitudinaux — mais elle ne couvre PAS la Nouvelle-Calédonie.',
+    licence:'Imagerie Géorep en Creative Commons attribution, pas d\'utilisation commerciale, partage à l\'identique : tout réemploi dérivé doit respecter cette clause.',
+    sources:'OBLIC, DIMENC, BRGM · portails Géorep et Open Data NC · Réseau national des observatoires du trait de côte · MTECT Chiffres clés 2024.'
+  },
+  stmartin:{
+    linéaire_km:null,superficie_km2:53,
+    bilan:'Dynamique récente dominée par l\'ouragan Irma (5-6 septembre 2017, cat. 5). Vents moyens > 275 km/h sur une minute pendant 3,5 jours (record mondial, Météo-France). Surcote > 3 m sur les côtes nord (Marigot, Grand Case) ; Hs des vagues 4-6 m.',
+    reculs_secteurs:[
+      'Anse Marcel : recul de la végétation de haut de plage > 10 m, microfalaise > 1 m',
+      'Baie Rouge, Baie Longue : microfalaise ≈ 2 m, démantèlement du beachrock',
+      'Sandy Ground : abaissement de plage 1-2 m, affouillement de fondations',
+      'Marigot, Grand Case : perte d\'épaisseur 1-2 m mettant à nu les fondations'
+    ],
+    recul_long_terme:'Baie Orientale : recul de 50 à 150 m depuis les années 1950 (Carib-Coast), secteur le plus exposé de la partie française ; mât caméra côtière de 8 m installé le 4 avril 2022.',
+    taux_reference:1.4,   // ≈ 100 m / 70 ans, Baie Orientale, ordre de grandeur long terme
+    taux_reference_label:'Baie Orientale, recul long terme (Carib-Coast, ~100 m sur ~70 ans)',
+    mangrove:'Perte d\'environ 80 % de la superficie de mangrove après Irma (Walcker et al., 2019) ; mortalité 65 % pour Avicennia germinans, 62 % pour Rhizophora mangle. Fonction tampon fortement réduite.',
+    suivi:'Projet Relev (Cerema) : plusieurs millésimes de trait de côte par imagerie Pléiades ; 334 bâtis qualifiés, 21 km parcourus (mission janvier 2020).',
+    sources:'Cerema, Fascicule 12 (2020, ISBN 978-2-37180-342-8) · BRGM/RP-67291-FR (octobre 2017) · Walcker et al. 2019 (Scientific Reports, DOI 10.1038/s41598-019-55393-3) · Carib-Coast · Météo-France (14 sept. 2017).'
+  },
+  stbarth:{
+    linéaire_km:null,superficie_km2:21,
+    bilan:'Dynamique récente dominée par Irma (6 septembre 2017) : pression 915,9 hPa, rafales 244 km/h, Hs des vagues 5-9 m, surcote > 1,2 m au sud de Gustavia. Mais selon l\'Université Paul-Valéry Montpellier 3 (pour l\'ATE, janvier 2022), la tendance générale est une érosion des plages relativement légère ; l\'impact d\'Irma a été moindre que celui du cyclone Luis (cat. 4) en 1995.',
+    reculs_secteurs:[
+      'Anse des Flamands : falaises de sable > 3 m, perte d\'épaisseur 3-4 m, basculement de murs et terrasses (classement maximal)',
+      'Baie de Saint-Jean : recul > 10 m, ensablement de la piste de l\'aéroport',
+      'Baie de Lorient, Grand Cul-de-Sac : recul 5-10 m, submersion jusqu\'à la seconde ligne'
+    ],
+    taux_reference:null,   // « érosion légère », pas de taux long terme chiffré dans le corpus
+    histoire:'Catalogue C3AF : 132 événements hydro-climatiques depuis 1635 ayant touché la Guadeloupe ou les îles du Nord, dont 17 surtout les îles du Nord (Luis 1995, Bertha 1996, Erika 1997, Danielle 1998, José 1999, Irma 2017…).',
+    actions:'Mission Cerema (février 2018) : 68 relevés de plus hautes eaux, 7 700 m de jets de rive (quasi exhaustif). Restauration de 3 plages (Colombier, Flamands, Saline) par ganivelles, lancée par l\'ATE en 2025. PPRN prescrit le 20 novembre 2017, NON approuvé à mai 2026.',
+    sources:'Cerema, Fascicule 12 (2020) · BRGM/RP-67291-FR (octobre 2017) · Université Paul-Valéry Montpellier 3 / ATE (janvier 2022) · catalogue C3AF · Rivages de France (2025).'
+  },
+  pf:{
+    linéaire_km:null,
+    cadre:'121 îles, 5 archipels, dont ≈ 76 atolls aux Tuamotu (point culminant dépassant rarement 4-5 m). Diversité forte : îles hautes volcaniques, atolls, presqu\'atolls — un indicateur unique serait trompeur, traitement différencié requis selon le type d\'île.',
+    bilan:'Sur l\'atoll de Takapoto (Tuamotu Nord), l\'analyse des 27 îles entre 1969 et 2013 montre que la plupart sont restées stables (≈ 41 %) ou en expansion (≈ 33 %), 26 % seulement en érosion (Duvat & Pillet, 2017). Ce résultat nuance la lecture catastrophiste habituelle des atolls.',
+    taux_mesures:[],
+    taux_reference:null,   // pas de taux de recul généralisable ; majorité stable/expansion à Takapoto
+    houles:'Houles cycloniques très énergétiques documentées : jusqu\'à 4 m à Tikehau, 7 m sur la côte nord de Moorea, 12 m à Tubuai. Jet de rive de tsunami ≈ 3,5 m lors de l\'événement de 1960 (Tahiti).',
+    elevation:'≈ 7,5 cm observés au marégraphe de Papeete entre 1975 et 2005 (Université d\'Hawaï) ; ≈ 3 mm/an récents (NASA). Réseau de marégraphes géodésiques Shom déployé 2008-2013 (Tubuai, Vairao, Rikitea, Makemo, Marquises).',
+    lacune:'LACUNE : pas de cartographie publique homogène des ouvrages côtiers ; références précises de Tautira (Tahiti) et Tahiamanu (Moorea) non confirmées dans ce corpus ; pas d\'observatoire formalisé malgré une recherche active (CRIOBE, UPF).',
+    sources:'Duvat & Pillet 2017 (Geomorphology, DOI 10.1016/j.geomorph.2017.01.002) · Duvat, Salvat & Salmon 2017 (Global and Planetary Change) · BRGM/RP-61656-FR, RP-61888-FR, RP-61901-FR · projets STORISK et INSeaPTION.'
+  }
+};
 function _regionDuTerritoire(key){const T=TERRITOIRES[key]||{};return T.region||(key==='spm'?'atlantique':((['pf','nc','wallis'].includes(key))?'pacifique':'caraibes'));}
 
 // Familles aléa / enjeu / capacité (réf. 7.2 : pas d'agrégation compensatoire).
@@ -1843,19 +1950,30 @@ function _regionDuTerritoire(key){const T=TERRITOIRES[key]||{};return T.region||
 function _construirePanneauFamilles(T){
   const host=document.getElementById('panneau-familles');if(!host||!T)return;
   const pr=_PREROGATIVES[TERR_ACTIF]||{};const reg=_CLIMAT_REGIONS[_regionDuTerritoire(TERR_ACTIF)]||{};
+  const mono=_MONOGRAPHIE[TERR_ACTIF]||{};
   const aleaItems=[
     `Régime de marée : ${pr.maree||'—'}`,
+    mono.linéaire_km?`Linéaire côtier : ${mono.linéaire_km} km`:null,
+    reg.slr_observe?`Élévation marine observée : ${reg.slr_observe}`:null,
     `Observatoire du trait de côte : ${pr.observatoire||'—'}`,
     `Événement de référence : ${T.event_passe?T.event_passe.titre:'—'}`,
     `Aléas régionaux dominants : ${(reg.aleas_specifiques||[]).slice(0,3).join(' · ')}`
-  ];
+  ].filter(Boolean);
+  // Faits sourcés de la monographie consolidée : bilan, taux mesurés, niveaux de référence.
+  const monoBloc=[];
+  if(mono.bilan)monoBloc.push(`<div class="aec-mono-bilan">${mono.bilan}</div>`);
+  if(mono.taux_mesures&&mono.taux_mesures.length)monoBloc.push(`<div class="aec-mono-taux"><b>Taux d'érosion mesurés :</b><br>${mono.taux_mesures.map(t=>`${t.secteur} : <b>${t.taux} m/an</b>${t.proj2100?' (proj. 2100 '+t.proj2100+')':''}`).join('<br>')}</div>`);
+  if(mono.recul_long_terme)monoBloc.push(`<div class="aec-mono-taux"><b>Recul long terme :</b> ${mono.recul_long_terme}</div>`);
+  if(mono.niveaux_reference)monoBloc.push(`<div class="aec-mono-taux"><b>Niveaux de référence :</b> ${mono.niveaux_reference}</div>`);
+  if(mono.seuil_critique)monoBloc.push(`<div class="aec-mono-seuil">⚠ ${mono.seuil_critique}</div>`);
+  const monoSrc=mono.sources?`<div class="aec-mono-src">Sources : ${mono.sources}</div>`:'';
   const enjeuItems=(T.facts||[]).slice(0,4).map(f=>`${f.n} ${f.l}`);
   const capScores=ALL.map(ax=>axScWeighted(ax));
   const capDone=capScores.filter(s=>s.answered).length;
   const capMoy=capDone?(capScores.reduce((a,s)=>a+(s.answered?s.score:0),0)/capDone).toFixed(1):'—';
   host.innerHTML=`<div class="aec-grid">
-    <div class="aec-card aec-alea"><div class="aec-k">Aléa</div><div class="aec-t">Ce qui menace</div><ul>${aleaItems.map(s=>`<li>${s}</li>`).join('')}</ul><div class="aec-foot">Voir « Projection climatique » ci-dessous pour la trajectoire de référence (TRACC) et la fourchette d'élévation marine régionalisée.</div></div>
-    <div class="aec-card aec-enjeu"><div class="aec-k">Enjeu</div><div class="aec-t">Ce qui est exposé</div><ul>${enjeuItems.map(s=>`<li>${s}</li>`).join('')}</ul><div class="aec-foot">Inventaire des biens exposés par destination : à consolider via le tableau de bord territorial (Cerema, observatoires).</div></div>
+    <div class="aec-card aec-alea"><div class="aec-k">Aléa</div><div class="aec-t">Ce qui menace</div><ul>${aleaItems.map(s=>`<li>${s}</li>`).join('')}</ul>${monoBloc.join('')}${monoSrc}<div class="aec-foot">Voir « Projection climatique » ci-dessous pour la trajectoire de référence (TRACC) et la fourchette d'élévation marine régionalisée.</div></div>
+    <div class="aec-card aec-enjeu"><div class="aec-k">Enjeu</div><div class="aec-t">Ce qui est exposé</div><ul>${enjeuItems.map(s=>`<li>${s}</li>`).join('')}</ul>${mono.composition?`<div class="aec-mono-taux"><b>Composition du littoral :</b> ${mono.composition}</div>`:''}${mono.exposition?`<div class="aec-mono-taux">${mono.exposition}</div>`:''}${mono.mangrove?`<div class="aec-mono-taux"><b>Mangrove :</b> ${mono.mangrove}</div>`:''}<div class="aec-foot">Inventaire des biens exposés par destination : à consolider via le tableau de bord territorial (Cerema, observatoires).</div></div>
     <div class="aec-card aec-cap"><div class="aec-k">Capacité d'adaptation</div><div class="aec-t">Ce qui est mobilisable</div><div class="aec-score">${capMoy}<span style="font-size:11px;color:var(--muted);font-weight:400"> / 3 (${capDone}/${ALL.length} axes renseignés)</span></div><ul>${ALL.map((ax,i)=>`<li><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${ax.color};margin-right:5px"></span><b>${ax.label}</b> · ${capScores[i].answered?capScores[i].score.toFixed(1):'—'}</li>`).join('')}</ul></div>
     </div>
     <div class="aec-warn"><b>Lecture.</b> Les trois familles sont présentées séparément, sans score unique compensatoire (réf. méth. 7.2 : la critique de l'indice de vulnérabilité côtière repose précisément sur ce mélange). Un score de capacité élevé ne compense pas un aléa fort.</div>`;
@@ -1863,17 +1981,25 @@ function _construirePanneauFamilles(T){
 function _construirePanneauClimat(T){
   const host=document.getElementById('panneau-climat');if(!host||!T)return;
   const reg=_CLIMAT_REGIONS[_regionDuTerritoire(TERR_ACTIF)]||{};
-  const trBlock=_CLIMAT_TRACC.national.map(r=>`<div class="tr-row"><span class="tr-h">${r.horizon}</span><span class="tr-v">${r.valeur}</span><span class="tr-n">${r.note||''}</span></div>`).join('');
+  // TRACC territorialisée si documentée (Antilles), sinon hexagonale + mention « à confirmer ».
+  const trTerr=_CLIMAT_TRACC.parTerritoire&&_CLIMAT_TRACC.parTerritoire[TERR_ACTIF];
+  const trVals=trTerr?trTerr.vals:_CLIMAT_TRACC.national;
+  const trTitle=trTerr?('Trajectoire de réchauffement (TRACC, '+(T.nom||TERR_ACTIF)+')'):'Trajectoire de réchauffement (TRACC, France hexagonale)';
+  const trBlock=trVals.map(r=>`<div class="tr-row"><span class="tr-h">${r.horizon}</span><span class="tr-v">${r.valeur}</span><span class="tr-n">${r.note||''}</span></div>`).join('');
+  const trSrc=trTerr?trTerr.src:_CLIMAT_TRACC.note_ultramarine;
   const ar6Block=_CLIMAT_AR6_MONDE.ranges.map(r=>`<div class="tr-row"><span class="tr-h">${r.scenario}</span><span class="tr-v">${r.valeur}</span></div>`).join('');
+  const slrObs=reg.slr_observe?`<div class="cp-region-slr" style="font-size:14px;color:var(--navy)">Élévation observée : ${reg.slr_observe}</div><div class="cp-src" style="margin-top:2px">${reg.slr_observe_src||''}</div>`:'';
   host.innerHTML=`<div class="climat-panel">
     <div class="cp-block">
-      <div class="cp-k">Trajectoire de réchauffement de référence (TRACC, France)</div>
+      <div class="cp-k">${trTitle}</div>
+      <div class="cp-note" style="margin-bottom:5px">${_CLIMAT_TRACC.nature}</div>
       ${trBlock}
-      <div class="cp-src">Source : ${_CLIMAT_TRACC.source}.<br><b>Outre-mer :</b> ${_CLIMAT_TRACC.note_ultramarine}</div>
+      <div class="cp-src">Source : ${_CLIMAT_TRACC.source}.<br>${trSrc}</div>
     </div>
     <div class="cp-block">
       <div class="cp-k">Région océanique : ${reg.nom||'—'}</div>
-      <div class="cp-region-slr">${reg.slr_2100_likely||'—'}</div>
+      ${slrObs}
+      <div class="cp-region-slr">Projection 2100 : ${reg.slr_2100_likely||'—'}</div>
       <div class="cp-note">${reg.note||''}</div>
     </div>
     <div class="cp-block">
@@ -1881,7 +2007,7 @@ function _construirePanneauClimat(T){
       ${ar6Block}
       <div class="cp-src">${_CLIMAT_AR6_MONDE.source} La déclinaison régionale au marégraphe local est à consulter via le portail NASA Sea Level Change (catalogue AR6 Sea Level Projections) et le réseau PSMSL.</div>
     </div>
-    <div class="cp-warn">⚠ Aucune moyenne mondiale n'est affichée comme valeur locale. Les fourchettes régionales ci-dessus sont indicatives ; pour un usage opérationnel, consultez le marégraphe le plus proche.</div>
+    <div class="cp-warn">⚠ La TRACC est une trajectoire de TEMPÉRATURE, pas d'élévation marine. Aucune moyenne mondiale n'est affichée comme valeur locale. Pour un usage opérationnel, consultez le marégraphe le plus proche.</div>
     </div>`;
 }
 function _construirePanneauMethode(){
@@ -5102,15 +5228,26 @@ window.proposerTauxRecul=function(){
   const info=document.getElementById('bande-info');
   sel.innerHTML='';
   const add=(v,lbl)=>{const o=document.createElement('option');o.value=v;o.textContent=lbl;sel.appendChild(o);};
+  const mono=_MONOGRAPHIE[TERR_ACTIF]||{};
   if(s.erosion){const e=s.erosion;
     add(e.moyen.toFixed(2),`Moyen érosion : ${e.moyen.toFixed(2)} m/an (n=${e.n})`);
     add(e.median.toFixed(2),`Médian : ${e.median.toFixed(2)} m/an`);
     add(e.p90.toFixed(2),`P90 (prudent) : ${e.p90.toFixed(2)} m/an`);
     add(e.p10.toFixed(2),`P10 (optimiste) : ${e.p10.toFixed(2)} m/an`);
-    if(info)info.innerHTML=`<b>${e.n}</b> transects d'érosion détectés · médiane ${e.median.toFixed(2)} m/an · enveloppe [${e.p10.toFixed(2)} – ${e.p90.toFixed(2)}]`;
+    // En complément, le taux documenté de la monographie (autre source de comparaison)
+    if(mono.taux_reference)add(mono.taux_reference.toFixed(2),`Documenté : ${mono.taux_reference.toFixed(2)} m/an — ${mono.taux_reference_label||'monographie'}`);
+    if(info)info.innerHTML=`<b>${e.n}</b> transects d'érosion détectés · médiane ${e.median.toFixed(2)} m/an · enveloppe [${e.p10.toFixed(2)} – ${e.p90.toFixed(2)}]`+(mono.taux_reference?` · taux documenté disponible (${mono.taux_reference.toFixed(2)} m/an)`:'');
+  }else if(mono.taux_reference){
+    // Pas d'extraction Évolution, mais un taux documenté existe pour ce territoire (monographie sourcée)
+    add(mono.taux_reference.toFixed(2),`Documenté : ${mono.taux_reference.toFixed(2)} m/an — ${mono.taux_reference_label||'monographie'}`);
+    if(mono.taux_mesures)mono.taux_mesures.forEach(t=>{if(t.taux)add((+t.taux).toFixed(2),`${t.secteur} : ${(+t.taux).toFixed(2)} m/an (mesuré)`);});
+    add('1.0','À saisir manuellement (1,0 m/an défaut)');
+    if(info)info.innerHTML=`Aucune extraction « Évolution » lancée. Taux <b>documenté</b> proposé depuis la monographie sourcée : ${mono.taux_reference.toFixed(2)} m/an (${mono.taux_reference_label||''}). Lancez « Évolution » pour un taux mesuré sur votre emprise.`;
   }else{
     add('1.0','À saisir manuellement (1,0 m/an défaut)');
-    if(info)info.innerHTML='Aucun transect d\'érosion : lancez l\'extraction « Évolution » d\'abord pour disposer d\'un taux mesuré, ou saisissez la valeur manuellement.';
+    if(info)info.innerHTML=(mono.bilan&&/LACUNE/.test(mono.bilan))
+      ?'⚠ Aucun taux d\'érosion institutionnel disponible pour ce territoire (lacune documentée dans la monographie). Lancez « Évolution » si des archives existent, ou saisissez une valeur experte — sans l\'attribuer à une mesure.'
+      :'Aucun transect d\'érosion : lancez l\'extraction « Évolution » d\'abord pour disposer d\'un taux mesuré, ou saisissez la valeur manuellement.';
   }
 };
 window.cumulSurCarte=function(){if(!_sigCumul.features.length){alert('Couche cumulée vide.');return;}if(!mapInstance){alert('Carte non initialisée — ouvrez la section « Carte ».');return;}ajouterGeojsonLayer(JSON.stringify(_sigCumul),'SIG cumulé ('+_sigCumul.features.length+')');document.getElementById('sec-carte').scrollIntoView({behavior:'smooth'});};
