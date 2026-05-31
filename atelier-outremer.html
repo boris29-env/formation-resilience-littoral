@@ -883,11 +883,11 @@ if(typeof firebase!=="undefined"&&!window._fbLoadFail){
     fbListen=(p,cb)=>{fbRef(p).on("value",s=>cb(s.val()));};
     fbRemove=(p)=>fbRef(p).remove();
     // gpush/glisten : chemin GLOBAL (hors session) pour l'apprentissage partagé des ouvrages.
-    window._FB={setVal:fbSet,listen:fbListen,remove:fbRemove,gpush:(p,v)=>fbDB.ref(p).push(v),glisten:(p,cb)=>{fbDB.ref(p).on("value",s=>cb(s.val()));},ready:()=>fbReady,session:()=>SESSION_ID};
+    window._FB={setVal:fbSet,listen:fbListen,remove:fbRemove,gpush:(p,v)=>fbDB.ref(p).push(v),glisten:(p,cb)=>{fbDB.ref(p).on("value",s=>cb(s.val()));},gset:(p,v)=>fbDB.ref(p).set(v),gremove:(p)=>fbDB.ref(p).remove(),ready:()=>fbReady,session:()=>SESSION_ID};
     fbRef("_ping").set(Date.now()).then(()=>{fbReady=true;updateVoteDot(true);}).catch(()=>updateVoteDot(false));
   }catch(e){console.warn("Firebase init error:",e);updateVoteDot(false);window._FB={setVal:()=>Promise.resolve(),listen:()=>{},remove:()=>Promise.resolve(),gpush:()=>Promise.resolve(),glisten:()=>{},ready:()=>false,session:()=>SESSION_ID};}
 }else{
-  window._FB={setVal:()=>Promise.resolve(),listen:()=>{},remove:()=>Promise.resolve(),gpush:()=>Promise.resolve(),glisten:()=>{},ready:()=>false,session:()=>SESSION_ID};
+  window._FB={setVal:()=>Promise.resolve(),listen:()=>{},remove:()=>Promise.resolve(),gpush:()=>Promise.resolve(),glisten:()=>{},gset:()=>Promise.resolve(),gremove:()=>Promise.resolve(),ready:()=>false,session:()=>SESSION_ID};
   // Retry après le chargement des scripts Firebase
   window.addEventListener('load',()=>{
     if(typeof firebase!=="undefined"&&!window._fbLoadFail){
@@ -897,7 +897,7 @@ if(typeof firebase!=="undefined"&&!window._fbLoadFail){
         const fbDB=firebase.database();
         const fbRef=p=>fbDB.ref("outremer/"+SESSION_ID+"/"+p);
         fbSet=(p,v)=>fbRef(p).set(v);fbListen=(p,cb)=>{fbRef(p).on("value",s=>cb(s.val()));};fbRemove=(p)=>fbRef(p).remove();
-        window._FB={setVal:fbSet,listen:fbListen,remove:fbRemove,gpush:(p,v)=>fbDB.ref(p).push(v),glisten:(p,cb)=>{fbDB.ref(p).on("value",s=>cb(s.val()));},ready:()=>fbReady,session:()=>SESSION_ID};
+        window._FB={setVal:fbSet,listen:fbListen,remove:fbRemove,gpush:(p,v)=>fbDB.ref(p).push(v),glisten:(p,cb)=>{fbDB.ref(p).on("value",s=>cb(s.val()));},gset:(p,v)=>fbDB.ref(p).set(v),gremove:(p)=>fbDB.ref(p).remove(),ready:()=>fbReady,session:()=>SESSION_ID};
         fbRef("_ping").set(Date.now()).then(()=>{fbReady=true;updateVoteDot(true);if(typeof TERR_ACTIF!=='undefined'&&TERR_ACTIF){initFbListeners();initApprentissageOuvrages();}}).catch(()=>updateVoteDot(false));
       }catch(e){console.warn("Firebase retry failed:",e);}
     }else{updateVoteDot(false);}
@@ -1460,6 +1460,7 @@ function chargerTerritoire(key){
   document.getElementById('terr-vigil-content').innerHTML=T.vigilance.split(' · ').map(s=>`<p style="margin-bottom:3px">· ${s}</p>`).join('');
   _construireBandeauPrerogatives(key);   // A5.1 — bandeau de prérogatives et licences
   _pondLoad();                            // A1.2 — pondérations persistées par territoire
+  _initInventaire(key);                   // B4 — base temporelle des ouvrages (listener Firebase)
   document.getElementById('terr-src').innerHTML=`<b>Sources :</b> ${(T.sources||'').replace(/Lettre de commande réf\.?\s*014917-02[^·]*·\s*/gi,'')}`;
   // Initialiser la carte
   setTimeout(()=>initMap(T,key),100);
@@ -2889,6 +2890,10 @@ function construireImageModule(){
           </div>
           <div id="bande-info" style="margin-top:5px;font-family:var(--mono);font-size:9px;color:var(--muted);line-height:1.5">Cliquez « Calculer les taux disponibles » pour proposer un taux mesuré depuis l'extraction « Évolution » de votre territoire.</div>
         </div>
+        <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line)">
+          <div style="font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:4px">📚 Inventaire territorial historisé (B4)</div>
+          <div id="inventaire-host" style="font-size:11px;line-height:1.55"><em style="color:var(--muted)">Chargement de l'inventaire…</em></div>
+        </div>
       </div>
       <div style="font-family:var(--mono);font-size:8.5px;color:var(--muted);margin-top:7px;line-height:1.5">Traitement local (navigateur), géoréférencement pixel→WGS84 exact · Résultats indicatifs, à valider sur le terrain</div>
     </div>
@@ -3909,13 +3914,111 @@ function affinerOuvragesParModele(feats,relaxed){
 }
 window.validerOuvrage=function(idx,y){
   const gj=_lastSigGeojson;if(!gj||!gj.features||!gj.features[idx])return;
-  const p=gj.features[idx].properties||{};
+  const f=gj.features[idx];const p=f.properties||{};
   if(!p._features){alert("Entité non apprenable (pas de vecteur de caractéristiques).");return;}
   p._label=y;
   const rec={f:p._features,y:y?1:0,type:p.type||'',site:(typeof _lastSigMeta!=='undefined'&&_lastSigMeta&&_lastSigMeta.site)||'',sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now()};
   _ouvrLabelsLocal.push(rec);_saveLocalLabels();entrainerModeleOuvrages();
   if(window._FB&&window._FB.gpush)window._FB.gpush(OUVR_FB_PATH,rec).then(()=>{_fbWriteOk=true;majApprentissageUI();}).catch(()=>{_fbWriteOk=false;majApprentissageUI();});
   majApprentissageUI();
+  // Lot B4 — Base temporelle : un ouvrage validé est aussi versé dans l'inventaire territorial
+  // (Firebase global), avec appariement spatial aux ouvrages déjà connus → statut nouveau / maintenu /
+  // modifié + années d'apparition/disparition. Pas de stockage de géométrie complète (centroid seul).
+  if(y===1)_pousserInventaire(f);
+};
+
+/* ============================================================
+   LOT B4 — BASE TEMPORELLE DES OUVRAGES (réf. méth. 7.7 attributs Cerema
+   annee_apparition / annee_disparition, plan B4). Historisation Firebase
+   par territoire ; appariement spatial au centroïde (tolérance 30 m).
+   Statuts : nouveau, maintenu, modifié, disparu. Pas d'écrasement.
+============================================================ */
+const _INV_PATH='outremer/_inventaire_ouvrages';
+let _inventaireTerr={};   // par territoire : array d'ouvrages {id, centroid, type_cerema, history, …}
+let _invListenerFor=null;
+function _centroidGeo(geom){
+  if(!geom)return null;
+  if(geom.type==='Point')return geom.coordinates.slice();
+  if(geom.type==='LineString'){const c=geom.coordinates;const n=c.length||1;return [c.reduce((a,p)=>a+p[0],0)/n,c.reduce((a,p)=>a+p[1],0)/n];}
+  if(geom.type==='Polygon')return _centroidGeo({type:'LineString',coordinates:geom.coordinates[0]||[]});
+  return null;
+}
+function _distMetres(c1,c2){const lat=(c1[1]+c2[1])/2;const dx=(c1[0]-c2[0])*111320*Math.cos(lat*Math.PI/180);const dy=(c1[1]-c2[1])*111320;return Math.hypot(dx,dy);}
+function _appairerInventaire(centroid,toleranceM,inv){
+  if(!inv)return null;let best=null,bd=1e9;
+  for(const o of inv){if(!o||!o.centroid)continue;const d=_distMetres(centroid,o.centroid);if(d<bd){bd=d;best=o;}}
+  return (best&&bd<=toleranceM)?best:null;
+}
+function _initInventaire(terr){
+  if(!terr||!window._FB||!window._FB.glisten)return;
+  if(_invListenerFor===terr)return;_invListenerFor=terr;
+  window._FB.glisten(_INV_PATH+'/'+terr,val=>{
+    _inventaireTerr[terr]=val?Object.entries(val).map(([k,v])=>({...(v||{}),_fbKey:k})):[];
+    _afficherInventaireUI();
+  });
+}
+function _pousserInventaire(feat){
+  if(!window._FB||!window._FB.gset||!TERR_ACTIF)return;
+  if(!feat||!feat.geometry)return;
+  const p=feat.properties||{};
+  // On n'historise QUE les ouvrages (pas les traits de côte ni les bandes de recul)
+  if(!/(enrochement|perré|mur|digue|brise-lames|épi|jetée|môle|quai|cale|ouvrage)/i.test((p.type||'')+' '+(p.classe_suggeree||'')))return;
+  const c=_centroidGeo(feat.geometry);if(!c)return;
+  const annee=(p.date_photo&&(''+p.date_photo).substring(0,4))||(new Date().getFullYear()+'');
+  const ceremaMap=(typeof _propsCerema==='function')?_propsCerema(p):p;
+  const inv=_inventaireTerr[TERR_ACTIF]||[];
+  const match=_appairerInventaire(c,30,inv);
+  const sess=window._FB.session?window._FB.session():'?';
+  if(match){
+    const sameType=match.cerema_type===(ceremaMap.cerema_type||p.cerema_type||p.type);
+    const statut=sameType?'maintenu':'modifié';
+    const updated={...match,
+      annee_derniere_obs:annee,
+      statut,
+      longueur_m:p.longueur_m_est||p.longueur_m||match.longueur_m,
+      history:(match.history||[]).concat([{ts:Date.now(),statut,annee,source_session:sess,site:(_lastSigMeta&&_lastSigMeta.site)||''}]).slice(-30)};
+    delete updated._fbKey;
+    window._FB.gset(_INV_PATH+'/'+TERR_ACTIF+'/'+match._fbKey,updated).catch(e=>console.warn('inv update KO',e));
+  }else{
+    const id='ouv_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,6);
+    const ouv={id,centroid:c,
+      cerema_categorie:ceremaMap.cerema_categorie||null,
+      cerema_classe:ceremaMap.cerema_classe||null,
+      cerema_type:ceremaMap.cerema_type||p.type||'ouvrage',
+      cerema_orientation:ceremaMap.cerema_orientation||null,
+      substitue_tc:!!p.substitue_tc,
+      longueur_m:p.longueur_m_est||p.longueur_m||null,
+      annee_premiere_obs:annee,annee_derniere_obs:annee,statut:'nouveau',
+      history:[{ts:Date.now(),statut:'nouveau',annee,source_session:sess,site:(_lastSigMeta&&_lastSigMeta.site)||''}]};
+    window._FB.gset(_INV_PATH+'/'+TERR_ACTIF+'/'+id,ouv).catch(e=>console.warn('inv new KO',e));
+  }
+}
+function _afficherInventaireUI(){
+  const host=document.getElementById('inventaire-host');if(!host)return;
+  const inv=_inventaireTerr[TERR_ACTIF]||[];
+  if(!inv.length){host.innerHTML='<em style="color:var(--muted);font-size:11px">Aucun ouvrage historisé pour ce territoire. Validez ✓ vos premières détections pour amorcer l\'inventaire.</em>';return;}
+  const par={nouveau:0,maintenu:0,modifié:0,disparu:0};inv.forEach(o=>{par[o.statut||'nouveau']=(par[o.statut||'nouveau']||0)+1;});
+  const anciens=inv.map(o=>+(o.annee_premiere_obs||0)).filter(x=>x>0);const moinsRecent=Math.min(...anciens),plusRecent=Math.max(...anciens);
+  // Top types
+  const types={};inv.forEach(o=>{const t=o.cerema_type||'?';types[t]=(types[t]||0)+1;});const topTypes=Object.entries(types).sort(([,a],[,b])=>b-a).slice(0,4);
+  host.innerHTML=`<div style="display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-size:11.5px;align-items:start">
+    <div style="font-family:var(--serif);font-size:24px;color:var(--navy);font-weight:600;line-height:1">${inv.length}</div>
+    <div><div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono)">ouvrages historisés</div>
+      <div style="margin-top:3px">de ${moinsRecent||'?'} à ${plusRecent||'?'} ${anciens.length?'· couverte par ce territoire':''}</div></div>
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">
+      <span style="background:#1a8a4a;color:#fff;padding:2px 7px;border-radius:4px;font-size:10.5px;font-weight:600">${par.nouveau||0} nouveau(x)</span>
+      <span style="background:#0E7C86;color:#fff;padding:2px 7px;border-radius:4px;font-size:10.5px;font-weight:600">${par.maintenu||0} maintenu(s)</span>
+      <span style="background:#B07E1B;color:#fff;padding:2px 7px;border-radius:4px;font-size:10.5px;font-weight:600">${par.modifié||0} modifié(s)</span>
+      <span style="background:#c0392b;color:#fff;padding:2px 7px;border-radius:4px;font-size:10.5px;font-weight:600">${par.disparu||0} disparu(s)</span>
+    </div>
+    ${topTypes.length?'<div style="margin-top:8px;font-size:11px;color:var(--muted)"><b style="color:var(--navy)">Types dominants :</b> '+topTypes.map(([t,n])=>`${t} (${n})`).join(' · ')+'</div>':''}
+    <div style="margin-top:8px"><button onclick="exporterInventaire()" style="background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:3px 8px;font-size:10.5px;cursor:pointer">Exporter (GeoJSON)</button></div>`;
+}
+window.exporterInventaire=function(){
+  const inv=_inventaireTerr[TERR_ACTIF]||[];if(!inv.length){alert('Inventaire vide.');return;}
+  const fc={type:'FeatureCollection',name:'inventaire_ouvrages_'+TERR_ACTIF,metadata:{territoire:TERR_ACTIF,date_export:new Date().toISOString(),producteur:'Plateforme Recomposition spatiale des littoraux ultramarins',note:'Base temporelle des ouvrages (Lot B4) — historisation par appariement spatial centroïde, tolérance 30 m.'},features:inv.map(o=>({type:'Feature',geometry:{type:'Point',coordinates:o.centroid},properties:{id:o.id,cerema_categorie:o.cerema_categorie,cerema_classe:o.cerema_classe,cerema_type:o.cerema_type,cerema_orientation:o.cerema_orientation,substitue_tc:!!o.substitue_tc,longueur_m:o.longueur_m,annee_premiere_obs:o.annee_premiere_obs,annee_derniere_obs:o.annee_derniere_obs,statut:o.statut,nb_observations:(o.history||[]).length}}))};
+  const blob=new Blob([JSON.stringify(fc,null,2)],{type:'application/geo+json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='inventaire_'+TERR_ACTIF+'_'+new Date().toLocaleDateString('fr-FR').replace(/\//g,'-')+'.geojson';a.click();URL.revokeObjectURL(url);
 };
 window.exporterLabelsOuvrages=function(){
   const blob=new Blob([JSON.stringify(_allLabels(),null,2)],{type:'application/json'});const u=URL.createObjectURL(blob);
