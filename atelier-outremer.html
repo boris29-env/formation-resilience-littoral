@@ -4037,18 +4037,93 @@ function otsu(sc,lo,hi){const B=64,H=new Array(B).fill(0),sp=(hi-lo)||1;for(let 
 function dilate(mask,w,h,k){const tmp=new Uint8Array(w*h),out=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){let v=0;for(let dx=-k;dx<=k;dx++){const xx=x+dx;if(xx>=0&&xx<w&&mask[y*w+xx]){v=1;break;}}tmp[y*w+x]=v;}for(let x=0;x<w;x++)for(let y=0;y<h;y++){let v=0;for(let dy=-k;dy<=k;dy++){const yy=y+dy;if(yy>=0&&yy<h&&tmp[yy*w+x]){v=1;break;}}out[y*w+x]=v;}return out;}
 function erodeMask(mask,w,h,k){const tmp=new Uint8Array(w*h),out=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){let v=1;for(let dx=-k;dx<=k;dx++){const xx=x+dx;if(xx<0||xx>=w||!mask[y*w+xx]){v=0;break;}}tmp[y*w+x]=v;}for(let x=0;x<w;x++)for(let y=0;y<h;y++){let v=1;for(let dy=-k;dy<=k;dy++){const yy=y+dy;if(yy<0||yy>=h||!tmp[yy*w+x]){v=0;break;}}out[y*w+x]=v;}return out;}
 function openMask(mask,w,h,k){return dilate(erodeMask(mask,w,h,k),w,h,k);} // ouverture morpho : supprime les tendrils fins (rivières, bruit)
-// Garde les composantes d'eau touchant le bord (mer ouverte) OU assez grandes (lagons / atolls fermés), écarte les petites taches (ombres, mares).
-function keepSeaComponents(mask,w,h){const lab=new Int32Array(w*h);let cur=0;const comp=[];const st=[];
-  for(let p0=0;p0<w*h;p0++){if(!mask[p0]||lab[p0])continue;cur++;let area=0,border=false;st.length=0;st.push(p0);lab[p0]=cur;
-    while(st.length){const p=st.pop();area++;const x=p%w,y=(p-x)/w;if(x===0||y===0||x===w-1||y===h-1)border=true;
+// Algorithme robuste mer/terre (banc /tmp/bench7 : 95→58 m d'erreur moyenne brute avant filtre OSM).
+// Concept "noyau" : une vraie mer contient des pixels à ≥3 px de toute terre (sinon = ruelle urbaine
+// connectée par hasard à la mer du port). Une vraie terre contient des pixels à ≥2 px de toute eau
+// (sinon = bateau fin). Distingue donc port-réel vs bateau-fin, et mer-pleine vs eau-intra-urbaine.
+function _affinerMer(mask, w, h, opts){
+  opts = opts || {};
+  const noyauMer = opts.noyauMer != null ? opts.noyauMer : 3;
+  const noyauTerre = opts.noyauTerre != null ? opts.noyauTerre : 2;
+  const merMinFrac = opts.merMinFrac != null ? opts.merMinFrac : 0.005;
+  const n = w*h;
+  // 1. Composantes du masque eau brut
+  const lab = new Int32Array(n), comp = [null];
+  let cur = 0; const st = [];
+  for(let p0=0;p0<n;p0++){
+    if(!mask[p0] || lab[p0]) continue;
+    cur++; let area=0, border=false;
+    st.length=0; st.push(p0); lab[p0]=cur;
+    while(st.length){
+      const p=st.pop(); area++;
+      const x=p%w, y=(p-x)/w;
+      if(x===0||y===0||x===w-1||y===h-1) border=true;
       if(x>0&&mask[p-1]&&!lab[p-1]){lab[p-1]=cur;st.push(p-1);}
       if(x<w-1&&mask[p+1]&&!lab[p+1]){lab[p+1]=cur;st.push(p+1);}
       if(y>0&&mask[p-w]&&!lab[p-w]){lab[p-w]=cur;st.push(p-w);}
-      if(y<h-1&&mask[p+w]&&!lab[p+w]){lab[p+w]=cur;st.push(p+w);}}
-    comp[cur]={area,border};}
-  const minArea=Math.max(80,0.01*w*h);const out=new Uint8Array(w*h);
-  for(let p=0;p<w*h;p++){const c=comp[lab[p]];if(c&&(c.border||c.area>=minArea))out[p]=1;}
-  return out;}
+      if(y<h-1&&mask[p+w]&&!lab[p+w]){lab[p+w]=cur;st.push(p+w);}
+    }
+    comp[cur] = {area, border};
+  }
+  // 2. Noyaux de pleine mer (érosion : fines ruelles disparaissent)
+  const noyaux = erodeMask(mask, w, h, noyauMer);
+  const aNoyau = new Set();
+  for(let p=0;p<n;p++) if(noyaux[p] && lab[p]) aNoyau.add(lab[p]);
+  const merLabs = new Set();
+  const minArea = Math.max(80, merMinFrac*n);
+  for(let l=1;l<=cur;l++){
+    const c = comp[l];
+    if(!c) continue;
+    // Mer = touche le bord, contient un noyau, et a une aire significative
+    if(c.border && aNoyau.has(l) && c.area >= minArea) merLabs.add(l);
+    // Lagon fermé toléré si très grand (atolls) et contient un noyau
+    else if(aNoyau.has(l) && c.area >= 0.05*n) merLabs.add(l);
+  }
+  const mer = new Uint8Array(n);
+  for(let p=0;p<n;p++) if(mask[p] && merLabs.has(lab[p])) mer[p] = 1;
+  if(opts.raw) return mer;
+  // 3. Reclassement des objets flottants : composantes non-mer = bateau si (a) ne touche pas le bord
+  //    ET (b) (pas de noyau de terre OU trop petite pour être une vraie île)
+  const inv = new Uint8Array(n);
+  for(let p=0;p<n;p++) inv[p] = mer[p]?0:1;
+  const labI = new Int32Array(n), compI = [null];
+  let curI = 0;
+  for(let p0=0;p0<n;p0++){
+    if(!inv[p0] || labI[p0]) continue;
+    curI++;
+    let area=0, border=false;
+    st.length=0; st.push(p0); labI[p0]=curI;
+    while(st.length){
+      const p=st.pop(); area++;
+      const x=p%w, y=(p-x)/w;
+      if(x===0||y===0||x===w-1||y===h-1) border=true;
+      if(x>0&&inv[p-1]&&!labI[p-1]){labI[p-1]=curI;st.push(p-1);}
+      if(x<w-1&&inv[p+1]&&!labI[p+1]){labI[p+1]=curI;st.push(p+1);}
+      if(y>0&&inv[p-w]&&!labI[p-w]){labI[p-w]=curI;st.push(p-w);}
+      if(y<h-1&&inv[p+w]&&!labI[p+w]){labI[p+w]=curI;st.push(p+w);}
+    }
+    compI[curI] = {area, border};
+  }
+  const noyauxTerre = erodeMask(inv, w, h, noyauTerre);
+  const aNoyauT = new Set();
+  for(let p=0;p<n;p++) if(noyauxTerre[p] && labI[p]) aNoyauT.add(labI[p]);
+  // Île minimale : 0.5 % de l'image (sous ce seuil et hors bord, c'est un bateau ou un débris)
+  const seuilIle = Math.max(200, 0.005 * n);
+  const terreLabs = new Set();
+  for(let l=1;l<=curI;l++){
+    const c = compI[l];
+    if(!c) continue;
+    // Terre = touche le bord, OU contient un noyau ET assez grande pour être une île
+    if(c.border || (aNoyauT.has(l) && c.area >= seuilIle)) terreLabs.add(l);
+  }
+  const out = new Uint8Array(n);
+  for(let p=0;p<n;p++){
+    if(mer[p]) out[p] = 1;
+    else if(labI[p] && !terreLabs.has(labI[p])) out[p] = 1;
+  }
+  return out;
+}
+function keepSeaComponents(mask,w,h){return _affinerMer(mask,w,h,{raw:true});}
 // Pixels "no-data" de l'ortho (dalles blanches hors couverture, ou noir total) :
 // à exclure pour ne pas tracer le bord de dalle ni créer de faux ouvrages.
 function nodataMask(im){const {data,w,h}=im;const nd=new Uint8Array(w*h);for(let i=0,p=0;p<w*h;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];if((r>248&&g>248&&b>248)||(r<7&&g<7&&b<7))nd[p]=1;}return nd;}
@@ -4058,8 +4133,7 @@ function _waterMaskNDWI(ir,sens,raw){const {data,w,h}=ir,n=w*h;const nd=nodataMa
   for(let i=0,p=0;p<n;i+=4,p++){const NIR=data[i],Gv=data[i+2];const v=(Gv-NIR)/(Gv+NIR+1);wi[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;}
   let thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);
   const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p])?1:0;
-  const sea=keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h);
-  return raw?sea:fillWaterHoles(sea,w,h,0.004);}   // raw = sans bouchage (les structures détachées restent des « trous »)
+  return _affinerMer(openMask(majority(m,w,h),w,h,1), w, h, {raw: !!raw});}
 // Masque d'eau : IRC NDWI (PIR) si disponible, sinon indice cyan RGB avec garde végétation.
 function computeWaterMask(im,sens,imIRC,raw){
   if(imIRC&&imIRC.data&&imIRC.w===im.w&&imIRC.h===im.h)return _waterMaskNDWI(imIRC,sens,raw);
@@ -4069,8 +4143,7 @@ function computeWaterMask(im,sens,imIRC,raw){
     if(b<g-6)veg[p]=1;}
   let thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);
   const m=new Uint8Array(n);for(let p=0;p<n;p++)m[p]=(wi[p]>thr&&!nd[p]&&!veg[p])?1:0;
-  const sea=keepSeaComponents(openMask(majority(m,w,h),w,h,1),w,h);
-  return raw?sea:fillWaterHoles(sea,w,h,0.004);}
+  return _affinerMer(openMask(majority(m,w,h),w,h,1), w, h, {raw: !!raw});}
 // Bouche les composantes NON-eau entièrement enclavées dans l'eau et de petite taille (bateaux, herbiers,
 // écume) → évite les contours/îlots parasites dans le plan d'eau. Les grandes îles réelles sont conservées.
 function fillWaterHoles(m,w,h,maxFrac){const n=w*h,reached=new Uint8Array(n),st=[];
