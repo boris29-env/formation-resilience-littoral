@@ -22,9 +22,9 @@ from shapely.ops import unary_union, polygonize, transform
 from pyproj import Transformer
 
 OUT_DIR = '/home/user/formation-resilience-littoral/data/masque_cote'
-TAMPON_MER_M = 200   # bande côté mer : réduite à 200 m pour resserrer la zone de recherche
-TAMPON_TERRE_M = 100
-SIMPLIF_M = 30       # simplification plus fine, bande plus étroite
+TAMPON_MER_M = 30    # bande côté mer : 30 m strict (proche du trait OSM)
+TAMPON_TERRE_M = 30  # bande côté terre : 30 m strict (élimine totalement l'intérieur des terres)
+SIMPLIF_M = 10       # simplification fine, ≪ tampon
 
 TERRITOIRES = {
     'spm':      {'bbox': (46.65, -56.50, 47.20, -56.05), 'epsg': 32621, 'nom': 'Saint-Pierre-et-Miquelon'},
@@ -166,27 +166,30 @@ def generer(key, conf):
             print(f'    île trop petite pour érosion {TAMPON_TERRE_M} m → bande = couronne mer uniquement')
         else:
             bande = terre_ext.difference(terre_int)
-    bande = bande.simplify(SIMPLIF_M, preserve_topology=True)
-    if bande.is_empty:
-        print(f'    ✗ bande vide'); return None
-    bande_wgs = transform(to_w, bande)
-    bande_km2 = bande.area / 1e6
-    print(f'    bande +{TAMPON_MER_M}m mer / +{TAMPON_TERRE_M}m terre = {bande_km2:.1f} km²')
-
+    # Zones de port (calculées D'ABORD, pour les SOUSTRAIRE de la bande)
     port_polys_m = []
     for kind, g in raw_polys:
         g_m = transform(to_m, g)
         if kind == 'pier':
             g_m = g_m.buffer(15, cap_style='flat')
         port_polys_m.append(g_m)
+    ports_union = None
     if port_polys_m:
         ports_union = unary_union(port_polys_m).buffer(20)
-        ports_union = ports_union.simplify(10, preserve_topology=True)
-        ports_wgs = transform(to_w, ports_union)
+        ports_union = ports_union.simplify(5, preserve_topology=True)
         ports_km2 = ports_union.area / 1e6
-        print(f'    zones port à exclure (+20 m marge) : {ports_km2:.3f} km²')
-    else:
-        ports_wgs = None
+        # SOUSTRAIRE les ports de la bande littorale : on ne cherche pas DEDANS (pas de bateaux pris pour des traits)
+        bande_avant_km2 = bande.area / 1e6
+        bande = bande.difference(ports_union)
+        bande_apres_km2 = bande.area / 1e6
+        print(f'    ports soustraits du masque ({ports_km2:.3f} km² · bande {bande_avant_km2:.2f} → {bande_apres_km2:.2f} km²)')
+    bande = bande.simplify(SIMPLIF_M, preserve_topology=True)
+    if bande.is_empty:
+        print(f'    ✗ bande vide'); return None
+    bande_wgs = transform(to_w, bande)
+    bande_km2 = bande.area / 1e6
+    print(f'    bande finale +{TAMPON_MER_M}m mer / +{TAMPON_TERRE_M}m terre, ports exclus = {bande_km2:.2f} km²')
+    ports_wgs = transform(to_w, ports_union) if ports_union is not None else None
 
     features = [{
         'type': 'Feature',
