@@ -1675,6 +1675,165 @@ window.toggleSegDeep=function(){
   }).addTo(mapInstance);
   _segDeepVisible=true;btn.classList.add('active');
 };
+
+/* ============================================================
+   SAM — Segment Anything Model (Xenova/slimsam-77-uniform)
+   Segmentation promptable : l'utilisateur clique sur la mer (label 1) ou
+   sur une zone à exclure (label 0, clic droit). Le modèle renvoie un
+   masque cohérent qu'on convertit en contour = trait de côte propre.
+   · 1er chargement : ~40 Mo (modèle + transformers.js), mis en cache.
+   · Encoding image : 1× par dalle (quelques secondes), re-utilisé pour
+     chaque clic ensuite (~rapide).
+   · WebGPU si dispo, sinon WASM (Safari, vieilles plateformes).
+   Cible : lagons coralliens (Saint-Barthélemy, atolls) où l'heuristique
+   pixel produit un contour fractal.
+============================================================ */
+const _SAM_CDN='https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2';
+const _SAM_MODEL_ID='Xenova/slimsam-77-uniform';
+const _SAM_STATE={mod:null,model:null,processor:null,image:null,embeddings:null,imgKey:null,ready:false,lastMask:null,lastScore:null};
+const _samPts=[];
+
+window._samToggle=function(){
+  const p=document.getElementById('sam-panel');if(!p)return;
+  p.style.display=(p.style.display==='none'||!p.style.display)?'block':'none';
+};
+async function _samLazyLoad(progressCb){
+  if(_SAM_STATE.ready)return _SAM_STATE;
+  const status=document.getElementById('sam-status');
+  try{
+    if(!_SAM_STATE.mod){
+      if(status)status.textContent='Chargement de transformers.js (CDN)…';
+      _SAM_STATE.mod=await import(_SAM_CDN+'/dist/transformers.min.js');
+    }
+    const {SamModel,AutoProcessor}=_SAM_STATE.mod;
+    let device='wasm';
+    try{if(typeof navigator!=='undefined'&&navigator.gpu){const a=await navigator.gpu.requestAdapter();if(a)device='webgpu';}}catch(e){device='wasm';}
+    if(status)status.textContent='Chargement du modèle SAM (~40 Mo, mis en cache sur '+device+')…';
+    _SAM_STATE.model=await SamModel.from_pretrained(_SAM_MODEL_ID,{device,progress_callback:progressCb});
+    _SAM_STATE.processor=await AutoProcessor.from_pretrained(_SAM_MODEL_ID);
+    _SAM_STATE.ready=true;
+    if(status)status.textContent='SAM prêt ('+device+'). Encodage de l\'image en cours…';
+  }catch(e){
+    if(status)status.textContent='Échec chargement SAM : '+e.message+'. Repli : restez sur l\'extraction heuristique.';
+    throw e;
+  }
+  return _SAM_STATE;
+}
+async function _samEncodeImage(){
+  if(typeof _lastSigImage==='undefined'||!_lastSigImage||!_lastSigBbox)throw new Error('Aucune image SIG en mémoire. Chargez une orthophoto et lancez « Trait de côte » d\'abord.');
+  const key=JSON.stringify([_lastSigBbox.w,_lastSigBbox.s,_lastSigBbox.e,_lastSigBbox.n,_lastSigImage.w]);
+  if(_SAM_STATE.imgKey===key&&_SAM_STATE.embeddings)return;
+  const {RawImage}=_SAM_STATE.mod;
+  const status=document.getElementById('sam-status');
+  if(status)status.textContent='Encodage de l\'image (1× par dalle, quelques secondes)…';
+  const cnv=document.createElement('canvas');cnv.width=_lastSigImage.w;cnv.height=_lastSigImage.h;
+  const ctx=cnv.getContext('2d');const imgData=ctx.createImageData(_lastSigImage.w,_lastSigImage.h);
+  imgData.data.set(_lastSigImage.data);ctx.putImageData(imgData,0,0);
+  const blob=await new Promise(r=>cnv.toBlob(r,'image/png'));
+  const url=URL.createObjectURL(blob);
+  _SAM_STATE.image=await RawImage.read(url);
+  URL.revokeObjectURL(url);
+  const inputs=await _SAM_STATE.processor(_SAM_STATE.image);
+  _SAM_STATE.embeddings=await _SAM_STATE.model.get_image_embeddings({pixel_values:inputs.pixel_values});
+  _SAM_STATE.imgKey=key;_samPts.length=0;_SAM_STATE.lastMask=null;
+  if(status)status.textContent='Image encodée. Cliquez sur la MER dans l\'aperçu (clic droit = exclure récif/île secondaire).';
+}
+async function _samPredict(){
+  if(!_SAM_STATE.embeddings)throw new Error('Image non encodée.');
+  if(!_samPts.length)throw new Error('Aucun point cliqué.');
+  const pts=_samPts.map(p=>[p.x,p.y]);const lbs=_samPts.map(p=>p.label);
+  const inputs=await _SAM_STATE.processor(_SAM_STATE.image,{input_points:[[pts]],input_labels:[[lbs]]});
+  const outputs=await _SAM_STATE.model({...inputs,image_embeddings:_SAM_STATE.embeddings});
+  const masks=await _SAM_STATE.processor.post_process_masks(outputs.pred_masks,inputs.original_sizes,inputs.reshaped_input_sizes);
+  // masks[0] : Tensor [num_masks, H, W] (1 point => 3 hypothèses, on prend la meilleure par iou_scores)
+  const scores=Array.from(outputs.iou_scores.data);
+  let bestIdx=0;for(let i=1;i<scores.length;i++)if(scores[i]>scores[bestIdx])bestIdx=i;
+  const W=_lastSigImage.w,H=_lastSigImage.h;
+  const m=masks[0];const data=m.data||m;   // Tensor ou ndarray
+  const sliceSize=W*H;
+  const out=new Uint8Array(sliceSize);
+  for(let i=0;i<sliceSize;i++)out[i]=data[bestIdx*sliceSize+i]?1:0;
+  _SAM_STATE.lastMask=out;_SAM_STATE.lastScore=scores[bestIdx];
+  return {mask:out,score:scores[bestIdx]};
+}
+function _samAfficherCanvas(){
+  const cnv=document.getElementById('sam-canvas');if(!cnv||!_lastSigImage)return;
+  cnv.width=_lastSigImage.w;cnv.height=_lastSigImage.h;
+  const ctx=cnv.getContext('2d');
+  const imgData=ctx.createImageData(_lastSigImage.w,_lastSigImage.h);
+  imgData.data.set(_lastSigImage.data);ctx.putImageData(imgData,0,0);
+  cnv.style.display='';
+  cnv.onclick=e=>_samCanvasClick(e,1);
+  cnv.oncontextmenu=e=>{e.preventDefault();_samCanvasClick(e,0);};
+}
+async function _samCanvasClick(e,label){
+  if(!_SAM_STATE.ready||!_SAM_STATE.embeddings)return;
+  const cnv=e.target;const rect=cnv.getBoundingClientRect();
+  const x=Math.round((e.clientX-rect.left)*cnv.width/rect.width);
+  const y=Math.round((e.clientY-rect.top)*cnv.height/rect.height);
+  _samPts.push({x,y,label});
+  await _samRedessine();
+}
+async function _samRedessine(){
+  const cnv=document.getElementById('sam-canvas');const ctx=cnv.getContext('2d');
+  // Redessine l'image source
+  const imgData=ctx.createImageData(_lastSigImage.w,_lastSigImage.h);
+  imgData.data.set(_lastSigImage.data);ctx.putImageData(imgData,0,0);
+  const status=document.getElementById('sam-status');
+  if(status)status.textContent='Prédiction SAM…';
+  try{
+    const {mask,score}=await _samPredict();
+    // Overlay du masque
+    const overlay=ctx.createImageData(cnv.width,cnv.height);
+    for(let i=0,p=0;p<mask.length;i+=4,p++){if(mask[p]){overlay.data[i]=30;overlay.data[i+1]=144;overlay.data[i+2]=255;overlay.data[i+3]=110;}}
+    const tmp=document.createElement('canvas');tmp.width=cnv.width;tmp.height=cnv.height;
+    tmp.getContext('2d').putImageData(overlay,0,0);ctx.drawImage(tmp,0,0);
+    // Points cliqués
+    for(const p of _samPts){ctx.fillStyle=p.label?'#1a8a4a':'#c0392b';ctx.beginPath();ctx.arc(p.x,p.y,7,0,2*Math.PI);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();}
+    if(status)status.textContent='Masque SAM · score IoU '+score.toFixed(2)+' · '+_samPts.length+' point(s). Ajustez avec d\'autres clics, ou ajoutez au trait de côte.';
+    const act=document.getElementById('sam-actions');if(act)act.style.display='flex';
+  }catch(e){if(status)status.textContent='Erreur prédiction : '+e.message;}
+}
+window._samActiver=async function(){
+  const goBtn=document.getElementById('sam-btn-go');if(goBtn)goBtn.disabled=true;
+  try{
+    await _samLazyLoad(p=>{const s=document.getElementById('sam-status');if(!s||p.progress==null)return;s.textContent=(p.file?p.file+' · ':'')+Math.round(p.progress)+'% ('+p.status+')';});
+    await _samEncodeImage();
+    _samAfficherCanvas();
+  }catch(e){console.error(e);}
+  finally{if(goBtn){goBtn.disabled=false;goBtn.textContent='Recharger SAM';}}
+};
+window._samReinit=function(){
+  _samPts.length=0;_SAM_STATE.lastMask=null;
+  _samAfficherCanvas();
+  const s=document.getElementById('sam-status');if(s)s.textContent='Points effacés. Cliquez à nouveau sur la mer.';
+  const act=document.getElementById('sam-actions');if(act)act.style.display='none';
+};
+window._samToShoreline=function(){
+  if(!_SAM_STATE.lastMask){alert('Pas encore de masque. Cliquez sur la mer dans l\'aperçu.');return;}
+  const W=_lastSigImage.w,H=_lastSigImage.h;
+  const mPerPx=metresParPixel(_lastSigBbox,W);
+  const epsPx=Math.max(1,2/mPerPx);
+  const nd=nodataMask(_lastSigImage);
+  // Le masque SAM est généralement déjà propre : on majore + garde mer connectée + bouchage léger.
+  const sea=keepSeaComponents(majority(_SAM_STATE.lastMask,W,H),W,H);
+  const cleaned=fillWaterHoles(sea,W,H,0.05);
+  const lines=shorelinesFromMask(cleaned,W,H,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,3);
+  if(!lines.length){alert('SAM : aucun contour exploitable depuis ce masque (essayez d\'ajouter / d\'exclure des points).');return;}
+  const incertM=+(mPerPx).toFixed(2);
+  const feats=[];
+  for(const raw of lines){const l=smoothChaikin(raw,2);
+    const coords=l.map(p=>pxToGeo(p[0],p[1],W,H,_lastSigBbox));
+    const lenM=geoLenM(coords,_lastSigBbox);
+    if(lenM<30)continue;
+    feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:'trait de côte (SAM)',classe_rivage:'sam',indicateur_inseaption:'pied_de_plage',methode:'segmentation promptable Xenova/slimsam-77-uniform (clic mer dans le navigateur)',certitude:'modérée (SAM, score IoU '+(_SAM_STATE.lastScore||0).toFixed(2)+')',longueur_m_est:Math.round(lenM),incertitude_positionnelle_m:incertM,score_sam:+(_SAM_STATE.lastScore||0).toFixed(3),n_points_clic:_samPts.length}});
+  }
+  if(!feats.length){alert('SAM : aucun trait significatif (longueur < 30 m).');return;}
+  addToCumul(feats,{site:(_lastSigMeta&&_lastSigMeta.site)||TERR_ACTIF||'',mode:'sam'});
+  if(typeof _lastSigGeojson!=='undefined'&&_lastSigGeojson){_lastSigGeojson.features=(_lastSigGeojson.features||[]).concat(feats);
+    if(_lastSigBbox)afficherSig(_lastSigGeojson,_lastSigBbox,_lastSigMeta);}
+  const s=document.getElementById('sam-status');if(s)s.textContent='✓ '+feats.length+' contour(s) SAM ajouté(s) au trait de côte cumulé.';
+};
 window.switchLayer=function(type){
   if(!mapInstance||!window._mapLayers)return;
   const L=window.L;const m=mapInstance;
@@ -3108,6 +3267,18 @@ function construireImageModule(){
       </div>
       <button class="img-analyse-btn" id="img-sig-btn" onclick="lancerSIGAction()" style="background:var(--teal)">🗺️ Extraire la couche SIG (GeoJSON)</button>
       <button class="img-analyse-btn" id="img-batch-btn" onclick="traiterTousSites()" style="background:var(--navy);margin-top:7px">🧭 Traiter tout le territoire (couverture)</button>
+      <button class="img-analyse-btn" id="img-sam-btn" onclick="_samToggle()" style="background:#7B5EA7;margin-top:7px">🎯 SAM — trait de côte au clic (recommandé sur lagon corallien)</button>
+      <div id="sam-panel" style="margin-top:8px;padding:12px;background:#f6f3ec;border-left:3px solid #7B5EA7;border-radius:0 8px 8px 0;display:none">
+        <div style="font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:5px">SAM · segmentation promptable (Xenova/slimsam-77-uniform)</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.55;margin-bottom:8px">Modèle exécuté <b>dans votre navigateur</b> (WebGPU si dispo, sinon WASM). 1<sup>er</sup> chargement ≈ 40 Mo, mis en cache (IndexedDB) → instantané ensuite. Particulièrement adapté aux <b>lagons coralliens</b> où l'heuristique pixel échoue.<br><b>Usage :</b> chargez d'abord l'orthophoto d'un site, puis activez SAM ; <b>cliquez sur la mer</b> dans l'aperçu (clic droit = exclure une zone) → le contour s'extrait au pinceau, prêt à être ajouté.</div>
+        <button onclick="_samActiver()" id="sam-btn-go" style="background:#7B5EA7;color:#fff;border:none;border-radius:5px;padding:6px 11px;font-size:11.5px;cursor:pointer;font-weight:600">Activer SAM (charger le modèle)</button>
+        <div id="sam-status" style="font-size:10.5px;color:var(--muted);margin-top:6px;font-family:var(--mono);line-height:1.5"></div>
+        <canvas id="sam-canvas" style="display:none;width:100%;max-width:100%;border:1px solid var(--line);cursor:crosshair;margin-top:8px;border-radius:4px"></canvas>
+        <div id="sam-actions" style="display:none;margin-top:8px;gap:6px;flex-wrap:wrap">
+          <button onclick="_samReinit()" style="background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer">↺ Réinitialiser les points</button>
+          <button onclick="_samToShoreline()" style="background:#1a8a4a;color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer;font-weight:600">✓ Ajouter au trait de côte</button>
+        </div>
+      </div>
       <div id="sig-cumul-bar" style="margin-top:8px;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:none">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
           <span id="sig-cumul-count" style="font-size:12px;font-weight:600;color:var(--navy)">Couche cumulée : 0</span>
