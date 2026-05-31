@@ -1473,8 +1473,8 @@ const MODS=[
    q:[{s:"Solutions de relogement des ménages exposés",o:["Aucune","Au cas par cas","Filière identifiée","Parcours organisé"]},{s:"Offre de logements de report",o:["Inexistante","À l'étude","Programme engagé","Offre disponible et phasée"]},{s:"Encadrement de la construction en zone exposée",o:["Aucune règle","Règles minimales","Référentiel en cours","Référentiel opérationnel"]}]},
   {id:'fina',label:'Financement',color:'#2F7D5B',zone:'module',module:{t:'Financement',a:"Identifier les sources mobilisables et éviter les fractures territoriales."},
    q:[{s:"Identification des sources de financement",o:["Non identifiées","Repérage initial","Identifiées par opération","Plan consolidé"]},{s:"Mobilisation effective (Barnier, FEDER, ANAH, fonds locaux)",o:["Aucune","Demandes ponctuelles","Plusieurs sources mobilisées","Montage pérenne"]},{s:"Modèle économique de l'opération de recomposition",o:["Absent","Esquisse","Modèle par phase","Modèle bouclé"]}]},
-  {id:'gouv',label:'Gouvernance et acceptabilité',color:'#4E7081',zone:'module',module:{t:'Gouvernance et acceptabilité',a:"Structurer la gouvernance multi-niveaux, associer la population et les instances coutumières le cas échéant."},
-   q:[{s:"Pilotage local de la démarche",o:["Aucun pilote","Pilote informel","Instance dédiée","Gouvernance formalisée"]},{s:"Concertation avec la population exposée",o:["Absente","Information ponctuelle","Concertation engagée","Co-construction continue"]},{s:"Articulation État / collectivité / instances spécifiques le cas échéant",o:["Inexistante","Échanges ponctuels","Cadre de travail partagé","Cadre opérationnel installé"]}]}];
+  {id:'gouv',label:'Gouvernance et acceptabilité',color:'#4E7081',zone:'module',module:{t:'Gouvernance et acceptabilité',a:"Structurer la gouvernance multi-niveaux et associer la population ainsi que les acteurs locaux concernés."},
+   q:[{s:"Pilotage local de la démarche",o:["Aucun pilote","Pilote informel","Instance dédiée","Gouvernance formalisée"]},{s:"Concertation avec la population exposée",o:["Absente","Information ponctuelle","Concertation engagée","Co-construction continue"]},{s:"Articulation entre acteurs publics (État / collectivité / Pays / Provinces selon le cas)",o:["Inexistante","Échanges ponctuels","Cadre de travail partagé","Cadre opérationnel installé"]}]}];
 const ALL=[...FOUND,...MODS];
 const ARCH=[
   {id:'ile',name:"L'île qui s'efface",color:'#0E7C86',stress:['conn','habi'],ctx:"Atolls ou îles basses : secteurs menacés de disparition à terme."},
@@ -5747,10 +5747,12 @@ function _detecterArchetypes(site,T){
 // Premier jet (style atténué) : mémoire du lieu, à partir de la description et de l'événement passé.
 function _pretextMoment1(site,T){
   const ev=T.event_passe||{};
+  const pr=_PREROGATIVES[TERR_ACTIF]||{};
+  const acteurs=pr.coutumier?"ses habitants et les autorités coutumières":"ses habitants et les acteurs locaux concernés";
   const phr=[];
   phr.push(`${site.nom} est ${(site.desc||'un lieu du territoire').replace(/\.$/,'')}.`);
   if(ev.titre)phr.push(`La mémoire de ce littoral porte la trace d'événements documentés, dont ${ev.titre.toLowerCase().replace(/^l[ae]s? /,'')}.`);
-  phr.push(`Ce que ce lieu représente pour le territoire, ce qu'il a été dans le temps long, ce qu'en disent ses habitants et — le cas échéant — les autorités coutumières, reste à formuler ici par l'exécutif.`);
+  phr.push(`Ce que ce lieu représente pour le territoire, ce qu'il a été dans le temps long, ce qu'en disent ${acteurs}, reste à formuler ici par l'exécutif.`);
   return phr.join(' ');
 }
 // Premier jet (style atténué) : ce que l'on sait, ce que l'on ignore (monographie + lacunes).
@@ -5781,6 +5783,26 @@ function _pretextMoment4(T){
   if(pr.coutumier)phr.push(`Pour les lieux situés sur des terres coutumières, toute orientation engageante suppose un accord explicite des instances coutumières compétentes ; l'exécutif n'est pas le décideur unique.`);
   phr.push(`Cette répartition est une proposition révisable. L'exécutif reste seul juge de ses propres compétences et précise ce qui, dans le cas présent, relève de lui, de l'État, ou d'autres autorités.`);
   return phr.join(' ');
+}
+// Retire toute mention coutumière d'un texte. À appliquer dans les contenus dynamiques (branches
+// d'archétypes notamment) quand le territoire actif n'a PAS de régime coutumier (SPM, Saint-Martin,
+// Saint-Barthélemy) — pour éviter de présenter à tort des autorités coutumières à des collectivités
+// qui n'en relèvent pas.
+function _sansCoutume(txt){
+  if(!txt)return txt;
+  return String(txt)
+    // Phrases complètes type "instances coutumières si terres coutumières" / "le cas échéant"
+    .replace(/\s*;\s*instances? coutumi[èe]res?[^;.<]*[;.]?/gi,'.')
+    .replace(/\s*,\s*avec arbitrage des dépositaires coutumiers le cas échéant[^.<]*/gi,'')
+    .replace(/\s*,\s*instances? coutumi[èe]res?[^,.<]*(?=[,.])/gi,'')
+    .replace(/\s*;\s*instances? coutumi[èe]res?[^.<]*(?=\.|<)/gi,'')
+    // Items dans une énumération : "autorités coutumières, indivisions, ..." → enlever
+    .replace(/autorités coutumi[èe]res?,\s*/gi,'')
+    .replace(/\s*coutumi[èe]res?[,.]?/gi,'')
+    .replace(/\.\s*\./g,'.')
+    .replace(/\s+/g,' ')
+    .replace(/\s+([.,;])/g,'$1')
+    .trim();
 }
 // Persistance localStorage par territoire + lieu + champ. Pas de Firebase ici : le récit est interne
 // à l'exécutif et ne doit pas remonter ailleurs sans son geste explicite (cf. principe d'appropriation).
@@ -5876,9 +5898,13 @@ function _construireRecit(T){
     const ta=(champ,def,saved)=>{const ap=!!(saved&&saved.trim());return `<div class="recit-prop-label ${ap?'approprie':''}">${ap?'Texte du territoire':'Proposition à valider'}</div><textarea class="recit-texte ${ap?'approprie':''}" data-propose="${def.replace(/"/g,'&quot;')}" oninput="_recitMaj(this,${ev},'${champ}')">${ap?saved:def}</textarea>`;};
     // Archétypes (principal en navy, secondaires en pointillé). Ordre : principal puis autres.
     const archHTML=Object.entries(_ARCH_RECIT).map(([k,a])=>{const isPrinc=archCoches[0]===k;const checked=archCoches.includes(k);const cls=isPrinc?'principal':(checked?'':'secondaire');const titre=a.a_part?a.nom+' (archétype à part)':a.nom;return `<label class="recit-arche ${checked?cls:'secondaire'}" title="${a.declencheur.replace(/"/g,'&quot;')}"><input type="checkbox" value="${k}" ${checked?'checked':''} data-recit-site="${site.nom.replace(/"/g,'&quot;')}" onchange="_recitChange(${ev})">${titre}</label>`;}).join('');
-    // Branches d'avenir des archétypes COCHÉS (union, sans recommandation, dépliables)
+    // Branches d'avenir des archétypes COCHÉS (union, sans recommandation, dépliables).
+    // Si le territoire n'a PAS de régime coutumier (SPM, Saint-Martin, Saint-Barthélemy), on retire
+    // les mentions « instances coutumières / autorités coutumières / le cas échéant » des branches.
+    const prT=_PREROGATIVES[TERR_ACTIF]||{};
+    const clean=prT.coutumier?(s=>s):_sansCoutume;
     const archActifs=archCoches.filter(k=>_ARCH_RECIT[k]);
-    const branchesHTML=archActifs.map(k=>{const a=_ARCH_RECIT[k];return `<div style="margin-top:10px"><div class="recit-moment-k">${a.nom} — tension : <i>${a.tension}</i></div>${a.vigilance?'<div style="font-size:11px;color:#7a4a00;font-style:italic;background:#fff8e1;padding:6px 9px;border-radius:5px;margin:5px 0">⚠ '+a.vigilance+'</div>':''}${(a.branches||[]).map(b=>`<details class="recit-branche"><summary>${b.nom}</summary><div class="recit-branche-corps"><div class="b-sect"><b>Ce que cette branche suppose :</b> ${b.suppose}</div><div class="b-sect"><b>Ce qu'elle implique :</b> ${b.implique}</div><div class="b-sect"><b>De qui elle relève :</b> ${b.releve}</div></div></details>`).join('')}</div>`;}).join('');
+    const branchesHTML=archActifs.map(k=>{const a=_ARCH_RECIT[k];return `<div style="margin-top:10px"><div class="recit-moment-k">${a.nom} — tension : <i>${clean(a.tension)}</i></div>${a.vigilance?'<div style="font-size:11px;color:#7a4a00;font-style:italic;background:#fff8e1;padding:6px 9px;border-radius:5px;margin:5px 0">⚠ '+clean(a.vigilance)+'</div>':''}${(a.branches||[]).map(b=>`<details class="recit-branche"><summary>${b.nom}</summary><div class="recit-branche-corps"><div class="b-sect"><b>Ce que cette branche suppose :</b> ${clean(b.suppose)}</div><div class="b-sect"><b>Ce qu'elle implique :</b> ${clean(b.implique)}</div><div class="b-sect"><b>De qui elle relève :</b> ${clean(b.releve)}</div></div></details>`).join('')}</div>`;}).join('');
     html+=`<div class="recit-lieu">
       <div class="recit-lieu-head"><h3>${site.nom}</h3></div>
       <div class="recit-lieu-desc">${site.desc||''}</div>
