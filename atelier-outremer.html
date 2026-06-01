@@ -993,7 +993,7 @@ if(typeof firebase!=="undefined"&&!window._fbLoadFail){
         const fbRef=p=>fbDB.ref("outremer/"+SESSION_ID+"/"+p);
         fbSet=(p,v)=>fbRef(p).set(v);fbListen=(p,cb)=>{fbRef(p).on("value",s=>cb(s.val()));};fbRemove=(p)=>fbRef(p).remove();
         window._FB={setVal:fbSet,listen:fbListen,remove:fbRemove,gpush:(p,v)=>fbDB.ref(p).push(v),glisten:(p,cb)=>{fbDB.ref(p).on("value",s=>cb(s.val()));},gset:(p,v)=>fbDB.ref(p).set(v),gremove:(p)=>fbDB.ref(p).remove(),ready:()=>fbReady,session:()=>SESSION_ID};
-        fbRef("_ping").set(Date.now()).then(()=>{fbReady=true;updateVoteDot(true);if(typeof TERR_ACTIF!=='undefined'&&TERR_ACTIF){initFbListeners();initApprentissageOuvrages();}}).catch(()=>updateVoteDot(false));
+        fbRef("_ping").set(Date.now()).then(()=>{fbReady=true;updateVoteDot(true);if(typeof TERR_ACTIF!=='undefined'&&TERR_ACTIF){initFbListeners();initApprentissageOuvrages();initApprentissageTraits();}}).catch(()=>updateVoteDot(false));
       }catch(e){console.warn("Firebase retry failed:",e);}
     }else{updateVoteDot(false);}
   });
@@ -2035,6 +2035,99 @@ window._samToShoreline=function(){
     if(_lastSigBbox)afficherSig(_lastSigGeojson,_lastSigBbox,_lastSigMeta);}
   const s=document.getElementById('sam-status');if(s)s.textContent='✓ '+feats.length+' contour(s) SAM ajouté(s) au trait de côte cumulé.';
 };
+
+/* === Outil de tracé « vérité-terrain » ====================================================
+   L'utilisateur dessine une polyligne directement sur l'orthophoto (clics = points, double-clic
+   = terminer). Une fois enregistré, le tracé devient un exemple POSITIF dans le corpus
+   d'apprentissage : on échantillonne les features radiométriques + transversales le long de la
+   ligne (mêmes mesures que pour les détections auto), agrège, puis dépose dans Firebase.
+   Sert à fiabiliser le modèle quand l'algorithme heuristique se trompe. */
+const _VT_STATE={pts:[],kind:'trait',active:false};
+window._vtToggle=function(){
+  const p=document.getElementById('vt-panel');if(!p)return;
+  const open=p.style.display==='none';p.style.display=open?'block':'none';
+  if(open){
+    if(!_lastSigImage){const s=document.getElementById('vt-status');if(s)s.textContent='Chargez d\'abord une orthophoto.';return;}
+    _vtDessinerCanvas();
+    const cnv=document.getElementById('vt-canvas');if(cnv){cnv.style.display='block';
+      cnv.onclick=_vtClic; cnv.ondblclick=_vtTerminer; cnv.oncontextmenu=(e)=>{e.preventDefault();_vtTerminer();};}
+    document.addEventListener('keydown',_vtKey);
+    _VT_STATE.active=true;
+  }else{
+    document.removeEventListener('keydown',_vtKey);_VT_STATE.active=false;_VT_STATE.pts.length=0;
+  }
+};
+function _vtKey(e){if(e.key==='Escape'){_vtClear();}}
+function _vtDessinerCanvas(){
+  const cnv=document.getElementById('vt-canvas');if(!cnv||!_lastSigImage)return;
+  cnv.width=_lastSigImage.w;cnv.height=_lastSigImage.h;
+  const ctx=cnv.getContext('2d');
+  const imgD=ctx.createImageData(_lastSigImage.w,_lastSigImage.h);
+  imgD.data.set(_lastSigImage.data);ctx.putImageData(imgD,0,0);
+  // Affiche les points tracés
+  if(_VT_STATE.pts.length){
+    ctx.strokeStyle='#1a8a4a';ctx.lineWidth=3;ctx.fillStyle='#1a8a4a';
+    ctx.beginPath();
+    for(let i=0;i<_VT_STATE.pts.length;i++){
+      const [x,y]=_VT_STATE.pts[i];
+      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    for(const [x,y] of _VT_STATE.pts){ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();}
+  }
+}
+function _vtClic(e){
+  const cnv=e.target;const rect=cnv.getBoundingClientRect();
+  const sx=cnv.width/rect.width, sy=cnv.height/rect.height;
+  const x=(e.clientX-rect.left)*sx, y=(e.clientY-rect.top)*sy;
+  _VT_STATE.pts.push([x,y]);
+  _vtDessinerCanvas();
+  const s=document.getElementById('vt-status');if(s)s.textContent=`${_VT_STATE.pts.length} point(s). Double-clic = terminer.`;
+  if(_VT_STATE.pts.length>=2){const a=document.getElementById('vt-actions');if(a)a.style.display='flex';}
+}
+function _vtTerminer(){
+  if(_VT_STATE.pts.length<2){const s=document.getElementById('vt-status');if(s)s.textContent='Au moins 2 points requis.';return;}
+  const s=document.getElementById('vt-status');if(s)s.textContent=`Tracé fermé (${_VT_STATE.pts.length} points). Cliquez « Enregistrer ».`;
+}
+window._vtClear=function(){_VT_STATE.pts.length=0;_vtDessinerCanvas();const a=document.getElementById('vt-actions');if(a)a.style.display='none';const s=document.getElementById('vt-status');if(s)s.textContent='Tracé effacé. Cliquez à nouveau pour démarrer.';};
+window._vtSauver=function(){
+  if(_VT_STATE.pts.length<2){alert('Tracez au moins 2 points.');return;}
+  if(!_lastSigImage||!_lastSigBbox){alert('Aucune orthophoto chargée.');return;}
+  const kindEl=document.querySelector('input[name="vt-kind"]:checked');
+  const kind=kindEl?kindEl.value:'trait';
+  // Échantillonne les features le long de la polyligne (mêmes mesures que extraireOuvrages)
+  const im=_lastSigImage,bbox=_lastSigBbox,W=im.w,H=im.h;
+  const water=computeWaterMask(im,50,null);
+  const mPerPx=metresParPixel(bbox,W);
+  const pts=_VT_STATE.pts;
+  let totLen=0;const proto={sd:0,gran:0,cv:0,net:0,wf:0,persist:0,Lm:0,sat:0,rmb:0,larg:0,len:0,landReach:0};
+  let nValid=0;
+  for(let i=1;i<pts.length;i++){
+    const a=pts[i-1],b=pts[i];
+    const cg=[pxToGeo(a[0],a[1],W,H,bbox),pxToGeo(b[0],b[1],W,H,bbox)];
+    const lenM=geoLenM(cg,bbox);
+    const sb=sampleBand(im,a,b);
+    const tr=analyseTransversale(im,water,a,b);
+    const gr=granulariteBande(im,a,b);
+    if(!sb)continue;
+    const fv={sd:sb.sd,gran:gr,cv:tr.largeurCV,net:tr.netteteBord,wf:tr.waterFrac,persist:tr.persistanceTerrePx,Lm:sb.Lm,sat:sb.sat,rmb:sb.r-sb.b,larg:(tr.largeurPx||0)*mPerPx,len:lenM,landReach:tr.landReach};
+    const wgt=lenM||1;
+    for(const k in proto)proto[k]+=fv[k]*wgt;
+    totLen+=wgt;nValid++;
+  }
+  if(nValid===0){alert('Impossible d\'échantillonner le tracé (vérifiez qu\'il borde mer/terre).');return;}
+  for(const k in proto)proto[k]/=(totLen||1);
+  proto.len=totLen;
+  const rec={f:proto,y:1,type:(kind==='ouvrage'?'ouvrage tracé manuellement':'trait de côte tracé manuellement'),site:(_lastSigMeta&&_lastSigMeta.site)||TERR_ACTIF||'',sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now(),coords:pts.map(p=>pxToGeo(p[0],p[1],W,H,bbox))};
+  const path=(kind==='ouvrage')?OUVR_FB_PATH:TRAIT_FB_PATH;
+  if(kind==='ouvrage'){_ouvrLabelsLocal.push(rec);_saveLocalLabels();entrainerModeleOuvrages();}
+  else{_traitLabelsLocal.push(rec);_saveLocalTraitLabels();entrainerModeleTraits();}
+  if(window._FB&&window._FB.gpush)window._FB.gpush(path,rec).catch(()=>{});
+  const sEl=document.getElementById('vt-status');if(sEl)sEl.textContent=`✓ Tracé enregistré (${kind}, ${Math.round(totLen)} m, ${nValid} segments). Corpus local ${kind}: ${(kind==='ouvrage'?_ouvrLabelsLocal:_traitLabelsLocal).length} exemples.`;
+  _VT_STATE.pts.length=0;_vtDessinerCanvas();const a=document.getElementById('vt-actions');if(a)a.style.display='none';
+  if(typeof majApprentissageUI==='function')majApprentissageUI();
+};
+
 window.switchLayer=function(type){
   if(!mapInstance||!window._mapLayers)return;
   const L=window.L;const m=mapInstance;
@@ -2454,6 +2547,7 @@ function updateDiag(T){const ss=ALL.map(ax=>axScWeighted(ax));drawHouse(ss);
 ============================================================ */
 function initFbListeners(){if(!window._FB){setTimeout(initFbListeners,500);return;}
   initApprentissageOuvrages();
+  initApprentissageTraits();
   window._FB.listen('diagnostic',(val)=>updateLiveBoard(val));
   window._FB.listen('routing',(val)=>{const h=document.getElementById('route-votes-content');if(!h)return;if(!val){h.innerHTML='<em style="color:var(--muted);font-size:11px">Aucun vote.</em>';return;}let html='';GROUPES.forEach(g=>{const v=val[g.id];if(!v)return;html+=`<div class="route-vote-row"><div class="fb-board-badge" style="background:${g.couleur}">${g.lettre}</div><span class="rvo-badge rvo-${v.code}">${v.code}</span> <span style="font-size:12px;color:var(--ink)">${v.label}</span></div>`;});h.innerHTML=html||'<em>Aucun vote.</em>';});}
 function pushDiagToFb(){if(!window._FB||!GRP_ACTIF)return;const ss=ALL.map(ax=>axSc(ax));
@@ -3519,6 +3613,22 @@ function construireImageModule(){
           <button onclick="_samToShoreline()" style="background:#1a8a4a;color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer;font-weight:600">✓ Ajouter au trait de côte</button>
         </div>
       </div>
+      <button class="img-analyse-btn" id="img-vt-btn" onclick="_vtToggle()" style="background:#1a8a4a;margin-top:7px">🖍️ Annoter la vérité-terrain (apprentissage)</button>
+      <div id="vt-panel" style="margin-top:8px;padding:12px;background:#eff7f0;border-left:3px solid #1a8a4a;border-radius:0 8px 8px 0;display:none">
+        <div style="font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:5px">Apprentissage supervisé par tracé</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.55;margin-bottom:8px"><b>Tracez le trait de côte tel que vous le voyez</b> (ou un ouvrage) directement sur l'orthophoto. Chaque tracé devient un exemple positif pour le modèle ; les détections automatiques en désaccord deviennent des exemples négatifs.<br><b>Usage :</b> chargez d'abord l'orthophoto d'un site, puis activez ce mode ; <b>clics</b> = points successifs, <b>double-clic</b> = terminer le tracé, <b>Échap</b> = annuler. Stocké dans Firebase (corpus partagé).</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center">
+          <span style="font-size:11px;color:var(--muted)">Type :</span>
+          <label style="font-size:11px;cursor:pointer"><input type="radio" name="vt-kind" value="trait" checked> trait de côte</label>
+          <label style="font-size:11px;cursor:pointer"><input type="radio" name="vt-kind" value="ouvrage"> ouvrage</label>
+        </div>
+        <canvas id="vt-canvas" style="display:none;width:100%;max-width:100%;border:1px solid var(--line);cursor:crosshair;margin-top:8px;border-radius:4px"></canvas>
+        <div id="vt-status" style="font-size:10.5px;color:var(--muted);margin-top:6px;font-family:var(--mono);line-height:1.5"></div>
+        <div id="vt-actions" style="display:none;margin-top:8px;gap:6px;flex-wrap:wrap">
+          <button onclick="_vtClear()" style="background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer">↺ Effacer le tracé</button>
+          <button onclick="_vtSauver()" style="background:#1a8a4a;color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer;font-weight:600">✓ Enregistrer (exemple positif)</button>
+        </div>
+      </div>
       <div id="sig-cumul-bar" style="margin-top:8px;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:none">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
           <span id="sig-cumul-count" style="font-size:12px;font-weight:600;color:var(--navy)">Couche cumulée : 0</span>
@@ -3945,10 +4055,14 @@ function afficherSig(gj,bbox,meta){
   const apprenable=gj.features.some(f=>f.properties&&f.properties._features);
   const rows=gj.features.map((f,i)=>{
     const p=f.properties||{};
+    // Routage validation : un trait de côte appelle validerTrait, un ouvrage validerOuvrage.
+    const estTrait=/trait de côte/.test(p.type||'');
+    const fn=estTrait?'validerTrait':'validerOuvrage';
+    const proba=estTrait?p.proba_trait:p.proba_ouvrage;
     const valCell=apprenable?(p._features?`<td style="padding:4px 6px;white-space:nowrap">`+
-        `<button onclick="validerOuvrage(${i},1)" title="Valider : vrai ouvrage" style="border:1px solid ${p._label===1?'#1a8a4a':'var(--line)'};background:${p._label===1?'#1a8a4a':'#fff'};color:${p._label===1?'#fff':'#1a8a4a'};border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer;font-weight:700">✓</button> `+
-        `<button onclick="validerOuvrage(${i},0)" title="Invalider : pas un ouvrage" style="border:1px solid ${p._label===0?'#c0392b':'var(--line)'};background:${p._label===0?'#c0392b':'#fff'};color:${p._label===0?'#fff':'#c0392b'};border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer;font-weight:700">✗</button>`+
-        (p.proba_ouvrage!=null?` <span style="font-family:var(--mono);font-size:9.5px;color:var(--muted)">p=${p.proba_ouvrage}</span>`:'')+
+        `<button onclick="${fn}(${i},1)" title="Valider : vrai ${estTrait?'trait de côte':'ouvrage'}" style="border:1px solid ${p._label===1?'#1a8a4a':'var(--line)'};background:${p._label===1?'#1a8a4a':'#fff'};color:${p._label===1?'#fff':'#1a8a4a'};border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer;font-weight:700">✓</button> `+
+        `<button onclick="${fn}(${i},0)" title="Invalider : faux positif" style="border:1px solid ${p._label===0?'#c0392b':'var(--line)'};background:${p._label===0?'#c0392b':'#fff'};color:${p._label===0?'#fff':'#c0392b'};border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer;font-weight:700">✗</button>`+
+        (proba!=null?` <span style="font-family:var(--mono);font-size:9.5px;color:var(--muted)">p=${proba}</span>`:'')+
       `</td>`:`<td style="padding:4px 6px;color:var(--muted);font-size:10px">—</td>`):'';
     const dout=p._label===0||/à vérifier|à écarter|à qualifier/.test(p.type||'');
     return `<tr style="border-top:1px solid var(--line)${dout?';opacity:.72':''}"><td style="padding:4px 6px;font-family:var(--mono);font-size:10px">${i+1}</td><td style="padding:4px 6px;font-size:11px;color:${dout?'var(--muted)':'var(--navy)'};font-weight:600">${p.type||f.geometry.type}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;color:var(--muted)">${f.geometry.type}</td><td style="padding:4px 6px;font-family:var(--mono);font-size:10px;text-align:right">${p.longueur_m_est!=null?p.longueur_m_est+' m':'—'}</td><td style="padding:4px 6px"><span class="cert ${(p.certitude||'').indexOf('élev')>=0?'high':(p.certitude||'').indexOf('faible')>=0?'low':'med'}">${p.certitude||'—'}</span></td>${valCell}</tr>`;
@@ -4330,6 +4444,17 @@ function extraireTraitDeCote(im,bbox,sens,imIRC){
   const minRunM=fragmente?60:30;
   const lines=shorelinesFromMask(waterTrace,im.w,im.h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,4);
   for(const raw of lines){const l=smoothChaikin(raw,2);
+    // Calcul des features radiométriques + transversales par sous-segment (réutilise les mesures
+    // des ouvrages : sd, gran, cv, net, wf, persist, Lm, sat, rmb, landReach). Sert au modèle
+    // d'apprentissage qui apprend à scorer « vrai bord mer/terre » vs « faux positif ».
+    const segFv=[];
+    for(let i=1;i<l.length;i++){
+      const s=sampleBand(im,l[i-1],l[i]);
+      const tr=analyseTransversale(im,water,l[i-1],l[i]);
+      const gr=granulariteBande(im,l[i-1],l[i]);
+      const lenSeg=geoLenM([pxToGeo(l[i-1][0],l[i-1][1],im.w,im.h,bbox),pxToGeo(l[i][0],l[i][1],im.w,im.h,bbox)],bbox);
+      segFv.push(s?{sd:s.sd,gran:gr,cv:tr.largeurCV,net:tr.netteteBord,wf:tr.waterFrac,persist:tr.persistanceTerrePx,Lm:s.Lm,sat:s.sat,rmb:s.r-s.b,larg:(tr.largeurPx||0)*mPerPx,len:lenSeg,landReach:tr.landReach}:null);
+    }
     const cls=[];for(let i=1;i<l.length;i++)cls.push(_classeRivage(im,water,l[i-1],l[i],imIRC));
     let k=0;while(k<cls.length){const t=cls[k];let m=k;while(m+1<cls.length&&cls[m+1]===t)m++;
       const coords=[];for(let pi=k;pi<=m+1;pi++)coords.push(pxToGeo(l[pi][0],l[pi][1],im.w,im.h,bbox));
@@ -4337,7 +4462,17 @@ function extraireTraitDeCote(im,bbox,sens,imIRC){
       // A2.1 — Indicateur INSeaPTION : sur côte naturelle (sable) → c'est le PIED DE PLAGE ;
       // sur bâti/végétation → c'est la LIGNE DE STABILITÉ (base ouvrage ou limite externe végétation).
       const indicateur=(t==='sable')?'pied_de_plage':'ligne_de_stabilite';
-      if(lenM>=minRunM)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:{type:_RIVAGE_LBL[t]||'trait de côte',classe_rivage:t,indicateur_inseaption:indicateur,methode:'contour mer/terre nettoyé (échelle métrique) + classé (sable › bâti/enrochement › végétation)',certitude:'modérée',longueur_m_est:Math.round(lenM),incertitude_positionnelle_m:incertM,incertitude_jet_de_rive_m:incertJet}});
+      // Agrégation pondérée par longueur des features du run (sd, gran, cv, etc.)
+      let agg=null;
+      const runFv=segFv.slice(k,m+1).filter(Boolean);
+      if(runFv.length===(m-k+1)){
+        agg={};const proto=runFv[0];for(const key in proto)agg[key]=0;let wsum=0;
+        for(let j=0;j<runFv.length;j++){const wgt=runFv[j].len||1;wsum+=wgt;for(const key in proto)agg[key]+=runFv[j][key]*wgt;}
+        for(const key in agg)agg[key]/=(wsum||1);agg.len=lenM;
+      }
+      const props={type:_RIVAGE_LBL[t]||'trait de côte',classe_rivage:t,indicateur_inseaption:indicateur,methode:'contour mer/terre nettoyé (échelle métrique) + classé (sable › bâti/enrochement › végétation)',certitude:'modérée',longueur_m_est:Math.round(lenM),incertitude_positionnelle_m:incertM,incertitude_jet_de_rive_m:incertJet};
+      if(agg)props._features=agg;
+      if(lenM>=minRunM)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:props});
       k=m+1;}
   }
   // A2.1 — Ligne de stabilité « haut de plage » sur côtes sans marée. DÉSACTIVÉE si le littoral est
@@ -4776,6 +4911,77 @@ function affinerOuvragesParModele(feats,relaxed){
   }
   return out;
 }
+
+/* === Apprentissage supervisé du TRAIT DE CÔTE ============================================
+   Structure parallèle à l'apprentissage ouvrages : un label binaire (vrai trait / faux
+   positif) est attaché à chaque trait validé/invalidé ; les vecteurs de caractéristiques
+   (radiométriques + transversaux, mêmes features que les ouvrages) entraînent un classifieur
+   léger qui complète la chaîne heuristique. À terme, un modèle TensorFlow.js peut remplacer
+   la régression logistique (cf. _bordDeepModel ci-dessous, lazy-loaded). */
+const TRAIT_FK=OUVR_FK;   // mêmes features → corpus comparable, possible fusion plus tard
+const TRAIT_FB_PATH='outremer/_apprentissage_traits_cote/labels';
+let _traitLabelsFb=[],_traitLabelsLocal=[],_traitModel=null,_apprTraitLocalInit=false,_apprTraitFbInit=false;
+function _loadLocalTraitLabels(){try{const s=localStorage.getItem('trait_labels');_traitLabelsLocal=s?JSON.parse(s):[];}catch(e){_traitLabelsLocal=[];}}
+function _saveLocalTraitLabels(){try{localStorage.setItem('trait_labels',JSON.stringify(_traitLabelsLocal));}catch(e){}}
+function _allTraitLabels(){const seen={},out=[];for(const r of _traitLabelsLocal.concat(_traitLabelsFb)){if(!r||!r.f)continue;if(r.ts){if(seen[r.ts])continue;seen[r.ts]=1;}out.push(r);}return out;}
+function initApprentissageTraits(){
+  if(!_apprTraitLocalInit){_apprTraitLocalInit=true;_loadLocalTraitLabels();entrainerModeleTraits();}
+  if(window._FB&&window._FB.glisten&&!_apprTraitFbInit){_apprTraitFbInit=true;
+    window._FB.glisten(TRAIT_FB_PATH,(val)=>{
+      _traitLabelsFb=val?Object.values(val).filter(r=>r&&r.f&&typeof r.y==='number'):[];
+      entrainerModeleTraits();
+      if(typeof imgRoutineActive!=='undefined'&&imgRoutineActive==='trait_cote'&&typeof majApprentissageUI==='function')majApprentissageUI();
+    });
+  }
+}
+function _vecTrait(f){const v=[];for(const k of TRAIT_FK){const x=f?f[k]:null;if(x==null||isNaN(x))return null;v.push(+x);}return v;}
+function entrainerModeleTraits(){
+  const allLab=_allTraitLabels();
+  const valides=_quorumValide(allLab);
+  const {train,test}=_splitTrainTest(valides);
+  const X=[],Y=[];
+  for(const r of train){const v=_vecTrait(r.f);if(v){X.push(v);Y.push(r.y?1:0);}}
+  const n=X.length,F=TRAIT_FK.length,npos=Y.reduce((a,b)=>a+b,0),nneg=n-npos;
+  if(n<12||npos<3||nneg<3){_traitModel=null;return;}
+  const mean=new Array(F).fill(0),std=new Array(F).fill(0);
+  for(const x of X)for(let j=0;j<F;j++)mean[j]+=x[j];for(let j=0;j<F;j++)mean[j]/=n;
+  for(const x of X)for(let j=0;j<F;j++)std[j]+=(x[j]-mean[j])**2;for(let j=0;j<F;j++)std[j]=Math.sqrt(std[j]/n)||1;
+  const Z=X.map(x=>x.map((v,j)=>(v-mean[j])/std[j]));
+  let w=new Array(F).fill(0),b=0;const lr=0.3,lam=0.01,iters=400;
+  for(let it=0;it<iters;it++){const gw=new Array(F).fill(0);let gb=0;
+    for(let i=0;i<n;i++){let z=b;for(let j=0;j<F;j++)z+=w[j]*Z[i][j];const p=1/(1+Math.exp(-z)),e=p-Y[i];for(let j=0;j<F;j++)gw[j]+=e*Z[i][j];gb+=e;}
+    for(let j=0;j<F;j++)w[j]-=lr*(gw[j]/n+lam*w[j]);b-=lr*gb/n;}
+  let okTrain=0;for(let i=0;i<n;i++){let z=b;for(let j=0;j<F;j++)z+=w[j]*Z[i][j];if(((1/(1+Math.exp(-z)))>=0.5?1:0)===Y[i])okTrain++;}
+  let okTest=0,nTest=0;const ops=new Set();
+  for(const r of test){const v=_vecTrait(r.f);if(!v)continue;nTest++;let z=b;for(let j=0;j<F;j++)z+=w[j]*((v[j]-mean[j])/std[j]);if(((1/(1+Math.exp(-z)))>=0.5?1:0)===(r.y?1:0))okTest++;}
+  for(const r of allLab)ops.add(_opSig(r));
+  _traitModel={w,b,mean,std,n,npos,nneg,acc:okTrain/n,acc_test:nTest>0?okTest/nTest:null,n_test:nTest,n_total_labels:allLab.length,n_valides_quorum:valides.length,n_operateurs:ops.size};
+}
+function scoreTrait(f){if(!_traitModel)return null;const v=_vecTrait(f);if(!v)return null;let z=_traitModel.b;for(let j=0;j<TRAIT_FK.length;j++)z+=_traitModel.w[j]*((v[j]-_traitModel.mean[j])/_traitModel.std[j]);return 1/(1+Math.exp(-z));}
+function affinerTraitsParModele(feats){
+  if(!_traitModel)return feats;
+  for(const f of feats){const p=f&&f.properties;if(!p||!p._features)continue;
+    const s=scoreTrait(p._features);if(s==null)continue;
+    p.proba_trait=+s.toFixed(2);
+    if(p._label===0)continue; // invalidé → conservé grisé
+    if(p._label===1)continue; // validé → conservé
+    // Le modèle indique « faux positif probable » → marquer pour relecture, mais ne pas supprimer
+    if(s<0.30) p.certitude='à vérifier (modèle)';
+    else if(s>=0.65) p.certitude='élevée (modèle)';
+  }
+  return feats;
+}
+window.validerTrait=function(idx,y){
+  const gj=_lastSigGeojson;if(!gj||!gj.features||!gj.features[idx])return;
+  const f=gj.features[idx];const p=f.properties||{};
+  if(!p._features){alert("Entité non apprenable (pas de vecteur de caractéristiques).");return;}
+  p._label=y;
+  const rec={f:p._features,y:y?1:0,type:p.type||'',site:(typeof _lastSigMeta!=='undefined'&&_lastSigMeta&&_lastSigMeta.site)||'',sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now()};
+  _traitLabelsLocal.push(rec);_saveLocalTraitLabels();entrainerModeleTraits();
+  if(window._FB&&window._FB.gpush)window._FB.gpush(TRAIT_FB_PATH,rec).then(()=>{if(typeof majApprentissageUI==='function')majApprentissageUI();}).catch(()=>{});
+  if(typeof majApprentissageUI==='function')majApprentissageUI();
+};
+
 window.validerOuvrage=function(idx,y){
   const gj=_lastSigGeojson;if(!gj||!gj.features||!gj.features[idx])return;
   const f=gj.features[idx];const p=f.properties||{};
@@ -4963,6 +5169,11 @@ window.lancerExtractionSIG=async function(){
       if(mpp>2.5)aiNote=`Résolution ≈ ${mpp.toFixed(1)} m/px : un ouvrage (~5-15 m) est quasi sous-pixellaire — resserrez l'emprise (visez < 1 m/px) pour une caractérisation fiable. `;
       _lastSigCandidates=feats.slice();feats=affinerOuvragesParModele(feats);
       if(_ouvrModel){const nO=feats.filter(f=>/(enrochement|perré|digue|ouvrage)/.test(f.properties.type||'')).length,nV=feats.filter(f=>/à vérifier/.test(f.properties.type||'')).length;aiNote+=`Modèle actif : ${nO} ouvrage(s), ${nV} à vérifier (rejets masqués). `;}}
+    if(imgRoutineActive==='trait_cote'){
+      feats=affinerTraitsParModele(feats);
+      if(_traitModel){const nVal=feats.filter(f=>(f.properties.proba_trait||0)>=0.65).length,nDoubt=feats.filter(f=>(f.properties.proba_trait||0)<0.30&&f.properties.proba_trait!=null).length;
+        aiNote+=`Modèle trait actif : ${nVal} validé(s) par IA, ${nDoubt} douteux. `;}
+    }
     // Le contrôle IA (2ᵉ passe vision) ne s'applique qu'aux OUVRAGES : sur le trait de côte, filtrer
     // une géométrie bruitée segment par segment est inopérant — le bon levier est un masque propre
     // (fait en amont) ou une segmentation profonde (bouton « Segmentation profonde » de la carte).
