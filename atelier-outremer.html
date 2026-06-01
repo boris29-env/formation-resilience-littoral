@@ -3628,6 +3628,12 @@ function construireImageModule(){
           <button onclick="_vtClear()" style="background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer">↺ Effacer le tracé</button>
           <button onclick="_vtSauver()" style="background:#1a8a4a;color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer;font-weight:600">✓ Enregistrer (exemple positif)</button>
         </div>
+        <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)">
+          <div style="font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:4px">Modèle DEEP (TensorFlow.js)</div>
+          <div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-bottom:6px">Un MLP 32→16→1 (sigmoïde) entraîné dans votre navigateur sur le corpus de tracés. Remplace la régression logistique légère dès ≥ 20 exemples. Téléchargement TF.js ≈ 1 Mo au 1<sup>er</sup> usage.</div>
+          <button onclick="_deepActiver()" style="background:#7B5EA7;color:#fff;border:none;border-radius:5px;padding:5px 10px;font-size:11px;cursor:pointer;font-weight:600">⚡ Entraîner le modèle deep</button>
+          <div id="deep-status" style="font-size:10.5px;color:var(--muted);margin-top:6px;font-family:var(--mono);line-height:1.5"></div>
+        </div>
       </div>
       <div id="sig-cumul-bar" style="margin-top:8px;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:none">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
@@ -4815,6 +4821,78 @@ function extraireOuvrages(im,bbox,sens,imIRC){
    qui remplace la certitude heuristique dès qu'assez d'exemples sont disponibles (cold-start sinon). */
 const OUVR_FK=['sd','gran','cv','net','wf','persist','Lm','sat','rmb','larg','len','landReach'];
 const OUVR_FB_PATH='outremer/_apprentissage_ouvrages/labels';
+
+/* === Modèle DEEP optionnel via TensorFlow.js ============================================
+   Chargé à la demande (clic « Activer modèle deep »). Architecture : MLP 32→16→1 (sigmoïde),
+   binaire vrai bord / faux positif. Une fois entraîné, remplace les régressions logistiques
+   _ouvrModel et _traitModel pour le scoring. Restera dormant si l'utilisateur n'active pas
+   le mode (la régression logistique légère suffit pour < ~50 exemples). */
+const _TFJS_CDN='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js';
+let _deepModelTrait=null,_deepModelOuvr=null,_deepNormTrait=null,_deepNormOuvr=null,_deepTfReady=false,_deepLoading=false;
+function _loadTfjs(){
+  if(window.tf) return Promise.resolve(window.tf);
+  if(_deepLoading) return new Promise((res)=>{const t=setInterval(()=>{if(window.tf){clearInterval(t);res(window.tf);}},120);});
+  _deepLoading=true;
+  return new Promise((res, rej)=>{
+    const s=document.createElement('script');s.src=_TFJS_CDN;
+    s.onload=()=>{_deepLoading=false;_deepTfReady=true;res(window.tf);};
+    s.onerror=()=>{_deepLoading=false;rej(new Error('Échec chargement TensorFlow.js'));};
+    document.head.appendChild(s);
+  });
+}
+async function _entrainerDeep(X, Y){
+  const tf=await _loadTfjs();
+  if(X.length<20) return null;
+  const F=X[0].length;
+  // Z-score
+  const mean=new Array(F).fill(0), std=new Array(F).fill(0);
+  for(const x of X) for(let j=0;j<F;j++) mean[j]+=x[j];
+  for(let j=0;j<F;j++) mean[j]/=X.length;
+  for(const x of X) for(let j=0;j<F;j++) std[j]+=(x[j]-mean[j])**2;
+  for(let j=0;j<F;j++) std[j]=Math.sqrt(std[j]/X.length)||1;
+  const Xn=X.map(x=>x.map((v,j)=>(v-mean[j])/std[j]));
+  const xs=tf.tensor2d(Xn), ys=tf.tensor2d(Y.map(y=>[y]));
+  const model=tf.sequential();
+  model.add(tf.layers.dense({units:32,activation:'relu',inputShape:[F]}));
+  model.add(tf.layers.dropout({rate:0.2}));
+  model.add(tf.layers.dense({units:16,activation:'relu'}));
+  model.add(tf.layers.dense({units:1,activation:'sigmoid'}));
+  model.compile({optimizer:tf.train.adam(0.005), loss:'binaryCrossentropy', metrics:['accuracy']});
+  await model.fit(xs, ys, {epochs:60, batchSize:Math.min(16, X.length), verbose:0, shuffle:true});
+  const evals=model.evaluate(xs, ys);
+  const acc=(await evals[1].data())[0];
+  xs.dispose(); ys.dispose(); evals.forEach(t=>t.dispose());
+  return {model, mean, std, acc, n:X.length, npos:Y.filter(y=>y===1).length, nneg:Y.filter(y=>y===0).length};
+}
+function _scoreDeep(deep, vec){
+  if(!deep||!window.tf) return null;
+  const F=deep.mean.length;
+  const xn=vec.map((v,j)=>(v-deep.mean[j])/deep.std[j]);
+  const x=window.tf.tensor2d([xn]);
+  const p=deep.model.predict(x);
+  const s=p.dataSync()[0];
+  x.dispose(); p.dispose();
+  return s;
+}
+async function _reentrainerDeep(){
+  const s=document.getElementById('deep-status');
+  if(s)s.textContent='Chargement TensorFlow.js…';
+  try{await _loadTfjs();}catch(e){if(s)s.textContent='✗ '+e.message;return;}
+  if(s)s.textContent='Entraînement deep en cours…';
+  // Trait de côte
+  const trX=[],trY=[];const traitLab=_quorumValide(_allTraitLabels());
+  for(const r of traitLab){const v=_vecTrait(r.f);if(v){trX.push(v);trY.push(r.y?1:0);}}
+  // Ouvrages
+  const ouvX=[],ouvY=[];const ouvrLab=_quorumValide(_allLabels());
+  for(const r of ouvrLab){const v=_vecOuvr(r.f);if(v){ouvX.push(v);ouvY.push(r.y?1:0);}}
+  let parts=[];
+  if(trX.length>=20){_deepModelTrait=await _entrainerDeep(trX, trY);parts.push(`trait : ${(_deepModelTrait.acc*100).toFixed(0)}% acc, n=${_deepModelTrait.n}`);}
+  else parts.push(`trait : ${trX.length}/20 exemples`);
+  if(ouvX.length>=20){_deepModelOuvr=await _entrainerDeep(ouvX, ouvY);parts.push(`ouvrage : ${(_deepModelOuvr.acc*100).toFixed(0)}% acc, n=${_deepModelOuvr.n}`);}
+  else parts.push(`ouvrage : ${ouvX.length}/20 exemples`);
+  if(s)s.textContent='✓ Modèle deep entraîné — '+parts.join(' · ');
+}
+window._deepActiver=_reentrainerDeep;
 // Labels Firebase (partagés) + labels locaux (localStorage / importés) ; fusionnés (dédoublonnés par ts)
 // pour que la synchro Firebase n'écrase pas un corpus importé hors-ligne.
 let _ouvrLabelsFb=[],_ouvrLabelsLocal=[],_ouvrModel=null,_apprLocalInit=false,_apprFbInit=false,_fbWriteOk=null;
@@ -4885,7 +4963,13 @@ function entrainerModeleOuvrages(){
   for(const r of allLab)ops.add(_opSig(r));
   _ouvrModel={w,b,mean,std,n,npos,nneg,acc:okTrain/n,acc_test:nTest>0?okTest/nTest:null,n_test:nTest,n_total_labels:allLab.length,n_valides_quorum:valides.length,n_operateurs:ops.size};
 }
-function scoreOuvrage(f){if(!_ouvrModel)return null;const v=_vecOuvr(f);if(!v)return null;let z=_ouvrModel.b;for(let j=0;j<OUVR_FK.length;j++)z+=_ouvrModel.w[j]*((v[j]-_ouvrModel.mean[j])/_ouvrModel.std[j]);return 1/(1+Math.exp(-z));}
+function scoreOuvrage(f){
+  // Priorité au modèle deep si entraîné, sinon repli régression logistique.
+  const v=_vecOuvr(f);if(!v)return null;
+  if(_deepModelOuvr){const s=_scoreDeep(_deepModelOuvr,v);if(s!=null)return s;}
+  if(!_ouvrModel)return null;
+  let z=_ouvrModel.b;for(let j=0;j<OUVR_FK.length;j++)z+=_ouvrModel.w[j]*((v[j]-_ouvrModel.mean[j])/_ouvrModel.std[j]);return 1/(1+Math.exp(-z));
+}
 // Affine les candidats HEURISTIQUES avec le modèle (granularité = celle du corpus → notation fiable,
 // pas d'hallucination sur des segments bruts). Trois niveaux : ≥0.65 = ouvrage ; 0.40–0.65 = à vérifier
 // (affiché, grisé, validable) ; <0.40 = rejet (masqué). Sans modèle : candidats inchangés.
@@ -4957,7 +5041,12 @@ function entrainerModeleTraits(){
   for(const r of allLab)ops.add(_opSig(r));
   _traitModel={w,b,mean,std,n,npos,nneg,acc:okTrain/n,acc_test:nTest>0?okTest/nTest:null,n_test:nTest,n_total_labels:allLab.length,n_valides_quorum:valides.length,n_operateurs:ops.size};
 }
-function scoreTrait(f){if(!_traitModel)return null;const v=_vecTrait(f);if(!v)return null;let z=_traitModel.b;for(let j=0;j<TRAIT_FK.length;j++)z+=_traitModel.w[j]*((v[j]-_traitModel.mean[j])/_traitModel.std[j]);return 1/(1+Math.exp(-z));}
+function scoreTrait(f){
+  const v=_vecTrait(f);if(!v)return null;
+  if(_deepModelTrait){const s=_scoreDeep(_deepModelTrait,v);if(s!=null)return s;}
+  if(!_traitModel)return null;
+  let z=_traitModel.b;for(let j=0;j<TRAIT_FK.length;j++)z+=_traitModel.w[j]*((v[j]-_traitModel.mean[j])/_traitModel.std[j]);return 1/(1+Math.exp(-z));
+}
 function affinerTraitsParModele(feats){
   if(!_traitModel)return feats;
   for(const f of feats){const p=f&&f.properties;if(!p||!p._features)continue;
