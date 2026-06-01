@@ -2047,6 +2047,8 @@ window._vtToggle=function(){
   const p=document.getElementById('vt-panel');if(!p)return;
   const open=p.style.display==='none';p.style.display=open?'block':'none';
   if(open){
+    // Synchronise la case « Mode solo » avec l'état courant.
+    const solo=document.getElementById('vt-solo');if(solo)solo.checked=_MODE_SOLO;
     if(!_lastSigImage){const s=document.getElementById('vt-status');if(s)s.textContent='Chargez d\'abord une orthophoto.';return;}
     _vtDessinerCanvas();
     const cnv=document.getElementById('vt-canvas');if(cnv){cnv.style.display='block';
@@ -2118,7 +2120,7 @@ window._vtSauver=function(){
   if(nValid===0){alert('Impossible d\'échantillonner le tracé (vérifiez qu\'il borde mer/terre).');return;}
   for(const k in proto)proto[k]/=(totLen||1);
   proto.len=totLen;
-  const rec={f:proto,y:1,type:(kind==='ouvrage'?'ouvrage tracé manuellement':'trait de côte tracé manuellement'),site:(_lastSigMeta&&_lastSigMeta.site)||TERR_ACTIF||'',sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now(),coords:pts.map(p=>pxToGeo(p[0],p[1],W,H,bbox))};
+  const rec={f:proto,y:1,type:(kind==='ouvrage'?'ouvrage tracé manuellement':'trait de côte tracé manuellement'),site:(_lastSigMeta&&_lastSigMeta.site)||TERR_ACTIF||'',op:_operatorId(),sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now(),coords:pts.map(p=>pxToGeo(p[0],p[1],W,H,bbox))};
   const path=(kind==='ouvrage')?OUVR_FB_PATH:TRAIT_FB_PATH;
   if(kind==='ouvrage'){_ouvrLabelsLocal.push(rec);_saveLocalLabels();entrainerModeleOuvrages();}
   else{_traitLabelsLocal.push(rec);_saveLocalTraitLabels();entrainerModeleTraits();}
@@ -3617,6 +3619,12 @@ function construireImageModule(){
       <div id="vt-panel" style="margin-top:8px;padding:12px;background:#eff7f0;border-left:3px solid #1a8a4a;border-radius:0 8px 8px 0;display:none">
         <div style="font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:5px">Apprentissage supervisé par tracé</div>
         <div style="font-size:11px;color:var(--muted);line-height:1.55;margin-bottom:8px"><b>Tracez le trait de côte tel que vous le voyez</b> (ou un ouvrage) directement sur l'orthophoto. Chaque tracé devient un exemple positif pour le modèle ; les détections automatiques en désaccord deviennent des exemples négatifs.<br><b>Usage :</b> chargez d'abord l'orthophoto d'un site, puis activez ce mode ; <b>clics</b> = points successifs, <b>double-clic</b> = terminer le tracé, <b>Échap</b> = annuler. Stocké dans Firebase (corpus partagé).</div>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;padding:6px 8px;background:#fff;border:1px solid var(--line);border-radius:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;flex:1">
+            <input type="checkbox" id="vt-solo" onchange="setModeSolo(this.checked)" style="cursor:pointer">
+            <span><b>Mode solo</b> — n'attendre aucun autre opérateur, apprendre directement de mes annotations</span>
+          </label>
+        </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center">
           <span style="font-size:11px;color:var(--muted)">Type :</span>
           <label style="font-size:11px;cursor:pointer"><input type="radio" name="vt-kind" value="trait" checked> trait de côte</label>
@@ -4900,23 +4908,41 @@ function _loadLocalLabels(){try{const s=localStorage.getItem('ouvr_labels');_ouv
 function _saveLocalLabels(){try{localStorage.setItem('ouvr_labels',JSON.stringify(_ouvrLabelsLocal));}catch(e){}}
 function _allLabels(){const seen={},out=[];for(const r of _ouvrLabelsLocal.concat(_ouvrLabelsFb)){if(!r||!r.f)continue;if(r.ts){if(seen[r.ts])continue;seen[r.ts]=1;}out.push(r);}return out;}
 // A3.2 — Gouvernance du corpus d'apprentissage partagé (réf. méth. 7.8).
-// (1) operator_id : déjà capturé via `r.sess` (identifiant de session/opérateur).
-// (2) Quorum spatial : un label « partagé » exige ≥2 sessions distinctes ayant annoté des features
-//     proches (vecteur radiométrique similaire). Tant que le quorum n'est pas atteint, le label
-//     reste LOCAL et n'influence pas le modèle des autres sessions, mais entraîne le modèle local.
+// (1) operator_id : identifiant STABLE entre sessions, stocké en localStorage. Tant qu'on est
+//     un seul opérateur, tous les labels passent par défaut ; le quorum protège uniquement contre
+//     un autre opérateur isolé qui annoterait à contre-courant. `sess` reste enregistré pour
+//     traçabilité (qui a annoté quand) mais n'influence plus le quorum.
+// (2) Quorum spatial : un label vient d'un AUTRE opérateur exige une corroboration sur un vecteur
+//     proche. Désactivable via _MODE_SOLO=true (cocher dans le panneau apprentissage).
 // (3) Jeu de test gelé : 20 % aléatoire stable (hash du ts) tenu hors entraînement pour mesurer
 //     la performance et détecter une dérive à chaque ré-entraînement.
-function _opSig(r){return (r&&r.sess)||'_inconnu';}
+function _operatorId(){
+  try{
+    let id=localStorage.getItem('operator_id');
+    if(!id){id='op_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);localStorage.setItem('operator_id',id);}
+    return id;
+  }catch(e){return '_local';}
+}
+let _MODE_SOLO=true; // Par défaut : on n'attend pas un autre opérateur pour apprendre.
+try{const s=localStorage.getItem('mode_solo');if(s!=null)_MODE_SOLO=(s==='1');}catch(e){}
+window.setModeSolo=function(v){_MODE_SOLO=!!v;try{localStorage.setItem('mode_solo',v?'1':'0');}catch(e){}
+  entrainerModeleOuvrages();entrainerModeleTraits();
+  if(typeof majApprentissageUI==='function')majApprentissageUI();
+};
+function _opSig(r){return (r&&(r.op||r.sess))||'_inconnu';}
 // Échelles typiques par feature pour normalisation distance corpus (z-score grossier).
 const _OUVR_SCALES={sd:50,gran:50,cv:0.3,net:30,wf:0.3,persist:30,Lm:50,sat:50,rmb:50,larg:50,len:50,landReach:0.3};
 function _vecDist(a,b){let s=0;for(const k of OUVR_FK){const va=+a[k]||0,vb=+b[k]||0;s+=Math.abs(va-vb)/(_OUVR_SCALES[k]||1);}return s/OUVR_FK.length;}
 function _quorumValide(labels){
-  // Un label partagé n'est promu que s'il est corroboré par ≥1 AUTRE opérateur sur un vecteur proche.
-  // Implémentation simple O(n²) — acceptable pour corpus de quelques centaines.
+  // Mode solo : on accepte tous les labels (l'utilisateur unique est sa propre référence).
+  // Sinon : labels du même operator_id (= moi, toutes sessions confondues) acceptés directement ;
+  // labels d'autres opérateurs corroborés sur un vecteur proche.
+  if(_MODE_SOLO) return labels.filter(r=>r&&r.f);
+  const myOp=_operatorId();
   const out=[];
   for(const r of labels){
     if(!r||!r.f)continue;
-    // Si le label vient de la session locale courante (annotation immédiate), on lui fait confiance.
+    if((r.op||r.sess)===myOp){out.push(r);continue;}   // mes propres labels (même opérateur stable)
     if(r.sess&&window._FB&&window._FB.session&&r.sess===window._FB.session()){out.push(r);continue;}
     const sigSelf=_opSig(r);
     let corrobore=false;
@@ -5065,7 +5091,7 @@ window.validerTrait=function(idx,y){
   const f=gj.features[idx];const p=f.properties||{};
   if(!p._features){alert("Entité non apprenable (pas de vecteur de caractéristiques).");return;}
   p._label=y;
-  const rec={f:p._features,y:y?1:0,type:p.type||'',site:(typeof _lastSigMeta!=='undefined'&&_lastSigMeta&&_lastSigMeta.site)||'',sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now()};
+  const rec={f:p._features,y:y?1:0,type:p.type||'',site:(typeof _lastSigMeta!=='undefined'&&_lastSigMeta&&_lastSigMeta.site)||'',op:_operatorId(),sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now()};
   _traitLabelsLocal.push(rec);_saveLocalTraitLabels();entrainerModeleTraits();
   if(window._FB&&window._FB.gpush)window._FB.gpush(TRAIT_FB_PATH,rec).then(()=>{if(typeof majApprentissageUI==='function')majApprentissageUI();}).catch(()=>{});
   if(typeof majApprentissageUI==='function')majApprentissageUI();
@@ -5076,7 +5102,7 @@ window.validerOuvrage=function(idx,y){
   const f=gj.features[idx];const p=f.properties||{};
   if(!p._features){alert("Entité non apprenable (pas de vecteur de caractéristiques).");return;}
   p._label=y;
-  const rec={f:p._features,y:y?1:0,type:p.type||'',site:(typeof _lastSigMeta!=='undefined'&&_lastSigMeta&&_lastSigMeta.site)||'',sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now()};
+  const rec={f:p._features,y:y?1:0,type:p.type||'',site:(typeof _lastSigMeta!=='undefined'&&_lastSigMeta&&_lastSigMeta.site)||'',op:_operatorId(),sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now()};
   _ouvrLabelsLocal.push(rec);_saveLocalLabels();entrainerModeleOuvrages();
   if(window._FB&&window._FB.gpush)window._FB.gpush(OUVR_FB_PATH,rec).then(()=>{_fbWriteOk=true;majApprentissageUI();}).catch(()=>{_fbWriteOk=false;majApprentissageUI();});
   majApprentissageUI();
@@ -5603,7 +5629,7 @@ window.marquerOuvrage=function(){
       _saveTrait();
     }else{
       added.forEach(f=>{const p=f.properties;p.type='ouvrage confirmé (manuel)';p.classe_suggeree=p.type;p.certitude='confirmé';p.methode='marqué manuellement sur la carte';p._label=1;
-        if(p._features){const rec={f:p._features,y:1,type:p.type,site:(_lastSigMeta&&_lastSigMeta.site)||'',sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now()+Math.random()};_ouvrLabelsLocal.push(rec);
+        if(p._features){const rec={f:p._features,y:1,type:p.type,site:(_lastSigMeta&&_lastSigMeta.site)||'',op:_operatorId(),sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now()+Math.random()};_ouvrLabelsLocal.push(rec);
           if(window._FB&&window._FB.gpush)window._FB.gpush(OUVR_FB_PATH,rec).then(()=>{_fbWriteOk=true;}).catch(()=>{_fbWriteOk=false;});}});
       _saveLocalLabels();entrainerModeleOuvrages();
     }
