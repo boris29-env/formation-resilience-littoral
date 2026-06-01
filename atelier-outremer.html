@@ -745,6 +745,16 @@ svg.house{width:100%;max-width:290px;height:auto}
               <button class="layer-btn" onclick="effacerSecteurs()" title="Effacer les secteurs dessinés">✕ Secteurs</button>
               <span id="annot-hint" style="font-size:10px;color:var(--muted);flex-basis:100%"></span>
             </div>
+            <div class="map-ctrl-bar" style="flex-wrap:wrap;gap:6px;background:#eff7f0;border:1px solid #1a8a4a">
+              <span class="mcb-label" style="color:#1a8a4a"><b>Vérité-terrain</b></span>
+              <button class="layer-btn" onclick="dessinerVT('trait')" title="Tracer une polyligne directement sur la carte : exemple POSITIF de trait de côte (zoom + déplacement libres)">🖍️ Tracer trait</button>
+              <button class="layer-btn" onclick="dessinerVT('ouvrage')" title="Tracer un ouvrage côtier (perré, digue, enrochement, brise-lames)">🖍️ Tracer ouvrage</button>
+              <button class="layer-btn" id="btn-vt-fin" style="display:none" onclick="terminerTraceVT()">Terminer le tracé</button>
+              <button class="layer-btn" onclick="document.getElementById('vt-import-input').click()" title="Importer une couche existante (GeoJSON) comme vérité-terrain ; chaque LineString devient un exemple positif">📤 Importer GeoJSON</button>
+              <input type="file" id="vt-import-input" accept=".geojson,.json" style="display:none" onchange="importerVTGeojson(this)">
+              <button class="layer-btn" onclick="effacerVT()" title="Effacer les tracés vérité-terrain affichés sur la carte (le corpus stocké reste inchangé)">✕ VT carte</button>
+              <span id="vt-map-hint" style="font-size:10px;color:#1a8a4a;flex-basis:100%"></span>
+            </div>
             <div id="map"></div>
             <div class="map-upload">
               <label>Charger GeoJSON</label>
@@ -5560,12 +5570,151 @@ function _annotMapClick(e){
   if(_drawMode==='rect'&&_drawPts.length>=2){_finaliserSecteur('rect',_drawPts.slice(0,2));_resetDraw();return;}
   if(_drawTmp)mapInstance.removeLayer(_drawTmp);
   const lls=_drawPts.map(p=>[p[1],p[0]]);
-  _drawTmp=(_drawMode==='line'&&lls.length>1)?L.polyline(lls,{color:'#c026d3',weight:3,dashArray:'5,5'}):L.circleMarker([ll[1],ll[0]],{radius:4,color:'#c026d3',fillOpacity:.6});
+  const couleur=/^vt-/.test(_drawMode||'')?'#1a8a4a':'#c026d3';
+  _drawTmp=(/^(line|vt-)/.test(_drawMode||'')&&lls.length>1)?L.polyline(lls,{color:couleur,weight:3,dashArray:'5,5'}):L.circleMarker([ll[1],ll[0]],{radius:4,color:couleur,fillOpacity:.6});
   _drawTmp.addTo(mapInstance);
 }
 window.terminerTrace=function(){if(_drawMode==='line'&&_drawPts.length>=2)_finaliserSecteur('line',_drawPts.slice());_resetDraw();};
-function _resetDraw(){_drawMode=null;_drawPts=[];if(_drawTmp){mapInstance.removeLayer(_drawTmp);_drawTmp=null;}const fin=document.getElementById('btn-sect-fin');if(fin)fin.style.display='none';if(mapInstance&&mapInstance.doubleClickZoom)mapInstance.doubleClickZoom.enable();}
+function _resetDraw(){_drawMode=null;_drawPts=[];if(_drawTmp){mapInstance.removeLayer(_drawTmp);_drawTmp=null;}
+  const fin=document.getElementById('btn-sect-fin');if(fin)fin.style.display='none';
+  const finVT=document.getElementById('btn-vt-fin');if(finVT)finVT.style.display='none';
+  if(mapInstance&&mapInstance.doubleClickZoom)mapInstance.doubleClickZoom.enable();}
 function _finaliserSecteur(kind,coords){_secteurs.push({kind,coords,ts:Date.now()});_saveSecteurs();_dessineSecteurs();_hint('Secteur ajouté. « 🔍 Chercher ici » pour re-détecter (seuils abaissés).');}
+
+/* === Annotation vérité-terrain depuis la CARTE ============================================
+   Permet de tracer trait de côte / ouvrage à zoom libre sur la carte Leaflet, sans passer par
+   le canvas d'aperçu d'image. Chaque tracé fini est échantillonné radiométrie + transversale
+   le long de la ligne, puis stocké comme exemple positif dans le corpus partagé Firebase.
+   Si aucune orthophoto n'est en mémoire, on télécharge automatiquement une emprise IGN/Esri
+   centrée sur le tracé. */
+let _vtMapLayers=[];   // couches L.polyline affichées sur la carte (tracés enregistrés ou importés)
+function _vtHint(t){const el=document.getElementById('vt-map-hint');if(el)el.textContent=t||'';}
+window.dessinerVT=function(kind){
+  if(!mapInstance){alert('Ouvrez la section « Carte ».');return;}
+  _drawMode='vt-'+kind;_drawPts=[];if(_drawTmp){mapInstance.removeLayer(_drawTmp);_drawTmp=null;}
+  mapInstance.doubleClickZoom.disable();
+  const fin=document.getElementById('btn-vt-fin');if(fin)fin.style.display='';
+  _vtHint(`Tracez ${kind==='ouvrage'?'l\'ouvrage':'le trait de côte'} : cliquez chaque point, puis « Terminer le tracé ».`);
+};
+window.terminerTraceVT=async function(){
+  if(!_drawMode||!/^vt-/.test(_drawMode)){_vtHint('Démarrez par « 🖍️ Tracer trait » ou « 🖍️ Tracer ouvrage ».');return;}
+  if(_drawPts.length<2){_vtHint('Au moins 2 points requis.');return;}
+  const kind=_drawMode.slice(3);   // 'trait' ou 'ouvrage'
+  const coords=_drawPts.slice();
+  _resetDraw();
+  _vtHint('Échantillonnage en cours…');
+  try{
+    const rec=await _vtRecDepuisCoords(coords, kind);
+    if(!rec){_vtHint('✗ Impossible d\'échantillonner (orthophoto non disponible pour cette zone).');return;}
+    _vtEnregistrerRec(rec, kind);
+    _vtDessinerSurCarte(coords, kind, 'tracé');
+    _vtHint(`✓ Tracé enregistré (${kind}, ${Math.round(rec.f.len||0)} m). Corpus ${kind} : ${(kind==='ouvrage'?_ouvrLabelsLocal:_traitLabelsLocal).length} exemples.`);
+  }catch(e){console.warn(e);_vtHint('✗ Erreur : '+e.message);}
+};
+window.effacerVT=function(){
+  _vtMapLayers.forEach(l=>{try{mapInstance.removeLayer(l);}catch(e){}});
+  _vtMapLayers=[];_vtHint('Tracés effacés de la carte (corpus inchangé).');
+};
+function _vtDessinerSurCarte(coords, kind, src){
+  if(!mapInstance||!window.L)return;
+  const L=window.L;const lls=coords.map(p=>[p[1],p[0]]);
+  const couleur=kind==='ouvrage'?'#7B5EA7':'#1a8a4a';
+  const ly=L.polyline(lls,{color:couleur,weight:3,opacity:.85}).addTo(mapInstance);
+  ly.bindPopup(`<b>Vérité-terrain ${kind}</b><br><span style="font-size:10.5px;color:#666">${src||'import'}</span>`,{maxWidth:200});
+  _vtMapLayers.push(ly);
+}
+// Calcule features radiométriques pour un tracé donné (suite de coords [lon,lat]).
+// Si aucune ortho dans la bbox du tracé n'est en mémoire, télécharge l'orthophoto IGN à la volée.
+async function _vtRecDepuisCoords(coords, kind){
+  // bbox du tracé
+  let w=Infinity,e=-Infinity,s=Infinity,n=-Infinity;
+  for(const [lo,la] of coords){if(lo<w)w=lo;if(lo>e)e=lo;if(la<s)s=la;if(la>n)n=la;}
+  // Agrandit légèrement pour éviter les pixels frontière
+  const dx=(e-w)*0.05, dy=(n-s)*0.05;w-=dx;e+=dx;s-=dy;n+=dy;
+  // Si l'orthophoto en mémoire couvre déjà cette bbox → on l'utilise
+  let im=_lastSigImage, bbox=_lastSigBbox;
+  const covers=(b)=>b&&b.w<=w&&b.e>=e&&b.s<=s&&b.n>=n;
+  if(!covers(bbox)){
+    // Télécharge l'ortho IGN (WMS) pour cette bbox
+    const url=ignOrthoUrl({w,s,e,n});
+    try{const img=await loadImageURL(url);const cv=drawCV(img);im=cv;bbox={w,s,e,n};
+      _lastSigImage=im;_lastSigBbox=bbox;
+    }catch(err){throw new Error('orthophoto indisponible : '+err.message);}
+  }
+  const W=im.w,H=im.h;
+  const water=computeWaterMask(im,50,null);
+  const mPerPx=metresParPixel(bbox,W);
+  // Conversion lonlat → pixels selon la bbox de l'ortho de référence
+  const px=coords.map(([lo,la])=>[(lo-bbox.w)/(bbox.e-bbox.w)*W, (bbox.n-la)/(bbox.n-bbox.s)*H]);
+  let totLen=0;const proto={sd:0,gran:0,cv:0,net:0,wf:0,persist:0,Lm:0,sat:0,rmb:0,larg:0,len:0,landReach:0};
+  let nValid=0;
+  for(let i=1;i<px.length;i++){
+    const a=px[i-1],b=px[i];
+    const lenM=geoLenM([coords[i-1],coords[i]],bbox);
+    const sb=sampleBand(im,a,b);
+    const tr=analyseTransversale(im,water,a,b);
+    const gr=granulariteBande(im,a,b);
+    if(!sb)continue;
+    const fv={sd:sb.sd,gran:gr,cv:tr.largeurCV,net:tr.netteteBord,wf:tr.waterFrac,persist:tr.persistanceTerrePx,Lm:sb.Lm,sat:sb.sat,rmb:sb.r-sb.b,larg:(tr.largeurPx||0)*mPerPx,len:lenM,landReach:tr.landReach};
+    const wgt=lenM||1;
+    for(const k in proto)proto[k]+=fv[k]*wgt;
+    totLen+=wgt;nValid++;
+  }
+  if(nValid===0)return null;
+  for(const k in proto)proto[k]/=(totLen||1);
+  proto.len=totLen;
+  return {f:proto,y:1,type:(kind==='ouvrage'?'ouvrage tracé carte':'trait de côte tracé carte'),site:(_lastSigMeta&&_lastSigMeta.site)||TERR_ACTIF||'',op:_operatorId(),sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now(),coords:coords};
+}
+function _vtEnregistrerRec(rec, kind){
+  const path=(kind==='ouvrage')?OUVR_FB_PATH:TRAIT_FB_PATH;
+  if(kind==='ouvrage'){_ouvrLabelsLocal.push(rec);_saveLocalLabels();entrainerModeleOuvrages();}
+  else{_traitLabelsLocal.push(rec);_saveLocalTraitLabels();entrainerModeleTraits();}
+  if(window._FB&&window._FB.gpush)window._FB.gpush(path,rec).catch(()=>{});
+  if(typeof majApprentissageUI==='function')majApprentissageUI();
+}
+// Importe une couche GeoJSON existante (sortie QGIS, Cerema, observatoire local…) comme corpus
+// vérité-terrain. Chaque LineString devient un exemple positif. Le type (trait / ouvrage) est
+// déduit des propriétés (« man_made », « type », « class ») ; sinon prompt utilisateur.
+window.importerVTGeojson=function(input){
+  const f=input.files&&input.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    let gj;try{gj=JSON.parse(ev.target.result);}catch(e){alert('JSON invalide : '+e.message);return;}
+    const items=[];
+    const walk=(g,props)=>{
+      if(!g)return;
+      if(g.type==='LineString')items.push({coords:g.coordinates,props:props||{}});
+      else if(g.type==='MultiLineString')g.coordinates.forEach(c=>items.push({coords:c,props:props||{}}));
+      else if(g.type==='Feature')walk(g.geometry,g.properties);
+      else if(g.type==='FeatureCollection')(g.features||[]).forEach(f=>walk(f));
+      else if(g.type==='GeometryCollection')(g.geometries||[]).forEach(x=>walk(x,props));
+    };
+    walk(gj);
+    if(!items.length){alert('Aucune polyligne trouvée dans le fichier.');return;}
+    // Type par défaut : déduit ou demandé
+    let kindParDefaut=null;
+    const r1=items[0].props;
+    if(/man_made|seamark|breakwater|pier|seawall|quay|groyne/i.test(JSON.stringify(r1)))kindParDefaut='ouvrage';
+    else if(/coastline|trait|shoreline/i.test(JSON.stringify(r1)))kindParDefaut='trait';
+    if(!kindParDefaut){
+      const r=prompt(`Type pour les ${items.length} polyligne(s) importée(s) : tapez "trait" ou "ouvrage"`,'trait');
+      if(r==='ouvrage'||r==='trait')kindParDefaut=r;else return;
+    }
+    _vtHint(`Import en cours (${items.length} polyligne(s), type ${kindParDefaut})…`);
+    let ok=0,fail=0;
+    for(let i=0;i<items.length;i++){
+      try{
+        const rec=await _vtRecDepuisCoords(items[i].coords, kindParDefaut);
+        if(rec){_vtEnregistrerRec(rec, kindParDefaut);_vtDessinerSurCarte(items[i].coords, kindParDefaut, 'import GeoJSON');ok++;}
+        else fail++;
+      }catch(e){fail++;}
+      if((i+1)%5===0)_vtHint(`Import ${i+1}/${items.length}… (${ok} OK, ${fail} échec)`);
+    }
+    input.value='';
+    _vtHint(`✓ Import terminé : ${ok} polyligne(s) enregistrée(s), ${fail} échec(s). Corpus ${kindParDefaut} : ${(kindParDefaut==='ouvrage'?_ouvrLabelsLocal:_traitLabelsLocal).length} exemples.`);
+  };
+  reader.readAsText(f);
+};
 function _dessineSecteurs(){if(!mapInstance||!window.L)return;const L=window.L;_secteurLayers.forEach(l=>mapInstance.removeLayer(l));_secteurLayers=[];
   for(const s of _secteurs){let lyr;
     if(s.kind==='rect'){const a=s.coords[0],b=s.coords[1];lyr=L.rectangle([[a[1],a[0]],[b[1],b[0]]],{color:'#c026d3',weight:2,dashArray:'5,5',fill:true,fillOpacity:.06});}
