@@ -413,15 +413,23 @@ svg.house{width:100%;max-width:290px;height:auto}
 .vp-input-row button{background:var(--teal);color:#fff;border:none;border-radius:7px;padding:9px 15px;font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer}
 .vp-input-row button:disabled{opacity:.5;cursor:not-allowed}
 .vp-counter{font-family:var(--mono);font-size:9px;color:var(--muted);padding:5px 16px;text-align:right}
-.cas-card{background:var(--panel);border:1px solid var(--line);border-radius:13px;overflow:hidden;margin-bottom:16px}
-.cas-head{padding:20px 24px;background:var(--navy);color:#fff;cursor:pointer;position:relative}
-.cas-head:hover{background:#122E52}
-.cas-num{font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:#7FD3D9;margin-bottom:5px}
-.cas-head h3{font-family:var(--serif);font-size:22px;font-weight:600;margin-bottom:5px}
+/* Bandeaux accordéon des analyses territoriales — compacts par défaut, expansion à la demande */
+.cas-card{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:10px;transition:box-shadow .2s}
+.cas-card.open{margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.cas-head{padding:11px 18px 11px 22px;background:var(--bf500);color:#fff;cursor:pointer;position:relative;display:flex;align-items:center;gap:14px;transition:background .15s}
+.cas-head:hover{background:var(--bf700)}
+.cas-num{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#7FD3D9;flex-shrink:0;line-height:1;margin:0}
+.cas-head h3{font-family:var(--sans);font-size:14.5px;font-weight:700;margin:0;flex:1;line-height:1.25;letter-spacing:.005em}
 .cas-head .cas-desc{font-size:13px;color:rgba(255,255,255,.78);line-height:1.45}
-.cas-chev{position:absolute;top:20px;right:20px;font-size:18px;color:rgba(255,255,255,.5);transition:transform .2s}
+.cas-chev{position:static;font-size:14px;color:rgba(255,255,255,.7);transition:transform .2s;flex-shrink:0}
 .cas-card.open .cas-chev{transform:rotate(180deg)}
-.cas-body{display:none;padding:24px}.cas-card.open .cas-body{display:block}
+.cas-card.open .cas-head{padding:16px 22px}
+.cas-card.open .cas-head h3{font-size:18px}
+.cas-body{display:none;padding:20px 22px}.cas-card.open .cas-body{display:block}
+/* Barre de contrôle Déplier/Replier au-dessus du conteneur d'analyses */
+.cas-toolbar{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px}
+.cas-toolbar button{font-family:var(--sans);font-size:11.5px;font-weight:500;color:var(--bf500);background:#fff;border:1px solid var(--bf500);border-radius:4px;padding:5px 12px;cursor:pointer;transition:all .15s}
+.cas-toolbar button:hover{background:var(--gris-50)}
 .consigne{background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:14px 16px;margin-bottom:18px;font-size:13px;line-height:1.55}
 .consigne .conk{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
 .consigne strong{color:var(--navy)}
@@ -2699,6 +2707,11 @@ function mkCas(id,num,titre,objectif,body,open){
   return c;
 }
 function construireCas(T){const host=document.getElementById('cas-container');host.innerHTML='';
+  // Barre Déplier / Replier tout — pour ne pas perdre de place quand on parcourt l'analyse
+  const tools=document.createElement('div');tools.className='cas-toolbar';
+  tools.innerHTML=`<button onclick="_casToggleAll(true)" title="Ouvrir tous les bandeaux">▾ Tout déplier</button>
+    <button onclick="_casToggleAll(false)" title="Refermer tous les bandeaux">▴ Tout replier</button>`;
+  host.appendChild(tools);
   const filled=d=>(d.match(/●/g)||[]).length;
   // ANALYSE 1 — Connaissance et inventaire
   let sitesHtml=`<div class="site-grid"><div class="site-row hdr"><span>Site</span><span>Description</span><span>Menace 2030/2050/2100</span><span>Statut</span></div>`;
@@ -2706,7 +2719,7 @@ function construireCas(T){const host=document.getElementById('cas-container');ho
   sitesHtml+='</div>';
   host.appendChild(mkCas('cas1','Analyse n° 1','Connaissance et inventaire des biens exposés',
     "Recenser les biens exposés par <b>destination</b> (logements, équipements, infrastructures, activités) et par <b>horizon</b> (2030/2050/2100) — base de toute recomposition. La connaissance reste à consolider sur les COM, où la boîte à outils métropolitaine (cartes d'exposition loi Climat 2021) ne s'applique pas.",
-    sitesHtml+`<div class="src-note"><b>Source :</b> ${T.cas1_src}</div>`,true));
+    sitesHtml+`<div class="src-note"><b>Source :</b> ${T.cas1_src}</div>`,false));
   // ANALYSE 2 — Recomposition spatiale, orientation par site (analytique, sans vote)
   const orient=s=>{const f30=filled(s.h30),f50=filled(s.h50),f100=filled(s.h100);
     if(f30>=3)return['Relocaliser / renaturer','rvo-P','menace forte dès 2030'];
@@ -3224,6 +3237,7 @@ function pushDiToFb(){
 }
 
 window.toggleCas=id=>{document.getElementById(id).classList.toggle('open');};
+window._casToggleAll=(open)=>{document.querySelectorAll('#cas-container .cas-card').forEach(c=>{c.classList.toggle('open',!!open);});};
 
 /* ============================================================
    VOIX DU CLIMAT
