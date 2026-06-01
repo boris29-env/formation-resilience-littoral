@@ -3,43 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Littoraux ultramarins · recomposition spatiale</title>
+<title>Littoraux ultramarins · recomposition spatiale · GéoLittoral</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
+/* Police Marianne — police officielle de la République française (DSFR) */
+@font-face{font-family:'Marianne';font-weight:400;font-style:normal;font-display:swap;src:url('https://cdn.jsdelivr.net/gh/numerique-gouv/dsfr@v1.10.2/dist/fonts/Marianne-Regular.woff2') format('woff2');}
+@font-face{font-family:'Marianne';font-weight:500;font-style:normal;font-display:swap;src:url('https://cdn.jsdelivr.net/gh/numerique-gouv/dsfr@v1.10.2/dist/fonts/Marianne-Medium.woff2') format('woff2');}
+@font-face{font-family:'Marianne';font-weight:700;font-style:normal;font-display:swap;src:url('https://cdn.jsdelivr.net/gh/numerique-gouv/dsfr@v1.10.2/dist/fonts/Marianne-Bold.woff2') format('woff2');}
+@font-face{font-family:'Marianne';font-weight:400;font-style:italic;font-display:swap;src:url('https://cdn.jsdelivr.net/gh/numerique-gouv/dsfr@v1.10.2/dist/fonts/Marianne-Regular_Italic.woff2') format('woff2');}
 :root{
-  --navy:#0E2A47;--ink:#1E2A38;--muted:#6B7888;
-  --teal:#0E7C86;--ocean:#1C7293;--amber:#B07E1B;
+  /* Charte DSFR / GéoLittoral — Système de Design de l'État */
+  --bf500:#000091;       /* Bleu Marianne (couleur principale) */
+  --bf300:#1212FF;       /* Bleu France (action) */
+  --bf700:#21213F;       /* Bleu France foncé (hover) */
+  --rm500:#E1000F;       /* Rouge Marianne */
+  --gris-1000:#161616;   /* Texte principal */
+  --gris-600:#666666;    /* Texte secondaire */
+  --gris-200:#E5E5E5;    /* Filet / séparateur */
+  --gris-50:#F6F6F6;     /* Fond clair */
+  --vert-littoral:#009099; /* Accent thématique mer/littoral */
+  /* Alias historiques mappés sur la palette officielle */
+  --navy:var(--bf500);--ink:var(--gris-1000);--muted:var(--gris-600);
+  --teal:var(--vert-littoral);--ocean:#1C7293;--amber:#B07E1B;
   --terra:#B65A3C;--green:#2F7D5B;--slate:#4E7081;
-  --red:#8E2E1E;--purple:#6B3D8A;
-  --bg:#EDF1F4;--panel:#FFF;--line:#D7DFE6;--soft:#F4F7F9;
+  --red:var(--rm500);--purple:#6B3D8A;
+  --bg:#FFFFFF;--panel:#FFFFFF;--line:var(--gris-200);--soft:var(--gris-50);
   --m0:#C7D2DA;--m1:#7FB0BC;--m2:#2E8C97;--m3:#0E5A63;
   --cv-paris:#2F7D5B;--cv-tracc:#B07E1B;--cv-haut:#B65A3C;--cv-emball:#6B2C20;
-  --serif:'Fraunces',Georgia,serif;--sans:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono','Courier New',monospace;
+  /* DSFR : Marianne pour tout (titres éditoriaux compris). L'effet « serif/éditorial »
+     précédemment porté par Fraunces est restitué par Marianne italique 500. */
+  --serif:'Marianne','Marianne Local',Arial,sans-serif;
+  --sans:'Marianne','Marianne Local',Arial,sans-serif;
+  --mono:'IBM Plex Mono','Courier New',monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;scroll-padding-top:68px}
 body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
-.topbar{position:sticky;top:0;z-index:500;background:var(--navy);color:#fff;padding:11px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 10px rgba(14,42,71,.3)}
-.tb-left{display:flex;align-items:center;gap:14px}
-.flag{display:inline-flex;width:20px;height:13px;border-radius:1px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.3);flex-shrink:0}
-.flag span{flex:1}.flag .bl{background:#000091}.flag .wh{background:#FFF}.flag .rd{background:#E1000F}
-.tb-title{font-family:var(--serif);font-size:16px;font-weight:600;letter-spacing:.01em}
-.tb-title em{font-style:italic;color:#7FD3D9;font-weight:400}
-.tb-sub{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.5);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
-.tb-right{display:flex;align-items:center;gap:8px}
-.tb-pill{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:4px 9px;border-radius:10px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.2)}
-.tb-pill.grp{background:var(--teal)}.tb-pill.session{cursor:pointer}.tb-pill.session:hover{background:rgba(255,255,255,.18)}
-.tb-btn{background:transparent;border:1px solid rgba(255,255,255,.3);color:#fff;font-family:var(--sans);font-size:10px;letter-spacing:.07em;text-transform:uppercase;padding:6px 12px;border-radius:4px;cursor:pointer;transition:all .2s}
-.tb-btn:hover{background:rgba(255,255,255,.1)}.tb-btn.primary{background:var(--teal);border-color:var(--teal)}
+/* En-tête DSFR — bloc République française + marque GéoLittoral */
+.topbar{position:sticky;top:0;z-index:500;background:#fff;color:var(--gris-1000);border-bottom:1px solid var(--gris-200);box-shadow:0 2px 6px rgba(0,0,0,.04)}
+.tb-gouv{display:flex;align-items:center;justify-content:space-between;padding:8px 24px;background:#fff;border-bottom:1px solid var(--gris-200);gap:14px;flex-wrap:wrap}
+.tb-marianne{display:flex;align-items:center;gap:14px}
+.tb-rf{display:flex;flex-direction:column;line-height:1.05}
+.tb-rf-rep{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.02em;color:var(--gris-1000);text-transform:uppercase}
+.tb-rf-francaise{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.02em;color:var(--gris-1000);text-transform:uppercase}
+.tb-devise{font-family:var(--sans);font-size:9.5px;color:var(--gris-600);font-style:italic;margin-top:1px;letter-spacing:.01em}
+.tb-marque{display:flex;align-items:center;gap:10px}
+.tb-marque-logo{width:54px;height:54px;background:var(--bf500);color:#fff;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);font-size:11px;font-weight:700;text-align:center;line-height:1.05;letter-spacing:0;flex-shrink:0}
+.tb-marque-txt{display:flex;flex-direction:column}
+.tb-marque-1{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--gris-1000);letter-spacing:.005em;line-height:1.15}
+.tb-marque-2{font-family:var(--sans);font-size:10.5px;font-weight:400;color:var(--gris-600);margin-top:2px;letter-spacing:.005em}
+.tb-app{display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:#fff;gap:14px;flex-wrap:wrap}
+.tb-left{display:flex;align-items:center;gap:14px;flex:1;min-width:0}
+.flag{display:inline-flex;width:20px;height:13px;border-radius:1px;overflow:hidden;box-shadow:0 0 0 1px var(--gris-200);flex-shrink:0}
+.flag span{flex:1}.flag .bl{background:var(--bf500)}.flag .wh{background:#FFF}.flag .rd{background:var(--rm500)}
+.tb-title{font-family:var(--sans);font-size:17px;font-weight:700;color:var(--bf500);letter-spacing:.005em;line-height:1.2}
+.tb-title em{font-style:italic;color:var(--vert-littoral);font-weight:500}
+.tb-sub{font-family:var(--sans);font-size:11px;color:var(--gris-600);letter-spacing:.005em;margin-top:2px;font-weight:400;text-transform:none}
+.tb-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.tb-pill{font-family:var(--sans);font-size:11px;font-weight:500;letter-spacing:.005em;text-transform:none;padding:4px 10px;border-radius:4px;background:var(--gris-50);color:var(--gris-600);border:1px solid var(--gris-200)}
+.tb-pill.grp{background:var(--vert-littoral);color:#fff;border-color:var(--vert-littoral)}.tb-pill.session{cursor:pointer}.tb-pill.session:hover{background:var(--gris-200)}
+/* Bouton DSFR — secondaire (contour bleu Marianne) + primaire (plein) */
+.tb-btn{background:transparent;border:1px solid var(--bf500);color:var(--bf500);font-family:var(--sans);font-size:12px;font-weight:500;letter-spacing:.005em;text-transform:none;padding:6px 12px;border-radius:4px;cursor:pointer;transition:all .15s}
+.tb-btn:hover{background:var(--gris-50)}
+.tb-btn.primary{background:var(--bf500);color:#fff;border-color:var(--bf500)}
+.tb-btn.primary:hover{background:var(--bf700);border-color:var(--bf700)}
 #ecran-sel,#ecran-groupe{max-width:1050px;margin:0 auto;padding:56px 24px 80px}
 #ecran-plateforme{display:none}
 #ecran-groupe{display:none}
 .sel-kicker{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);margin-bottom:14px;display:block}
-.sel-h1{font-family:var(--serif);font-size:48px;font-weight:400;color:var(--navy);line-height:1.05;letter-spacing:-.02em;margin-bottom:14px}
-.sel-h1 em{font-style:italic;color:var(--terra)}
+.sel-h1{font-family:var(--serif);font-size:46px;font-weight:700;color:var(--bf500);line-height:1.1;letter-spacing:-.015em;margin-bottom:14px}
+.sel-h1 em{font-style:italic;color:var(--vert-littoral);font-weight:500}
 .sel-lede{font-family:var(--serif);font-size:19px;color:var(--muted);font-style:italic;max-width:680px;line-height:1.5}
 .sel-ref{font-family:var(--mono);font-size:9.5px;color:var(--muted);background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:6px 11px;display:inline-block;margin-top:8px}
 .sel-sep{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:32px 0 14px;display:flex;align-items:center;gap:10px}
@@ -92,8 +128,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15p
 .content{padding:44px 52px;max-width:none}
 .terr-hero{margin-bottom:60px;padding-bottom:38px;border-bottom:2px solid var(--navy)}
 .th-kicker{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);background:rgba(14,124,134,.1);padding:4px 10px;border-radius:3px;display:inline-block;margin-bottom:16px}
-.terr-hero h1{font-family:var(--serif);font-size:50px;font-weight:400;color:var(--navy);line-height:1.05;letter-spacing:-.02em;margin-bottom:12px}
-.terr-hero h1 em{font-style:italic;color:var(--terra)}
+.terr-hero h1{font-family:var(--serif);font-size:46px;font-weight:700;color:var(--bf500);line-height:1.1;letter-spacing:-.015em;margin-bottom:12px}
+.terr-hero h1 em{font-style:italic;color:var(--vert-littoral);font-weight:500}
 .th-lede{font-family:var(--serif);font-size:18px;font-style:italic;color:var(--muted);max-width:680px;margin-bottom:24px;line-height:1.5}
 .fact-row{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:28px}
 .fact-box{border-top:2px solid var(--navy);padding-top:10px}
@@ -643,21 +679,41 @@ svg.house{width:100%;max-width:290px;height:auto}
 </style>
 </head>
 <body>
-<div class="topbar">
-  <div class="tb-left">
-    <div class="flag"><span class="bl"></span><span class="wh"></span><span class="rd"></span></div>
-    <div>
-      <div class="tb-title">Recomposition spatiale des <em>littoraux ultramarins</em></div>
-      <div class="tb-sub">Adaptation au recul du trait de côte &nbsp;·&nbsp; outre-mer (COM et Nouvelle-Calédonie)</div>
+<header class="topbar">
+  <!-- Bloc-marque DSFR : République Française + Ministère / GéoLittoral -->
+  <div class="tb-gouv">
+    <div class="tb-marianne">
+      <div class="tb-rf" aria-label="République Française">
+        <span class="tb-rf-rep">République</span>
+        <span class="tb-rf-francaise">Française</span>
+        <span class="tb-devise">Liberté · Égalité · Fraternité</span>
+      </div>
+    </div>
+    <div class="tb-marque" title="GéoLittoral — Le portail de la mer et du littoral · Ministère de la Transition écologique, Cerema">
+      <div class="tb-marque-logo">Géo<br>Littoral</div>
+      <div class="tb-marque-txt">
+        <span class="tb-marque-1">Atelier littoraux ultramarins</span>
+        <span class="tb-marque-2">Ministère de la Transition écologique · Cerema</span>
+      </div>
     </div>
   </div>
-  <div class="tb-right">
-    <span class="tb-pill grp" id="tb-grp" style="display:none"></span>
-    <span class="tb-pill session" id="tb-session" style="display:none"></span>
-    <button class="tb-btn" id="btn-retour" onclick="retourSelecteur()" style="display:none">Changer</button>
-    <button class="tb-btn primary" onclick="exporterBilan()">Exporter le bilan</button>
+  <!-- Bandeau application -->
+  <div class="tb-app">
+    <div class="tb-left">
+      <div class="flag" aria-hidden="true"><span class="bl"></span><span class="wh"></span><span class="rd"></span></div>
+      <div>
+        <div class="tb-title">Recomposition spatiale des <em>littoraux ultramarins</em></div>
+        <div class="tb-sub">Adaptation au recul du trait de côte · outre-mer (COM et Nouvelle-Calédonie)</div>
+      </div>
+    </div>
+    <div class="tb-right">
+      <span class="tb-pill grp" id="tb-grp" style="display:none"></span>
+      <span class="tb-pill session" id="tb-session" style="display:none"></span>
+      <button class="tb-btn" id="btn-retour" onclick="retourSelecteur()" style="display:none">Changer</button>
+      <button class="tb-btn primary" onclick="exporterBilan()">Exporter le bilan</button>
+    </div>
   </div>
-</div>
+</header>
 
 <div id="ecran-sel">
   <span class="sel-kicker">Recomposition spatiale des littoraux ultramarins</span>
@@ -7037,4 +7093,43 @@ function collectRoutage(code, label) {
 
 initSelecteur();
 </script>
+
+<!-- Pied de page institutionnel DSFR -->
+<footer style="margin-top:60px;background:#fff;border-top:2px solid var(--bf500)">
+  <div style="max-width:1200px;margin:0 auto;padding:32px 24px 24px;display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start">
+    <div style="flex:0 0 auto;display:flex;gap:18px;align-items:center">
+      <div style="display:flex;flex-direction:column;line-height:1.1">
+        <span style="font-family:var(--sans);font-size:13px;font-weight:700;color:var(--gris-1000);text-transform:uppercase">République</span>
+        <span style="font-family:var(--sans);font-size:13px;font-weight:700;color:var(--gris-1000);text-transform:uppercase">Française</span>
+        <span style="font-family:var(--sans);font-size:11px;color:var(--gris-600);font-style:italic;margin-top:2px">Liberté · Égalité · Fraternité</span>
+      </div>
+      <div style="width:60px;height:60px;background:var(--bf500);color:#fff;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);font-size:12px;font-weight:700;text-align:center;line-height:1.05">Géo<br>Littoral</div>
+    </div>
+    <div style="flex:1;min-width:280px">
+      <p style="font-family:var(--sans);font-size:13px;line-height:1.6;color:var(--gris-1000);margin-bottom:8px">
+        <b>Atelier littoraux ultramarins</b> est un outil de co-construction pour les six collectivités d'outre-mer (Saint-Pierre-et-Miquelon, Saint-Martin, Saint-Barthélemy, Nouvelle-Calédonie, Wallis-et-Futuna, Polynésie française) sur la recomposition spatiale et l'adaptation au recul du trait de côte.
+      </p>
+      <p style="font-family:var(--sans);font-size:11.5px;color:var(--gris-600);line-height:1.6">
+        Sources de données : IGN Géoplateforme · OpenStreetMap (ODbL) · Cerema · INSeaPTION · Carib-Coast · Esri World Imagery. Le code source de cette plateforme est disponible sur GitHub. Cet atelier est un outil indicatif, sans valeur d'engagement.
+      </p>
+      <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-family:var(--sans);font-size:12px">
+        <a href="https://www.geolittoral.developpement-durable.gouv.fr" target="_blank" rel="noopener" style="color:var(--bf500);text-decoration:underline">geolittoral.developpement-durable.gouv.fr</a>
+        <a href="https://www.cerema.fr" target="_blank" rel="noopener" style="color:var(--bf500);text-decoration:underline">cerema.fr</a>
+        <a href="https://www.ecologie.gouv.fr" target="_blank" rel="noopener" style="color:var(--bf500);text-decoration:underline">ecologie.gouv.fr</a>
+        <a href="https://www.legifrance.gouv.fr" target="_blank" rel="noopener" style="color:var(--bf500);text-decoration:underline">legifrance.gouv.fr</a>
+      </div>
+    </div>
+  </div>
+  <div style="border-top:1px solid var(--gris-200);padding:14px 24px;background:var(--gris-50)">
+    <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-family:var(--sans);font-size:11px;color:var(--gris-600)">
+      <div>© <span id="ft-year"></span> Atelier littoraux ultramarins · sous licence Etalab 2.0 (Open Licence)</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap">
+        <span>Charte graphique : Système de Design de l'État (DSFR)</span>
+        <span>·</span>
+        <span>Police Marianne © DINUM</span>
+      </div>
+    </div>
+  </div>
+</footer>
+<script>document.getElementById('ft-year').textContent=new Date().getFullYear();</script>
 </body></html>
