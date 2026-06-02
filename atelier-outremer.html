@@ -3784,8 +3784,10 @@ function construireImageModule(){
         </div>
         <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)">
           <div style="font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:4px">apprentissage actif et calibration</div>
-          <div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-bottom:6px"><b>🎯 proposer des candidats</b> : 5 tracés colorés sont générés sur la zone visible avec des paramètres différents (strict, permissif, urbain, lagon, récifs). cliquez sur un trait pour le valider (✓) ou l'écarter (✗) ; un ✓ enregistre le preset pour la bbox courante.<br><b>⚙ calibrer</b> : grid-search sur vos tracés vt déjà enregistrés, par secteur (~85 essais). un preset par secteur est calibré pour suivre votre vt.<br>presets sectoriels persistés en localStorage, sélectionnés automatiquement à l'extraction selon la zone analysée.</div>
+          <div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-bottom:6px"><b>📥 calibrer sur OSM</b> : télécharge le trait de côte OSM (Overpass) dans la bbox active et l'utilise comme vérité-terrain abondante (~50-1000 pts vs 5-50 pour un tracé manuel). recommandé en première intention : la grid-search converge mieux, le preset stocké est plus robuste.<br><b>🎯 proposer des candidats</b> : 5 tracés colorés générés sur la zone visible avec paramètres différents (strict, permissif, urbain, lagon, récifs). cliquez pour valider (✓) ou écarter (✗).<br><b>⚙ calibrer</b> : grid-search sur vos tracés vt manuels. à utiliser hors couverture OSM.<br>presets sectoriels persistés en localStorage, sélectionnés automatiquement à l'extraction selon la zone analysée.</div>
           <button onclick="_calibrerParamsDepuisVT()" style="background:var(--bf500);color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11.5px;cursor:pointer;font-weight:600">⚙ calibrer (par secteur)</button>
+          <button onclick="_calibrerSurOsm()" style="background:#1a8a4a;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11.5px;cursor:pointer;font-weight:600;margin-left:6px" title="Télécharge la coastline OSM dans la bbox active (Overpass) et l'utilise comme vérité-terrain abondante pour calibrer les paramètres. Bien plus fiable qu'un tracé manuel partiel.">📥 calibrer sur OSM</button>
+          <button onclick="_effacerOsmCalque()" style="background:#fff;color:#1a8a4a;border:1px solid #1a8a4a;border-radius:5px;padding:6px 8px;font-size:11px;cursor:pointer;margin-left:4px" title="Retire le calque OSM affiché sur la carte">✕ osm</button>
           <button onclick="_proposerCandidats()" style="background:#1a8a4a;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11.5px;cursor:pointer;font-weight:600;margin-left:6px">🎯 proposer des candidats</button>
           <button onclick="_demanderClaudeVision()" style="background:#FFC107;color:#000;border:none;border-radius:5px;padding:6px 12px;font-size:11.5px;cursor:pointer;font-weight:600;margin-left:6px" title="Envoie l'orthophoto à Claude Vision avec un prompt territorialisé (marnage, géomorpho, indicateur de référence). Nécessite une clé API Anthropic stockée localement.">🤖 IA Claude Vision</button>
           <button onclick="_effacerCleApi()" style="background:#fff;color:#666;border:1px solid #ccc;border-radius:5px;padding:6px 8px;font-size:11px;cursor:pointer;margin-left:4px" title="Efface la clé API Anthropic du localStorage">🔑</button>
@@ -5319,11 +5321,11 @@ function _distMedTraitVT(feats,vtCoords,bbox){
   dists.sort((a,b)=>a-b);
   return dists[Math.floor(dists.length/2)];
 }
-async function _calibrerParamsDepuisVT(){
+async function _calibrerParamsDepuisVT(tracesOverride){
   const s=document.getElementById('deep-status');
   const k=(typeof TERR_ACTIF==='string'&&TERR_ACTIF)?TERR_ACTIF:null;
   if(!k){if(s)s.textContent='✗ Aucun territoire actif.';return;}
-  const traces=_allTraitLabels().filter(r=>r&&r.y===1&&Array.isArray(r.coords)&&r.coords.length>=2);
+  const traces=tracesOverride||_allTraitLabels().filter(r=>r&&r.y===1&&Array.isArray(r.coords)&&r.coords.length>=2);
   if(!traces.length){if(s)s.textContent='✗ Aucun tracé vérité-terrain trait de côte. Tracez-en au moins un sur la carte avant de calibrer.';return;}
   // Sectorisation : on calibre 1 PRESET PAR TRACÉ (chaque tracé = un secteur géographique propre).
   // L'utilisateur peut ainsi avoir des paramètres distincts pour Saint-Pierre ville vs Langlade plage
@@ -5422,6 +5424,66 @@ async function _calibrerParamsDepuisVT(){
   }
 }
 window._calibrerParamsDepuisVT=_calibrerParamsDepuisVT;
+
+// === Import OSM coastline (Overpass) comme vérité-terrain abondante ===
+// Là où OSM existe, le trait est meilleur que toute heuristique RGB sur image dense urbaine
+// (Saint-Pierre, Marigot). On télécharge le trait OSM dans la bbox active, on l'affiche comme
+// calque éditable, et on s'en sert pour calibrer les paramètres heuristiques sur les secteurs
+// adjacents (OSM ≥ 50 points dans la bbox = VT statistiquement utile).
+async function _fetchOsmCoastline(bbox){
+  // Overpass query : ways natural=coastline dans la bbox, géométrie complète
+  const q=`[out:json][timeout:25];way["natural"="coastline"](${bbox.s},${bbox.w},${bbox.n},${bbox.e});out geom;`;
+  const url='https://overpass-api.de/api/interpreter?data='+encodeURIComponent(q);
+  const r=await fetch(url);
+  if(!r.ok) throw new Error('Overpass HTTP '+r.status);
+  const data=await r.json();
+  const lines=[];
+  for(const el of (data.elements||[])){
+    if(el.type!=='way'||!Array.isArray(el.geometry)) continue;
+    const pts=el.geometry.map(p=>[p.lon,p.lat]);
+    if(pts.length>=2) lines.push(pts);
+  }
+  return lines;
+}
+let _osmLayer=null;
+function _afficherOsmSurCarte(lines,bbox){
+  if(!window.mapInstance||!window.L) return;
+  if(_osmLayer){try{mapInstance.removeLayer(_osmLayer);}catch(e){}_osmLayer=null;}
+  const g=L.layerGroup();
+  for(const ln of lines){
+    const latlngs=ln.map(p=>[p[1],p[0]]);
+    L.polyline(latlngs,{color:'#1a8a4a',weight:3,opacity:.9,dashArray:'6,3'}).bindTooltip('coastline OSM',{permanent:false}).addTo(g);
+  }
+  g.addTo(mapInstance);
+  _osmLayer=g;
+}
+async function _calibrerSurOsm(){
+  const s=document.getElementById('deep-status');
+  const k=(typeof TERR_ACTIF==='string'&&TERR_ACTIF)?TERR_ACTIF:null;
+  if(!k){if(s)s.textContent='✗ Aucun territoire actif.';return;}
+  // bbox de référence : analyse en cours sinon vue carte courante
+  let bb=_lastSigBbox;
+  if(!bb&&window.mapInstance){const b=mapInstance.getBounds();bb={w:b.getWest(),s:b.getSouth(),e:b.getEast(),n:b.getNorth()};}
+  if(!bb){if(s)s.textContent='✗ Pas de bbox active. Lancez une analyse ou recadrez la carte.';return;}
+  if(s)s.textContent='Téléchargement coastline OSM…';
+  let lines;
+  try{lines=await _fetchOsmCoastline(bb);}
+  catch(e){if(s)s.textContent='✗ Overpass : '+e.message;return;}
+  if(!lines.length){if(s)s.textContent='✗ Aucune coastline OSM dans la bbox. Cette zone n\'est pas couverte par OSM — utilisez VT manuelle ou SAM.';return;}
+  _afficherOsmSurCarte(lines,bb);
+  // Clipping intra-bbox pour calibration honnête (sinon les segments hors image faussent la métrique)
+  const clip=lines.map(ln=>ln.filter(p=>p[0]>=bb.w&&p[0]<=bb.e&&p[1]>=bb.s&&p[1]<=bb.n)).filter(ln=>ln.length>=2);
+  if(!clip.length){if(s)s.textContent='✗ Coastline OSM présente mais aucun point dans la bbox actuelle.';return;}
+  // Construit des traces synthétiques (≤ 3 plus longues = 3 secteurs distincts)
+  clip.sort((a,b)=>b.length-a.length);
+  const traces=clip.slice(0,3).map(c=>({y:1,coords:c,site:k,_source:'osm'}));
+  const nPts=clip.reduce((a,c)=>a+c.length,0);
+  if(s)s.textContent=`OSM : ${lines.length} ligne(s), ${nPts} points dans la bbox. Calibration en cours sur ${traces.length} secteur(s)…`;
+  return _calibrerParamsDepuisVT(traces);
+}
+function _effacerOsmCalque(){if(_osmLayer&&window.mapInstance){try{mapInstance.removeLayer(_osmLayer);}catch(e){}_osmLayer=null;}}
+window._calibrerSurOsm=_calibrerSurOsm;
+window._effacerOsmCalque=_effacerOsmCalque;
 
 /* === Apprentissage actif : tracés candidats à valider =====================================
    Pour la bbox de la carte courante, on génère 5 tracés en variant les paramètres typiques
