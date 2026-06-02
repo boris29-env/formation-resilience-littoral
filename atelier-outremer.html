@@ -5260,26 +5260,40 @@ window._proposerCandidats=async function(){
   const k=(typeof TERR_ACTIF==='string'&&TERR_ACTIF)?TERR_ACTIF:null;
   if(!k){if(s)s.textContent='✗ Aucun territoire actif.';return;}
   if(!mapInstance){if(s)s.textContent='✗ Ouvrez d\'abord la carte.';return;}
-  // Bbox = ce qui est visible sur la carte courante (limites du viewport leaflet)
+  // Bbox = ce qui est visible. On force un côté minimum de ~1.5 km pour que la scène contienne
+  // mer + terre et que les fractions merMinFrac/lagonMinFrac soient atteignables.
   const b=mapInstance.getBounds();
   let bb={w:b.getWest(),s:b.getSouth(),e:b.getEast(),n:b.getNorth()};
+  const latMid=(bb.s+bb.n)/2;
+  const mPerDegLat=111320, mPerDegLon=111320*Math.cos(latMid*Math.PI/180);
+  let widthM=(bb.e-bb.w)*mPerDegLon, heightM=(bb.n-bb.s)*mPerDegLat;
+  const MIN_M=1500;
+  if(widthM<MIN_M){const dlon=(MIN_M-widthM)/2/mPerDegLon;bb.w-=dlon;bb.e+=dlon;widthM=MIN_M;}
+  if(heightM<MIN_M){const dlat=(MIN_M-heightM)/2/mPerDegLat;bb.s-=dlat;bb.n+=dlat;heightM=MIN_M;}
   // Force carré
   const dx=bb.e-bb.w, dy=bb.n-bb.s;
   if(dx>dy){const m=(bb.s+bb.n)/2,h=dx/2;bb.s=m-h;bb.n=m+h;}else{const m=(bb.w+bb.e)/2,w=dy/2;bb.w=m-w;bb.e=m+w;}
-  if(s)s.textContent='Téléchargement orthophoto de la zone visible…';
+  if(s)s.textContent=`Téléchargement orthophoto (~${Math.round(widthM)}×${Math.round(heightM)} m)…`;
   let im;
   try{const img=await loadImageURL(ignOrthoUrl(bb));im=drawCV(img);}
   catch(e){if(s)s.textContent='✗ Échec téléchargement orthophoto : '+e.message;return;}
+  // Diagnostic : taille image, % de mer avec params défaut
+  const dimOrtho=`${im.w}×${im.h}`;
   // Efface candidats précédents
   _effacerCandidats(true);
   const L=window.L;
-  for(let i=0;i<_CANDIDATS_PRESETS.length;i++){
-    const c=_CANDIDATS_PRESETS[i];
-    if(s)s.textContent=`Génération candidat ${i+1}/${_CANDIDATS_PRESETS.length} (${c.nom})…`;
+  // Liste enrichie : presets fixes + un preset de secours toujours testé
+  const allPresets=[..._CANDIDATS_PRESETS,
+    {nom:'secours (très permissif)',params:_CALIB_SECOURS,couleur:'#FFD600'}
+  ];
+  const detailLog=[];
+  for(let i=0;i<allPresets.length;i++){
+    const c=allPresets[i];
+    if(s)s.textContent=`Génération candidat ${i+1}/${allPresets.length} (${c.nom})…`;
     let feats;try{feats=await _extraireAvecParams(im,bb,c.params);}catch(e){feats=[];}
     const lines=(feats||[]).filter(f=>f.geometry&&f.geometry.type==='LineString'&&(!f.properties||!f.properties._base));
+    detailLog.push(`${c.nom}: ${lines.length} contour(s)`);
     if(!lines.length){continue;}
-    // Tracer chaque ligne en couleur du preset
     const lyrs=[];
     let totalCoords=[];
     for(const f of lines){
@@ -5294,9 +5308,9 @@ window._proposerCandidats=async function(){
   }
   const nbProd=_candidatsData.filter(Boolean).length;
   if(nbProd){
-    if(s)s.textContent=`✓ ${nbProd} candidat(s) tracé(s) sur la carte. Cliquez un trait coloré pour le valider (✓) ou l'écarter (✗). Chaque ✓ enregistre un preset pour la zone visible et la prochaine extraction utilisera le plus proche.`;
+    if(s)s.textContent=`✓ ${nbProd}/${allPresets.length} candidat(s) tracé(s). Détail : ${detailLog.join(' · ')}\nCliquez un trait coloré pour le valider (✓) ou l'écarter (✗). Chaque ✓ enregistre un preset pour la zone visible.`;
   } else {
-    if(s)s.textContent='Aucun candidat n\'a produit de contour sur cette zone. Réduisez le zoom ou centrez sur la côte.';
+    if(s)s.textContent=`✗ Aucun candidat n'a produit de contour, même le preset de secours. Ortho ${dimOrtho}, ~${Math.round(widthM)}×${Math.round(heightM)} m. Détail : ${detailLog.join(' · ')}\nPossible : l'orthophoto IGN ne couvre pas cette zone, ou la mer est presque absente du cadre. Dézoomez sur une zone côtière plus large.`;
   }
 };
 function _effacerCandidats(silent){
