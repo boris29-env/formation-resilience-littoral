@@ -3783,10 +3783,11 @@ function construireImageModule(){
         </div>
         <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)">
           <div style="font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:4px">calibrer l'algorithme depuis mes tracés</div>
-          <div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-bottom:6px">grid-search sur les paramètres territoire (lumMin, noyauMer, vegDelta, seuilTerreBordFrac) avec votre vt comme référence. télécharge l'orthophoto de la zone tracée, ré-exécute l'extraction pour 16 combinaisons, garde la meilleure. ces paramètres remplacent les défauts du territoire et persistent (localStorage). 1 à 3 minutes selon la taille des tracés.</div>
-          <button onclick="_calibrerParamsDepuisVT()" style="background:var(--bf500);color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11.5px;cursor:pointer;font-weight:600">⚙ calibrer pour ce territoire</button>
-          <button onclick="_deepActiver()" style="background:#7B5EA7;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11px;cursor:pointer;font-weight:500;margin-left:6px">⚡ entraîner le scoreur (tf.js)</button>
-          <div id="deep-status" style="font-size:10.5px;color:var(--muted);margin-top:6px;font-family:var(--mono);line-height:1.5"></div>
+          <div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-bottom:6px">un preset de paramètres (lumMin, noyauMer, vegDelta, seuilTerreBordFrac) est calibré <b>par secteur</b> : chaque tracé vt génère un preset propre à sa bbox. à l'extraction, le preset le plus proche de la zone analysée est appliqué automatiquement (port-ville, plage, falaise, lagon peuvent ainsi cohabiter sur un même territoire). 1 à 3 min par secteur, 3 secteurs max par session. les presets sont persistés en localStorage.</div>
+          <button onclick="_calibrerParamsDepuisVT()" style="background:var(--bf500);color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11.5px;cursor:pointer;font-weight:600">⚙ calibrer (par secteur)</button>
+          <button onclick="_effacerPresetsSecteurs()" style="background:#fff;color:var(--bf500);border:1px solid var(--bf500);border-radius:5px;padding:6px 12px;font-size:11px;cursor:pointer;margin-left:6px">↺ effacer presets</button>
+          <button onclick="_deepActiver()" style="background:#7B5EA7;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11px;cursor:pointer;font-weight:500;margin-left:6px">⚡ scoreur tf.js</button>
+          <div id="deep-status" style="font-size:10.5px;color:var(--muted);margin-top:6px;font-family:var(--mono);line-height:1.5;white-space:pre-wrap"></div>
         </div>
       </div>
       <div id="sig-cumul-bar" style="margin-top:8px;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:none">
@@ -4331,9 +4332,29 @@ const _PARAMS_DETECTION_TERR = {
   pf:       {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.05,   varMin: 500},
 };
 const _PARAMS_DETECTION_DEFAUT = {lumMin: 0, noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005, varMin: 0};
+// Presets sectoriels : pour chaque territoire, une liste de calibrations bbox-spécifiques.
+// _PARAMS_SECTEURS_TERR[territoire] = [{w,s,e,n,params,nom,distRef,distOpt,ts}, ...].
+// Chargés depuis localStorage. Au moment d'une extraction, on cherche le secteur dont la bbox
+// est la plus proche (centre-à-centre) du contexte courant ; sinon on prend le défaut territoire.
+const _PARAMS_SECTEURS_TERR={};
+(function _chargerSecteursTerr(){try{const s=localStorage.getItem('params_secteurs_terr');if(s){const o=JSON.parse(s);for(const k in o)_PARAMS_SECTEURS_TERR[k]=o[k];}}catch(e){}})();
+function _saveSecteursTerr(){try{localStorage.setItem('params_secteurs_terr',JSON.stringify(_PARAMS_SECTEURS_TERR));}catch(e){}}
+function _centreBbox(b){return [(b.w+b.e)/2,(b.s+b.n)/2];}
+function _distBboxDeg(a,b){const ca=_centreBbox(a),cb=_centreBbox(b);return Math.hypot(ca[0]-cb[0],ca[1]-cb[1]);}
+function _bboxContient(grand,petit){return grand.w<=petit.w&&grand.e>=petit.e&&grand.s<=petit.s&&grand.n>=petit.n;}
 function _paramsDetectionTerr(){
   const k = (typeof TERR_ACTIF === 'string' && TERR_ACTIF) ? TERR_ACTIF : null;
-  return _PARAMS_DETECTION_TERR[k] || _PARAMS_DETECTION_DEFAUT;
+  const defaut = _PARAMS_DETECTION_TERR[k] || _PARAMS_DETECTION_DEFAUT;
+  const ctx = window._currentExtractBbox;
+  if(k && ctx && _PARAMS_SECTEURS_TERR[k] && _PARAMS_SECTEURS_TERR[k].length){
+    // 1) Secteur dont la bbox CONTIENT le contexte → priorité absolue
+    let preset = _PARAMS_SECTEURS_TERR[k].find(p=>_bboxContient(p,ctx));
+    if(preset) return Object.assign({},defaut,preset.params);
+    // 2) Sinon, secteur dont le centre est le plus proche, à condition d'être à < 0.05° (~5 km)
+    const proches = _PARAMS_SECTEURS_TERR[k].map(p=>({p,d:_distBboxDeg(p,ctx)})).sort((a,b)=>a.d-b.d);
+    if(proches.length && proches[0].d < 0.05) return Object.assign({},defaut,proches[0].p.params);
+  }
+  return defaut;
 }
 // Image de variance de luminance par fenêtre carrée (radius px), calculée en O(W·H) via sommes
 // intégrales — sert au filtrage récif (lisse) vs terre (texturée) sur les territoires à barrière
@@ -4590,6 +4611,7 @@ function _fragmentationMasque(im,sens,imIRC,nd){
   return shorelinesFromMask(raw,im.w,im.h,nd,1.5).length;
 }
 function extraireTraitDeCote(im,bbox,sens,imIRC){
+  window._currentExtractBbox=bbox;   // utilisé par _paramsDetectionTerr pour choisir un preset secteur
   const nd=nodataMask(im);
   const water=computeWaterMask(im,sens,imIRC);     // masque par-pixel : sert à CLASSER le rivage
   const mPerPx=metresParPixel(bbox,im.w),epsPx=Math.max(1,2/mPerPx);   // DP ≈ 2 m (fidèle)
@@ -5079,13 +5101,17 @@ function _bboxDeCoords(coords,pad){
   return {w,s,e,n};
 }
 async function _extraireAvecParams(im,bbox,params){
-  // Sauvegarde des paramètres territoire, override le temps de l'extraction, restaure ensuite.
+  // Override des paramètres territoire le temps de l'extraction, restaure ensuite.
+  // On suspend aussi le mécanisme de preset secteur pendant la calibration en effaçant
+  // _currentExtractBbox, sinon _paramsDetectionTerr() pourrait choisir un autre preset
+  // au lieu d'appliquer les paramètres testés.
   const k=(typeof TERR_ACTIF==='string'&&TERR_ACTIF)?TERR_ACTIF:null;
   const old=k?Object.assign({},_PARAMS_DETECTION_TERR[k]||_PARAMS_DETECTION_DEFAUT):null;
-  if(k) _PARAMS_DETECTION_TERR[k]=Object.assign({},old||{},params);
+  const oldSecteurs=k?_PARAMS_SECTEURS_TERR[k]:null;
+  if(k){_PARAMS_DETECTION_TERR[k]=Object.assign({},old||{},params);_PARAMS_SECTEURS_TERR[k]=[];}
   let feats;
   try{feats=extraireTraitDeCote(im,bbox,50,null);}
-  finally{if(k)_PARAMS_DETECTION_TERR[k]=old;}
+  finally{if(k){_PARAMS_DETECTION_TERR[k]=old;_PARAMS_SECTEURS_TERR[k]=oldSecteurs;}}
   return feats;
 }
 function _distMedTraitVT(feats,vtCoords,bbox){
@@ -5109,51 +5135,67 @@ async function _calibrerParamsDepuisVT(){
   if(!k){if(s)s.textContent='✗ Aucun territoire actif.';return;}
   const traces=_allTraitLabels().filter(r=>r&&r.y===1&&Array.isArray(r.coords)&&r.coords.length>=2);
   if(!traces.length){if(s)s.textContent='✗ Aucun tracé vérité-terrain trait de côte. Tracez-en au moins un sur la carte avant de calibrer.';return;}
-  if(s)s.textContent=`Calibration en cours sur ${Math.min(traces.length,2)} tracé(s)…`;
-  // On garde au plus 2 tracés représentatifs (le plus long et un autre éloigné).
+  // Sectorisation : on calibre 1 PRESET PAR TRACÉ (chaque tracé = un secteur géographique propre).
+  // L'utilisateur peut ainsi avoir des paramètres distincts pour Saint-Pierre ville vs Langlade plage
+  // vs un site corallien : le bon preset est choisi automatiquement à l'extraction selon la bbox.
   traces.sort((a,b)=>(b.coords.length||0)-(a.coords.length||0));
-  const ref=traces.slice(0,2);
-  // Pour chaque tracé, télécharge l'ortho IGN couvrant sa bbox élargie
-  const dossiers=[];
-  for(let i=0;i<ref.length;i++){
-    const tr=ref[i];
-    const bb=_bboxDeCoords(tr.coords,0.0015);
-    try{
-      const img=await loadImageURL(ignOrthoUrl(bb));
-      const im=drawCV(img);
-      dossiers.push({tr,bb,im});
-    }catch(e){if(s)s.textContent='✗ Échec du téléchargement orthophoto : '+e.message;return;}
-  }
-  // Référence : distance médiane avec paramètres actuels
-  const paramsAct=Object.assign({},_PARAMS_DETECTION_TERR[k]||_PARAMS_DETECTION_DEFAUT);
-  let distRef=0;
-  for(const d of dossiers){const f=await _extraireAvecParams(d.im,d.bb,paramsAct);distRef+=_distMedTraitVT(f,d.tr.coords,d.bb);}
-  distRef/=dossiers.length;
-  // Greedy : pour chaque paramètre, on teste les 4 valeurs, on garde la meilleure, on passe au suivant
-  let best=Object.assign({},paramsAct), bestD=distRef;
-  const ordreParams=['lumMin','noyauMer','vegDelta','seuilTerreBordFrac'];
-  for(const param of ordreParams){
-    let meilleurD=bestD, meilleurV=best[param];
-    for(const v of _CALIB_GRID[param]){
-      if(v===best[param]) continue;
-      const test=Object.assign({},best,{[param]:v});
-      let dm=0;for(const d of dossiers){const f=await _extraireAvecParams(d.im,d.bb,test);dm+=_distMedTraitVT(f,d.tr.coords,d.bb);}
-      dm/=dossiers.length;
-      if(dm<meilleurD){meilleurD=dm;meilleurV=v;}
+  const ref=traces.slice(0,3);   // jusqu'à 3 tracés = 3 secteurs distincts par session de calibration
+  if(s)s.textContent=`Calibration en cours sur ${ref.length} secteur(s)…`;
+  const log=[];
+  const newPresets=[];
+  for(let idx=0;idx<ref.length;idx++){
+    const tr=ref[idx];
+    if(s)s.textContent=`Calibration secteur ${idx+1}/${ref.length} : téléchargement orthophoto…`;
+    // Marge généreuse : ~700 m de chaque côté pour avoir une scène complète mer+terre
+    const bb=_bboxDeCoords(tr.coords,0.007);
+    let im;
+    try{const img=await loadImageURL(ignOrthoUrl(bb));im=drawCV(img);}
+    catch(e){log.push(`secteur ${idx+1} : échec téléchargement orthophoto (${e.message})`);continue;}
+    // Compte la taille de l'ortho téléchargée
+    const dimOrtho=`${im.w}×${im.h}`;
+    // Référence avec les paramètres actuels du territoire
+    const paramsAct=Object.assign({},_PARAMS_DETECTION_TERR[k]||_PARAMS_DETECTION_DEFAUT);
+    let fAct;
+    try{fAct=await _extraireAvecParams(im,bb,paramsAct);}catch(e){fAct=[];}
+    const distRef=_distMedTraitVT(fAct,tr.coords,bb);
+    const nbFeatRef=(fAct||[]).filter(f=>f&&f.geometry&&f.geometry.type==='LineString').length;
+    // Greedy : on optimise chaque paramètre individuellement, dans l'ordre de _CALIB_GRID
+    let best=Object.assign({},paramsAct), bestD=distRef;
+    const detailEssais=[];
+    for(const param of Object.keys(_CALIB_GRID)){
+      let meilleurV=best[param], meilleurD=bestD;
+      for(const v of _CALIB_GRID[param]){
+        if(v===best[param]) continue;
+        const test=Object.assign({},best,{[param]:v});
+        let dm;try{const ff=await _extraireAvecParams(im,bb,test);dm=_distMedTraitVT(ff,tr.coords,bb);}catch(e){dm=Infinity;}
+        detailEssais.push(`${param}=${v}:${isFinite(dm)?dm.toFixed(0)+'m':'∅'}`);
+        if(isFinite(dm)&&dm<meilleurD){meilleurD=dm;meilleurV=v;}
+      }
+      best[param]=meilleurV;bestD=meilleurD;
     }
-    best[param]=meilleurV;bestD=meilleurD;
-    if(s)s.textContent=`Calibration… ${param}=${meilleurV} (médiane ${meilleurD.toFixed(1)} m)`;
+    // Préset secteur stocké même si dist=Infinity : permet à l'utilisateur de voir le diagnostic
+    const preset={w:bb.w,s:bb.s,e:bb.e,n:bb.n,params:best,nom:`secteur ${idx+1} (${tr.site||k})`,distRef:isFinite(distRef)?+distRef.toFixed(1):null,distOpt:isFinite(bestD)?+bestD.toFixed(1):null,nbFeatRef:nbFeatRef,dimOrtho:dimOrtho,ts:Date.now()};
+    newPresets.push(preset);
+    log.push(`secteur ${idx+1} (${dimOrtho}) : ${nbFeatRef} feature(s) avec paramètres actuels, médiane VT ${isFinite(distRef)?distRef.toFixed(1)+' m':'∅ (aucun trait extrait)'} → optimum ${isFinite(bestD)?bestD.toFixed(1)+' m':'∅'}`);
   }
-  // Si on a gagné au moins 1 m, on applique. Sinon, on garde l'ancien et on le dit.
-  if(bestD<distRef-1){
-    _PARAMS_DETECTION_TERR[k]=best;
-    try{localStorage.setItem('params_detection_'+k,JSON.stringify(best));}catch(e){}
-    if(s)s.textContent=`✓ Paramètres territoire calibrés : ${distRef.toFixed(1)} m → ${bestD.toFixed(1)} m (gain ${(distRef-bestD).toFixed(1)} m). Sauvegardés pour ${k}. Relancez une extraction pour voir l'effet.`;
+  // Sauve les nouveaux presets (remplacement complet pour ce territoire)
+  _PARAMS_SECTEURS_TERR[k]=newPresets;
+  _saveSecteursTerr();
+  const valides=newPresets.filter(p=>p.distOpt!=null);
+  if(!valides.length){
+    if(s)s.textContent='✗ Aucun secteur n\'a permis d\'extraire un trait, même en variant les paramètres. Vérifiez que vos tracés VT sont sur une zone côtière effective, et que l\'orthophoto IGN couvre cette zone. Détail :\n'+log.join('\n');
   } else {
-    if(s)s.textContent=`Aucune amélioration significative trouvée (médiane reste à ${distRef.toFixed(1)} m). Vos paramètres actuels sont déjà bons, ou tracez plus de VT pour permettre une calibration plus fine.`;
+    const gain=valides.reduce((a,p)=>a+((p.distRef||0)-(p.distOpt||0)),0)/valides.length;
+    if(s)s.textContent=`✓ ${valides.length} preset(s) secteur enregistré(s) pour ${k} : gain moyen ${gain.toFixed(1)} m. À l'extraction, le preset le plus proche de la bbox courante est appliqué automatiquement. Détail :\n`+log.join('\n');
   }
 }
 window._calibrerParamsDepuisVT=_calibrerParamsDepuisVT;
+window._effacerPresetsSecteurs=function(){
+  const k=(typeof TERR_ACTIF==='string'&&TERR_ACTIF)?TERR_ACTIF:null;
+  if(!k)return;
+  delete _PARAMS_SECTEURS_TERR[k];_saveSecteursTerr();
+  const s=document.getElementById('deep-status');if(s)s.textContent='Presets secteur effacés pour '+k+'. Le territoire revient aux paramètres par défaut.';
+};
 // Restauration des paramètres calibrés au chargement (s'il y en a en localStorage par territoire)
 (function _chargerParamsCalibres(){
   try{
