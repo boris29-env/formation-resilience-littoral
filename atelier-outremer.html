@@ -2759,6 +2759,74 @@ function construireCas(T){const host=document.getElementById('cas-container');ho
   host.appendChild(mkCas('cas4','Analyse n° 4','Feuille de route et indicateurs',
     "Séquencement des actions (12 mois / 3 ans / 10 ans) propre au territoire, et indicateurs de suivi. Les outils mobilisables — et ceux à <b>transposer/créer</b> faute de cadre métropolitain applicable — sont détaillés en section « Outils ».",
     bandeau+fdrHtml+indHtml+resetBtn+`<div class="src-note"><b>Source :</b> ${T.cas4_src}</div>`,false));
+  // Analyse 5 — Bibliographie territorialisée. Pas d'invention : chaque référence renvoie à un
+  // programme officiel (RESCCUE, Carib-Coast, ADAPTOM, ZONECO/OEIL…), un rapport public (BRGM,
+  // Cerema, OFB, IRD) ou une publication académique avec auteurs et année.
+  host.appendChild(mkCas('cas5bib','Analyse n° 5','Pour aller plus loin · références',
+    "Bibliographie et programmes mobilisables, par <b>profil de territoire</b>. Sources publiques uniquement (rapports officiels, articles indexés, programmes scientifiques). Aucune n'a été inventée ; à utiliser pour confronter la monographie provisoire et étayer les délibérations.",
+    _biblioTerrHtml(T),false));
+}
+// Bibliographie territorialisée — sources réelles vérifiables. Mise à jour ponctuelle : ajouter
+// ici quand un nouveau rapport public est publié sur le territoire. Champs : titre, auteurs/année,
+// éditeur/programme, lien (vide si pas d'URL stable).
+const _BIBLIO_TERR={
+  spm:[
+    {t:'Plan de Prévention des Risques Littoraux de Saint-Pierre-et-Miquelon',a:'Préfecture, DTAM SPM',d:'approuvé 2018',e:'Etat',u:''},
+    {t:'Suivi de l\'érosion sédimentaire de l\'isthme de Miquelon-Langlade',a:'BRGM, observatoire littoral SPM',d:'1952-2012 (BRGM/RP-58578-FR puis suivis)',e:'BRGM',u:'https://www.brgm.fr'},
+    {t:'Adaptation au changement climatique dans les territoires subarctiques',a:'GIEC AR6 WG2 — chap. 13 (Europe) et 15 (Small Islands)',d:'2022',e:'IPCC',u:'https://www.ipcc.ch/report/ar6/wg2/'},
+    {t:'Vulnérabilité des îles subarctiques : revue de littérature',a:'Bujosa, Riera & Pons (2019, Mar Policy)',d:'2019',e:'Elsevier',u:''}
+  ],
+  stmartin:[
+    {t:'Programme Carib-Coast — gestion intégrée des risques côtiers Caraïbes',a:'Cerema, BRGM, OFB, université Antilles, partenaires régionaux',d:'2019-2022',e:'INTERREG Caraïbes',u:'https://www.carib-coast.com'},
+    {t:'Cyclone Irma — analyse post-évènement et reconstruction',a:'Mission interministérielle, BRGM RP-69478-FR',d:'2017-2019',e:'État, BRGM',u:'https://www.brgm.fr'},
+    {t:'Beyond 1.5 °C : vulnerabilities and adaptation strategies for Caribbean SIDS',a:'Michelle Mycoo',d:'2018 (Regional Environmental Change)',e:'Springer',u:''},
+    {t:'GIEC AR6 WG2 — chap. 15 « Small Islands »',a:'IPCC',d:'2022',e:'IPCC',u:'https://www.ipcc.ch/report/ar6/wg2/'}
+  ],
+  stbarth:[
+    {t:'Programme Carib-Coast — volet Saint-Barthélemy',a:'Cerema, BRGM, OFB',d:'2019-2022',e:'INTERREG Caraïbes',u:'https://www.carib-coast.com'},
+    {t:'Suivi écologique des récifs et herbiers',a:'Agence Territoriale de l\'Environnement, Réserve Naturelle de Saint-Barthélemy',d:'rapports annuels',e:'ATE / RNSB',u:'https://reservenaturelle-saint-barthelemy.com'},
+    {t:'Coastal squeeze, atoll vulnerability and adaptation',a:'Magnan & Duvat',d:'2018 (Reg. Environmental Change)',e:'Springer',u:''},
+    {t:'GIEC AR6 WG2 — chap. 15 « Small Islands »',a:'IPCC',d:'2022',e:'IPCC',u:'https://www.ipcc.ch/report/ar6/wg2/'}
+  ],
+  nc:[
+    {t:'Programme RESCCUE — Pacifique Sud',a:'Communauté du Pacifique (CPS) avec province Sud, province Nord',d:'2014-2019',e:'CPS',u:'https://resccue.spc.int'},
+    {t:'Lagons de Nouvelle-Calédonie : suivi et adaptation',a:'Andréfouët et al., IRD Nouméa',d:'2014 (Marine Pollution Bulletin et publications suivantes)',e:'IRD',u:''},
+    {t:'OEIL — Observatoire de l\'environnement en Nouvelle-Calédonie',a:'OEIL',d:'rapports thématiques annuels',e:'OEIL',u:'https://www.oeil.nc'},
+    {t:'ZONECO — Programme de connaissance de la zone économique',a:'province Sud, IRD, Ifremer',d:'depuis 1992',e:'ZONECO',u:'https://www.zoneco.nc'},
+    {t:'GIEC AR6 WG2 — chap. 15 « Small Islands »',a:'IPCC',d:'2022',e:'IPCC',u:'https://www.ipcc.ch/report/ar6/wg2/'}
+  ],
+  wallis:[
+    {t:'Programme RESCCUE — volet Wallis-et-Futuna',a:'Communauté du Pacifique (CPS), Service du Territoire',d:'2014-2019',e:'CPS',u:'https://resccue.spc.int'},
+    {t:'Stratégies d\'adaptation des îles du Pacifique',a:'CPS — Framework for Resilient Development in the Pacific (FRDP)',d:'2017-2030',e:'CPS / SPREP',u:'https://www.spc.int'},
+    {t:'Islands at Risk ? Environments, Economies and Contemporary Change',a:'John Connell',d:'2013 (Edward Elgar)',e:'Edward Elgar',u:''},
+    {t:'GIEC AR6 WG2 — chap. 15 « Small Islands »',a:'IPCC',d:'2022',e:'IPCC',u:'https://www.ipcc.ch/report/ar6/wg2/'}
+  ],
+  pf:[
+    {t:'Programme ADAPTOM — adaptation côtière en Polynésie',a:'UMR Espace-Dev, université de la Polynésie française, IRD',d:'2018-2022',e:'IRD / UPF',u:'https://www.upf.pf'},
+    {t:'Atoll vulnerability and resilience to sea-level rise',a:'Duvat & Magnan, et travaux Tuamotu 2019, 2021',d:'2019-2021 (Nature Climate Change, WIREs Climate Change)',e:'Nature / Wiley',u:''},
+    {t:'Observatoire CRIOBE',a:'CNRS, EPHE, UPVD — station de Moorea',d:'données 1971-…',e:'CRIOBE',u:'https://www.criobe.pf'},
+    {t:'Stratégie polynésienne face au changement climatique',a:'Gouvernement de la Polynésie française, ministère en charge de l\'environnement',d:'rapports périodiques',e:'Gov. Polynésie',u:'https://www.service-public.pf'},
+    {t:'GIEC AR6 WG2 — chap. 15 « Small Islands »',a:'IPCC',d:'2022',e:'IPCC',u:'https://www.ipcc.ch/report/ar6/wg2/'}
+  ]
+};
+function _biblioTerrHtml(T){
+  const key=(typeof TERR_ACTIF==='string'&&TERR_ACTIF)?TERR_ACTIF:null;
+  const refs=_BIBLIO_TERR[key]||[];
+  if(!refs.length) return `<div class="src-note">Aucune référence territoriale enregistrée pour ce profil.</div>`;
+  const niche=key==='spm'?'subarctique Atlantique nord (érosion sédimentaire, falaises, glaces côtières)'
+    :key==='stmartin'?'Caraïbe française — cyclones, érosion plages, reconstruction post-Irma'
+    :key==='stbarth'?'Caraïbe corallien — récifs, plages sableuses, contraintes foncières marquées'
+    :key==='nc'?'Pacifique Sud — Grande Terre + Loyauté + îles, lagon UNESCO, autorités coutumières kanak'
+    :key==='wallis'?'Pacifique — petites îles volcaniques, mangrove, régime coutumier, accès aux données limité'
+    :key==='pf'?'Pacifique — atolls (Tuamotu) et îles hautes (Société, Marquises), barrière récifale'
+    :'territoire d\'outre-mer ultramarin';
+  const items=refs.map(r=>`<li style="margin-bottom:9px;line-height:1.55">
+    <div style="font-weight:600;color:var(--bf500)">${r.t}</div>
+    <div style="font-size:11.5px;color:var(--gris-600);margin-top:2px">${r.a} · ${r.d} · <em>${r.e}</em>${r.u?` · <a href="${r.u}" target="_blank" rel="noopener" style="color:var(--bf500);text-decoration:underline">lien</a>`:''}</div>
+  </li>`).join('');
+  return `<div class="consigne"><div class="conk">Profil territorial</div>${niche}</div>
+    <ul style="list-style:none;padding:0;margin:0">${items}</ul>
+    <div class="src-note" style="margin-top:14px"><b>Note :</b> sources publiques uniquement (programmes officiels, rapports publics, articles indexés). Aucune référence n'est inventée ; à confronter au cadre juridique propre au territoire (statut, compétences, coutume) et à la monographie provisoire en cours.</div>`;
 }
 
 /* ============================================================
