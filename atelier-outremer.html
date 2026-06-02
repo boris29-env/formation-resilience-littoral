@@ -5363,6 +5363,12 @@ window._proposerCandidats=async function(){
       else if(c.mode==='falaise') feats=await _extraireFalaise(im,bb,c.params);
       else feats=await _extraireAvecParams(im,bb,c.params);
     }catch(e){feats=[];}
+    // Filtrage par la bande côtière OSM ±30 m si le masque est actif. Sans cela, la limite de
+    // végétation par exemple suit aussi les lacs intérieurs et les forêts, ce qui n'a aucun sens
+    // pour un candidat de trait de côte.
+    if(_masqueCoteActif&&_masqueCote&&typeof filtrerParMasqueCote==='function'){
+      try{const r=filtrerParMasqueCote(feats);feats=r.kept||feats;}catch(e){}
+    }
     const lines=(feats||[]).filter(f=>f.geometry&&f.geometry.type==='LineString'&&(!f.properties||!f.properties._base));
     detailLog.push(`${c.nom}: ${lines.length} contour(s)`);
     if(!lines.length){continue;}
