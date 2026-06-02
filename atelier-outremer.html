@@ -3787,6 +3787,8 @@ function construireImageModule(){
           <div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-bottom:6px"><b>🎯 proposer des candidats</b> : 5 tracés colorés sont générés sur la zone visible avec des paramètres différents (strict, permissif, urbain, lagon, récifs). cliquez sur un trait pour le valider (✓) ou l'écarter (✗) ; un ✓ enregistre le preset pour la bbox courante.<br><b>⚙ calibrer</b> : grid-search sur vos tracés vt déjà enregistrés, par secteur (~85 essais). un preset par secteur est calibré pour suivre votre vt.<br>presets sectoriels persistés en localStorage, sélectionnés automatiquement à l'extraction selon la zone analysée.</div>
           <button onclick="_calibrerParamsDepuisVT()" style="background:var(--bf500);color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11.5px;cursor:pointer;font-weight:600">⚙ calibrer (par secteur)</button>
           <button onclick="_proposerCandidats()" style="background:#1a8a4a;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11.5px;cursor:pointer;font-weight:600;margin-left:6px">🎯 proposer des candidats</button>
+          <button onclick="_demanderClaudeVision()" style="background:#FFC107;color:#000;border:none;border-radius:5px;padding:6px 12px;font-size:11.5px;cursor:pointer;font-weight:600;margin-left:6px" title="Envoie l'orthophoto à Claude Vision avec un prompt territorialisé (marnage, géomorpho, indicateur de référence). Nécessite une clé API Anthropic stockée localement.">🤖 IA Claude Vision</button>
+          <button onclick="_effacerCleApi()" style="background:#fff;color:#666;border:1px solid #ccc;border-radius:5px;padding:6px 8px;font-size:11px;cursor:pointer;margin-left:4px" title="Efface la clé API Anthropic du localStorage">🔑</button>
           <button onclick="_effacerCandidats()" style="background:#fff;color:#1a8a4a;border:1px solid #1a8a4a;border-radius:5px;padding:6px 12px;font-size:11px;cursor:pointer;margin-left:6px">✕ candidats</button>
           <button onclick="_effacerPresetsSecteurs()" style="background:#fff;color:var(--bf500);border:1px solid var(--bf500);border-radius:5px;padding:6px 12px;font-size:11px;cursor:pointer;margin-left:6px">↺ effacer presets</button>
           <button onclick="_deepActiver()" style="background:#7B5EA7;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11px;cursor:pointer;font-weight:500;margin-left:6px">⚡ scoreur tf.js</button>
@@ -5427,6 +5429,105 @@ function _effacerCandidats(silent){
   if(!silent){const s=document.getElementById('deep-status');if(s)s.textContent='Candidats effacés.';}
 }
 window._effacerCandidats=_effacerCandidats;
+
+/* === Candidat IA Vision (Anthropic Claude) ================================================
+   Envoie l'orthophoto en mémoire à Claude Vision avec un prompt territorialisé :
+    · le marnage local fixe la cible (microtidal → ligne de stabilité ; macrotidal → trait de
+      pleine mer ou pied de falaise selon géomorpho)
+    · la géomorphologie dominante (falaise, plage sableuse, mangrove, atoll récifal) fixe
+      l'indicateur photo-interprétable correspondant
+   Réf. méth. : INSeaPTION (Cerema 2021) ; Magnan & Duvat (2018) pour les SIDS ; Pinault (2009)
+   pour les Caraïbes ; Duvat & Magnan (2019) pour les atolls.
+   Sortie : polyligne en pixels → convertie via pxToGeo → ajoutée comme candidat coloré (jaune).
+*/
+const _CONTEXTE_TERR_VISION={
+  spm:{marnage:'modéré (Saint-Pierre ≈ 1,5 m, isthme de Miquelon ≈ 1,2 m)',geomorpho:'côtes mixtes : falaises basaltiques abruptes (côte ouest de Saint-Pierre, falaises ouest de Miquelon) ; plages sédimentaires (anse à Henry, Grand Barachois) ; isthme bas dunaire reliant Miquelon à Langlade',indicateur:'limite haute de végétation (lande boréale rase, conifères côte est) sur falaise ; haut de plage sur cordons sédimentaires (sommet de la berme). Référence Cerema 2021 (INSeaPTION) pour côtes sans marée significative en outre-mer subarctique.'},
+  stmartin:{marnage:'très faible (microtidal, amplitude ≈ 25 cm)',geomorpho:'plages sableuses (Grand-Case, Orient Bay) ; falaises calcaires basses (Pointe Blanche) ; lagunes saumâtres (Étang du Cul-de-Sac, Grand Étang)',indicateur:'ligne de stabilité émergée (pied de talus de plage permanent, base de végétation halophile) — indicateur INSeaPTION pour côtes microtidales caraïbes. Sur ouvrages : base externe. Sur falaise : pied de falaise. Réf. Carib-Coast et Mycoo (2018).'},
+  stbarth:{marnage:'très faible (microtidal, ≈ 25 cm)',geomorpho:'baies coralliennes (Saint-Jean, Lorient, Flamands) ; falaises basaltiques (Gustavia, Colombier) ; affleurements rocheux entre baies',indicateur:'limite végétation halophile / pied de falaise. Sur les plages : haut de plage stable (jet de rive en jour calme). Réf. Magnan & Duvat (2018) pour les SIDS coralliennes ; ATE Saint-Barthélemy.'},
+  nc:{marnage:'modéré (≈ 1,5 à 2 m sur Grande Terre, plus faible aux Loyauté)',geomorpho:'Grande Terre montagneuse avec côtes mixtes (mangrove ouest, falaises est) ; barrière récifale ; îles Loyauté à plateaux calcaires soulevés et plages',indicateur:'pied de falaise ou limite mangrove pour Grande Terre ; sur côtes basses, ligne de stabilité (base permanente de végétation). Sur le récif : à exclure du trait de côte (ce n\'est pas la terre émergée). Réf. Andréfouët et al. IRD ; programme RESCCUE.'},
+  wallis:{marnage:'modéré (≈ 1 m)',geomorpho:'îles volcaniques basses ; côtes à mangrove étendues ; lagon barrière à Wallis ; falaises basaltiques modérées à Futuna',indicateur:'limite mangrove (front extérieur de la palétuvier) ou pied de falaise selon le secteur. Sur lagon : trait de côte côté terre uniquement, pas la barrière récifale. Réf. RESCCUE-CPS ; FRDP-CPS.'},
+  pf:{marnage:'très faible (microtidal, ≈ 25 à 35 cm)',geomorpho:'îles hautes volcaniques (Société, Marquises, Australes) à falaise basaltique + plage de sable noir ou blanc + lagon ; atolls coralliens (Tuamotu) plats à motu sableux séparés par des passes',indicateur:'limite végétation des motu sur atolls (lisière cocoteraie / plage) — indicateur INSeaPTION validé sur Tautira, Tahiamanu, Moorea, Aratika. Sur îles hautes : pied de falaise basaltique ou haut de plage en baie. Excluer barrière récifale et hauts-fonds turquoise. Réf. Duvat & Magnan (2019, 2021) ; ADAPTOM-UPF.'}
+};
+const _CONTEXTE_VISION_DEFAUT={marnage:'inconnu',geomorpho:'côte mixte (à préciser)',indicateur:'trait de côte tel qu\'il apparaît visuellement à la jonction terre émergée / mer ou base de la végétation côtière permanente'};
+
+function _cleApiClaude(){
+  let k=null;try{k=localStorage.getItem('anthropic_api_key');}catch(e){}
+  if(!k){
+    k=prompt('Clé API Anthropic (format sk-ant-…) — stockée localement seulement, jamais transmise ailleurs qu\'à api.anthropic.com :');
+    if(!k||!k.trim()) return null;
+    try{localStorage.setItem('anthropic_api_key',k.trim());}catch(e){}
+  }
+  return k.trim();
+}
+window._effacerCleApi=function(){try{localStorage.removeItem('anthropic_api_key');}catch(e){}const s=document.getElementById('deep-status');if(s)s.textContent='Clé API Anthropic effacée.';};
+
+window._demanderClaudeVision=async function(){
+  const s=document.getElementById('deep-status');
+  const k=(typeof TERR_ACTIF==='string'&&TERR_ACTIF)?TERR_ACTIF:null;
+  if(!k){if(s)s.textContent='✗ Aucun territoire actif.';return;}
+  if(!_lastSigImage||!_lastSigBbox){if(s)s.textContent='✗ Chargez d\'abord une orthophoto via la section Analyse d\'images.';return;}
+  const apiKey=_cleApiClaude();if(!apiKey)return;
+  const ctx=_CONTEXTE_TERR_VISION[k]||_CONTEXTE_VISION_DEFAUT;
+  const T=TERRITOIRES[k]||{};
+  const W=_lastSigImage.w, H=_lastSigImage.h;
+  const mPerPx=metresParPixel(_lastSigBbox,W).toFixed(2);
+  if(s)s.textContent='Préparation de l\'image…';
+  // Encodage en JPEG base64
+  const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
+  const cctx=canvas.getContext('2d');
+  const imgData=cctx.createImageData(W,H);imgData.data.set(_lastSigImage.data);cctx.putImageData(imgData,0,0);
+  const base64=canvas.toDataURL('image/jpeg',0.85).split(',')[1];
+  const prompt=`Vous êtes expert en photo-interprétation côtière (formation Cerema, méthode INSeaPTION).
+
+Contexte territorial :
+- Territoire : ${T.nom||k}
+- Marnage : ${ctx.marnage}
+- Géomorphologie dominante : ${ctx.geomorpho}
+- Indicateur cible : ${ctx.indicateur}
+
+Orthophoto : ${W}×${H} pixels, résolution ${mPerPx} m/pixel. Coin haut-gauche = (0, 0). Bbox géographique : lon ${_lastSigBbox.w.toFixed(5)} à ${_lastSigBbox.e.toFixed(5)}, lat ${_lastSigBbox.s.toFixed(5)} à ${_lastSigBbox.n.toFixed(5)}.
+
+Tâche : identifiez sur l'image l'indicateur cible décrit ci-dessus. Renvoyez UNIQUEMENT un objet JSON avec une clé "lignes" contenant une liste de polylignes, chaque polyligne étant une liste de paires [x, y] en pixels (x: colonne 0 à ${W-1}, y: ligne 0 à ${H-1}, origine en haut-gauche).
+
+Format strict, sans texte avant ni après, sans bloc de code :
+{"lignes": [[[x1,y1],[x2,y2],...],[[xa,ya],[xb,yb],...]]}
+
+Si l'image ne contient aucun littoral interprétable selon l'indicateur, renvoyez {"lignes": []}.
+Privilégiez peu de points bien placés (10 à 50 par polyligne) plutôt qu'un nuage dense.`;
+
+  if(s)s.textContent='Appel à Claude Vision en cours (≤ 30 s)…';
+  let resp;
+  try{
+    resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'x-api-key':apiKey,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8192,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:'image/jpeg',data:base64}},{type:'text',text:prompt}]}]})});
+  }catch(e){if(s)s.textContent='✗ Échec réseau : '+e.message;return;}
+  if(!resp.ok){const txt=await resp.text().catch(()=>'');if(s)s.textContent='✗ HTTP '+resp.status+' : '+txt.slice(0,300);return;}
+  let data;try{data=await resp.json();}catch(e){if(s)s.textContent='✗ Réponse non-JSON : '+e.message;return;}
+  const texte=(data.content&&data.content[0]&&data.content[0].text)||'';
+  let parsed;try{parsed=JSON.parse(texte.trim().replace(/^```(?:json)?/,'').replace(/```$/,'').trim());}catch(e){
+    // Tentative de récupération : chercher la première accolade
+    const idx=texte.indexOf('{');if(idx>=0){try{parsed=JSON.parse(texte.slice(idx,texte.lastIndexOf('}')+1));}catch(e2){}}
+    if(!parsed){if(s)s.textContent='✗ Sortie non JSON : '+texte.slice(0,200);return;}
+  }
+  const lignes=Array.isArray(parsed.lignes)?parsed.lignes:[];
+  if(!lignes.length){if(s)s.textContent='Claude n\'a identifié aucune ligne pour cet indicateur sur cette dalle.';return;}
+  // Conversion pixels → coords géo
+  const couleur='#FFC107';
+  const L=window.L;
+  const layers=[];let totalPts=[];
+  for(const poly of lignes){
+    if(!Array.isArray(poly)||poly.length<2) continue;
+    const coords=poly.map(([x,y])=>pxToGeo(+x,+y,W,H,_lastSigBbox));
+    totalPts=totalPts.concat(coords);
+    const lls=coords.map(p=>[p[1],p[0]]);
+    const ly=L.polyline(lls,{color:couleur,weight:4,opacity:.9}).addTo(mapInstance);
+    const i=_candidatsData.length;
+    ly.bindPopup(`<div style="font-size:12px"><b>Candidat « IA Claude Vision »</b><br><span style="font-size:10.5px;color:#666">indicateur : ${ctx.indicateur.slice(0,100)}…</span><div style="margin-top:6px;display:flex;gap:6px"><button onclick="_validerCandidat(${i},1)" style="flex:1;background:#1a8a4a;color:#fff;border:none;border-radius:5px;padding:4px 8px;cursor:pointer;font-weight:600;font-size:11px">✓ valider</button><button onclick="_validerCandidat(${i},0)" style="flex:1;background:#fff;color:#c0392b;border:1px solid #c0392b;border-radius:5px;padding:4px 8px;cursor:pointer;font-weight:600;font-size:11px">✗ écarter</button></div></div>`,{maxWidth:260});
+    layers.push(ly);
+  }
+  _candidatsLayers.push(...layers);
+  _candidatsData.push({preset:{nom:'IA Claude Vision',params:{},couleur:couleur},coords:totalPts,bbox:_lastSigBbox,layers:layers});
+  if(s)s.textContent=`✓ ${lignes.length} polyligne(s) IA tracée(s). Cliquez pour valider ✓ ou écarter ✗.`;
+};
 window._validerCandidat=function(idx,ok){
   const d=_candidatsData[idx];if(!d)return;
   const s=document.getElementById('deep-status');
