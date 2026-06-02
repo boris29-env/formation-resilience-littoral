@@ -3784,10 +3784,8 @@ function construireImageModule(){
         </div>
         <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)">
           <div style="font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:4px">apprentissage actif et calibration</div>
-          <div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-bottom:6px"><b>📥 calibrer sur OSM</b> : télécharge le trait de côte OSM (Overpass) dans la bbox active et l'utilise comme vérité-terrain abondante (~50-1000 pts vs 5-50 pour un tracé manuel). recommandé en première intention : la grid-search converge mieux, le preset stocké est plus robuste.<br><b>🎯 proposer des candidats</b> : 5 tracés colorés générés sur la zone visible avec paramètres différents (strict, permissif, urbain, lagon, récifs). cliquez pour valider (✓) ou écarter (✗).<br><b>⚙ calibrer</b> : grid-search sur vos tracés vt manuels. à utiliser hors couverture OSM.<br>presets sectoriels persistés en localStorage, sélectionnés automatiquement à l'extraction selon la zone analysée.</div>
+          <div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-bottom:6px">à l'analyse, le trait OSM (Overpass) est récupéré automatiquement pour la bbox et utilisé comme tracé principal s'il existe. l'heuristique calibre ses paramètres en silence sur ce trait OSM pour les secteurs adjacents et les zones non couvertes.<br><b>🎯 proposer des candidats</b> : 5 tracés colorés générés sur la zone visible avec paramètres différents. cliquez pour valider (✓) ou écarter (✗).<br><b>⚙ calibrer</b> : grid-search sur vos tracés vt manuels (à utiliser hors couverture OSM).</div>
           <button onclick="_calibrerParamsDepuisVT()" style="background:var(--bf500);color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11.5px;cursor:pointer;font-weight:600">⚙ calibrer (par secteur)</button>
-          <button onclick="_calibrerSurOsm()" style="background:#1a8a4a;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11.5px;cursor:pointer;font-weight:600;margin-left:6px" title="Télécharge la coastline OSM dans la bbox active (Overpass) et l'utilise comme vérité-terrain abondante pour calibrer les paramètres. Bien plus fiable qu'un tracé manuel partiel.">📥 calibrer sur OSM</button>
-          <button onclick="_effacerOsmCalque()" style="background:#fff;color:#1a8a4a;border:1px solid #1a8a4a;border-radius:5px;padding:6px 8px;font-size:11px;cursor:pointer;margin-left:4px" title="Retire le calque OSM affiché sur la carte">✕ osm</button>
           <button onclick="_proposerCandidats()" style="background:#1a8a4a;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11.5px;cursor:pointer;font-weight:600;margin-left:6px">🎯 proposer des candidats</button>
           <button onclick="_demanderClaudeVision()" style="background:#FFC107;color:#000;border:none;border-radius:5px;padding:6px 12px;font-size:11.5px;cursor:pointer;font-weight:600;margin-left:6px" title="Envoie l'orthophoto à Claude Vision avec un prompt territorialisé (marnage, géomorpho, indicateur de référence). Nécessite une clé API Anthropic stockée localement.">🤖 IA Claude Vision</button>
           <button onclick="_effacerCleApi()" style="background:#fff;color:#666;border:1px solid #ccc;border-radius:5px;padding:6px 8px;font-size:11px;cursor:pointer;margin-left:4px" title="Efface la clé API Anthropic du localStorage">🔑</button>
@@ -6163,6 +6161,22 @@ window.lancerExtractionSIG=async function(){
       _lastSigCandidates=feats.slice();feats=affinerOuvragesParModele(feats);
       if(_ouvrModel){const nO=feats.filter(f=>/(enrochement|perré|digue|ouvrage)/.test(f.properties.type||'')).length,nV=feats.filter(f=>/à vérifier/.test(f.properties.type||'')).length;aiNote+=`Modèle actif : ${nO} ouvrage(s), ${nV} à vérifier (rejets masqués). `;}}
     if(imgRoutineActive==='trait_cote'){
+      // OSM coastline (Overpass) en première intention : là où OSM existe, le tracé est meilleur
+      // que toute heuristique RGB sur image dense urbaine. Fetch silencieux, l'heuristique reste
+      // en repli si OSM est absent ou incomplet. La calibration des paramètres heuristiques sur
+      // ce trait OSM tourne en arrière-plan pour les zones non couvertes.
+      try{
+        irBody.textContent='Trait de côte OSM (Overpass)…';
+        const lignes=await _fetchOsmCoastline(b);
+        const lignesClip=lignes.map(ln=>ln.filter(p=>p[0]>=b.w&&p[0]<=b.e&&p[1]>=b.s&&p[1]<=b.n)).filter(ln=>ln.length>=2);
+        if(lignesClip.length){
+          const featsOsm=lignesClip.map(c=>({type:'Feature',geometry:{type:'LineString',coordinates:c},properties:{type:'trait de côte OSM',source:'OpenStreetMap (coastline)',methode:'OSM Overpass API',certitude:'élevée (OSM coastline)'}}));
+          feats=featsOsm.concat(feats.filter(f=>f&&f.properties&&f.properties._base));
+          aiNote+=`Trait OSM : ${featsOsm.length} ligne(s) (source primaire). `;
+          // Calibration silencieuse en arrière-plan : améliore l'heuristique pour secteurs sans OSM
+          if(!window._osmCalibLock){window._osmCalibLock=true;setTimeout(()=>{_calibrerSurOsm().finally(()=>{window._osmCalibLock=false;});},800);}
+        }
+      }catch(e){/* Overpass HS ou hors couverture : on garde l'heuristique sans bruit visuel */}
       const nAvant=feats.length;
       feats=affinerTraitsParModele(feats);
       feats=_filtrerParTracesVT(feats, b);
