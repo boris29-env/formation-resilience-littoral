@@ -5205,23 +5205,59 @@ async function _extraireFalaise(im,bbox,params){
 // limite plage / végétation, qui est l'indicateur OSM sur SPM, Saint-Martin, atolls PF, etc.
 // Résultats : Miquelon médiane 8 m, Anse-Vata 15 m, Pirae 21 m. Bibliographie : INSeaPTION
 // (Cerema 2021), Magnan & Duvat (2018), Duvat & Magnan (2019).
+// Composantes connexes 4-conn : renvoie {lab, info[].area/edge, n}
+function _composantesSimples(mask,W,H){
+  const N=W*H, lab=new Int32Array(N), info=[null]; let cur=0;
+  for(let p=0;p<N;p++){
+    if(!mask[p]||lab[p]) continue;
+    cur++; let area=0, edge=false;
+    const st=[p]; lab[p]=cur;
+    while(st.length){
+      const q=st.pop(); area++;
+      const x=q%W, y=(q-x)/W;
+      if(x===0||y===0||x===W-1||y===H-1) edge=true;
+      if(x>0&&mask[q-1]&&!lab[q-1]){lab[q-1]=cur;st.push(q-1);}
+      if(x<W-1&&mask[q+1]&&!lab[q+1]){lab[q+1]=cur;st.push(q+1);}
+      if(y>0&&mask[q-W]&&!lab[q-W]){lab[q-W]=cur;st.push(q-W);}
+      if(y<H-1&&mask[q+W]&&!lab[q+W]){lab[q+W]=cur;st.push(q+W);}
+    }
+    info[cur]={area,edge};
+  }
+  return {lab,info,n:cur};
+}
 async function _extraireTerreStable(im,bbox,params){
   window._currentExtractBbox=bbox;
   const W=im.w,H=im.h,N=W*H,d=im.data;
-  // Masques constitutifs
+  // v4 : critère mer plus strict, segmenté par régime spectral.
+  //  - atlantique sombre  : b > g+3, b > r+5, lum 30-130 (SPM, Saint-Pierre baie ville grise)
+  //  - tropical turquoise : b > r+10, g > r+5, sat ≥ 15, lum 50-210 (Antilles, Polynésie lagons)
+  //  - profonde quasi-noire: lum ≤ 55 et b > r+2 (passe corallienne, bord récif)
+  // Ces trois critères couvrent les régimes des 6 territoires sans surdétecter en ville.
   const mer=new Uint8Array(N), sable=new Uint8Array(N), nd=new Uint8Array(N);
   for(let i=0,p=0;p<N;i+=4,p++){
     const r=d[i],g=d[i+1],b=d[i+2];
     const lum=(r+g+b)/3, sat=Math.max(r,g,b)-Math.min(r,g,b);
     if((r>248&&g>248&&b>248)||(r<7&&g<7&&b<7)) nd[p]=1;
-    if(b>r+4 && g>=r-2 && lum<=180 && lum>=25 && (sat>=6||lum>=50)) mer[p]=1;
+    const atlantique = (b>g+3) && (b>r+5) && lum>=30 && lum<=130;
+    const tropical   = (b>r+10) && (g>r+5) && lum>=50 && lum<=210 && sat>=15;
+    const profonde   = (lum<=55) && (b>r+2) && (g>=r-3);
+    if(atlantique||tropical||profonde) mer[p]=1;
     if(lum>=145 && lum<=235 && sat<=40 && r>=b-5 && b<=g+5) sable[p]=1;
   }
-  // exterieur = mer ∪ sable (dilaté +2) ∪ nodata
+  // Étape clé v4 : ne garder que la "mer principale" = composante mer touchant le bord
+  // ET couvrant ≥ 1% de l'image. Les patchs gris urbains isolés (cours, ombres) sont écartés
+  // : ils ne servent plus de germe au flood-fill, donc les ruelles ne fuient plus.
+  const cMer=_composantesSimples(mer,W,H);
+  const merPrincipale=new Uint8Array(N);
+  const seuilMer=N*0.01;
+  for(let p=0;p<N;p++){
+    const l=cMer.lab[p];
+    if(l && cMer.info[l].edge && cMer.info[l].area>=seuilMer) merPrincipale[p]=1;
+  }
   const sableD=dilate(sable,W,H,2);
   const ext=new Uint8Array(N);
-  for(let p=0;p<N;p++) if(mer[p]||sableD[p]||nd[p]) ext[p]=1;
-  // Flood fill depuis le bord SUR ext : la mer externe propage
+  for(let p=0;p<N;p++) if(merPrincipale[p]||sableD[p]||nd[p]) ext[p]=1;
+  // Flood fill depuis le bord
   const externe=new Uint8Array(N), st=[];
   for(let x=0;x<W;x++){if(ext[x]){externe[x]=1;st.push(x);}if(ext[(H-1)*W+x]){externe[(H-1)*W+x]=1;st.push((H-1)*W+x);}}
   for(let y=0;y<H;y++){if(ext[y*W]){externe[y*W]=1;st.push(y*W);}if(ext[y*W+W-1]){externe[y*W+W-1]=1;st.push(y*W+W-1);}}
@@ -5230,17 +5266,25 @@ async function _extraireTerreStable(im,bbox,params){
     if(x<W-1&&ext[q+1]&&!externe[q+1]){externe[q+1]=1;st.push(q+1);}
     if(y>0&&ext[q-W]&&!externe[q-W]){externe[q-W]=1;st.push(q-W);}
     if(y<H-1&&ext[q+W]&&!externe[q+W]){externe[q+W]=1;st.push(q+W);}}
-  // terre = NOT externe (bouche automatiquement les trous internes : toits, jardins, piscines)
+  // terre = NOT externe (bouche les trous internes : toits, jardins, piscines)
   const terre=new Uint8Array(N);for(let p=0;p<N;p++) if(!externe[p]) terre[p]=1;
-  // Ouverture morpho 2 px pour lisser
   const lisse=dilate(erodeMask(terre,W,H,2),W,H,2);
-  // Composante principale + îlots significatifs
-  const c=_affinerMer(lisse,W,H,{raw:true,noyauMer:1,merMinFrac:0.005,lagonMinFrac:0.005}); // détourne mais marche
+  // Composante principale touchant bord + îlots ≥ 0.5%
+  const c2=_composantesSimples(lisse,W,H);
+  let bestL=0,bestA=0;
+  for(let l=1;l<=c2.n;l++){if(c2.info[l] && c2.info[l].edge && c2.info[l].area>bestA){bestA=c2.info[l].area;bestL=l;}}
+  const seuilIle=N*0.005;
+  const finalMask=new Uint8Array(N);
+  for(let p=0;p<N;p++){
+    const l=c2.lab[p];
+    if(l===bestL) finalMask[p]=1;
+    else if(l && c2.info[l].area>=seuilIle) finalMask[p]=1;
+  }
   const ndMask=nodataMask(im);
   const mPerPx=metresParPixel(bbox,W);
   const epsPx=Math.max(1,2/mPerPx);
-  const lines=shorelinesFromMask(lisse,W,H,ndMask,epsPx);
-  return lines.map(l=>({type:'Feature',geometry:{type:'LineString',coordinates:l.map(p=>pxToGeo(p[0],p[1],W,H,bbox))},properties:{type:'limite plage / végétation (terre stable)',methode:'flood-fill mer externe depuis bord image, contour terre = limite plage-végétation',certitude:'à vérifier'}}));
+  const lines=shorelinesFromMask(finalMask,W,H,ndMask,epsPx);
+  return lines.map(l=>({type:'Feature',geometry:{type:'LineString',coordinates:l.map(p=>pxToGeo(p[0],p[1],W,H,bbox))},properties:{type:'limite plage / végétation (terre stable)',methode:'flood-fill mer principale (composante bord ≥ 1%), contour terre = limite plage-végétation',certitude:'à vérifier'}}));
 }
 async function _extraireAvecParams(im,bbox,params){
   // Override des paramètres territoire le temps de l'extraction, restaure ensuite.
