@@ -5161,15 +5161,22 @@ async function _calibrerParamsDepuisVT(){
   const newPresets=[];
   for(let idx=0;idx<ref.length;idx++){
     const tr=ref[idx];
-    if(s)s.textContent=`Calibration secteur ${idx+1}/${ref.length} : téléchargement orthophoto…`;
-    // Marge généreuse (~1500 m) pour avoir une scène mer+terre complète et un ratio bbox équilibré.
-    // On force aussi un ratio 1:1 pour que le serveur IGN renvoie bien 1280×1280.
-    let bb=_bboxDeCoords(tr.coords,0.015);
-    const dx=bb.e-bb.w, dy=bb.n-bb.s;
-    if(dx>dy){const m=(bb.s+bb.n)/2,h=dx/2;bb.s=m-h;bb.n=m+h;}else{const m=(bb.w+bb.e)/2,w=dy/2;bb.w=m-w;bb.e=m+w;}
-    let im;
-    try{const img=await loadImageURL(ignOrthoUrl(bb));im=drawCV(img);}
-    catch(e){log.push(`secteur ${idx+1} : échec téléchargement orthophoto (${e.message})`);continue;}
+    if(s)s.textContent=`Calibration secteur ${idx+1}/${ref.length} : préparation orthophoto…`;
+    let bb, im;
+    // Si une orthophoto est déjà en mémoire ET couvre le tracé vt, on l'utilise (même résolution
+    // que l'analyse en cours, mêmes paramètres sig-emprise). Sinon on télécharge.
+    const trBbox=_bboxDeCoords(tr.coords,0);
+    if(_lastSigImage&&_lastSigBbox&&_bboxContient(_lastSigBbox,trBbox)){
+      bb=_lastSigBbox; im=_lastSigImage;
+      log.push(`secteur ${idx+1} : utilise l'orthophoto en mémoire`);
+    } else {
+      // Téléchargement à l'échelle sig-emprise pour rester aligné avec l'analyse
+      const sizeM=+(document.getElementById('sig-emprise')?.value||1500);
+      const c=[(trBbox.w+trBbox.e)/2,(trBbox.s+trBbox.n)/2];
+      bb=bboxAutour(c[1],c[0],sizeM);
+      try{const img=await loadImageURL(ignOrthoUrl(bb));im=drawCV(img);}
+      catch(e){log.push(`secteur ${idx+1} : échec téléchargement orthophoto (${e.message})`);continue;}
+    }
     const dimOrtho=`${im.w}×${im.h}`;
     // Point de départ : défauts ORIGINAUX du territoire (pas les overrides en mémoire)
     const paramsAct=Object.assign({},_PARAMS_DETECTION_TERR_ORIG[k]||_PARAMS_DETECTION_DEFAUT);
@@ -5259,26 +5266,19 @@ window._proposerCandidats=async function(){
   const s=document.getElementById('deep-status');
   const k=(typeof TERR_ACTIF==='string'&&TERR_ACTIF)?TERR_ACTIF:null;
   if(!k){if(s)s.textContent='✗ Aucun territoire actif.';return;}
-  if(!mapInstance){if(s)s.textContent='✗ Ouvrez d\'abord la carte.';return;}
-  // Bbox = ce qui est visible. On force un côté minimum de ~1.5 km pour que la scène contienne
-  // mer + terre et que les fractions merMinFrac/lagonMinFrac soient atteignables.
-  const b=mapInstance.getBounds();
-  let bb={w:b.getWest(),s:b.getSouth(),e:b.getEast(),n:b.getNorth()};
+  // On travaille sur la MÊME orthophoto que celle de l'extraction analyse (même site, même
+  // sig-emprise, même résolution). Si aucune ortho n'est en mémoire, on invite à passer par
+  // la section « Analyse d'images » pour charger un site avec l'emprise choisie.
+  let im=_lastSigImage, bb=_lastSigBbox;
+  if(!im||!bb){
+    if(s)s.textContent='✗ Aucune orthophoto en mémoire. Ouvrez la section « Analyse d\'images », choisissez un site et une emprise (400 à 3000 m), puis lancez « Extraire la couche SIG » au moins une fois. Les candidats utiliseront ensuite cette même tuile.';
+    return;
+  }
   const latMid=(bb.s+bb.n)/2;
   const mPerDegLat=111320, mPerDegLon=111320*Math.cos(latMid*Math.PI/180);
-  let widthM=(bb.e-bb.w)*mPerDegLon, heightM=(bb.n-bb.s)*mPerDegLat;
-  const MIN_M=1500;
-  if(widthM<MIN_M){const dlon=(MIN_M-widthM)/2/mPerDegLon;bb.w-=dlon;bb.e+=dlon;widthM=MIN_M;}
-  if(heightM<MIN_M){const dlat=(MIN_M-heightM)/2/mPerDegLat;bb.s-=dlat;bb.n+=dlat;heightM=MIN_M;}
-  // Force carré
-  const dx=bb.e-bb.w, dy=bb.n-bb.s;
-  if(dx>dy){const m=(bb.s+bb.n)/2,h=dx/2;bb.s=m-h;bb.n=m+h;}else{const m=(bb.w+bb.e)/2,w=dy/2;bb.w=m-w;bb.e=m+w;}
-  if(s)s.textContent=`Téléchargement orthophoto (~${Math.round(widthM)}×${Math.round(heightM)} m)…`;
-  let im;
-  try{const img=await loadImageURL(ignOrthoUrl(bb));im=drawCV(img);}
-  catch(e){if(s)s.textContent='✗ Échec téléchargement orthophoto : '+e.message;return;}
-  // Diagnostic : taille image, % de mer avec params défaut
-  const dimOrtho=`${im.w}×${im.h}`;
+  const widthM=(bb.e-bb.w)*mPerDegLon, heightM=(bb.n-bb.s)*mPerDegLat;
+  const dimOrtho=`${im.w}×${im.h}, ~${Math.round(widthM)}×${Math.round(heightM)} m`;
+  if(s)s.textContent=`Analyse en cours sur l'orthophoto en mémoire (${dimOrtho})…`;
   // Efface candidats précédents
   _effacerCandidats(true);
   const L=window.L;
