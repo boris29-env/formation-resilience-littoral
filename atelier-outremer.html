@@ -1057,7 +1057,7 @@ if(typeof firebase!=="undefined"&&!window._fbLoadFail){
         const fbRef=p=>fbDB.ref("outremer/"+SESSION_ID+"/"+p);
         fbSet=(p,v)=>fbRef(p).set(v);fbListen=(p,cb)=>{fbRef(p).on("value",s=>cb(s.val()));};fbRemove=(p)=>fbRef(p).remove();
         window._FB={setVal:fbSet,listen:fbListen,remove:fbRemove,gpush:(p,v)=>fbDB.ref(p).push(v),glisten:(p,cb)=>{fbDB.ref(p).on("value",s=>cb(s.val()));},gset:(p,v)=>fbDB.ref(p).set(v),gremove:(p)=>fbDB.ref(p).remove(),ready:()=>fbReady,session:()=>SESSION_ID};
-        fbRef("_ping").set(Date.now()).then(()=>{fbReady=true;updateVoteDot(true);if(typeof TERR_ACTIF!=='undefined'&&TERR_ACTIF){initFbListeners();initApprentissageOuvrages();initApprentissageTraits();}}).catch(()=>updateVoteDot(false));
+        fbRef("_ping").set(Date.now()).then(()=>{fbReady=true;updateVoteDot(true);if(typeof TERR_ACTIF!=='undefined'&&TERR_ACTIF){initFbListeners();initApprentissageOuvrages();initApprentissageTraits();if(typeof _initPresetsFbListener==='function')_initPresetsFbListener();}}).catch(()=>updateVoteDot(false));
       }catch(e){console.warn("Firebase retry failed:",e);}
     }else{updateVoteDot(false);}
   });
@@ -2615,6 +2615,7 @@ function updateDiag(T){const ss=ALL.map(ax=>axScWeighted(ax));drawHouse(ss);
 function initFbListeners(){if(!window._FB){setTimeout(initFbListeners,500);return;}
   initApprentissageOuvrages();
   initApprentissageTraits();
+  if(typeof _initPresetsFbListener==='function') _initPresetsFbListener();
   window._FB.listen('diagnostic',(val)=>updateLiveBoard(val));
   window._FB.listen('routing',(val)=>{const h=document.getElementById('route-votes-content');if(!h)return;if(!val){h.innerHTML='<em style="color:var(--muted);font-size:11px">Aucun vote.</em>';return;}let html='';GROUPES.forEach(g=>{const v=val[g.id];if(!v)return;html+=`<div class="route-vote-row"><div class="fb-board-badge" style="background:${g.couleur}">${g.lettre}</div><span class="rvo-badge rvo-${v.code}">${v.code}</span> <span style="font-size:12px;color:var(--ink)">${v.label}</span></div>`;});h.innerHTML=html||'<em>Aucun vote.</em>';});}
 function pushDiagToFb(){if(!window._FB||!GRP_ACTIF)return;const ss=ALL.map(ax=>axSc(ax));
@@ -4339,8 +4340,35 @@ const _PARAMS_DETECTION_DEFAUT = {lumMin: 0, noyauMer: 3, noyauTerre: 2, vegDelt
 // Chargés depuis localStorage. Au moment d'une extraction, on cherche le secteur dont la bbox
 // est la plus proche (centre-à-centre) du contexte courant ; sinon on prend le défaut territoire.
 const _PARAMS_SECTEURS_TERR={};
+// Path Firebase pour partager les presets sectoriels entre tous les opérateurs (corpus collectif).
+// Sous chemin par territoire ; chaque entrée est un preset avec timestamp pour dédoublonnage.
+const PRESETS_SECTEURS_FB_PATH='outremer/_calibration/presets_secteurs';
+let _presetsSecteursFbInit=false;
 (function _chargerSecteursTerr(){try{const s=localStorage.getItem('params_secteurs_terr');if(s){const o=JSON.parse(s);for(const k in o)_PARAMS_SECTEURS_TERR[k]=o[k];}}catch(e){}})();
 function _saveSecteursTerr(){try{localStorage.setItem('params_secteurs_terr',JSON.stringify(_PARAMS_SECTEURS_TERR));}catch(e){}}
+// Pousse un preset vers Firebase (path par territoire) — synchronisation inter-opérateurs.
+function _pushPresetFb(territoire, preset){
+  if(!window._FB||!window._FB.gpush)return;
+  const rec=Object.assign({},preset,{op:_operatorId(),sess:(window._FB.session?window._FB.session():''),ts:preset.ts||Date.now()});
+  window._FB.gpush(PRESETS_SECTEURS_FB_PATH+'/'+territoire, rec).catch(()=>{});
+}
+// Active le listener Firebase pour le territoire actif : fusion presets distants + locaux,
+// dédoublonnage par ts. Appelé une seule fois par territoire (cf. _presetsFbInitParTerr).
+const _presetsFbInitParTerr={};
+function _initPresetsFbListener(){
+  const k=(typeof TERR_ACTIF==='string'&&TERR_ACTIF)?TERR_ACTIF:null;
+  if(!k||!window._FB||!window._FB.glisten||_presetsFbInitParTerr[k])return;
+  _presetsFbInitParTerr[k]=true;
+  window._FB.glisten(PRESETS_SECTEURS_FB_PATH+'/'+k, val=>{
+    const distants=val?Object.values(val).filter(r=>r&&r.w!=null&&r.params):[];
+    const locaux=_PARAMS_SECTEURS_TERR[k]||[];
+    // Fusion par ts (Firebase prime en cas de doublon — corpus partagé canonique)
+    const parTs={};for(const p of locaux)if(p.ts)parTs[p.ts]=p;for(const p of distants)if(p.ts)parTs[p.ts]=p;
+    _PARAMS_SECTEURS_TERR[k]=Object.values(parTs);
+    _saveSecteursTerr();
+    const s=document.getElementById('deep-status');if(s)s.textContent='Corpus presets sectoriels actualisé pour '+k+' : '+_PARAMS_SECTEURS_TERR[k].length+' preset(s) (local + partagé).';
+  });
+}
 function _centreBbox(b){return [(b.w+b.e)/2,(b.s+b.n)/2];}
 function _distBboxDeg(a,b){const ca=_centreBbox(a),cb=_centreBbox(b);return Math.hypot(ca[0]-cb[0],ca[1]-cb[1]);}
 function _bboxContient(grand,petit){return grand.w<=petit.w&&grand.e>=petit.e&&grand.s<=petit.s&&grand.n>=petit.n;}
@@ -5293,6 +5321,8 @@ async function _calibrerParamsDepuisVT(){
   // Sauve les nouveaux presets (remplacement complet pour ce territoire)
   _PARAMS_SECTEURS_TERR[k]=newPresets;
   _saveSecteursTerr();
+  // Partage Firebase : chaque preset calibré bénéficie à tous les opérateurs (corpus collectif)
+  for(const p of newPresets) _pushPresetFb(k,p);
   const valides=newPresets.filter(p=>p.distOpt!=null);
   if(!valides.length){
     if(s)s.textContent='✗ Aucun secteur n\'a permis d\'extraire un trait, même en variant les paramètres. Vérifiez que vos tracés VT sont sur une zone côtière effective, et que l\'orthophoto IGN couvre cette zone. Détail :\n'+log.join('\n');
@@ -5405,8 +5435,10 @@ window._validerCandidat=function(idx,ok){
   if(ok){
     // Enregistre comme preset secteur pour la bbox courante
     if(!_PARAMS_SECTEURS_TERR[k])_PARAMS_SECTEURS_TERR[k]=[];
-    _PARAMS_SECTEURS_TERR[k].push({w:d.bbox.w,s:d.bbox.s,e:d.bbox.e,n:d.bbox.n,params:d.preset.params,nom:'validé : '+d.preset.nom,ts:Date.now()});
+    const presetVal={w:d.bbox.w,s:d.bbox.s,e:d.bbox.e,n:d.bbox.n,params:d.preset.params,nom:'validé : '+d.preset.nom,ts:Date.now()};
+    _PARAMS_SECTEURS_TERR[k].push(presetVal);
     _saveSecteursTerr();
+    _pushPresetFb(k,presetVal);   // partage Firebase
     // Aussi : la polyligne devient un tracé vt positif (alimente le corpus pour calibration future)
     const rec={f:_featAggregateBidon(),y:1,type:'trait validé via candidat '+d.preset.nom,site:k,op:_operatorId(),sess:(window._FB&&window._FB.session)?window._FB.session():'',ts:Date.now(),coords:d.coords};
     _traitLabelsLocal.push(rec);_saveLocalTraitLabels();
