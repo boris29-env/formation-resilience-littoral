@@ -5112,6 +5112,24 @@ function _bboxDeCoords(coords,pad){
   pad=pad||0;w-=pad;e+=pad;s-=pad;n+=pad;
   return {w,s,e,n};
 }
+// Variante « brute » de l'extraction : contourne _masqueTraitPropre (fermeture + ouverture morpho
+// agressive) qui peut éliminer entièrement une mer mince ou fragmentée (par exemple l'isthme de
+// Miquelon). Utile pour vérifier si le souci vient du nettoyage morpho ou des seuils eux-mêmes.
+async function _extraireBrut(im,bbox,params){
+  const k=(typeof TERR_ACTIF==='string'&&TERR_ACTIF)?TERR_ACTIF:null;
+  const old=k?Object.assign({},_PARAMS_DETECTION_TERR[k]||_PARAMS_DETECTION_DEFAUT):null;
+  const oldSect=k?_PARAMS_SECTEURS_TERR[k]:null;
+  if(k){_PARAMS_DETECTION_TERR[k]=Object.assign({},old||{},params);_PARAMS_SECTEURS_TERR[k]=[];}
+  try{
+    window._currentExtractBbox=bbox;
+    const water=computeWaterMask(im,50,null);
+    const nd=nodataMask(im);
+    const mPerPx=metresParPixel(bbox,im.w);
+    const epsPx=Math.max(1,2/mPerPx);
+    const lines=shorelinesFromMask(water,im.w,im.h,nd,epsPx);
+    return lines.map(l=>({type:'Feature',geometry:{type:'LineString',coordinates:l.map(p=>pxToGeo(p[0],p[1],im.w,im.h,bbox))},properties:{type:'trait brut',methode:'contour mer/terre direct (sans nettoyage morphologique)',certitude:'à vérifier'}}));
+  } finally {if(k){_PARAMS_DETECTION_TERR[k]=old;_PARAMS_SECTEURS_TERR[k]=oldSect;}}
+}
 async function _extraireAvecParams(im,bbox,params){
   // Override des paramètres territoire le temps de l'extraction, restaure ensuite.
   // On suspend aussi le mécanisme de preset secteur pendant la calibration en effaçant
@@ -5254,11 +5272,12 @@ window._calibrerParamsDepuisVT=_calibrerParamsDepuisVT;
    niveau du secteur, et propose de relancer pour générer de nouveaux candidats raffinés
    autour du validé. */
 const _CANDIDATS_PRESETS=[
-  {nom:'strict',params:{lumMin:0,noyauMer:2,noyauTerre:1,vegDelta:8,merMinFrac:0.005,seuilTerreBordFrac:0.0005,varMin:0},couleur:'#E53935'},
-  {nom:'permissif',params:{lumMin:0,noyauMer:3,noyauTerre:2,vegDelta:12,merMinFrac:0.001,seuilTerreBordFrac:0.0001,varMin:0},couleur:'#1E88E5'},
-  {nom:'urbain',params:{lumMin:80,noyauMer:3,noyauTerre:2,vegDelta:6,merMinFrac:0.005,seuilTerreBordFrac:0.02,varMin:0},couleur:'#8E24AA'},
-  {nom:'lagon',params:{lumMin:0,noyauMer:3,noyauTerre:2,vegDelta:6,merMinFrac:0.005,seuilTerreBordFrac:0.005,lagonMinFrac:0.005,varMin:0},couleur:'#00ACC1'},
-  {nom:'récifs',params:{lumMin:0,noyauMer:4,noyauTerre:2,vegDelta:6,merMinFrac:0.005,seuilTerreBordFrac:0.05,varMin:500},couleur:'#FB8C00'}
+  {nom:'strict',params:{lumMin:0,noyauMer:2,noyauTerre:1,vegDelta:8,merMinFrac:0.005,seuilTerreBordFrac:0.0005,varMin:0},couleur:'#E53935',mode:'normal'},
+  {nom:'permissif',params:{lumMin:0,noyauMer:3,noyauTerre:2,vegDelta:12,merMinFrac:0.001,seuilTerreBordFrac:0.0001,varMin:0},couleur:'#1E88E5',mode:'normal'},
+  {nom:'urbain',params:{lumMin:80,noyauMer:3,noyauTerre:2,vegDelta:6,merMinFrac:0.005,seuilTerreBordFrac:0.02,varMin:0},couleur:'#8E24AA',mode:'normal'},
+  {nom:'lagon',params:{lumMin:0,noyauMer:3,noyauTerre:2,vegDelta:6,merMinFrac:0.005,seuilTerreBordFrac:0.005,lagonMinFrac:0.005,varMin:0},couleur:'#00ACC1',mode:'normal'},
+  {nom:'récifs',params:{lumMin:0,noyauMer:4,noyauTerre:2,vegDelta:6,merMinFrac:0.005,seuilTerreBordFrac:0.05,varMin:500},couleur:'#FB8C00',mode:'normal'},
+  {nom:'brut (sans nettoyage morpho)',params:{lumMin:0,noyauMer:1,noyauTerre:1,vegDelta:20,merMinFrac:0.0005,seuilTerreBordFrac:0.0001,varMin:0},couleur:'#00897B',mode:'brut'}
 ];
 let _candidatsLayers=[];   // L.polyline affichés
 let _candidatsData=[];      // {preset, coords[], bbox, layer}
@@ -5284,13 +5303,21 @@ window._proposerCandidats=async function(){
   const L=window.L;
   // Liste enrichie : presets fixes + un preset de secours toujours testé
   const allPresets=[..._CANDIDATS_PRESETS,
-    {nom:'secours (très permissif)',params:_CALIB_SECOURS,couleur:'#FFD600'}
+    {nom:'secours (très permissif, brut)',params:_CALIB_SECOURS,couleur:'#FFD600',mode:'brut'}
   ];
   const detailLog=[];
+  // Diagnostic console pour comprendre où ça coupe quand tous les candidats donnent 0
+  try{
+    const kAct=TERR_ACTIF;const oldP=_PARAMS_DETECTION_TERR[kAct];_PARAMS_DETECTION_TERR[kAct]=Object.assign({},_PARAMS_DETECTION_TERR_ORIG[kAct]||_PARAMS_DETECTION_DEFAUT);
+    const w0=computeWaterMask(im,50,null);let nEau=0;for(let p=0;p<w0.length;p++)if(w0[p])nEau++;
+    const nWp=_masqueTraitPropre(im,50,null,metresParPixel(bb,im.w));let nEauP=0;for(let p=0;p<nWp.length;p++)if(nWp[p])nEauP++;
+    console.log('[candidats] ortho '+im.w+'×'+im.h+' · masque mer : '+nEau+' px ('+(100*nEau/w0.length).toFixed(1)+'%) → après _masqueTraitPropre : '+nEauP+' px ('+(100*nEauP/nWp.length).toFixed(1)+'%)');
+    _PARAMS_DETECTION_TERR[kAct]=oldP;
+  }catch(e){console.warn('[candidats] diagnostic impossible :',e);}
   for(let i=0;i<allPresets.length;i++){
     const c=allPresets[i];
     if(s)s.textContent=`Génération candidat ${i+1}/${allPresets.length} (${c.nom})…`;
-    let feats;try{feats=await _extraireAvecParams(im,bb,c.params);}catch(e){feats=[];}
+    let feats;try{feats=await (c.mode==='brut'?_extraireBrut(im,bb,c.params):_extraireAvecParams(im,bb,c.params));}catch(e){feats=[];}
     const lines=(feats||[]).filter(f=>f.geometry&&f.geometry.type==='LineString'&&(!f.properties||!f.properties._base));
     detailLog.push(`${c.nom}: ${lines.length} contour(s)`);
     if(!lines.length){continue;}
