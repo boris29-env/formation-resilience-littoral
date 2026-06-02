@@ -5130,6 +5130,44 @@ async function _extraireBrut(im,bbox,params){
     return lines.map(l=>({type:'Feature',geometry:{type:'LineString',coordinates:l.map(p=>pxToGeo(p[0],p[1],im.w,im.h,bbox))},properties:{type:'trait brut',methode:'contour mer/terre direct (sans nettoyage morphologique)',certitude:'à vérifier'}}));
   } finally {if(k){_PARAMS_DETECTION_TERR[k]=old;_PARAMS_SECTEURS_TERR[k]=oldSect;}}
 }
+// Limite de végétation : contour du masque chlorophylle (G > B + delta et G ≥ R - 12).
+// C'est le trait que tracent souvent les contributeurs OSM sur les îles atlantiques (SPM,
+// Saint-Martin, Saint-Barthélemy) où la limite émergée vue du ciel est la lisière du couvert
+// végétal, pas le bord eau-rocher (souvent invisible sous une falaise).
+async function _extraireVegetation(im,bbox,params){
+  window._currentExtractBbox=bbox;
+  const veg=computeVegMask(im);
+  const nd=nodataMask(im);
+  const mPerPx=metresParPixel(bbox,im.w);
+  const epsPx=Math.max(1,2/mPerPx);
+  // Petite ouverture morpho pour lisser les bords (sans détruire les patchs significatifs)
+  const cleaned=openMask(veg,im.w,im.h,1);
+  const lines=shorelinesFromMask(cleaned,im.w,im.h,nd,epsPx);
+  return lines.map(l=>({type:'Feature',geometry:{type:'LineString',coordinates:l.map(p=>pxToGeo(p[0],p[1],im.w,im.h,bbox))},properties:{type:'limite végétation',methode:'masque chlorophylle (G > B + 8) + contour',certitude:'à vérifier'}}));
+}
+// Pied / crête de falaise (approximation sans MNT) : contour entre zone minérale (ni eau, ni
+// végétation) et le reste. On garde uniquement les segments PROCHES de l'eau pour ne pas
+// retourner toute la voirie/sol nu intérieur. Sur côtes en falaise, ce contour matérialise
+// la rupture entre falaise/eau (pied) ou falaise/végétation (crête) selon la classe voisine.
+async function _extraireFalaise(im,bbox,params){
+  window._currentExtractBbox=bbox;
+  const W=im.w,H=im.h;
+  const water=computeWaterMask(im,50,null);
+  const veg=computeVegMask(im);
+  const nd=nodataMask(im);
+  // Masque minéral = pixel non-eau, non-végétation, non-nodata
+  const mineral=new Uint8Array(W*H);
+  for(let p=0;p<W*H;p++){if(!water[p]&&!veg[p]&&!nd[p]) mineral[p]=1;}
+  // Dilatation de l'eau pour définir une « zone côtière » (~30 m) qui filtre les minéraux intérieurs
+  const mPerPx=metresParPixel(bbox,W);
+  const zoneRadPx=Math.max(2,Math.min(40,Math.round(30/mPerPx)));
+  const proxEau=dilate(water,W,H,zoneRadPx);
+  const mineralLittoral=new Uint8Array(W*H);
+  for(let p=0;p<W*H;p++) if(mineral[p]&&proxEau[p]) mineralLittoral[p]=1;
+  const epsPx=Math.max(1,2/mPerPx);
+  const lines=shorelinesFromMask(mineralLittoral,W,H,nd,epsPx);
+  return lines.map(l=>({type:'Feature',geometry:{type:'LineString',coordinates:l.map(p=>pxToGeo(p[0],p[1],W,H,bbox))},properties:{type:'pied/crête de falaise',methode:'contour zone minérale littorale (ni eau, ni végétation, ≤ '+(zoneRadPx*mPerPx).toFixed(0)+' m de la mer)',certitude:'à vérifier'}}));
+}
 async function _extraireAvecParams(im,bbox,params){
   // Override des paramètres territoire le temps de l'extraction, restaure ensuite.
   // On suspend aussi le mécanisme de preset secteur pendant la calibration en effaçant
@@ -5272,12 +5310,14 @@ window._calibrerParamsDepuisVT=_calibrerParamsDepuisVT;
    niveau du secteur, et propose de relancer pour générer de nouveaux candidats raffinés
    autour du validé. */
 const _CANDIDATS_PRESETS=[
-  {nom:'strict',params:{lumMin:0,noyauMer:2,noyauTerre:1,vegDelta:8,merMinFrac:0.005,seuilTerreBordFrac:0.0005,varMin:0},couleur:'#E53935',mode:'normal'},
-  {nom:'permissif',params:{lumMin:0,noyauMer:3,noyauTerre:2,vegDelta:12,merMinFrac:0.001,seuilTerreBordFrac:0.0001,varMin:0},couleur:'#1E88E5',mode:'normal'},
-  {nom:'urbain',params:{lumMin:80,noyauMer:3,noyauTerre:2,vegDelta:6,merMinFrac:0.005,seuilTerreBordFrac:0.02,varMin:0},couleur:'#8E24AA',mode:'normal'},
+  {nom:'trait mer/terre — strict',params:{lumMin:0,noyauMer:2,noyauTerre:1,vegDelta:8,merMinFrac:0.005,seuilTerreBordFrac:0.0005,varMin:0},couleur:'#E53935',mode:'normal'},
+  {nom:'trait mer/terre — permissif',params:{lumMin:0,noyauMer:3,noyauTerre:2,vegDelta:12,merMinFrac:0.001,seuilTerreBordFrac:0.0001,varMin:0},couleur:'#1E88E5',mode:'normal'},
+  {nom:'trait mer/terre — urbain',params:{lumMin:80,noyauMer:3,noyauTerre:2,vegDelta:6,merMinFrac:0.005,seuilTerreBordFrac:0.02,varMin:0},couleur:'#8E24AA',mode:'normal'},
   {nom:'lagon',params:{lumMin:0,noyauMer:3,noyauTerre:2,vegDelta:6,merMinFrac:0.005,seuilTerreBordFrac:0.005,lagonMinFrac:0.005,varMin:0},couleur:'#00ACC1',mode:'normal'},
-  {nom:'récifs',params:{lumMin:0,noyauMer:4,noyauTerre:2,vegDelta:6,merMinFrac:0.005,seuilTerreBordFrac:0.05,varMin:500},couleur:'#FB8C00',mode:'normal'},
-  {nom:'brut (sans nettoyage morpho)',params:{lumMin:0,noyauMer:1,noyauTerre:1,vegDelta:20,merMinFrac:0.0005,seuilTerreBordFrac:0.0001,varMin:0},couleur:'#00897B',mode:'brut'}
+  {nom:'récifs (filtre variance)',params:{lumMin:0,noyauMer:4,noyauTerre:2,vegDelta:6,merMinFrac:0.005,seuilTerreBordFrac:0.05,varMin:500},couleur:'#FB8C00',mode:'normal'},
+  {nom:'mer/terre brut (sans morpho)',params:{lumMin:0,noyauMer:1,noyauTerre:1,vegDelta:20,merMinFrac:0.0005,seuilTerreBordFrac:0.0001,varMin:0},couleur:'#00897B',mode:'brut'},
+  {nom:'limite végétation',params:{},couleur:'#2E7D32',mode:'vegetation'},
+  {nom:'pied / crête de falaise',couleur:'#5D4037',mode:'falaise',params:{}}
 ];
 let _candidatsLayers=[];   // L.polyline affichés
 let _candidatsData=[];      // {preset, coords[], bbox, layer}
@@ -5317,7 +5357,12 @@ window._proposerCandidats=async function(){
   for(let i=0;i<allPresets.length;i++){
     const c=allPresets[i];
     if(s)s.textContent=`Génération candidat ${i+1}/${allPresets.length} (${c.nom})…`;
-    let feats;try{feats=await (c.mode==='brut'?_extraireBrut(im,bb,c.params):_extraireAvecParams(im,bb,c.params));}catch(e){feats=[];}
+    let feats;try{
+      if(c.mode==='brut') feats=await _extraireBrut(im,bb,c.params);
+      else if(c.mode==='vegetation') feats=await _extraireVegetation(im,bb,c.params);
+      else if(c.mode==='falaise') feats=await _extraireFalaise(im,bb,c.params);
+      else feats=await _extraireAvecParams(im,bb,c.params);
+    }catch(e){feats=[];}
     const lines=(feats||[]).filter(f=>f.geometry&&f.geometry.type==='LineString'&&(!f.properties||!f.properties._base));
     detailLog.push(`${c.nom}: ${lines.length} contour(s)`);
     if(!lines.length){continue;}
