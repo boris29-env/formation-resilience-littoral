@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Littoraux ultramarins · recomposition spatiale · GéoLittoral</title>
+<title>Littoraux ultramarins · recomposition spatiale</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
-/* Police Marianne — police officielle de la République française (DSFR) */
+/* Police sans-serif officielle (chargée depuis CDN, fallback Arial) */
 @font-face{font-family:'Marianne';font-weight:400;font-style:normal;font-display:swap;src:url('https://cdn.jsdelivr.net/gh/numerique-gouv/dsfr@v1.10.2/dist/fonts/Marianne-Regular.woff2') format('woff2');}
 @font-face{font-family:'Marianne';font-weight:500;font-style:normal;font-display:swap;src:url('https://cdn.jsdelivr.net/gh/numerique-gouv/dsfr@v1.10.2/dist/fonts/Marianne-Medium.woff2') format('woff2');}
 @font-face{font-family:'Marianne';font-weight:700;font-style:normal;font-display:swap;src:url('https://cdn.jsdelivr.net/gh/numerique-gouv/dsfr@v1.10.2/dist/fonts/Marianne-Bold.woff2') format('woff2');}
 @font-face{font-family:'Marianne';font-weight:400;font-style:italic;font-display:swap;src:url('https://cdn.jsdelivr.net/gh/numerique-gouv/dsfr@v1.10.2/dist/fonts/Marianne-Regular_Italic.woff2') format('woff2');}
 :root{
-  /* Charte DSFR / GéoLittoral — Système de Design de l'État */
-  --bf500:#000091;       /* Bleu Marianne (couleur principale) */
-  --bf300:#1212FF;       /* Bleu France (action) */
-  --bf700:#21213F;       /* Bleu France foncé (hover) */
-  --rm500:#E1000F;       /* Rouge Marianne */
+  /* Palette principale — bleu institutionnel + accent littoral */
+  --bf500:#000091;       /* Bleu principal */
+  --bf300:#1212FF;       /* Bleu d'action */
+  --bf700:#21213F;       /* Bleu foncé (hover) */
+  --rm500:#E1000F;       /* Rouge d'alerte */
   --gris-1000:#161616;   /* Texte principal */
   --gris-600:#666666;    /* Texte secondaire */
   --gris-200:#E5E5E5;    /* Filet / séparateur */
@@ -33,8 +33,7 @@
   --bg:#FFFFFF;--panel:#FFFFFF;--line:var(--gris-200);--soft:var(--gris-50);
   --m0:#C7D2DA;--m1:#7FB0BC;--m2:#2E8C97;--m3:#0E5A63;
   --cv-paris:#2F7D5B;--cv-tracc:#B07E1B;--cv-haut:#B65A3C;--cv-emball:#6B2C20;
-  /* DSFR : Marianne pour tout (titres éditoriaux compris). L'effet « serif/éditorial »
-     précédemment porté par Fraunces est restitué par Marianne italique 500. */
+  /* Une seule famille sans-serif partout (titres et corps). L'effet éditorial repose sur l'italique 500. */
   --serif:'Marianne','Marianne Local',Arial,sans-serif;
   --sans:'Marianne','Marianne Local',Arial,sans-serif;
   --mono:'IBM Plex Mono','Courier New',monospace;
@@ -42,7 +41,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;scroll-padding-top:68px}
 body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
-/* En-tête DSFR — bloc République française + marque GéoLittoral */
+/* En-tête de l'application */
 .topbar{position:sticky;top:0;z-index:500;background:#fff;color:var(--gris-1000);border-bottom:1px solid var(--gris-200);box-shadow:0 2px 6px rgba(0,0,0,.04)}
 .tb-gouv{display:flex;align-items:center;justify-content:space-between;padding:8px 24px;background:#fff;border-bottom:1px solid var(--gris-200);gap:14px;flex-wrap:wrap}
 .tb-marianne{display:flex;align-items:center;gap:14px}
@@ -65,7 +64,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15p
 .tb-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .tb-pill{font-family:var(--sans);font-size:11px;font-weight:500;letter-spacing:.005em;text-transform:none;padding:4px 10px;border-radius:4px;background:var(--gris-50);color:var(--gris-600);border:1px solid var(--gris-200)}
 .tb-pill.grp{background:var(--vert-littoral);color:#fff;border-color:var(--vert-littoral)}.tb-pill.session{cursor:pointer}.tb-pill.session:hover{background:var(--gris-200)}
-/* Bouton DSFR — secondaire (contour bleu Marianne) + primaire (plein) */
+/* Bouton — secondaire (contour bleu) + primaire (plein) */
 .tb-btn{background:transparent;border:1px solid var(--bf500);color:var(--bf500);font-family:var(--sans);font-size:12px;font-weight:500;letter-spacing:.005em;text-transform:none;padding:6px 12px;border-radius:4px;cursor:pointer;transition:all .15s}
 .tb-btn:hover{background:var(--gris-50)}
 .tb-btn.primary{background:var(--bf500);color:#fff;border-color:var(--bf500)}
@@ -7159,41 +7158,18 @@ function collectRoutage(code, label) {
 initSelecteur();
 </script>
 
-<!-- Pied de page institutionnel DSFR -->
+<!-- Pied de page sobre -->
 <footer style="margin-top:60px;background:#fff;border-top:2px solid var(--bf500)">
-  <div style="max-width:1200px;margin:0 auto;padding:32px 24px 24px;display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start">
-    <div style="flex:0 0 auto;display:flex;gap:18px;align-items:center">
-      <div style="display:flex;flex-direction:column;line-height:1.1">
-        <span style="font-family:var(--sans);font-size:13px;font-weight:700;color:var(--gris-1000);text-transform:uppercase">République</span>
-        <span style="font-family:var(--sans);font-size:13px;font-weight:700;color:var(--gris-1000);text-transform:uppercase">Française</span>
-        <span style="font-family:var(--sans);font-size:11px;color:var(--gris-600);font-style:italic;margin-top:2px">Liberté · Égalité · Fraternité</span>
-      </div>
-      <div style="width:60px;height:60px;background:var(--bf500);color:#fff;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--sans);font-size:12px;font-weight:700;text-align:center;line-height:1.05">Géo<br>Littoral</div>
-    </div>
-    <div style="flex:1;min-width:280px">
-      <p style="font-family:var(--sans);font-size:13px;line-height:1.6;color:var(--gris-1000);margin-bottom:8px">
-        <b>Atelier littoraux ultramarins</b> est un outil de co-construction pour les six collectivités d'outre-mer (Saint-Pierre-et-Miquelon, Saint-Martin, Saint-Barthélemy, Nouvelle-Calédonie, Wallis-et-Futuna, Polynésie française) sur la recomposition spatiale et l'adaptation au recul du trait de côte.
-      </p>
-      <p style="font-family:var(--sans);font-size:11.5px;color:var(--gris-600);line-height:1.6">
-        Sources de données : IGN Géoplateforme · OpenStreetMap (ODbL) · Cerema · INSeaPTION · Carib-Coast · Esri World Imagery. Le code source de cette plateforme est disponible sur GitHub. Cet atelier est un outil indicatif, sans valeur d'engagement.
-      </p>
-      <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-family:var(--sans);font-size:12px">
-        <a href="https://www.geolittoral.developpement-durable.gouv.fr" target="_blank" rel="noopener" style="color:var(--bf500);text-decoration:underline">geolittoral.developpement-durable.gouv.fr</a>
-        <a href="https://www.cerema.fr" target="_blank" rel="noopener" style="color:var(--bf500);text-decoration:underline">cerema.fr</a>
-        <a href="https://www.ecologie.gouv.fr" target="_blank" rel="noopener" style="color:var(--bf500);text-decoration:underline">ecologie.gouv.fr</a>
-        <a href="https://www.legifrance.gouv.fr" target="_blank" rel="noopener" style="color:var(--bf500);text-decoration:underline">legifrance.gouv.fr</a>
-      </div>
-    </div>
+  <div style="max-width:1200px;margin:0 auto;padding:28px 24px 16px">
+    <p style="font-family:var(--sans);font-size:13px;line-height:1.6;color:var(--gris-1000);margin-bottom:8px">
+      <b>Atelier littoraux ultramarins</b> est un outil de co-construction pour les six collectivités d'outre-mer (Saint-Pierre-et-Miquelon, Saint-Martin, Saint-Barthélemy, Nouvelle-Calédonie, Wallis-et-Futuna, Polynésie française) sur la recomposition spatiale et l'adaptation au recul du trait de côte.
+    </p>
+    <p style="font-family:var(--sans);font-size:11.5px;color:var(--gris-600);line-height:1.6">
+      Sources de données : IGN Géoplateforme · OpenStreetMap (ODbL) · INSeaPTION · Carib-Coast · Esri World Imagery. Le code source de cette plateforme est disponible sur GitHub. Cet atelier est un outil indicatif, sans valeur d'engagement.
+    </p>
   </div>
-  <div style="border-top:1px solid var(--gris-200);padding:14px 24px;background:var(--gris-50)">
-    <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-family:var(--sans);font-size:11px;color:var(--gris-600)">
-      <div>© <span id="ft-year"></span> Atelier littoraux ultramarins · sous licence Etalab 2.0 (Open Licence)</div>
-      <div style="display:flex;gap:14px;flex-wrap:wrap">
-        <span>Charte graphique : Système de Design de l'État (DSFR)</span>
-        <span>·</span>
-        <span>Police Marianne © DINUM</span>
-      </div>
-    </div>
+  <div style="border-top:1px solid var(--gris-200);padding:12px 24px;background:var(--gris-50)">
+    <div style="max-width:1200px;margin:0 auto;font-family:var(--sans);font-size:11px;color:var(--gris-600)">© <span id="ft-year"></span> Atelier littoraux ultramarins · sous licence Etalab 2.0 (Open Licence)</div>
   </div>
 </footer>
 <script>document.getElementById('ft-year').textContent=new Date().getFullYear();</script>
