@@ -5123,17 +5123,21 @@ async function _extraireAvecParams(im,bbox,params){
   return feats;
 }
 function _distMedTraitVT(feats,vtCoords,bbox){
+  // Métrique : pour CHAQUE point de la vt, distance min au plus proche segment du contour détecté.
+  // Médiane de ces distances. On mesure ainsi à quel point le contour détecté PASSE par votre vt,
+  // et pas à quel point vos détections sont proches de la vt (l'extraction couvre toute l'image,
+  // votre vt n'est qu'une portion de 50 m → la métrique inverse était systématiquement gonflée).
   if(!feats||!feats.length||!vtCoords||vtCoords.length<2) return Infinity;
   const latMid=(bbox.s+bbox.n)/2;
-  // Tous les sommets des traits extraits (linestrings)
-  const pts=[];
+  // Tous les segments des traits extraits (LineString uniquement, hors _base)
+  const segs=[];
   for(const f of feats){
-    if(!f.geometry||f.geometry.type!=='LineString'||f.properties&&f.properties._base) continue;
-    for(const c of f.geometry.coordinates) pts.push(c);
+    if(!f.geometry||f.geometry.type!=='LineString'||(f.properties&&f.properties._base)) continue;
+    const c=f.geometry.coordinates;
+    for(let i=1;i<c.length;i++) segs.push([c[i-1],c[i]]);
   }
-  if(!pts.length) return Infinity;
-  const vtSegs=[];for(let i=1;i<vtCoords.length;i++) vtSegs.push([vtCoords[i-1],vtCoords[i]]);
-  const dists=pts.map(pt=>{let m=Infinity;for(const [a,b] of vtSegs){const d=_distGeoSegPoint(pt,a,b,latMid);if(d<m)m=d;}return m;});
+  if(!segs.length) return Infinity;
+  const dists=vtCoords.map(pt=>{let m=Infinity;for(const [a,b] of segs){const d=_distGeoSegPoint(pt,a,b,latMid);if(d<m){m=d;if(m<5)break;}}return m;});
   dists.sort((a,b)=>a-b);
   return dists[Math.floor(dists.length/2)];
 }
