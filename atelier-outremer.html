@@ -2113,6 +2113,7 @@ window._vtToggle=function(){
   if(open){
     // Synchronise la case « Mode solo » avec l'état courant.
     const solo=document.getElementById('vt-solo');if(solo)solo.checked=_MODE_SOLO;
+    const strict=document.getElementById('vt-strict');if(strict)strict.checked=!!window._VT_FILTRE_STRICT;
     if(!_lastSigImage){const s=document.getElementById('vt-status');if(s)s.textContent='Chargez d\'abord une orthophoto.';return;}
     _vtDessinerCanvas();
     const cnv=document.getElementById('vt-canvas');if(cnv){cnv.style.display='block';
@@ -3763,6 +3764,12 @@ function construireImageModule(){
             <span><b>Mode solo</b> — n'attendre aucun autre opérateur, apprendre directement de mes annotations</span>
           </label>
         </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;padding:6px 8px;background:#fff;border:1px solid var(--line);border-radius:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;flex:1">
+            <input type="checkbox" id="vt-strict" onchange="setVtFiltreStrict(this.checked)" style="cursor:pointer">
+            <span><b>Filtre strict par VT</b> — supprimer les segments à 30-120 m de mes tracés (par défaut : seulement marqués)</span>
+          </label>
+        </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center">
           <span style="font-size:11px;color:var(--muted)">Type :</span>
           <label style="font-size:11px;cursor:pointer"><input type="radio" name="vt-kind" value="trait" checked> trait de côte</label>
@@ -5063,6 +5070,9 @@ function _operatorId(){
 }
 let _MODE_SOLO=true; // Par défaut : on n'attend pas un autre opérateur pour apprendre.
 try{const s=localStorage.getItem('mode_solo');if(s!=null)_MODE_SOLO=(s==='1');}catch(e){}
+window._VT_FILTRE_STRICT=false;
+try{const s=localStorage.getItem('vt_filtre_strict');if(s!=null)window._VT_FILTRE_STRICT=(s==='1');}catch(e){}
+window.setVtFiltreStrict=function(v){window._VT_FILTRE_STRICT=!!v;try{localStorage.setItem('vt_filtre_strict',v?'1':'0');}catch(e){}};
 window.setModeSolo=function(v){_MODE_SOLO=!!v;try{localStorage.setItem('mode_solo',v?'1':'0');}catch(e){}
   entrainerModeleOuvrages();entrainerModeleTraits();
   if(typeof majApprentissageUI==='function')majApprentissageUI();
@@ -5262,13 +5272,14 @@ function _filtrerParTracesVT(feats, bbox){
     const dMed=dists.slice().sort((a,b)=>a-b)[Math.floor(dists.length/2)];
     if(dMed<=TOL){p.dist_vt_m=Math.round(dMed);p.proba_vt=1;p.certitude='accordé à la VT ('+Math.round(dMed)+' m)';out.push(f);}
     else if(dMed<=REJET){
-      // zone VT couvrante mais trait à l'écart : SUPPRIMÉ. La vérité-terrain dit que le bon trait
-      // est ailleurs ; le détecté ici est probablement bruit. Décommenter out.push(f) pour seulement
-      // marquer sans supprimer.
-      // p.dist_vt_m=Math.round(dMed);p.proba_vt=+(1-(dMed-TOL)/(REJET-TOL)).toFixed(2);
-      // p.certitude='écart à la VT : '+Math.round(dMed)+' m';
-      // out.push(f);
-      continue;
+      // zone VT couvrante mais trait à l'écart : par défaut MARQUÉ mais conservé (non destructif).
+      // Le mode strict (suppression) est opt-in via le bouton « filtrer strict par VT » côté UI
+      // (window._VT_FILTRE_STRICT=true).
+      p.dist_vt_m=Math.round(dMed);
+      p.proba_vt=+(1-(dMed-TOL)/(REJET-TOL)).toFixed(2);
+      p.certitude='écart à la VT : '+Math.round(dMed)+' m';
+      if(window._VT_FILTRE_STRICT) continue;   // mode strict : on supprime
+      out.push(f);
     }
     else {p.dist_vt_m=Math.round(dMed);p.proba_vt=0;out.push(f);}   // hors zone VT : conservé
   }
