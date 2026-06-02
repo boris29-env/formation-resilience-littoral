@@ -5082,16 +5082,18 @@ window._deepActiver=_reentrainerDeep;
 // (on n'amplifie pas un mauvais override précédent).
 const _PARAMS_DETECTION_TERR_ORIG=JSON.parse(JSON.stringify(_PARAMS_DETECTION_TERR));
 const _CALIB_GRID={
-  lumMin:[0,40,80,120],
-  noyauMer:[2,3,4,5],
-  vegDelta:[4,6,8,12],
-  seuilTerreBordFrac:[0.0005,0.005,0.02,0.08],
-  merMinFrac:[0.001,0.005,0.02],
-  lagonMinFrac:[0.01,0.03,0.05]
+  lumMin:[0,20,40,60,80,100,120,150],
+  noyauMer:[1,2,3,4,5,7],
+  noyauTerre:[1,2,3,4],
+  vegDelta:[0,4,6,8,12,18],
+  seuilTerreBordFrac:[0.0001,0.0005,0.005,0.02,0.08],
+  merMinFrac:[0.0005,0.001,0.005,0.02],
+  lagonMinFrac:[0.005,0.01,0.03,0.05],
+  varMin:[0,200,500,1000]
 };
 // Essai de secours appliqué si tous les essais produisent 0 feature : très permissif, conçu pour
 // faire émerger n'importe quel contour (sert au moins à voir où le seuil principal coince).
-const _CALIB_SECOURS={lumMin:0,noyauMer:1,noyauTerre:1,vegDelta:20,merMinFrac:0.001,seuilIleFrac:0.001,lagonMinFrac:0.005,seuilTerreBordFrac:0.0001,varMin:0};
+const _CALIB_SECOURS={lumMin:0,noyauMer:1,noyauTerre:1,vegDelta:20,merMinFrac:0.0005,seuilIleFrac:0.001,lagonMinFrac:0.005,seuilTerreBordFrac:0.0001,varMin:0};
 function _distGeoSegPoint(pt,a,b,latMid){
   const mPerDegLat=111320, mPerDegLon=111320*Math.cos(latMid*Math.PI/180);
   const dx=(b[0]-a[0])*mPerDegLon, dy=(b[1]-a[1])*mPerDegLat, L=dx*dx+dy*dy;
@@ -5173,20 +5175,41 @@ async function _calibrerParamsDepuisVT(){
     try{fAct=await _extraireAvecParams(im,bb,paramsAct);}catch(e){fAct=[];}
     const distRef=_distMedTraitVT(fAct,tr.coords,bb);
     const nbFeatRef=(fAct||[]).filter(f=>f&&f.geometry&&f.geometry.type==='LineString').length;
-    // Greedy : on optimise chaque paramètre individuellement, dans l'ordre de _CALIB_GRID
+    // Greedy multi-passes : 2 tours complets sur tous les paramètres, chaque tour réutilise les
+    // meilleures valeurs du précédent (l'ordre des paramètres compte, on en fait 2 pour stabiliser).
     let best=Object.assign({},paramsAct), bestD=distRef, bestNb=nbFeatRef;
     const detailEssais=[`défaut(${nbFeatRef}f→${isFinite(distRef)?distRef.toFixed(0)+'m':'∅'})`];
-    for(const param of Object.keys(_CALIB_GRID)){
-      let meilleurV=best[param], meilleurD=bestD, meilleurNb=bestNb;
-      for(const v of _CALIB_GRID[param]){
-        if(v===best[param]) continue;
-        const test=Object.assign({},best,{[param]:v});
-        let dm,nb;try{const ff=await _extraireAvecParams(im,bb,test);dm=_distMedTraitVT(ff,tr.coords,bb);nb=(ff||[]).filter(f=>f&&f.geometry&&f.geometry.type==='LineString').length;}catch(e){dm=Infinity;nb=0;}
-        detailEssais.push(`${param}=${v}(${nb}f→${isFinite(dm)?dm.toFixed(0)+'m':'∅'})`);
-        // Préférence : si on n'avait rien et qu'on a quelque chose → on prend ; sinon meilleure distance
-        if((meilleurNb===0&&nb>0) || (nb>0&&isFinite(dm)&&dm<meilleurD)){meilleurD=dm;meilleurV=v;meilleurNb=nb;}
+    const evalTest=async(test,libel)=>{
+      let dm,nb;try{const ff=await _extraireAvecParams(im,bb,test);dm=_distMedTraitVT(ff,tr.coords,bb);nb=(ff||[]).filter(f=>f&&f.geometry&&f.geometry.type==='LineString').length;}catch(e){dm=Infinity;nb=0;}
+      detailEssais.push(`${libel}(${nb}f→${isFinite(dm)?dm.toFixed(0)+'m':'∅'})`);
+      return {dm,nb};
+    };
+    const accepte=(dm,nb,curD,curNb)=>(curNb===0&&nb>0)||(nb>0&&isFinite(dm)&&dm<curD);
+    for(let pass=0; pass<2; pass++){
+      for(const param of Object.keys(_CALIB_GRID)){
+        let meilleurV=best[param], meilleurD=bestD, meilleurNb=bestNb;
+        for(const v of _CALIB_GRID[param]){
+          if(v===best[param]) continue;
+          const test=Object.assign({},best,{[param]:v});
+          const {dm,nb}=await evalTest(test,`p${pass+1}.${param}=${v}`);
+          if(accepte(dm,nb,meilleurD,meilleurNb)){meilleurD=dm;meilleurV=v;meilleurNb=nb;}
+        }
+        best[param]=meilleurV;bestD=meilleurD;bestNb=meilleurNb;
+        if(s)s.textContent=`Calibration secteur ${idx+1}/${ref.length}, passe ${pass+1}, ${param}=${meilleurV} (${meilleurNb}f→${isFinite(meilleurD)?meilleurD.toFixed(0)+'m':'∅'})`;
       }
-      best[param]=meilleurV;bestD=meilleurD;bestNb=meilleurNb;
+    }
+    // Recherche locale : tester des perturbations 2-à-2 autour du best pour tenter une combinaison
+    // non explorée par le greedy. On choisit 4 perturbations aléatoires de 2 paramètres parmi le grid.
+    const keys=Object.keys(_CALIB_GRID);
+    for(let k1=0;k1<4;k1++){
+      const a=keys[Math.floor(Math.random()*keys.length)],b2=keys[Math.floor(Math.random()*keys.length)];
+      if(a===b2) continue;
+      const va=_CALIB_GRID[a][Math.floor(Math.random()*_CALIB_GRID[a].length)];
+      const vb=_CALIB_GRID[b2][Math.floor(Math.random()*_CALIB_GRID[b2].length)];
+      if(va===best[a]&&vb===best[b2]) continue;
+      const test=Object.assign({},best,{[a]:va,[b2]:vb});
+      const {dm,nb}=await evalTest(test,`loc.${a}=${va}+${b2}=${vb}`);
+      if(accepte(dm,nb,bestD,bestNb)){best[a]=va;best[b2]=vb;bestD=dm;bestNb=nb;}
     }
     // Essai de secours si toujours zéro feature
     if(bestNb===0){
