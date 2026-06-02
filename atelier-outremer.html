@@ -207,10 +207,18 @@ body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15p
 /* Récit délibératif — atelier d'écriture (pas formulaire). Le pré-rempli est typographiquement
    distinct du texte approprié : frontière toujours visible (dispositif anti-tutelle). */
 #recit-host{margin-top:6px}
-.recit-lieu{margin-bottom:32px;padding:22px;background:#fafaf7;border-left:3px solid var(--navy);border-radius:0 8px 8px 0}
-.recit-lieu-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;margin-bottom:14px}
-.recit-lieu h3{font-family:var(--serif);font-size:24px;color:var(--navy);margin:0;letter-spacing:-.01em}
-.recit-lieu-desc{font-size:12px;color:var(--muted);font-style:italic;line-height:1.5;margin-bottom:4px;width:100%}
+.recit-lieu{margin-bottom:10px;background:#fff;border:1px solid var(--gris-200);border-left:3px solid var(--bf500);border-radius:0 6px 6px 0;overflow:hidden;transition:box-shadow .15s}
+.recit-lieu.open{margin-bottom:18px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.recit-lieu-head{display:flex;align-items:center;gap:12px;padding:11px 18px;cursor:pointer;background:#fff;transition:background .15s}
+.recit-lieu-head:hover{background:var(--gris-50)}
+.recit-lieu h3{font-family:var(--sans);font-size:14px;font-weight:700;color:var(--bf500);margin:0;letter-spacing:.005em;flex:1;line-height:1.25}
+.recit-lieu .lieu-chev{font-size:13px;color:var(--gris-600);transition:transform .2s;flex-shrink:0}
+.recit-lieu.open .lieu-chev{transform:rotate(180deg)}
+.recit-lieu.open .recit-lieu-head{padding:14px 20px;border-bottom:1px solid var(--gris-200)}
+.recit-lieu.open .recit-lieu-head h3{font-size:17px}
+.recit-lieu-body{display:none;padding:18px 20px 22px}
+.recit-lieu.open .recit-lieu-body{display:block}
+.recit-lieu-desc{font-size:12px;color:var(--muted);font-style:italic;line-height:1.5;margin-bottom:14px}
 .recit-arches{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
 .recit-arche{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--line);padding:4px 10px;border-radius:5px;font-size:11.5px;cursor:pointer;font-family:var(--sans);color:var(--ink);user-select:none}
 .recit-arche input{margin:0;accent-color:var(--navy)}
@@ -889,7 +897,7 @@ svg.house{width:100%;max-width:290px;height:auto}
     <!-- RÉCIT DÉLIBÉRATIF — atelier d'écriture, lieu par lieu, sans recommandation -->
     <section class="ps" id="sec-recit">
       <div class="sec-hd"><span class="sec-num">06 ter</span><h2 class="sec-title">Récit délibératif</h2></div>
-      <div class="sec-intro">Atelier d'écriture pour mettre en récit les choix d'aménagement de votre littoral, lieu par lieu, selon une trame en quatre moments (mémoire · ce que l'on sait et ignore · éventail des avenirs · qui décide). Le texte en gris est une <b>proposition issue de la monographie, à valider, amender ou réécrire</b>. Aucune branche d'avenir n'est recommandée ; aucun score n'est calculé. Le document final est un support de délibération, présentable à l'assemblée comme le travail propre du territoire.</div>
+      <div class="sec-intro">atelier d'écriture pour mettre en récit les choix d'aménagement du littoral, lieu par lieu, selon une trame en quatre moments : mémoire, ce que l'on sait et ignore, éventail des avenirs, qui décide. le texte en gris est une <b>proposition issue de la monographie, à valider, amender ou réécrire</b>. aucune branche d'avenir n'est recommandée ; aucun score n'est calculé. le document final est un support de délibération, présentable à l'assemblée comme le travail propre du territoire.</div>
       <div id="recit-host"></div>
       <div class="recit-export-row">
         <button onclick="exporterRecit()" class="recit-export-btn">Télécharger le document de délibération (.txt)</button>
@@ -6708,12 +6716,14 @@ function _recitKey(siteNom,champ){return `recit_${TERR_ACTIF||'def'}_${(siteNom|
 function _recitGet(siteNom,champ){try{return localStorage.getItem(_recitKey(siteNom,champ));}catch(e){return null;}}
 function _recitSet(siteNom,champ,val){try{if(val&&val.trim())localStorage.setItem(_recitKey(siteNom,champ),val);else localStorage.removeItem(_recitKey(siteNom,champ));}catch(e){}}
 // Met à jour le statut visuel d'un textarea (gris atténué = proposition non touchée ; affirmé = appropriée).
+window._recitToggleLieu=function(headEl){const li=headEl&&headEl.closest('.recit-lieu');if(li)li.classList.toggle('open');};
+window._recitToggleAll=function(open){document.querySelectorAll('#recit-host .recit-lieu').forEach(l=>l.classList.toggle('open',!!open));};
 window._recitMaj=function(el,siteNom,champ){
   const val=el.value;const def=el.dataset.propose||'';
   const approprie=(val&&val.trim()&&val.trim()!==def.trim());
   el.classList.toggle('approprie',approprie);
   const label=el.previousElementSibling;
-  if(label&&label.classList.contains('recit-prop-label')){label.classList.toggle('approprie',approprie);label.textContent=approprie?'Texte du territoire':'Proposition à valider';}
+  if(label&&label.classList.contains('recit-prop-label')){label.classList.toggle('approprie',approprie);label.textContent=approprie?'texte du territoire':'proposition à valider';}
   _recitSet(siteNom,champ,approprie?val:'');
 };
 window._recitChange=function(siteNom){
@@ -6726,7 +6736,8 @@ function _construireRecit(T){
   const host=document.getElementById('recit-host');if(!host||!T)return;
   const sites=(T.sites||[]).slice();
   if(!sites.length){host.innerHTML='<em style="color:var(--muted)">Aucun lieu documenté pour ce territoire. L\'exécutif peut ajouter des lieux à traiter via le tableau de bord territorial.</em>';return;}
-  const introNote=`<div class="recit-intro-note"><b>Mode d'emploi.</b> Pour chaque lieu, un archétype principal et des secondaires sont <i>pré-cochés</i> à partir de la monographie : modifiez librement. Le texte en gris est une <i>proposition à valider, amender ou réécrire</i> — dès que vous écrivez ou modifiez, le texte bascule en style affirmé (« texte du territoire »). Les avenirs sont des <i>branches à déplier</i>, jamais à classer. La sortie est un document de délibération, fin ouverte, qui s'achève sur les questions que le territoire se pose à lui-même.</div>`;
+  const introNote=`<div class="recit-intro-note"><b>mode d'emploi.</b> chaque lieu est replié par défaut. cliquez sur l'en-tête d'un lieu pour le déplier. les archétypes sont pré-cochés à partir de la monographie, modifiables librement. le texte en gris est une proposition à valider, amender ou réécrire ; dès qu'il est édité il devient le texte du territoire. les avenirs sont des branches dépliables, non classées. le document de sortie est un support de délibération à fin ouverte.</div>
+  <div class="cas-toolbar"><button onclick="_recitToggleAll(true)">▾ tout déplier</button><button onclick="_recitToggleAll(false)">▴ tout replier</button></div>`;
   let html=introNote;
   sites.forEach(site=>{
     const {principal,secondaires}=_detecterArchetypes(site,T);
@@ -6736,7 +6747,7 @@ function _construireRecit(T){
     // Pré-textes (style atténué). Si l'exécutif a déjà écrit, on charge sa version.
     const m1=_pretextMoment1(site,T),m2=_pretextMoment2(site,T),m4=_pretextMoment4(T);
     const v1=_recitGet(site.nom,'moment1'),v2=_recitGet(site.nom,'moment2'),v4=_recitGet(site.nom,'moment4'),vQ=_recitGet(site.nom,'questions');
-    const ta=(champ,def,saved)=>{const ap=!!(saved&&saved.trim());return `<div class="recit-prop-label ${ap?'approprie':''}">${ap?'Texte du territoire':'Proposition à valider'}</div><textarea class="recit-texte ${ap?'approprie':''}" data-propose="${def.replace(/"/g,'&quot;')}" oninput="_recitMaj(this,${ev},'${champ}')">${ap?saved:def}</textarea>`;};
+    const ta=(champ,def,saved)=>{const ap=!!(saved&&saved.trim());return `<div class="recit-prop-label ${ap?'approprie':''}">${ap?'texte du territoire':'proposition à valider'}</div><textarea class="recit-texte ${ap?'approprie':''}" data-propose="${def.replace(/"/g,'&quot;')}" oninput="_recitMaj(this,${ev},'${champ}')">${ap?saved:def}</textarea>`;};
     // Archétypes (principal en navy, secondaires en pointillé). Ordre : principal puis autres.
     const archHTML=Object.entries(_ARCH_RECIT).map(([k,a])=>{const isPrinc=archCoches[0]===k;const checked=archCoches.includes(k);const cls=isPrinc?'principal':(checked?'':'secondaire');const titre=a.a_part?a.nom+' (archétype à part)':a.nom;return `<label class="recit-arche ${checked?cls:'secondaire'}" title="${a.declencheur.replace(/"/g,'&quot;')}"><input type="checkbox" value="${k}" ${checked?'checked':''} data-recit-site="${site.nom.replace(/"/g,'&quot;')}" onchange="_recitChange(${ev})">${titre}</label>`;}).join('');
     // Branches d'avenir des archétypes COCHÉS (union, sans recommandation, dépliables).
@@ -6747,34 +6758,36 @@ function _construireRecit(T){
     const archActifs=archCoches.filter(k=>_ARCH_RECIT[k]);
     const branchesHTML=archActifs.map(k=>{const a=_ARCH_RECIT[k];return `<div style="margin-top:10px"><div class="recit-moment-k">${a.nom} — tension : <i>${clean(a.tension)}</i></div>${a.vigilance?'<div style="font-size:11px;color:#7a4a00;font-style:italic;background:#fff8e1;padding:6px 9px;border-radius:5px;margin:5px 0">⚠ '+clean(a.vigilance)+'</div>':''}${(a.branches||[]).map(b=>`<details class="recit-branche"><summary>${b.nom}</summary><div class="recit-branche-corps"><div class="b-sect"><b>Ce que cette branche suppose :</b> ${clean(b.suppose)}</div><div class="b-sect"><b>Ce qu'elle implique :</b> ${clean(b.implique)}</div><div class="b-sect"><b>De qui elle relève :</b> ${clean(b.releve)}</div></div></details>`).join('')}</div>`;}).join('');
     html+=`<div class="recit-lieu">
-      <div class="recit-lieu-head"><h3>${site.nom}</h3></div>
-      <div class="recit-lieu-desc">${site.desc||''}</div>
-      <div class="recit-moment-k" style="margin-top:8px">Archétypes pré-cochés (révisables)</div>
-      <div class="recit-arches">${archHTML}</div>
-      <div class="recit-moment">
-        <div class="recit-moment-k">Moment 1</div>
-        <div class="recit-moment-titre">Le lieu et sa mémoire</div>
-        ${ta('moment1',m1,v1)}
-      </div>
-      <div class="recit-moment">
-        <div class="recit-moment-k">Moment 2</div>
-        <div class="recit-moment-titre">Ce que l'on sait, et ce que l'on ignore</div>
-        ${ta('moment2',m2,v2)}
-      </div>
-      <div class="recit-moment">
-        <div class="recit-moment-k">Moment 3</div>
-        <div class="recit-moment-titre">L'éventail des avenirs — branches à déplier, pas à classer</div>
-        <div class="recit-branche-add">Aucune branche n'est recommandée. Les déplier sert à explorer ce qu'elles supposent et ce qu'elles impliquent ; la décision reste à l'exécutif.</div>
-        <div class="recit-branches">${branchesHTML||'<em style="color:var(--muted);font-size:12px">Activez un archétype ci-dessus pour faire apparaître ses branches.</em>'}</div>
-      </div>
-      <div class="recit-moment">
-        <div class="recit-moment-k">Moment 4</div>
-        <div class="recit-moment-titre">Ce qui relève de nous, ce qui relève d'un autre</div>
-        ${ta('moment4',m4,v4)}
-      </div>
-      <div class="recit-fin">
-        <div class="recit-fin-titre">Les questions que le territoire se pose à lui-même</div>
-        ${ta('questions',"Ce qui reste ouvert sur ce lieu, à formuler ici par l'exécutif. Le document de délibération s'achève sur ces questions — pas sur une conclusion.",vQ)}
+      <div class="recit-lieu-head" onclick="_recitToggleLieu(this)"><h3>${site.nom}</h3><span class="lieu-chev">▾</span></div>
+      <div class="recit-lieu-body">
+        <div class="recit-lieu-desc">${site.desc||''}</div>
+        <div class="recit-moment-k" style="margin-top:8px">archétypes pré-cochés, révisables</div>
+        <div class="recit-arches">${archHTML}</div>
+        <div class="recit-moment">
+          <div class="recit-moment-k">moment 1</div>
+          <div class="recit-moment-titre">le lieu et sa mémoire</div>
+          ${ta('moment1',m1,v1)}
+        </div>
+        <div class="recit-moment">
+          <div class="recit-moment-k">moment 2</div>
+          <div class="recit-moment-titre">ce que l'on sait, ce que l'on ignore</div>
+          ${ta('moment2',m2,v2)}
+        </div>
+        <div class="recit-moment">
+          <div class="recit-moment-k">moment 3</div>
+          <div class="recit-moment-titre">éventail des avenirs : branches à déplier, non classées</div>
+          <div class="recit-branche-add">aucune branche n'est recommandée. les déplier sert à examiner ce qu'elles supposent et ce qu'elles impliquent ; la décision reste à l'exécutif.</div>
+          <div class="recit-branches">${branchesHTML||'<em style="color:var(--muted);font-size:12px">activez un archétype ci-dessus pour faire apparaître ses branches.</em>'}</div>
+        </div>
+        <div class="recit-moment">
+          <div class="recit-moment-k">moment 4</div>
+          <div class="recit-moment-titre">ce qui relève de nous, ce qui relève d'un autre</div>
+          ${ta('moment4',m4,v4)}
+        </div>
+        <div class="recit-fin">
+          <div class="recit-fin-titre">les questions que le territoire se pose à lui-même</div>
+          ${ta('questions',"ce qui reste ouvert sur ce lieu, à formuler ici par l'exécutif. le document de délibération s'achève sur ces questions, sans conclusion.",vQ)}
+        </div>
       </div>
     </div>`;
   });
