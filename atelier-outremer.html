@@ -3782,9 +3782,10 @@ function construireImageModule(){
           <button onclick="_vtSauver()" style="background:#1a8a4a;color:#fff;border:none;border-radius:5px;padding:5px 9px;font-size:11px;cursor:pointer;font-weight:600">✓ Enregistrer (exemple positif)</button>
         </div>
         <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)">
-          <div style="font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:4px">Modèle DEEP (TensorFlow.js)</div>
-          <div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-bottom:6px">Un MLP 32→16→1 (sigmoïde) entraîné dans votre navigateur sur le corpus de tracés. Remplace la régression logistique légère dès ≥ 20 exemples. Téléchargement TF.js ≈ 1 Mo au 1<sup>er</sup> usage.</div>
-          <button onclick="_deepActiver()" style="background:#7B5EA7;color:#fff;border:none;border-radius:5px;padding:5px 10px;font-size:11px;cursor:pointer;font-weight:600">⚡ Entraîner le modèle deep</button>
+          <div style="font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:4px">calibrer l'algorithme depuis mes tracés</div>
+          <div style="font-size:10.5px;color:var(--muted);line-height:1.5;margin-bottom:6px">grid-search sur les paramètres territoire (lumMin, noyauMer, vegDelta, seuilTerreBordFrac) avec votre vt comme référence. télécharge l'orthophoto de la zone tracée, ré-exécute l'extraction pour 16 combinaisons, garde la meilleure. ces paramètres remplacent les défauts du territoire et persistent (localStorage). 1 à 3 minutes selon la taille des tracés.</div>
+          <button onclick="_calibrerParamsDepuisVT()" style="background:var(--bf500);color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11.5px;cursor:pointer;font-weight:600">⚙ calibrer pour ce territoire</button>
+          <button onclick="_deepActiver()" style="background:#7B5EA7;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:11px;cursor:pointer;font-weight:500;margin-left:6px">⚡ entraîner le scoreur (tf.js)</button>
           <div id="deep-status" style="font-size:10.5px;color:var(--muted);margin-top:6px;font-family:var(--mono);line-height:1.5"></div>
         </div>
       </div>
@@ -5046,6 +5047,122 @@ async function _reentrainerDeep(){
   if(s)s.textContent='✓ Modèle deep entraîné — '+parts.join(' · ');
 }
 window._deepActiver=_reentrainerDeep;
+
+/* === Calibration des paramètres de détection à partir des tracés vérité-terrain ============
+   Le modèle deep score des features mais ne touche pas aux seuils (lumMin, noyauMer, vegDelta,
+   varMin, seuilTerreBordFrac). Ces seuils déterminent CE QUE L'ALGORITHME VOIT comme mer/terre.
+   Pour qu'un tracé VT change vraiment l'extraction sur tout le territoire, on optimise ici les
+   paramètres territoire avec votre tracé comme référence.
+   Méthode : grid search greedy sur 4 paramètres × 4 valeurs (16 essais max), score = distance
+   médiane entre le trait extrait et le tracé VT. Le meilleur preset remplace les paramètres
+   par défaut du territoire et est persisté en localStorage. */
+const _CALIB_GRID={
+  lumMin:[0,40,80,120],
+  noyauMer:[2,3,4,5],
+  vegDelta:[4,6,8,12],
+  seuilTerreBordFrac:[0.0005,0.005,0.02,0.08]
+};
+function _distGeoSegPoint(pt,a,b,latMid){
+  const mPerDegLat=111320, mPerDegLon=111320*Math.cos(latMid*Math.PI/180);
+  const dx=(b[0]-a[0])*mPerDegLon, dy=(b[1]-a[1])*mPerDegLat, L=dx*dx+dy*dy;
+  if(L<1e-6){const ddx=(pt[0]-a[0])*mPerDegLon, ddy=(pt[1]-a[1])*mPerDegLat;return Math.hypot(ddx,ddy);}
+  const ex=(pt[0]-a[0])*mPerDegLon, ey=(pt[1]-a[1])*mPerDegLat;
+  let t=(ex*dx+ey*dy)/L; t=Math.max(0,Math.min(1,t));
+  const px=a[0]+t*(b[0]-a[0]), py=a[1]+t*(b[1]-a[1]);
+  const ddx=(pt[0]-px)*mPerDegLon, ddy=(pt[1]-py)*mPerDegLat;
+  return Math.hypot(ddx,ddy);
+}
+function _bboxDeCoords(coords,pad){
+  let w=Infinity,e=-Infinity,s=Infinity,n=-Infinity;
+  for(const [lo,la] of coords){if(lo<w)w=lo;if(lo>e)e=lo;if(la<s)s=la;if(la>n)n=la;}
+  pad=pad||0;w-=pad;e+=pad;s-=pad;n+=pad;
+  return {w,s,e,n};
+}
+async function _extraireAvecParams(im,bbox,params){
+  // Sauvegarde des paramètres territoire, override le temps de l'extraction, restaure ensuite.
+  const k=(typeof TERR_ACTIF==='string'&&TERR_ACTIF)?TERR_ACTIF:null;
+  const old=k?Object.assign({},_PARAMS_DETECTION_TERR[k]||_PARAMS_DETECTION_DEFAUT):null;
+  if(k) _PARAMS_DETECTION_TERR[k]=Object.assign({},old||{},params);
+  let feats;
+  try{feats=extraireTraitDeCote(im,bbox,50,null);}
+  finally{if(k)_PARAMS_DETECTION_TERR[k]=old;}
+  return feats;
+}
+function _distMedTraitVT(feats,vtCoords,bbox){
+  if(!feats||!feats.length||!vtCoords||vtCoords.length<2) return Infinity;
+  const latMid=(bbox.s+bbox.n)/2;
+  // Tous les sommets des traits extraits (linestrings)
+  const pts=[];
+  for(const f of feats){
+    if(!f.geometry||f.geometry.type!=='LineString'||f.properties&&f.properties._base) continue;
+    for(const c of f.geometry.coordinates) pts.push(c);
+  }
+  if(!pts.length) return Infinity;
+  const vtSegs=[];for(let i=1;i<vtCoords.length;i++) vtSegs.push([vtCoords[i-1],vtCoords[i]]);
+  const dists=pts.map(pt=>{let m=Infinity;for(const [a,b] of vtSegs){const d=_distGeoSegPoint(pt,a,b,latMid);if(d<m)m=d;}return m;});
+  dists.sort((a,b)=>a-b);
+  return dists[Math.floor(dists.length/2)];
+}
+async function _calibrerParamsDepuisVT(){
+  const s=document.getElementById('deep-status');
+  const k=(typeof TERR_ACTIF==='string'&&TERR_ACTIF)?TERR_ACTIF:null;
+  if(!k){if(s)s.textContent='✗ Aucun territoire actif.';return;}
+  const traces=_allTraitLabels().filter(r=>r&&r.y===1&&Array.isArray(r.coords)&&r.coords.length>=2);
+  if(!traces.length){if(s)s.textContent='✗ Aucun tracé vérité-terrain trait de côte. Tracez-en au moins un sur la carte avant de calibrer.';return;}
+  if(s)s.textContent=`Calibration en cours sur ${Math.min(traces.length,2)} tracé(s)…`;
+  // On garde au plus 2 tracés représentatifs (le plus long et un autre éloigné).
+  traces.sort((a,b)=>(b.coords.length||0)-(a.coords.length||0));
+  const ref=traces.slice(0,2);
+  // Pour chaque tracé, télécharge l'ortho IGN couvrant sa bbox élargie
+  const dossiers=[];
+  for(let i=0;i<ref.length;i++){
+    const tr=ref[i];
+    const bb=_bboxDeCoords(tr.coords,0.0015);
+    try{
+      const img=await loadImageURL(ignOrthoUrl(bb));
+      const im=drawCV(img);
+      dossiers.push({tr,bb,im});
+    }catch(e){if(s)s.textContent='✗ Échec du téléchargement orthophoto : '+e.message;return;}
+  }
+  // Référence : distance médiane avec paramètres actuels
+  const paramsAct=Object.assign({},_PARAMS_DETECTION_TERR[k]||_PARAMS_DETECTION_DEFAUT);
+  let distRef=0;
+  for(const d of dossiers){const f=await _extraireAvecParams(d.im,d.bb,paramsAct);distRef+=_distMedTraitVT(f,d.tr.coords,d.bb);}
+  distRef/=dossiers.length;
+  // Greedy : pour chaque paramètre, on teste les 4 valeurs, on garde la meilleure, on passe au suivant
+  let best=Object.assign({},paramsAct), bestD=distRef;
+  const ordreParams=['lumMin','noyauMer','vegDelta','seuilTerreBordFrac'];
+  for(const param of ordreParams){
+    let meilleurD=bestD, meilleurV=best[param];
+    for(const v of _CALIB_GRID[param]){
+      if(v===best[param]) continue;
+      const test=Object.assign({},best,{[param]:v});
+      let dm=0;for(const d of dossiers){const f=await _extraireAvecParams(d.im,d.bb,test);dm+=_distMedTraitVT(f,d.tr.coords,d.bb);}
+      dm/=dossiers.length;
+      if(dm<meilleurD){meilleurD=dm;meilleurV=v;}
+    }
+    best[param]=meilleurV;bestD=meilleurD;
+    if(s)s.textContent=`Calibration… ${param}=${meilleurV} (médiane ${meilleurD.toFixed(1)} m)`;
+  }
+  // Si on a gagné au moins 1 m, on applique. Sinon, on garde l'ancien et on le dit.
+  if(bestD<distRef-1){
+    _PARAMS_DETECTION_TERR[k]=best;
+    try{localStorage.setItem('params_detection_'+k,JSON.stringify(best));}catch(e){}
+    if(s)s.textContent=`✓ Paramètres territoire calibrés : ${distRef.toFixed(1)} m → ${bestD.toFixed(1)} m (gain ${(distRef-bestD).toFixed(1)} m). Sauvegardés pour ${k}. Relancez une extraction pour voir l'effet.`;
+  } else {
+    if(s)s.textContent=`Aucune amélioration significative trouvée (médiane reste à ${distRef.toFixed(1)} m). Vos paramètres actuels sont déjà bons, ou tracez plus de VT pour permettre une calibration plus fine.`;
+  }
+}
+window._calibrerParamsDepuisVT=_calibrerParamsDepuisVT;
+// Restauration des paramètres calibrés au chargement (s'il y en a en localStorage par territoire)
+(function _chargerParamsCalibres(){
+  try{
+    for(const k in _PARAMS_DETECTION_TERR){
+      const s=localStorage.getItem('params_detection_'+k);
+      if(s){try{_PARAMS_DETECTION_TERR[k]=JSON.parse(s);}catch(e){}}
+    }
+  }catch(e){}
+})();
 // Labels Firebase (partagés) + labels locaux (localStorage / importés) ; fusionnés (dédoublonnés par ts)
 // pour que la synchro Firebase n'écrase pas un corpus importé hors-ligne.
 let _ouvrLabelsFb=[],_ouvrLabelsLocal=[],_ouvrModel=null,_apprLocalInit=false,_apprFbInit=false,_fbWriteOk=null;
