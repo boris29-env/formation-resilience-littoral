@@ -4336,7 +4336,7 @@ const _PARAMS_DETECTION_TERR = {
   // à la terre tahitienne (urbain texturé). Banc /tmp/test_var_filter : Pirae 317 → 14 m d'erreur.
   pf:       {lumMin: 0,  noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.05,   varMin: 500},
 };
-const _PARAMS_DETECTION_DEFAUT = {lumMin: 0, noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005, varMin: 0};
+const _PARAMS_DETECTION_DEFAUT = {lumMin: 0, noyauMer: 3, noyauTerre: 2, vegDelta: 6, merMinFrac: 0.005, seuilIleFrac: 0.005, lagonMinFrac: 0.05, seuilTerreBordFrac: 0.0005, varMin: 0, kCloseM: 18, kOpenM: 10};
 // Presets sectoriels : pour chaque territoire, une liste de calibrations bbox-spécifiques.
 // _PARAMS_SECTEURS_TERR[territoire] = [{w,s,e,n,params,nom,distRef,distOpt,ts}, ...].
 // Chargés depuis localStorage. Au moment d'une extraction, on cherche le secteur dont la bbox
@@ -4589,6 +4589,62 @@ function metresParPixel(bbox,w){return ((bbox.e-bbox.w)*111320*Math.cos((bbox.s+
 
 // Lissage Chaikin (corner-cutting) → trait de côte plus naturel / sub-pixel
 function smoothChaikin(pts,it){if(pts.length<3)return pts;let p=pts;for(let k=0;k<it;k++){const out=[p[0]];for(let i=0;i<p.length-1;i++){const a=p[i],b=p[i+1];out.push([a[0]*0.75+b[0]*0.25,a[1]*0.75+b[1]*0.25]);out.push([a[0]*0.25+b[0]*0.75,a[1]*0.25+b[1]*0.75]);}out.push(p[p.length-1]);p=out;}return p;}
+// ============ RAFFINEMENT SUB-PIXEL DU TRAIT ============
+// Le contour issu du masque BINAIRE est quantifié au pixel et déplacé par le nettoyage
+// morphologique (fermeture/ouverture ~10-18 m). On recale chaque sommet sur le passage à
+// seuil de l'INDICE D'EAU CONTINU (NDWI ou cyan), échantillonné en bilinéaire le long de la
+// normale locale : le masque nettoyé fixe la TOPOLOGIE (anti-fractal), l'indice radiométrique
+// fixe la POSITION exacte. Déplacement borné (±~4 m) pour ne pas défaire l'anti-fractal.
+function _bilin(wi,w,h,x,y){
+  const x0=Math.floor(x),y0=Math.floor(y);
+  if(x0<0||y0<0||x0>=w-1||y0>=h-1)return null;
+  const fx=x-x0,fy=y-y0,i=y0*w+x0;
+  return wi[i]*(1-fx)*(1-fy)+wi[i+1]*fx*(1-fy)+wi[i+w]*(1-fx)*fy+wi[i+w+1]*fx*fy;
+}
+// Indice d'eau continu + seuil Otsu, MÊME formulation que computeWaterMask/_waterMaskNDWI
+// (IRC NDWI si dispo, sinon indice cyan RGB) pour que le zéro du raffinement coïncide
+// avec la frontière du masque.
+function _indiceEauContinu(im,sens,imIRC){
+  const ircOK=imIRC&&imIRC.data&&imIRC.w===im.w&&imIRC.h===im.h;
+  const src=ircOK?imIRC:im;const {data,w,h}=src,n=w*h;
+  const wi=new Float32Array(n);let lo=1e9,hi=-1e9;
+  if(ircOK){for(let i=0,p=0;p<n;i+=4,p++){const NIR=data[i],Gv=data[i+2];const v=(Gv-NIR)/(Gv+NIR+1);wi[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;}}
+  else{for(let i=0,p=0;p<n;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];const v=(g-r)/(g+r+8)+(b-r)/(b+r+8);wi[p]=v;if(v<lo)lo=v;if(v>hi)hi=v;}}
+  const thr=otsu(wi,lo,hi)-(sens-50)*0.01*(hi-lo);
+  return {wi,w,h,thr,amp:hi-lo};
+}
+function _raffinerSubPixel(pts,idx,mPerPx){
+  if(!idx||!pts||pts.length<3)return pts;
+  const {wi,w,h,thr,amp}=idx;
+  const R=Math.max(2.5,Math.min(5,4/mPerPx));   // rayon de recherche ≈4 m, borné 2,5-5 px
+  const step=0.5,gradMin=amp*0.002;             // gradient mini : évite de sauter dans une zone plate
+  const out=new Array(pts.length);
+  for(let k=0;k<pts.length;k++){
+    const p=pts[k],a=pts[Math.max(0,k-1)],b=pts[Math.min(pts.length-1,k+1)];
+    let tx=b[0]-a[0],ty=b[1]-a[1];const L=Math.hypot(tx,ty);
+    if(L<1e-6){out[k]=p;continue;}
+    const nx=-ty/L,ny=tx/L;
+    let bestO=null,bestDist=1e9;
+    let prevS=_bilin(wi,w,h,p[0]-nx*R,p[1]-ny*R);
+    for(let o=-R+step;o<=R+1e-9;o+=step){
+      const s=_bilin(wi,w,h,p[0]+nx*o,p[1]+ny*o);
+      if(prevS!=null&&s!=null){
+        const d1=prevS-thr,d2=s-thr;
+        if((d1<0)!==(d2<0)||d1===0||d2===0){
+          const g=Math.abs(d2-d1);
+          if(g>gradMin){
+            const oc=(o-step)+step*(Math.abs(d1)/((Math.abs(d1)+Math.abs(d2))||1));
+            const dd=Math.abs(oc);
+            if(dd<bestDist){bestDist=dd;bestO=oc;}
+          }
+        }
+      }
+      prevS=s;
+    }
+    out[k]=(bestO!=null)?[p[0]+nx*bestO,p[1]+ny*bestO]:p;
+  }
+  return out;
+}
 // Masque de végétation (chlorophylle : vert > bleu, suffisamment vert) — sert à la limite végétation.
 function computeVegMask(im){const {data,w,h}=im,n=w*h;const m=new Uint8Array(n);
   for(let i=0,p=0;p<n;i+=4,p++){const r=data[i],g=data[i+1],b=data[i+2];if(g>b+8&&g>50&&g>=r-12)m[p]=1;}
@@ -4629,8 +4685,12 @@ const _RIVAGE_LBL={sable:'trait de côte · plage (sable/eau)',bati:'trait de c�
 function _masqueTraitPropre(im,sens,imIRC,mPerPx){
   const W=im.w,H=im.h;
   let w=computeWaterMask(im,sens,imIRC,true);                 // composantes mer, sans bouchage
-  const kClose=Math.max(1,Math.min(14,Math.round(18/mPerPx)));// ferme les chenaux de récif (~18 m, plafonné)
-  const kOpen=Math.max(1,Math.min(10,Math.round(10/mPerPx))); // retire récifs isolés / tendrils (~10 m)
+  // Noyaux en MÈTRES, calibrables par territoire/secteur (kCloseM/kOpenM dans _CALIB_GRID) :
+  // valeurs fortes = anti-fractal lagon ; valeurs faibles = préserve isthmes et flèches étroites.
+  const P=_paramsDetectionTerr();
+  const kCloseM=(P.kCloseM!=null)?P.kCloseM:18, kOpenM=(P.kOpenM!=null)?P.kOpenM:10;
+  const kClose=Math.max(1,Math.min(14,Math.round(kCloseM/mPerPx)));// ferme les chenaux de récif (plafonné)
+  const kOpen=Math.max(1,Math.min(10,Math.round(kOpenM/mPerPx))); // retire récifs isolés / tendrils
   w=erodeMask(dilate(w,W,H,kClose),W,H,kClose);               // fermeture morphologique
   w=dilate(erodeMask(w,W,H,kOpen),W,H,kOpen);                 // ouverture morphologique
   w=keepSeaComponents(w,W,H);
@@ -4656,8 +4716,9 @@ function extraireTraitDeCote(im,bbox,sens,imIRC){
   const feats=[];
   // On ne garde que les littoraux PRINCIPAUX (île / motu) : top 4 par longueur, longueur min 60 m.
   const minRunM=fragmente?60:30;
+  const idxEau=_indiceEauContinu(im,sens,imIRC);   // indice continu : recale les sommets au bord radiométrique
   const lines=shorelinesFromMask(waterTrace,im.w,im.h,nd,epsPx).sort((a,b)=>polyLenPx(b)-polyLenPx(a)).slice(0,4);
-  for(const raw of lines){const l=smoothChaikin(raw,2);
+  for(const raw of lines){const l=_raffinerSubPixel(smoothChaikin(raw,2),idxEau,mPerPx);
     // Calcul des features radiométriques + transversales par sous-segment (réutilise les mesures
     // des ouvrages : sd, gran, cv, net, wf, persist, Lm, sat, rmb, landReach). Sert au modèle
     // d'apprentissage qui apprend à scorer « vrai bord mer/terre » vs « faux positif ».
@@ -4684,7 +4745,7 @@ function extraireTraitDeCote(im,bbox,sens,imIRC){
         for(let j=0;j<runFv.length;j++){const wgt=runFv[j].len||1;wsum+=wgt;for(const key in proto)agg[key]+=runFv[j][key]*wgt;}
         for(const key in agg)agg[key]/=(wsum||1);agg.len=lenM;
       }
-      const props={type:_RIVAGE_LBL[t]||'trait de côte',classe_rivage:t,indicateur_inseaption:indicateur,methode:'contour mer/terre nettoyé (échelle métrique) + classé (sable › bâti/enrochement › végétation)',certitude:'modérée',longueur_m_est:Math.round(lenM),incertitude_positionnelle_m:incertM,incertitude_jet_de_rive_m:incertJet};
+      const props={type:_RIVAGE_LBL[t]||'trait de côte',classe_rivage:t,indicateur_inseaption:indicateur,methode:'contour mer/terre nettoyé (échelle métrique) + raffinement sub-pixel sur l\'indice d\'eau + classé (sable › bâti/enrochement › végétation)',certitude:'modérée',longueur_m_est:Math.round(lenM),incertitude_positionnelle_m:incertM,incertitude_jet_de_rive_m:incertJet};
       if(agg)props._features=agg;
       if(lenM>=minRunM)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:coords},properties:props});
       k=m+1;}
@@ -5121,11 +5182,15 @@ const _CALIB_GRID={
   seuilTerreBordFrac:[0.0001,0.0005,0.005,0.02,0.08],
   merMinFrac:[0.0005,0.001,0.005,0.02],
   lagonMinFrac:[0.005,0.01,0.03,0.05],
-  varMin:[0,200,500,1000]
+  varMin:[0,200,500,1000],
+  // Noyaux morpho du nettoyage de trait (en mètres) : forts = anti-fractal lagon,
+  // faibles = préserve isthmes/flèches étroites (cas Miquelon).
+  kCloseM:[6,12,18,26,36],
+  kOpenM:[3,6,10,16]
 };
 // Essai de secours appliqué si tous les essais produisent 0 feature : très permissif, conçu pour
 // faire émerger n'importe quel contour (sert au moins à voir où le seuil principal coince).
-const _CALIB_SECOURS={lumMin:0,noyauMer:1,noyauTerre:1,vegDelta:20,merMinFrac:0.0005,seuilIleFrac:0.001,lagonMinFrac:0.005,seuilTerreBordFrac:0.0001,varMin:0};
+const _CALIB_SECOURS={lumMin:0,noyauMer:1,noyauTerre:1,vegDelta:20,merMinFrac:0.0005,seuilIleFrac:0.001,lagonMinFrac:0.005,seuilTerreBordFrac:0.0001,varMin:0,kCloseM:6,kOpenM:3};
 function _distGeoSegPoint(pt,a,b,latMid){
   const mPerDegLat=111320, mPerDegLon=111320*Math.cos(latMid*Math.PI/180);
   const dx=(b[0]-a[0])*mPerDegLon, dy=(b[1]-a[1])*mPerDegLat, L=dx*dx+dy*dy;
@@ -5301,10 +5366,13 @@ async function _extraireAvecParams(im,bbox,params){
   return feats;
 }
 function _distMedTraitVT(feats,vtCoords,bbox){
-  // Métrique : pour CHAQUE point de la vt, distance min au plus proche segment du contour détecté.
-  // Médiane de ces distances. On mesure ainsi à quel point le contour détecté PASSE par votre vt,
-  // et pas à quel point vos détections sont proches de la vt (l'extraction couvre toute l'image,
-  // votre vt n'est qu'une portion de 50 m → la métrique inverse était systématiquement gonflée).
+  // Métrique SYMÉTRIQUE en deux termes :
+  //  1) fidélité : pour CHAQUE point de la vt, distance min au plus proche segment détecté
+  //     (médiane) → le contour détecté PASSE-t-il par votre vt ?
+  //  2) pénalité faux positifs (½ poids) : médiane des distances vt des sommets détectés situés
+  //     DANS LE CORRIDOR du tracé (bbox vt + ~60 m). Sans elle, la sur-détection (lignes
+  //     fractales partout) maximise le terme 1 sans être sanctionnée. Le corridor évite de
+  //     pénaliser les détections légitimes ailleurs dans l'image (la vt n'en couvre qu'une portion).
   if(!feats||!feats.length||!vtCoords||vtCoords.length<2) return Infinity;
   const latMid=(bbox.s+bbox.n)/2;
   // Tous les segments des traits extraits (LineString uniquement, hors _base)
@@ -5317,7 +5385,24 @@ function _distMedTraitVT(feats,vtCoords,bbox){
   if(!segs.length) return Infinity;
   const dists=vtCoords.map(pt=>{let m=Infinity;for(const [a,b] of segs){const d=_distGeoSegPoint(pt,a,b,latMid);if(d<m){m=d;if(m<5)break;}}return m;});
   dists.sort((a,b)=>a-b);
-  return dists[Math.floor(dists.length/2)];
+  const dVT=dists[Math.floor(dists.length/2)];
+  // — Terme 2 : corridor autour de la vt —
+  const padLat=60/111320, padLon=padLat/Math.max(0.2,Math.cos(latMid*Math.PI/180));
+  const vb=_bboxDeCoords(vtCoords,0);
+  const cw=vb.w-padLon, ce=vb.e+padLon, cs=vb.s-padLat, cn=vb.n+padLat;
+  const vsegs=[];for(let i=1;i<vtCoords.length;i++)vsegs.push([vtCoords[i-1],vtCoords[i]]);
+  const dDet=[];
+  for(const f of feats){
+    if(!f.geometry||f.geometry.type!=='LineString'||(f.properties&&f.properties._base)) continue;
+    for(const pt of f.geometry.coordinates){
+      if(pt[0]<cw||pt[0]>ce||pt[1]<cs||pt[1]>cn) continue;
+      let m=Infinity;for(const [a,b] of vsegs){const d=_distGeoSegPoint(pt,a,b,latMid);if(d<m)m=d;}
+      if(isFinite(m))dDet.push(m);
+    }
+  }
+  let pen=0;
+  if(dDet.length){dDet.sort((a,b)=>a-b);pen=dDet[Math.floor(dDet.length/2)];}
+  return dVT+0.5*pen;
 }
 async function _calibrerParamsDepuisVT(tracesOverride){
   const s=document.getElementById('deep-status');
