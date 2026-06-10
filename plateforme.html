@@ -2223,7 +2223,7 @@ input.imm-range::-moz-range-thumb {
 
       <div class="imm-attrib">
         Niveau = pleine mer de vive-eau (marée réf. par façade) + RSLR + surcote · submersion connectée à la mer (cuvettes isolées non inondées) · ouvrages franchis par surverse · « Tempête ▶ » = modèle hydraulique 2D dynamique sur 2 cycles de marée (marée semi-diurne adaptée à la façade + surcote sur la pleine mer, propagation temporelle, brèche, eau résiduelle) · flèches&nbsp;= flux/arrivée de l'eau.<br>
-        Tempêtes de référence : niveaux de pic observés RONIM/REFMAR-SHOM · crête des ouvrages calée sur le MNT LIDAR/RGE&nbsp;ALTI de l'ouvrage, ajustable.<br>
+        Niveau d'<strong>aléa de référence</strong> = pic observé RONIM/REFMAR-SHOM + 20&nbsp;cm (circ. 2011) · l'emprise inondée affichée est l'<strong>aléa SIMULÉ</strong> (à comparer aux cartes d'aléa PPRL pour validation) · crête des ouvrages calée sur le MNT LIDAR/RGE&nbsp;ALTI, ajustable.<br>
         Sources : MNT RGE ALTI® · BD TOPO® · BD ORTHO® © IGN-F / Géoplateforme · bathymétrie EMODnet (SHOM/LITTO3D) · marégraphie REFMAR/SHOM
       </div>
     </div>
@@ -2686,19 +2686,25 @@ input.imm-range::-moz-range-thumb {
           (Hallermeier 1981 simplifié).
           <strong>Niveau marin de référence</strong>&nbsp;: la submersion est
           calculée en <em>still-water level</em> NGF&nbsp;=&nbsp;marée&nbsp;+&nbsp;RSLR&nbsp;+&nbsp;surcote.
-          Un <strong>corpus France entière de 31 ports de référence</strong>
+          Un <strong>corpus France entière de 55 ports de référence</strong>
           (Dunkerque→Corse) fournit le <strong>marnage de vive-eau</strong>
           (SHOM, annuaire des marées / RAM) → amplitude de marée locale, et le
           <strong>pic still-water observé</strong> de la tempête de référence du
-          secteur (REFMAR/SHOM &amp; niveaux PPRL)&nbsp;; chaque commune est
-          rattachée au port le plus proche. Repères&nbsp;: <em>Xynthia</em>
-          28/02/2010 La&nbsp;Pallice <strong>+4,5&nbsp;m&nbsp;NGF</strong> (marnage&nbsp;6&nbsp;m),
-          <em>Klaus</em> 24/01/2009 Arcachon +3,2&nbsp;m (marnage&nbsp;4,4&nbsp;m),
-          <em>Johanna</em> 10/03/2008 et grandes marées St-Malo (marnage&nbsp;~12&nbsp;m),
-          <em>1953/Xaver</em> Dunkerque, tempêtes Méditerranée +1,1-1,2&nbsp;m
+          secteur (REFMAR/SHOM &amp; gauges RONIM)&nbsp;; chaque commune est
+          rattachée au port le plus proche. <strong>Distinction d'aléa</strong>&nbsp;:
+          le <em>niveau d'aléa de référence</em> (réglementaire PPRL) =
+          <strong>pic observé + 20&nbsp;cm</strong> de marge climatique court terme
+          (circ.&nbsp;27/07/2011 ; échéance 2100 = +60&nbsp;cm) — c'est l'<em>entrée</em>
+          du modèle&nbsp;; l'<strong>emprise inondée calculée est l'aléa SIMULÉ</strong>
+          (la <em>sortie</em>), à confronter aux cartes d'aléa PPRL pour caler et
+          valider — les deux ne sont pas confondus. Repères de pic observé&nbsp;:
+          <em>Xynthia</em> 28/02/2010 La&nbsp;Pallice <strong>+4,5&nbsp;m&nbsp;NGF</strong>
+          (marnage&nbsp;6&nbsp;m), <em>Klaus</em> 2009 Arcachon +3,2&nbsp;m
+          (marnage&nbsp;4,4&nbsp;m), grandes marées St-Malo (marnage&nbsp;~12&nbsp;m),
+          <em>1953/Xaver</em> Dunkerque, tempêtes Méditerranée +1,1-1,3&nbsp;m
           (marnage&nbsp;~0,4&nbsp;m). L'hydrogramme reconstitué (marée semi-diurne
           d'amplitude locale + surcote calée sur la 1ʳᵉ pleine mer pour atteindre
-          le pic observé) suit les curseurs RSLR/surcote en direct.
+          le niveau d'aléa de référence) suit les curseurs RSLR/surcote en direct.
           La surcote est exclue du recul morphologique (Bruun&nbsp;: variations
           pérennes, non les évènements épisodiques).
           <strong>Ouvrages de protection</strong> (digues BDTOPO&nbsp;: Quai/Digue/
@@ -2738,7 +2744,7 @@ input.imm-range::-moz-range-thumb {
           <li><strong>Cellules hydrosédimentaires</strong> · délinéation nationale data-driven (824 cellules) — stitching du trait de côte morpho-sédimentaire national (DGALN/Cerema, 56 865 segments) + barrières au transit : caps rocheux (rotation convexe), grands ports, et <strong>26 têtes de canyon sous-marin</strong> détectées par anomalie bathymétrique <a href="https://emodnet.ec.europa.eu/en/bathymetry" target="_blank">EMODnet</a> (Gouf de Capbreton, canyon du Var, canyons corses…). Budget net par l'indicateur d'érosion Cerema. <strong>Sens de la dérive littorale</strong> par cellule : transit longshore (formule CERC Q∝H²·sin2θ) projeté sur la tangente du trait de côte à partir du <a href="https://open-meteo.com/en/docs/marine-weather-api" target="_blank">climat de houle réel 2023</a> (archive horaire Hs + direction, ~390 points au large). Validé vs couche officielle Cerema (58 cellules, 2020)</li>
           <li><a href="https://www.data.gouv.fr/fr/datasets/indicateur-national-de-lerosion-cotiere-1/" target="_blank">Cerema</a> · indicateur national d'érosion (taux m/an, prod. 06/2018) embarqué en statique</li>
           <li><a href="https://www.georisques.gouv.fr/" target="_blank">Géorisques</a> · PPRN/PPRL (zonage submersion), Cat'Nat</li>
-          <li><a href="https://maree.shom.fr/" target="_blank">SHOM · annuaire des marées / RAM</a> · marnages de vive-eau par port de référence (31 ports, Dunkerque→Corse) → amplitude de marée locale</li>
+          <li><a href="https://maree.shom.fr/" target="_blank">SHOM · annuaire des marées / RAM</a> · marnages de vive-eau par port de référence (55 ports, Dunkerque→Corse) → amplitude de marée locale</li>
           <li><a href="https://refmar.shom.fr/" target="_blank">REFMAR / RONIM · SHOM</a> · pics still-water observés des tempêtes de référence (Xynthia 2010 La&nbsp;Pallice +4,5&nbsp;m, Klaus 2009, Martin 1999, Johanna 2008, 1953/Xaver, tempêtes Med…) — corpus France entière, commune rattachée au port le plus proche</li>
           <li><a href="https://www.ipcc.ch/report/ar6/wg1/" target="_blank">IPCC AR6 WG1</a> · scénarios SSP de niveau marin</li>
         </ul>
@@ -4242,57 +4248,87 @@ function bruunDefaultsForCoast(c) {
 function bruunFactorForCoast(c) { return bruunDefaultsForCoast(c).factor; }
 
 /* === CORPUS DOCUMENTAIRE FRANCE ENTIÈRE — marées & tempêtes de référence ======
-   Ports de référence répartis sur tout le littoral métropolitain + Corse.
-   Pour chaque port :
-     mar = marnage moyen de vive-eau (m), d'après l'ANNUAIRE DES MARÉES / RAM SHOM
-           → amplitude de l'onde semi-diurne = mar/2, pleine mer VE ≈ +mar/2 NGF
-           (le NGF-IGN69 est proche du niveau marin moyen).
-     sp  = pic still-water OBSERVÉ (m NGF) de la tempête de référence locale,
-           d'après REFMAR/SHOM (analyses de surcote) et niveaux de référence PPRL.
-   La commune est rattachée au port le plus proche. Valeurs indicatives mais
-   sourcées (ordre de grandeur fiable par secteur), non récupérées en direct
-   (le SHOM n'expose pas ces séries en API ouverte). */
+   55 ports de référence sur tout le littoral métropolitain + Corse.
+   Champs par port :
+     mar = marnage moyen de vive-eau (m) — ANNUAIRE DES MARÉES / RAM SHOM →
+           amplitude semi-diurne = mar/2, pleine mer VE ≈ +mar/2 NGF.
+     obs = pic still-water OBSERVÉ (m NGF) de la tempête de référence du secteur,
+           d'après REFMAR/SHOM (gauges RONIM) ; aux ports non instrumentés c'est
+           l'estimation sectorielle du même évènement.
+   IMPORTANT — distinction d'aléa :
+     • niveau d'ALÉA DE RÉFÉRENCE (réglementaire PPRL) = pic observé + 20 cm de
+       marge climatique court terme (circ. 27/07/2011) ; échéance 2100 = + 60 cm.
+       → c'est l'ENTRÉE de référence du modèle (« Aléa réf. »).
+     • l'emprise inondée calculée est l'ALÉA SIMULÉ (sortie du modèle), à
+       comparer aux cartes d'aléa PPRL pour caler/valider — à ne pas confondre.
+   Valeurs indicatives mais sourcées (SHOM/REFMAR/PPRL), non récupérées en API. */
 const TIDE_PORTS = [
-  // — Mer du Nord / Manche orientale (Nord, Picardie, Normandie) —
-  { nm: 'Dunkerque',            la: 51.05, lo: 2.37,  mar: 5.6,  sp: 5.3, sn: '1953/Xaver', sd: '01/02/1953', ev: 'tempête de 1953 / Xaver 2013' },
-  { nm: 'Calais',               la: 50.97, lo: 1.85,  mar: 6.7,  sp: 5.8, sn: '1953/Xaver', sd: '01/02/1953', ev: 'tempête de 1953 / Xaver 2013' },
-  { nm: 'Boulogne-sur-Mer',     la: 50.73, lo: 1.58,  mar: 8.5,  sp: 6.4, sn: 'Xaver',      sd: '06/12/2013', ev: 'tempête Xaver 2013 / 1953' },
-  { nm: 'Le Tréport / Dieppe',  la: 50.00, lo: 1.30,  mar: 9.2,  sp: 6.0, sn: 'tempête',    sd: '—',          ev: 'tempête de NO sur grande marée' },
-  { nm: 'Le Havre',             la: 49.48, lo: 0.11,  mar: 7.6,  sp: 5.2, sn: 'tempête',    sd: '16/12/1999', ev: 'Lothar/Martin 1999 sur marée' },
-  { nm: 'Ouistreham / Caen',    la: 49.28, lo: -0.25, mar: 7.3,  sp: 5.0, sn: 'Johanna',    sd: '10/03/2008', ev: 'tempête Johanna 2008' },
-  { nm: 'Cherbourg',            la: 49.65, lo: -1.63, mar: 6.0,  sp: 4.0, sn: 'Johanna',    sd: '10/03/2008', ev: 'tempête Johanna 2008' },
+  // — Mer du Nord / Manche orientale —
+  { nm: 'Dunkerque',            la: 51.05, lo: 2.37,  mar: 5.6,  obs: 5.3, sn: '1953/Xaver', sd: '01/02/1953', ev: 'tempête de 1953 / Xaver 2013' },
+  { nm: 'Calais',               la: 50.97, lo: 1.85,  mar: 6.7,  obs: 5.8, sn: '1953/Xaver', sd: '01/02/1953', ev: 'tempête de 1953 / Xaver 2013' },
+  { nm: 'Boulogne-sur-Mer',     la: 50.73, lo: 1.58,  mar: 8.5,  obs: 6.4, sn: 'Xaver',      sd: '06/12/2013', ev: 'tempête Xaver 2013 / 1953' },
+  { nm: 'Le Tréport',           la: 50.06, lo: 1.37,  mar: 9.0,  obs: 6.0, sn: 'tempête',    sd: '—',          ev: 'tempête de NO sur grande marée' },
+  { nm: 'Dieppe',               la: 49.93, lo: 1.08,  mar: 9.3,  obs: 6.0, sn: 'tempête',    sd: '—',          ev: 'tempête de NO sur grande marée' },
+  { nm: 'Fécamp',               la: 49.76, lo: 0.37,  mar: 7.9,  obs: 5.5, sn: 'tempête',    sd: '16/12/1999', ev: 'Lothar/Martin 1999' },
+  { nm: 'Le Havre',             la: 49.48, lo: 0.11,  mar: 7.6,  obs: 5.2, sn: 'Martin',     sd: '26/12/1999', ev: 'Lothar/Martin 1999 sur marée' },
+  { nm: 'Honfleur / Deauville', la: 49.40, lo: 0.10,  mar: 7.5,  obs: 5.3, sn: 'Martin',     sd: '26/12/1999', ev: 'Martin 1999 (estuaire Seine)' },
+  { nm: 'Ouistreham / Caen',    la: 49.28, lo: -0.25, mar: 7.3,  obs: 5.0, sn: 'Johanna',    sd: '10/03/2008', ev: 'tempête Johanna 2008' },
+  { nm: 'Grandcamp / Carentan', la: 49.39, lo: -1.04, mar: 6.6,  obs: 4.8, sn: 'Johanna',    sd: '10/03/2008', ev: 'tempête Johanna 2008' },
+  { nm: 'Saint-Vaast / Barfleur', la: 49.59, lo: -1.27, mar: 5.6, obs: 4.4, sn: 'Johanna',   sd: '10/03/2008', ev: 'tempête Johanna 2008' },
+  { nm: 'Cherbourg',            la: 49.65, lo: -1.63, mar: 6.0,  obs: 4.0, sn: 'Johanna',    sd: '10/03/2008', ev: 'tempête Johanna 2008' },
   // — Golfe normand-breton (très grands marnages) —
-  { nm: 'Granville',            la: 48.84, lo: -1.61, mar: 11.4, sp: 7.0, sn: 'gde marée',  sd: '—',          ev: 'tempête sur grande marée' },
-  { nm: 'Saint-Malo',           la: 48.65, lo: -2.02, mar: 12.0, sp: 7.2, sn: 'gde marée',  sd: '—',          ev: 'tempête sur grande marée' },
-  { nm: 'Saint-Brieuc',         la: 48.53, lo: -2.73, mar: 11.0, sp: 6.8, sn: 'gde marée',  sd: '—',          ev: 'tempête sur grande marée' },
+  { nm: 'Carteret',             la: 49.37, lo: -1.79, mar: 9.5,  obs: 6.3, sn: 'gde marée',  sd: '—',          ev: 'tempête sur grande marée' },
+  { nm: 'Granville',            la: 48.84, lo: -1.61, mar: 11.4, obs: 7.0, sn: 'gde marée',  sd: '—',          ev: 'tempête sur grande marée' },
+  { nm: 'Saint-Malo',           la: 48.65, lo: -2.02, mar: 12.0, obs: 7.2, sn: 'gde marée',  sd: '—',          ev: 'tempête sur grande marée' },
+  { nm: 'Saint-Cast',           la: 48.64, lo: -2.25, mar: 11.5, obs: 7.0, sn: 'gde marée',  sd: '—',          ev: 'tempête sur grande marée' },
+  { nm: 'Saint-Brieuc',         la: 48.53, lo: -2.73, mar: 11.0, obs: 6.8, sn: 'gde marée',  sd: '—',          ev: 'tempête sur grande marée' },
+  { nm: 'Paimpol',              la: 48.78, lo: -3.04, mar: 9.6,  obs: 6.2, sn: 'Johanna',    sd: '10/03/2008', ev: 'tempête Johanna 2008' },
   // — Bretagne nord & ouest —
-  { nm: 'Roscoff',              la: 48.72, lo: -3.97, mar: 9.0,  sp: 5.8, sn: 'Johanna',    sd: '10/03/2008', ev: 'tempête Johanna 2008' },
-  { nm: 'Brest',                la: 48.38, lo: -4.49, mar: 6.9,  sp: 4.6, sn: 'Johanna',    sd: '10/03/2008', ev: 'tempête Johanna 2008 / déc. 2013' },
-  { nm: 'Concarneau',           la: 47.87, lo: -3.92, mar: 5.0,  sp: 3.6, sn: 'hiver 2014', sd: '—',          ev: 'tempêtes hiver 2013-2014' },
+  { nm: 'Roscoff',              la: 48.72, lo: -3.97, mar: 9.0,  obs: 5.8, sn: 'Johanna',    sd: '10/03/2008', ev: 'tempête Johanna 2008' },
+  { nm: 'Morlaix',              la: 48.62, lo: -3.83, mar: 8.2,  obs: 5.4, sn: 'Johanna',    sd: '10/03/2008', ev: 'tempête Johanna 2008' },
+  { nm: 'Le Conquet',           la: 48.36, lo: -4.77, mar: 6.6,  obs: 4.4, sn: 'Johanna',    sd: '10/03/2008', ev: 'tempête Johanna 2008' },
+  { nm: 'Brest',                la: 48.38, lo: -4.49, mar: 6.9,  obs: 4.6, sn: 'Johanna',    sd: '10/03/2008', ev: 'Johanna 2008 / hiver 2013-14' },
+  { nm: 'Camaret / Crozon',     la: 48.28, lo: -4.59, mar: 6.4,  obs: 4.3, sn: 'hiver 2014', sd: '—',          ev: 'tempêtes hiver 2013-2014' },
+  { nm: 'Audierne',             la: 48.02, lo: -4.54, mar: 5.2,  obs: 3.9, sn: 'hiver 2014', sd: '—',          ev: 'tempêtes hiver 2013-2014' },
   // — Bretagne sud / Loire —
-  { nm: 'Lorient',              la: 47.72, lo: -3.37, mar: 4.8,  sp: 3.5, sn: 'hiver 2014', sd: '—',          ev: 'tempêtes hiver 2013-2014' },
-  { nm: 'Le Croisic',           la: 47.29, lo: -2.51, mar: 5.5,  sp: 4.0, sn: 'tempête',    sd: '—',          ev: 'tempête atlantique' },
-  { nm: 'Saint-Nazaire',        la: 47.27, lo: -2.20, mar: 5.6,  sp: 4.0, sn: 'tempête',    sd: '—',          ev: 'tempête / crue estuaire Loire' },
+  { nm: 'Bénodet',              la: 47.87, lo: -4.11, mar: 5.0,  obs: 3.7, sn: 'hiver 2014', sd: '—',          ev: 'tempêtes hiver 2013-2014' },
+  { nm: 'Concarneau',           la: 47.87, lo: -3.92, mar: 5.0,  obs: 3.6, sn: 'hiver 2014', sd: '—',          ev: 'tempêtes hiver 2013-2014' },
+  { nm: 'Lorient',              la: 47.72, lo: -3.37, mar: 4.8,  obs: 3.5, sn: 'hiver 2014', sd: '—',          ev: 'tempêtes hiver 2013-2014' },
+  { nm: 'Quiberon / Belle-Île', la: 47.48, lo: -3.12, mar: 5.0,  obs: 3.6, sn: 'hiver 2014', sd: '—',          ev: 'tempêtes hiver 2013-2014' },
+  { nm: 'Golfe du Morbihan',    la: 47.55, lo: -2.78, mar: 4.5,  obs: 3.4, sn: 'tempête',    sd: '—',          ev: 'tempête atlantique' },
+  { nm: 'Le Croisic',           la: 47.29, lo: -2.51, mar: 5.5,  obs: 4.0, sn: 'tempête',    sd: '—',          ev: 'tempête atlantique' },
+  { nm: 'Saint-Nazaire',        la: 47.27, lo: -2.20, mar: 5.6,  obs: 4.0, sn: 'tempête',    sd: '—',          ev: 'tempête / crue estuaire Loire' },
+  { nm: 'Pornic',               la: 47.11, lo: -2.10, mar: 5.5,  obs: 4.0, sn: 'Xynthia',    sd: '28/02/2010', ev: 'Xynthia 2010' },
+  { nm: 'Noirmoutier',          la: 46.99, lo: -2.23, mar: 5.6,  obs: 4.1, sn: 'Xynthia',    sd: '28/02/2010', ev: 'Xynthia 2010' },
   // — Vendée / Charente (Pertuis) — Xynthia 2010 (réf. PPRL) —
-  { nm: "Les Sables-d'Olonne",  la: 46.50, lo: -1.80, mar: 5.5,  sp: 4.2, sn: 'Xynthia',    sd: '28/02/2010', ev: 'Xynthia 2010 (réf. PPRL)' },
-  { nm: "L'Aiguillon / La Faute", la: 46.31, lo: -1.30, mar: 5.8, sp: 4.4, sn: 'Xynthia',   sd: '28/02/2010', ev: 'Xynthia 2010 (réf. PPRL)' },
-  { nm: 'La Rochelle-La Pallice', la: 46.16, lo: -1.22, mar: 6.0, sp: 4.5, sn: 'Xynthia',   sd: '28/02/2010', ev: 'Xynthia 2010 (réf. PPRL · La Pallice +4,5 m NGF)' },
-  { nm: 'Île d\'Oléron',        la: 45.95, lo: -1.31, mar: 5.8,  sp: 4.3, sn: 'Xynthia',    sd: '28/02/2010', ev: 'Xynthia 2010 (réf. PPRL)' },
-  { nm: 'Rochefort / Charente', la: 45.94, lo: -0.96, mar: 6.4,  sp: 4.6, sn: 'Xynthia',    sd: '28/02/2010', ev: 'Xynthia 2010 (réf. PPRL)' },
+  { nm: "Île d'Yeu",            la: 46.70, lo: -2.34, mar: 5.0,  obs: 4.0, sn: 'Xynthia',    sd: '28/02/2010', ev: 'Xynthia 2010' },
+  { nm: "Les Sables-d'Olonne",  la: 46.50, lo: -1.80, mar: 5.5,  obs: 4.2, sn: 'Xynthia',    sd: '28/02/2010', ev: 'Xynthia 2010 (réf. PPRL)' },
+  { nm: "L'Aiguillon / La Faute", la: 46.31, lo: -1.30, mar: 5.8, obs: 4.4, sn: 'Xynthia',   sd: '28/02/2010', ev: 'Xynthia 2010 (réf. PPRL · zone de solidarité)' },
+  { nm: 'Île de Ré',            la: 46.20, lo: -1.37, mar: 6.0,  obs: 4.4, sn: 'Xynthia',    sd: '28/02/2010', ev: 'Xynthia 2010 (réf. PPRL)' },
+  { nm: 'La Rochelle-La Pallice', la: 46.16, lo: -1.22, mar: 6.0, obs: 4.5, sn: 'Xynthia',   sd: '28/02/2010', ev: 'Xynthia 2010 — La Pallice +4,5 m NGF (réf. PPRL)' },
+  { nm: "Île d'Oléron",         la: 45.95, lo: -1.31, mar: 5.8,  obs: 4.3, sn: 'Xynthia',    sd: '28/02/2010', ev: 'Xynthia 2010 (réf. PPRL)' },
+  { nm: 'Rochefort / Charente', la: 45.94, lo: -0.96, mar: 6.4,  obs: 4.6, sn: 'Xynthia',    sd: '28/02/2010', ev: 'Xynthia 2010 (réf. PPRL)' },
   // — Gironde / Aquitaine — Martin 1999, Klaus 2009 —
-  { nm: 'Royan / Gironde',      la: 45.62, lo: -1.03, mar: 5.0,  sp: 4.0, sn: 'Martin',     sd: '27/12/1999', ev: 'tempête Martin 1999 / Klaus 2009' },
-  { nm: 'Arcachon-Eyrac',       la: 44.66, lo: -1.16, mar: 4.4,  sp: 3.2, sn: 'Klaus',      sd: '24/01/2009', ev: 'tempête Klaus 2009' },
-  { nm: 'Capbreton / Bayonne',  la: 43.60, lo: -1.45, mar: 4.0,  sp: 3.0, sn: 'Klaus',      sd: '24/01/2009', ev: 'tempête Klaus 2009' },
+  { nm: 'Royan / Gironde',      la: 45.62, lo: -1.03, mar: 5.0,  obs: 4.0, sn: 'Martin',     sd: '27/12/1999', ev: 'tempête Martin 1999 / Klaus 2009' },
+  { nm: 'Le Verdon / Gironde',  la: 45.55, lo: -1.06, mar: 4.8,  obs: 3.9, sn: 'Martin',     sd: '27/12/1999', ev: 'tempête Martin 1999' },
+  { nm: 'Arcachon-Eyrac',       la: 44.66, lo: -1.16, mar: 4.4,  obs: 3.2, sn: 'Klaus',      sd: '24/01/2009', ev: 'tempête Klaus 2009' },
+  { nm: 'Mimizan',              la: 44.20, lo: -1.29, mar: 4.0,  obs: 3.1, sn: 'Klaus',      sd: '24/01/2009', ev: 'tempête Klaus 2009' },
+  { nm: 'Capbreton / Hossegor', la: 43.65, lo: -1.45, mar: 4.0,  obs: 3.0, sn: 'Klaus',      sd: '24/01/2009', ev: 'tempête Klaus 2009' },
+  { nm: 'Saint-Jean-de-Luz',    la: 43.39, lo: -1.67, mar: 4.0,  obs: 3.0, sn: 'Klaus',      sd: '24/01/2009', ev: 'tempête Klaus 2009' },
   // — Méditerranée (microtidal : surcote + setup de houle dominent) —
-  { nm: 'Port-Vendres',         la: 42.52, lo: 3.11,  mar: 0.5,  sp: 1.2, sn: 'tempête',    sd: '16/12/1997', ev: 'tempêtes marines (déc. 1997, nov. 1982, 2019)' },
-  { nm: 'Sète',                 la: 43.40, lo: 3.70,  mar: 0.4,  sp: 1.2, sn: 'tempête',    sd: '16/12/1997', ev: 'tempêtes marines (déc. 1997, nov. 1982, 2019)' },
-  { nm: 'Marseille / Fos',      la: 43.30, lo: 5.00,  mar: 0.4,  sp: 1.1, sn: 'tempête',    sd: '16/12/1997', ev: 'tempêtes marines (déc. 1997, nov. 1982)' },
-  { nm: 'Toulon / Hyères',      la: 43.10, lo: 6.05,  mar: 0.4,  sp: 1.1, sn: 'tempête',    sd: '—',          ev: 'tempêtes marines de SE' },
-  { nm: 'Nice / Antibes',       la: 43.65, lo: 7.20,  mar: 0.4,  sp: 1.2, sn: 'tempête',    sd: '—',          ev: 'tempêtes marines de SE (Adrian 2018)' },
+  { nm: 'Port-Vendres',         la: 42.52, lo: 3.11,  mar: 0.5,  obs: 1.2, sn: 'tempête',    sd: '16/12/1997', ev: 'tempêtes marines (1997, 1982, 2019)' },
+  { nm: 'Sète / Frontignan',    la: 43.40, lo: 3.70,  mar: 0.4,  obs: 1.2, sn: 'tempête',    sd: '16/12/1997', ev: 'tempêtes marines (1997, 1982, 2019)' },
+  { nm: 'Camargue / Gd-Motte',  la: 43.45, lo: 4.20,  mar: 0.4,  obs: 1.3, sn: 'tempête',    sd: '16/12/1997', ev: 'tempêtes marines (1997, submersion Camargue)' },
+  { nm: 'Marseille / Fos',      la: 43.30, lo: 5.00,  mar: 0.4,  obs: 1.1, sn: 'tempête',    sd: '16/12/1997', ev: 'tempêtes marines (1997, 1982)' },
+  { nm: 'Toulon / Hyères',      la: 43.10, lo: 6.05,  mar: 0.4,  obs: 1.1, sn: 'tempête',    sd: '—',          ev: 'tempêtes marines de SE' },
+  { nm: 'Nice / Antibes',       la: 43.65, lo: 7.20,  mar: 0.4,  obs: 1.2, sn: 'Adrian',     sd: '29/10/2018', ev: 'tempête Adrian 2018 / SE' },
   // — Corse —
-  { nm: 'Ajaccio',              la: 41.92, lo: 8.74,  mar: 0.4,  sp: 1.0, sn: 'tempête',    sd: '—',          ev: 'tempêtes marines' },
-  { nm: 'Bastia',               la: 42.70, lo: 9.45,  mar: 0.4,  sp: 1.0, sn: 'tempête',    sd: '—',          ev: 'tempêtes marines' },
+  { nm: 'Ajaccio',              la: 41.92, lo: 8.74,  mar: 0.4,  obs: 1.0, sn: 'tempête',    sd: '—',          ev: 'tempêtes marines' },
+  { nm: 'Bastia',               la: 42.70, lo: 9.45,  mar: 0.4,  obs: 1.0, sn: 'tempête',    sd: '—',          ev: 'tempêtes marines' },
+  { nm: 'Bonifacio / Porto-V.', la: 41.45, lo: 9.25,  mar: 0.4,  obs: 1.0, sn: 'tempête',    sd: '—',          ev: 'tempêtes marines' },
 ];
+const ALEA_MARGE = 0.20;   // marge climatique court terme PPRL (circ. 27/07/2011)
+const ALEA_2100  = 0.60;   // marge à échéance 2100
 function nearestPort(lat, lng) {
   let best = TIDE_PORTS[0], bd = Infinity;
   const cl = Math.cos(lat * Math.PI / 180);
@@ -4303,24 +4339,27 @@ function nearestPort(lat, lng) {
   }
   return best;
 }
-/* Renvoie les références hydrographiques de la commune via le port le plus proche
-   (pmve = demi-marnage, pic de tempête observé, libellés). */
+/* Références hydrographiques de la commune (port le plus proche).
+   peakSWL = NIVEAU D'ALÉA DE RÉFÉRENCE = pic observé + marge climatique (réglementaire) ;
+   obs = pic still-water observé brut ; c100SWL = aléa 2100 (pic + 60 cm). */
 function facadeRef(c) {
   const p = nearestPort(c.lat, c.lng);
-  const pmve = p.mar / 2;
   return {
-    pmve, marnage: p.mar,
-    peakSWL: p.sp, c100SWL: p.sp + 0.4,
+    pmve: p.mar / 2, marnage: p.mar,
+    obs: p.obs,
+    peakSWL: p.obs + ALEA_MARGE, c100SWL: p.obs + ALEA_2100,
     event: p.ev, short: p.sn, date: p.sd, gauge: p.nm,
-    src: 'marées SHOM (annuaire/RAM) · pics REFMAR/SHOM & PPRL',
+    src: 'marées SHOM (annuaire/RAM) · pics REFMAR/SHOM · aléa réf. PPRL (circ. 2011)',
   };
 }
 function marineRefForCoast(c) { return facadeRef(c).pmve; }
-function refSurge(fr)  { return Math.max(0, fr.peakSWL - fr.pmve); }   // surcote = pic observé − PMVE
+function refSurge(fr)  { return Math.max(0, fr.peakSWL - fr.pmve); }   // surcote pour atteindre l'aléa de référence
 function refSurge100(fr) { return Math.max(0, fr.c100SWL - fr.pmve); }
 
-/* Adapte les presets + libellés à la façade : la tempête de référence (niveau de
-   pic observé) et la centennale sont propres à chaque littoral. */
+/* Adapte les presets + libellés au port de rattachement.
+   « Aléa réf. » vise le NIVEAU D'ALÉA DE RÉFÉRENCE (pic observé + 20 cm, PPRL) ;
+   « Pire cas » vise l'aléa à échéance 2100 (pic + 60 cm). L'emprise inondée
+   produite reste l'ALÉA SIMULÉ, à comparer aux cartes PPRL. */
 function adaptPresetsToFacade(fr) {
   const surge = refSurge(fr), c100 = refSurge100(fr);
   document.querySelectorAll('.imm-preset').forEach(btn => {
@@ -4328,17 +4367,17 @@ function adaptPresetsToFacade(fr) {
     if (k === 'storm') {
       btn.dataset.surge = Math.round(surge * 100);
       btn.textContent = fr.short;
-      btn.title = `${fr.event} · ${fr.date} · ${fr.gauge} : pic observé +${fr.peakSWL.toFixed(2).replace('.', ',')} m NGF (${fr.src})`;
+      btn.title = `Aléa de référence PPRL = pic observé +${fr.obs.toFixed(2).replace('.', ',')} m + 20 cm (circ. 2011) = +${fr.peakSWL.toFixed(2).replace('.', ',')} m NGF · ${fr.event} · ${fr.gauge} (${fr.src})`;
     } else if (k === 'storm2100') {
       btn.dataset.surge = Math.round(surge * 100);
-      btn.title = `${fr.event} + RSLR médian SSP2-4.5 2100`;
+      btn.title = `Aléa de référence (${fr.short}, +${fr.peakSWL.toFixed(2).replace('.', ',')} m) + RSLR médian SSP2-4.5 2100`;
     } else if (k === 'worst') {
       btn.dataset.surge = Math.round(c100 * 100);
-      btn.title = `Centennale (pic +${fr.c100SWL.toFixed(1).replace('.', ',')} m NGF) + SSP5-8.5 2100`;
+      btn.title = `Aléa à échéance 2100 = pic +60 cm (+${fr.c100SWL.toFixed(1).replace('.', ',')} m NGF) + SSP5-8.5`;
     }
   });
   const h = document.getElementById('immSurgeRefHint');
-  if (h) h.textContent = `${fr.short} ${fr.date} · pic +${fr.peakSWL.toFixed(1).replace('.', ',')} m`;
+  if (h) h.textContent = `aléa réf. ${fr.short} : +${fr.peakSWL.toFixed(1).replace('.', ',')} m (pic obs +${fr.obs.toFixed(1).replace('.', ',')})`;
 }
 
 /* === Helper pour sampler l'élévation original par bilinéaire === */
@@ -4676,7 +4715,7 @@ async function loadCommune3D(c) {
     if (cr) { cr.value = 0; updateCrestLabel(); }
     adaptPresetsToFacade(fref);
     document.getElementById('immEyebrow').textContent =
-      `Maquette · ${c.facade} · réf. ${fref.gauge} · marnage ~${fref.marnage.toFixed(1).replace('.', ',')} m · réf. ${fref.short}`;
+      `Maquette · ${c.facade} · réf. ${fref.gauge} · marnage ~${fref.marnage.toFixed(1).replace('.', ',')} m · aléa réf. ${fref.short} +${fref.peakSWL.toFixed(1).replace('.', ',')} m NGF`;
     if (t3d.bruunFactor === 0 || !t3d.shorelineOk) {
       t3d.bruunActive = false;
       document.getElementById('immBruun').classList.remove('active');
