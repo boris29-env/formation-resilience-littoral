@@ -115,9 +115,35 @@ textarea{resize:vertical;min-height:60px}
 .export{width:100%;height:150px;font-family:monospace;font-size:11px}
 .crew{display:flex;flex-wrap:wrap;gap:6px}
 .chip{background:#fff;border:1px solid var(--line);border-radius:14px;padding:3px 11px;font-size:12px;color:var(--teal);font-weight:600}
-.lobby{max-width:440px;margin:60px auto;padding:0 14px}
-.lobby .panel{padding:24px}
-.lobby h2{font-size:18px}
+.lobby{max-width:460px;margin:48px auto;padding:0 14px}
+.lobby .panel{padding:26px;box-shadow:0 6px 24px rgba(15,58,87,.10)}
+.lobby h2{font-size:19px}
+.lobby .mlist{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 2px}
+.lobby .mlist span{font-size:11px;background:#EDF4F8;color:var(--teal);border-radius:12px;padding:2px 9px;font-weight:600}
+/* ---- polish général ---- */
+.topbar{background:linear-gradient(120deg,var(--teal-d),var(--teal) 70%);box-shadow:0 1px 8px rgba(15,58,87,.28)}
+.panel{box-shadow:0 1px 3px rgba(27,39,51,.05)}
+@keyframes pop{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.item,.dfcard,.tree .arg{animation:pop .25s ease}
+.col h4 .count{float:right;background:var(--ac,var(--teal));color:#fff;border-radius:10px;font-size:10px;padding:1px 7px;letter-spacing:0}
+.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:760px){.g3{grid-template-columns:1fr}}
+/* bibliothèques (panneau animation) */
+.lib{background:#fff;border:1.5px dashed var(--teal);border-radius:6px;padding:10px 12px;margin:10px 0 4px}
+.lib>label{color:var(--teal);margin-bottom:6px}
+.lib select{flex:1;min-width:220px}
+.axrow{font-size:11.5px;color:var(--mut);margin-top:7px;min-height:14px}
+.ax{display:inline-block;background:var(--teal);color:#fff;font-size:10px;font-weight:700;border-radius:3px;padding:1px 6px;margin-right:3px;cursor:help}
+/* consigne du chapeau / sujet */
+.consigne{background:#FFF8E9;border-left:3px solid var(--orange);padding:10px 12px;border-radius:0 4px 4px 0;margin-bottom:12px;font-size:13.5px}
+.consigne .ct{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--orange);font-weight:700;margin-bottom:2px}
+/* signaux faibles (inspiration) */
+.sigbox{margin:10px 0 4px}
+.sigbox summary{cursor:pointer;font-size:12.5px;color:var(--teal);font-weight:600;user-select:none}
+.sigbox summary:hover{text-decoration:underline}
+.sigchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sigchip{background:#EDF4F8;border:1px solid var(--line);border-radius:14px;padding:4px 11px;font-size:12px;color:var(--teal);cursor:pointer;text-align:left}
+.sigchip:hover{border-color:var(--cyan);background:#E2F4F8}
 </style>
 </head>
 <body>
@@ -130,6 +156,7 @@ textarea{resize:vertical;min-height:60px}
 
 <script type="module">
 "use strict";
+import {CONTENT, AXES} from "./content.js";
 
 /* ============================================================
    1. CONFIGURATION FIREBASE  (collez la votre ici)
@@ -236,6 +263,26 @@ function setState(patch){ return DB.update(basePath()+"/state", patch); }
 function esc(s){ const d=document.createElement("div"); d.textContent=(s==null)?"":String(s); return d.innerHTML; }
 function status(msg,ok){ const el=document.getElementById("stx"); if(!el)return; el.textContent=msg; el.className="status "+(ok?"ok":"err"); setTimeout(()=>{ if(el&&el.textContent===msg)el.textContent=""; },2800); }
 
+/* ---- bibliothèques de contenu (panneau animation) ---- */
+function axChips(axes){ return (axes||[]).map(a=>'<span class="ax" title="'+esc(AXES[a]||a)+'">'+a+'</span>').join(""); }
+function libBlock(selId,btnId,titre,items,label,btnTxt,extra){
+  let h='<div class="lib"><label>📚 '+esc(titre)+'</label><div class="row"><select id="'+selId+'"><option value="">Choisir dans la bibliothèque…</option>';
+  items.forEach((it,i)=>{ const t=label(it); h+='<option value="'+i+'">'+esc(t.length>95?t.slice(0,93)+"…":t)+'</option>'; });
+  h+='</select><button class="btn sec sm" id="'+btnId+'" disabled>'+esc(btnTxt)+'</button>'+(extra||"")
+   +'</div><div class="axrow" id="'+selId+'Ax"></div></div>';
+  return h;
+}
+function bindLib(selId,btnId,items,onUse){
+  const sel=document.getElementById(selId); if(!sel)return;
+  const btn=document.getElementById(btnId);
+  sel.addEventListener("change",()=>{
+    const i=sel.value; if(btn)btn.disabled=(i==="");
+    const ax=document.getElementById(selId+"Ax");
+    if(ax)ax.innerHTML=(i===""||!items[i].axes)?"":("Axes : "+axChips(items[i].axes)+" "+items[i].axes.map(a=>AXES[a]).join(" · "));
+  });
+  if(btn)btn.addEventListener("click",()=>{ const i=sel.value; if(i==="")return; onUse(items[i],parseInt(i,10)); });
+}
+
 /* ============================================================
    5. LOBBY (rejoindre une salle, sans inscription)
    ============================================================ */
@@ -246,10 +293,11 @@ function renderLobby(){
    +'<h2>Rejoindre l\'atelier</h2>'
    +'<p class="hint">Intelligence collective de la mission n° 016714-01, « Comment bien préparer les sorties d\'emplois fonctionnels de l\'IGEDD ? ». Aucun compte requis.</p>'
    +'<div style="margin-bottom:12px"><label>Code de la salle</label>'
-   +'<input id="lbRoom" type="text" value="'+esc(roomId)+'" placeholder="ex : igedd-2028" autocomplete="off"></div>'
+   +'<input id="lbRoom" type="text" value="'+esc(roomId)+'" placeholder="ex : igedd-2028" autocomplete="off" data-go="lbGo"></div>'
    +'<div style="margin-bottom:16px"><label>Votre pseudonyme (un phare, par défaut)</label>'
-   +'<input id="lbPseudo" type="text" value="'+esc(pseudo)+'" maxlength="24" autocomplete="off"></div>'
+   +'<input id="lbPseudo" type="text" value="'+esc(pseudo)+'" maxlength="24" autocomplete="off" data-go="lbGo"></div>'
    +'<button class="btn prim" id="lbGo" style="width:100%;justify-content:center;font-size:15px;padding:13px">Entrer dans la salle</button>'
+   +'<div class="mlist">'+METHODS.map(m=>'<span>'+esc(m.t)+'</span>').join("")+'</div>'
    +(firebaseReady()?'':'<p class="note">Firebase non configuré : mode local actif. La synchronisation fonctionne entre onglets d\'un même navigateur, utile pour tester. Renseignez FIREBASE_CONFIG pour une session multi-postes.</p>')
    +'</div></div>';
   document.getElementById("lbGo").addEventListener("click",()=>{
@@ -286,8 +334,34 @@ function renderTop(){
 /* ============================================================
    7. RENDU PRINCIPAL
    ============================================================ */
+/* Conserve les saisies en cours lors des re-rendus déclenchés par le temps
+   réel : sans cela, chaque contribution d'un autre participant effacerait
+   le texte que l'on est en train de taper. */
+function snapshotFields(){
+  const snap={vals:{},focus:null,selS:0,selE:0,open:{}};
+  root.querySelectorAll("input[id],textarea[id],select[id]").forEach(el=>{ snap.vals[el.id]=el.value; });
+  root.querySelectorAll("details[id]").forEach(el=>{ snap.open[el.id]=el.open; });
+  const ae=document.activeElement;
+  if(ae&&ae.id&&(ae.id in snap.vals)){ snap.focus=ae.id; try{ snap.selS=ae.selectionStart; snap.selE=ae.selectionEnd; }catch(e){} }
+  return snap;
+}
+function restoreFields(snap){
+  for(const id in snap.vals){
+    const el=document.getElementById(id); if(!el)continue;
+    if(el.tagName==="SELECT"){
+      if(snap.vals[id]!==""&&el.value!==snap.vals[id]&&Array.prototype.some.call(el.options,o=>o.value===snap.vals[id])){
+        el.value=snap.vals[id]; el.dispatchEvent(new Event("change"));
+      }
+    }
+    else if(id===snap.focus){ el.value=snap.vals[id]; el.focus(); try{ el.setSelectionRange(snap.selS,snap.selE); }catch(e){} }
+    else if(el.value===""&&snap.vals[id]!=="") el.value=snap.vals[id];
+  }
+  for(const id in snap.open){ const el=document.getElementById(id); if(el)el.open=snap.open[id]; }
+}
+
 function renderApp(){
   renderTop();
+  const snap=snapshotFields();
   const st = (room&&room.state)||{};
   let h = animPanel(st);
   const active = st.active;
@@ -303,8 +377,16 @@ function renderApp(){
   else if(active==="cartoarg")       h += viewCarto(st);
   h += '<p class="status" id="stx"></p>';
   root.innerHTML = h;
-  bindAnim(st); bindActive(active,st); fillCrew();
+  bindAnim(st); bindActive(active,st);
+  restoreFields(snap);
+  fillCrew();
 }
+/* Touche Entrée : valide le champ (bouton désigné par data-go) */
+root.addEventListener("keydown",e=>{
+  if(e.key!=="Enter")return;
+  const t=e.target;
+  if(t&&t.tagName==="INPUT"&&t.dataset.go){ e.preventDefault(); const b=document.getElementById(t.dataset.go); if(b)b.click(); }
+});
 function fillCrew(){
   const el=document.getElementById("crew"); if(!el)return;
   const ps = (room&&room.participants)||{};
@@ -322,7 +404,8 @@ function animPanel(st){
   h+='</div>';
   /* commandes propres a la methode active */
   if(st.active==="designfiction"){
-    h+='<h3>Question prospective</h3><div class="row"><input id="dfPrompt" type="text" value="'+esc(st.dfPrompt||"Et si, en 2030, la sortie d\'emploi fonctionnel était devenue un atout de carrière reconnu ?")+'"><button class="btn prim sm" id="dfSet">Définir</button></div>';
+    h+='<h3>Question prospective</h3><div class="row"><input id="dfPrompt" type="text" value="'+esc(st.dfPrompt||"Et si, en 2030, la sortie d\'emploi fonctionnel était devenue un atout de carrière reconnu ?")+'" data-go="dfSet"><button class="btn prim sm" id="dfSet">Définir</button></div>'
+      +libBlock("dfLib","dfLibUse","Bibliothèque de questions prospectives",CONTENT.designFiction.prompts,p=>(p.noir?"⚠ ":"")+p.texte,"Utiliser");
   }
   if(st.active==="codev"){
     const cur=(room&&room.participants&&room.participants[uid])?pseudo:pseudo;
@@ -330,24 +413,32 @@ function animPanel(st){
       +'<div class="row" style="margin-bottom:8px"><div style="flex:1;min-width:160px"><label>Pseudonyme de la personne qui expose</label><input id="cvClient" type="text" value="'+esc(st.cvClient||"")+'" placeholder="ex : '+esc(cur)+'"></div><button class="btn prim sm" id="cvClientSet">Définir</button></div>'
       +'<div class="row">';
     CODEV_PHASES.forEach((p,i)=>{ h+='<button class="btn '+((st.cvPhase||0)===i?"prim":"sec")+' sm" data-cvph="'+i+'">'+(i+1)+'</button>'; });
-    h+='<span class="hint" style="margin:0 0 0 6px">'+esc(CODEV_PHASES[st.cvPhase||0])+'</span></div>';
+    h+='<span class="hint" style="margin:0 0 0 6px">'+esc(CODEV_PHASES[st.cvPhase||0])+'</span></div>'
+      +libBlock("cvLib","cvLibUse","Bibliothèque de situations (cas fictifs, si aucun volontaire)",CONTENT.codev.situations,s=>s.texte,"Proposer ce cas");
   }
   if(st.active==="sixchapeaux"){
     h+='<h3>Chapeau en cours</h3><div class="hatbtns">';
     HATS.forEach(ht=>{ h+='<button class="hatbtn'+(st.hat===ht.id?" on":"")+'" data-hat="'+ht.id+'" style="border-color:'+ht.c+';color:'+ht.c+'">'+esc(ht.t)+'</button>'; });
-    h+='</div>';
+    h+='</div>'
+      +libBlock("hatLib","hatLibUse","Bibliothèque de sujets (avec une consigne par chapeau)",CONTENT.sixChapeaux.sujets,s=>s.titre,"Utiliser");
+    const cs=CONTENT.sixChapeaux.sujets[st.hatSujet];
+    if(cs)h+='<p class="hint" style="margin-top:6px">Sujet en cours : <b>'+esc(cs.titre)+'</b></p>';
   }
   if(st.active==="debatmouvant"){
-    h+='<h3>Affirmation à débattre</h3><div class="row"><input id="dbAff" type="text" value="'+esc(st.dbAff||"Sans accompagnement formalisé dès le recrutement, la sortie d\'emploi fonctionnel restera subie.")+'"><button class="btn prim sm" id="dbSet">Définir</button><button class="btn warn sm" id="dbNew">Nouveau débat</button></div>';
+    h+='<h3>Affirmation à débattre</h3><div class="row"><input id="dbAff" type="text" value="'+esc(st.dbAff||"Sans accompagnement formalisé dès le recrutement, la sortie d\'emploi fonctionnel restera subie.")+'" data-go="dbSet"><button class="btn prim sm" id="dbSet">Définir</button><button class="btn warn sm" id="dbNew">Nouveau débat</button></div>'
+      +libBlock("dbLib","dbLibUse","Bibliothèque d\'affirmations clivantes",CONTENT.debatMouvant.affirmations,a=>a.texte,"Utiliser");
   }
   if(st.active==="worldcafe"){
     const tb=st.cafeTables||["",""," "];
     h+='<h3>Thèmes des trois tables</h3>';
     for(let i=0;i<3;i++){ h+='<div class="row" style="margin-bottom:6px"><input id="cf'+i+'" type="text" value="'+esc(tb[i]||"")+'" placeholder="Thème de la table '+(i+1)+'"></div>'; }
-    h+='<button class="btn prim sm" id="cfSet">Définir les thèmes</button>';
+    h+='<button class="btn prim sm" id="cfSet">Définir les thèmes</button>'
+      +libBlock("cfLib","cfLibUse","Jeux de tables prêts à l\'emploi",CONTENT.worldCafe.jeux,j=>j.nom+" : "+j.tables.join(" · "),"Utiliser");
   }
   if(st.active==="cartoarg"){
-    h+='<h3>Thèse à cartographier</h3><div class="row"><input id="caTh" type="text" value="'+esc(st.caThesis||"L\'IGEDD doit valoriser explicitement le passage en inspection comme label de carrière.")+'"><button class="btn prim sm" id="caSet">Définir</button></div>';
+    h+='<h3>Thèse à cartographier</h3><div class="row"><input id="caTh" type="text" value="'+esc(st.caThesis||"L\'IGEDD doit valoriser explicitement le passage en inspection comme label de carrière.")+'" data-go="caSet"><button class="btn prim sm" id="caSet">Définir</button></div>'
+      +libBlock("caLib","caLibUse","Bibliothèque de thèses (avec amorces pour et contre)",CONTENT.cartoArguments.theses,t=>t.texte,"Utiliser",
+        '<button class="btn warn sm" id="caSeed" disabled title="Définit la thèse et dépose ses amorces pour et contre dans l\'arbre">Pré-amorcer</button>');
   }
   h+='<h3>Salle</h3><div class="row"><button class="btn prim sm" id="aExport">Exporter (JSON)</button><button class="btn warn sm" id="aReset">Réinitialiser la méthode</button></div>'
    +'<textarea class="export" id="exportBox" hidden readonly></textarea></div>';
@@ -366,6 +457,29 @@ function bindAnim(st){
   const cas=document.getElementById("caSet"); if(cas)cas.addEventListener("click",()=>setState({caThesis:document.getElementById("caTh").value.trim()}));
   const ex=document.getElementById("aExport"); if(ex)ex.addEventListener("click",doExport);
   const rs=document.getElementById("aReset"); if(rs)rs.addEventListener("click",()=>{ if(confirm("Effacer les contributions de la méthode active ?")){ DB.remove(basePath()+"/data/"+st.active); status("Méthode réinitialisée",true); } });
+  /* bibliothèques de contenu */
+  bindLib("dfLib","dfLibUse",CONTENT.designFiction.prompts,it=>{ setState({dfPrompt:it.texte}); status("Question prospective définie",true); });
+  bindLib("cvLib","cvLibUse",CONTENT.codev.situations,it=>{
+    DB.set(basePath()+"/data/codev/expose",it.texte);
+    if(!st.cvClient)setState({cvClient:"Cas fictif"});
+    status("Cas proposé comme exposé",true);
+  });
+  bindLib("hatLib","hatLibUse",CONTENT.sixChapeaux.sujets,(it,i)=>{ setState({hatSujet:i}); status("Sujet défini : "+it.titre,true); });
+  bindLib("dbLib","dbLibUse",CONTENT.debatMouvant.affirmations,it=>{ setState({dbAff:it.texte}); status("Affirmation définie",true); });
+  bindLib("cfLib","cfLibUse",CONTENT.worldCafe.jeux,it=>{ setState({cafeTables:it.tables}); status("Thèmes des tables définis",true); });
+  bindLib("caLib","caLibUse",CONTENT.cartoArguments.theses,it=>{ setState({caThesis:it.texte}); status("Thèse définie",true); });
+  const caL=document.getElementById("caLib"), caS=document.getElementById("caSeed");
+  if(caL&&caS){
+    caL.addEventListener("change",()=>{ caS.disabled=(caL.value===""); });
+    caS.addEventListener("click",()=>{
+      const i=caL.value; if(i==="")return;
+      const th=CONTENT.cartoArguments.theses[i];
+      if(!confirm("Définir cette thèse et déposer "+th.amorces.length+" amorces dans l'arbre ?"))return;
+      setState({caThesis:th.texte});
+      th.amorces.forEach((a,j)=>DB.push(basePath()+"/data/cartoarg",{type:a.type,parent:a.parent||"root",text:a.texte,by:"amorce",ts:Date.now()+j}));
+      status("Thèse définie et amorces déposées",true);
+    });
+  }
 }
 
 /* ============================================================
@@ -380,6 +494,9 @@ function viewDesignFiction(st){
    +'<p style="font-weight:700;color:var(--teal);font-size:15px;margin-bottom:12px">'+esc(st.dfPrompt||"Et si, en 2030...")+'</p>'
    +'<div class="row" style="align-items:flex-start"><div style="flex:1;min-width:160px"><label>Signal faible observé aujourd\'hui</label><input id="dfSig" type="text" maxlength="140"></div>'
    +'<div style="flex:1;min-width:160px"><label>Hypothèse « Et si... »</label><input id="dfHyp" type="text" maxlength="140"></div></div>'
+   +'<details class="sigbox" id="dfSigBox"><summary>💡 Besoin d\'inspiration ? Signaux faibles à explorer</summary><div class="sigchips">'
+   + CONTENT.designFiction.signauxFaibles.map(s=>'<button class="sigchip" data-sig="'+esc(s)+'">'+esc(s)+'</button>').join("")
+   +'</div></details>'
    +'<div style="margin:8px 0"><label>Conséquence, en une phrase</label><textarea id="dfRec" maxlength="240"></textarea></div>'
    +'<button class="btn prim sm" id="dfAdd">Ajouter ce scénario</button>'
    +'<h3>Scénarios du groupe</h3><div id="dfList">'
@@ -408,7 +525,7 @@ function viewCodev(st){
   }
   /* questions */
   h+='<h3>2. Questions de clarification</h3>';
-  if(phase===1){ h+='<div class="row"><input id="cvQ" type="text" maxlength="200" placeholder="Votre question"><button class="btn prim sm" id="cvQAdd">Poser</button></div>'; }
+  if(phase===1){ h+='<div class="row"><input id="cvQ" type="text" maxlength="200" placeholder="Votre question" data-go="cvQAdd"><button class="btn prim sm" id="cvQAdd">Poser</button></div>'; }
   h+='<div id="cvQList" style="margin-top:8px">'+(questions.length?questions.map(q=>'<div class="item">'+esc(q.text)+'<div class="who">'+esc(q.by)+'</div></div>').join(""):'<p class="hint">Aucune question.</p>')+'</div>';
   /* contrat */
   h+='<h3>3. La demande (contrat)</h3>';
@@ -416,7 +533,7 @@ function viewCodev(st){
   else { h+='<div class="item">'+(d.contrat?esc(d.contrat):'<span class="hint">En attente de la demande.</span>')+'</div>'; }
   /* suggestions */
   h+='<h3>4. Suggestions du groupe</h3>';
-  if(phase===3){ h+='<div class="row"><input id="cvS" type="text" maxlength="220" placeholder="Votre suggestion"><button class="btn prim sm" id="cvSAdd">Proposer</button></div>'; }
+  if(phase===3){ h+='<div class="row"><input id="cvS" type="text" maxlength="220" placeholder="Votre suggestion" data-go="cvSAdd"><button class="btn prim sm" id="cvSAdd">Proposer</button></div>'; }
   h+='<div id="cvSList" style="margin-top:8px">'+(suggestions.length?suggestions.map(s=>'<div class="item">'+esc(s.text)+'<div class="who">'+esc(s.by)+'</div></div>').join(""):'<p class="hint">Aucune suggestion.</p>')+'</div>';
   /* plan */
   h+='<h3>5. Plan d\'action</h3>';
@@ -430,13 +547,16 @@ function viewHats(st){
   const hat = st.hat || HATS[0].id;
   const ht = HATS.find(x=>x.id===hat)||HATS[0];
   const all = dataList("sixchapeaux");
-  let h='<div class="panel"><h2>Les six chapeaux</h2>'
-   +'<div class="help">Tout le groupe réfléchit sous le même angle au même moment. Angle en cours, défini par l\'animateur : <b style="color:'+ht.c+'">'+esc(ht.t)+'</b>.</div>'
-   +'<div class="row"><input id="hatTxt" type="text" maxlength="220" placeholder="Votre contribution sous l\'angle « '+esc(ht.t)+' »"><button class="btn prim sm" id="hatAdd">Ajouter</button></div>'
-   +'<div class="cols" style="grid-template-columns:repeat(3,1fr);margin-top:14px" id="hatCols">';
+  const suj = CONTENT.sixChapeaux.sujets[st.hatSujet];
+  let h='<div class="panel"><h2>Les six chapeaux'+(suj?(' · '+esc(suj.titre)):'')+'</h2>'
+   +'<div class="help">Tout le groupe réfléchit sous le même angle au même moment. Angle en cours, défini par l\'animateur : <b style="color:'+ht.c+'">'+esc(ht.t)+'</b>.</div>';
+  if(suj&&suj.consignes[hat])h+='<div class="consigne"><div class="ct">Consigne · '+esc(ht.t)+'</div>'+esc(suj.consignes[hat])+'</div>';
+  h+='<div class="row"><input id="hatTxt" type="text" maxlength="220" placeholder="Votre contribution sous l\'angle « '+esc(ht.t)+' »" data-go="hatAdd"><button class="btn prim sm" id="hatAdd">Ajouter</button></div>'
+   +'<div class="cols g3" style="margin-top:14px" id="hatCols">';
   HATS.forEach(x=>{
-    h+='<div class="col" style="--ac:'+x.c+'"><h4 style="color:'+x.c+';border-color:'+x.c+'">'+esc(x.t)+'</h4>';
-    all.filter(c=>c.hat===x.id).forEach(c=>{ h+='<div class="item" style="--ac:'+x.c+'">'+esc(c.text)+'<div class="who">'+esc(c.by)+'</div></div>'; });
+    const items=all.filter(c=>c.hat===x.id);
+    h+='<div class="col" style="--ac:'+x.c+'"><h4 style="color:'+x.c+';border-color:'+x.c+'">'+esc(x.t)+(items.length?'<span class="count">'+items.length+'</span>':'')+'</h4>';
+    items.forEach(c=>{ h+='<div class="item" style="--ac:'+x.c+'">'+esc(c.text)+'<div class="who">'+esc(c.by)+'</div></div>'; });
     h+='</div>';
   });
   return h+'</div></div>';
@@ -461,8 +581,8 @@ function viewDebate(st){
    +'<div class="tally"><span>D\'accord</span><div class="track"><div class="fill" style="background:#1E7B3C;width:'+(counts.pour/tot*100)+'%"></div></div><b>'+counts.pour+'</b></div>'
    +'<div class="tally"><span>Nuancé</span><div class="track"><div class="fill" style="background:var(--orange);width:'+(counts.nuance/tot*100)+'%"></div></div><b>'+counts.nuance+'</b></div>'
    +'<div class="tally"><span>Pas d\'accord</span><div class="track"><div class="fill" style="background:#B3261E;width:'+(counts.contre/tot*100)+'%"></div></div><b>'+counts.contre+'</b></div>'
-   +'<div class="row" style="margin-top:12px"><input id="dbArg" type="text" maxlength="220" placeholder="Un argument (rattaché à votre position)"><button class="btn prim sm" id="dbArgAdd">Argumenter</button></div>'
-   +'<div class="cols" style="grid-template-columns:1fr 1fr 1fr;margin-top:12px">'
+   +'<div class="row" style="margin-top:12px"><input id="dbArg" type="text" maxlength="220" placeholder="Un argument (rattaché à votre position)" data-go="dbArgAdd"><button class="btn prim sm" id="dbArgAdd">Argumenter</button></div>'
+   +'<div class="cols g3" style="margin-top:12px">'
    +'<div class="col" style="--ac:#1E7B3C"><h4 style="color:#1E7B3C;border-color:#1E7B3C">Pour</h4>'+args.filter(a=>a.stance==="pour").map(a=>'<div class="item" style="--ac:#1E7B3C">'+esc(a.text)+'<div class="who">'+esc(a.by)+'</div></div>').join("")+'</div>'
    +'<div class="col" style="--ac:var(--orange)"><h4 style="color:#9a5b00;border-color:var(--orange)">Nuancé</h4>'+args.filter(a=>a.stance==="nuance").map(a=>'<div class="item" style="--ac:var(--orange)">'+esc(a.text)+'<div class="who">'+esc(a.by)+'</div></div>').join("")+'</div>'
    +'<div class="col" style="--ac:#B3261E"><h4 style="color:#B3261E;border-color:#B3261E">Contre</h4>'+args.filter(a=>a.stance==="contre").map(a=>'<div class="item" style="--ac:#B3261E">'+esc(a.text)+'<div class="who">'+esc(a.by)+'</div></div>').join("")+'</div>'
@@ -478,11 +598,11 @@ function viewCafe(st){
    +'<div class="help">Trois tables, trois thèmes. Choisissez une table, déposez vos idées, puis changez de table quand l\'animateur le propose, pour croiser les regards.</div>'
    +'<div class="row" style="margin-bottom:10px"><div style="flex:1;min-width:160px"><label>Votre table</label><select id="cfTable">'
    + tables.map((t,i)=>'<option value="'+i+'">Table '+(i+1)+(t?' : '+esc(t):'')+'</option>').join("")
-   +'</select></div><div style="flex:2;min-width:200px"><label>Votre idée</label><input id="cfTxt" type="text" maxlength="220"></div><button class="btn prim sm" id="cfAdd" style="align-self:flex-end">Déposer</button></div>'
-   +'<div class="cols" style="grid-template-columns:repeat(3,1fr)">';
+   +'</select></div><div style="flex:2;min-width:200px"><label>Votre idée</label><input id="cfTxt" type="text" maxlength="220" data-go="cfAdd"></div><button class="btn prim sm" id="cfAdd" style="align-self:flex-end">Déposer</button></div>'
+   +'<div class="cols g3">';
   for(let i=0;i<3;i++){
     const items=listOf(d[i]);
-    h+='<div class="col"><h4>'+esc(tables[i]||("Table "+(i+1)))+'</h4>'
+    h+='<div class="col"><h4>'+esc(tables[i]||("Table "+(i+1)))+(items.length?'<span class="count">'+items.length+'</span>':'')+'</h4>'
       + (items.length?items.map(x=>'<div class="item">'+esc(x.text)+'<div class="who">'+esc(x.by)+'</div></div>').join(""):'<p class="hint">Vide.</p>')
       + '</div>';
   }
@@ -509,7 +629,7 @@ function viewCarto(st){
    +'<div style="min-width:180px"><label>Se rattache à</label><select id="caParent"><option value="root">La thèse</option>'
    + roots.map(r=>'<option value="'+r.id+'">'+(r.type==="pour"?"[Pour] ":"[Contre] ")+esc(r.text.slice(0,40))+'</option>').join("")
    +'</select></div>'
-   +'<div style="flex:1;min-width:200px"><label>Argument</label><input id="caTxt" type="text" maxlength="220"></div>'
+   +'<div style="flex:1;min-width:200px"><label>Argument</label><input id="caTxt" type="text" maxlength="220" data-go="caAdd"></div>'
    +'<button class="btn prim sm" id="caAdd" style="align-self:flex-end">Ajouter</button></div>';
   return h+'</div>';
 }
@@ -521,29 +641,32 @@ function bindActive(active,st){
   if(active==="designfiction"){
     const b=document.getElementById("dfAdd");
     if(b)b.addEventListener("click",()=>{
-      const sig=document.getElementById("dfSig").value.trim();
-      const hyp=document.getElementById("dfHyp").value.trim();
-      const rec=document.getElementById("dfRec").value.trim();
+      const eSig=document.getElementById("dfSig"),eHyp=document.getElementById("dfHyp"),eRec=document.getElementById("dfRec");
+      const sig=eSig.value.trim(), hyp=eHyp.value.trim(), rec=eRec.value.trim();
       if(!sig&&!hyp&&!rec)return;
+      eSig.value="";eHyp.value="";eRec.value="";
       DB.push(basePath()+"/data/designfiction",{sig,hyp,rec,by:pseudo,ts:Date.now()}); status("Scénario ajouté",true);
     });
+    root.querySelectorAll("[data-sig]").forEach(c=>c.addEventListener("click",()=>{
+      const el=document.getElementById("dfSig"); if(el){ el.value=c.dataset.sig; el.focus(); }
+    }));
   }
   if(active==="codev"){
     const save=(field,id)=>{ const el=document.getElementById(id); if(el)el.parentElement; };
     const ex=document.getElementById("cvExposeSave"); if(ex)ex.addEventListener("click",()=>{ DB.set(basePath()+"/data/codev/expose",document.getElementById("cvExpose").value.trim()); status("Exposé enregistré",true); });
     const ct=document.getElementById("cvContratSave"); if(ct)ct.addEventListener("click",()=>{ DB.set(basePath()+"/data/codev/contrat",document.getElementById("cvContrat").value.trim()); status("Demande enregistrée",true); });
     const pl=document.getElementById("cvPlanSave"); if(pl)pl.addEventListener("click",()=>{ DB.set(basePath()+"/data/codev/plan",document.getElementById("cvPlan").value.trim()); status("Plan enregistré",true); });
-    const qa=document.getElementById("cvQAdd"); if(qa)qa.addEventListener("click",()=>{ const t=document.getElementById("cvQ").value.trim(); if(!t)return; DB.push(basePath()+"/data/codev/questions",{text:t,by:pseudo,ts:Date.now()}); });
-    const sa=document.getElementById("cvSAdd"); if(sa)sa.addEventListener("click",()=>{ const t=document.getElementById("cvS").value.trim(); if(!t)return; DB.push(basePath()+"/data/codev/suggestions",{text:t,by:pseudo,ts:Date.now()}); });
+    const qa=document.getElementById("cvQAdd"); if(qa)qa.addEventListener("click",()=>{ const el=document.getElementById("cvQ"); const t=el.value.trim(); if(!t)return; el.value=""; DB.push(basePath()+"/data/codev/questions",{text:t,by:pseudo,ts:Date.now()}); });
+    const sa=document.getElementById("cvSAdd"); if(sa)sa.addEventListener("click",()=>{ const el=document.getElementById("cvS"); const t=el.value.trim(); if(!t)return; el.value=""; DB.push(basePath()+"/data/codev/suggestions",{text:t,by:pseudo,ts:Date.now()}); });
   }
   if(active==="sixchapeaux"){
     const b=document.getElementById("hatAdd");
-    if(b)b.addEventListener("click",()=>{ const t=document.getElementById("hatTxt").value.trim(); if(!t)return; DB.push(basePath()+"/data/sixchapeaux",{hat:(st.hat||HATS[0].id),text:t,by:pseudo,ts:Date.now()}); });
+    if(b)b.addEventListener("click",()=>{ const el=document.getElementById("hatTxt"); const t=el.value.trim(); if(!t)return; el.value=""; DB.push(basePath()+"/data/sixchapeaux",{hat:(st.hat||HATS[0].id),text:t,by:pseudo,ts:Date.now()}); });
   }
   if(active==="debatmouvant"){
     root.querySelectorAll("[data-st]").forEach(b=>b.addEventListener("click",()=>{ DB.set(basePath()+"/data/debatmouvant/positions/"+uid,{stance:b.dataset.st,by:pseudo}); }));
     const a=document.getElementById("dbArgAdd");
-    if(a)a.addEventListener("click",()=>{ const t=document.getElementById("dbArg").value.trim(); const pos=(room&&room.data&&room.data.debatmouvant&&room.data.debatmouvant.positions&&room.data.debatmouvant.positions[uid])?room.data.debatmouvant.positions[uid].stance:"nuance"; if(!t)return; DB.push(basePath()+"/data/debatmouvant/args",{stance:pos,text:t,by:pseudo,ts:Date.now()}); });
+    if(a)a.addEventListener("click",()=>{ const el=document.getElementById("dbArg"); const t=el.value.trim(); const pos=(room&&room.data&&room.data.debatmouvant&&room.data.debatmouvant.positions&&room.data.debatmouvant.positions[uid])?room.data.debatmouvant.positions[uid].stance:"nuance"; if(!t)return; el.value=""; DB.push(basePath()+"/data/debatmouvant/args",{stance:pos,text:t,by:pseudo,ts:Date.now()}); });
   }
   if(active==="worldcafe"){
     const b=document.getElementById("cfAdd");
