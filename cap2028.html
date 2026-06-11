@@ -188,7 +188,7 @@ async function initBackend(){
     const database = dbMod.getDatabase(app);
     DB = {
       mode:"firebase",
-      watch:(p,cb)=>{ const r=dbMod.ref(database,p); return dbMod.onValue(r,s=>cb(s.val())); },
+      watch:(p,cb)=>{ const r=dbMod.ref(database,p); return dbMod.onValue(r,s=>cb(s.val()),err=>{ console.error("Firebase read denied on "+p,err); const el=document.getElementById("stx"); if(el){ el.textContent="Firebase : "+err.message+" (vérifier les règles pour /rooms)"; el.className="status err"; } }); },
       set:(p,v)=>dbMod.set(dbMod.ref(database,p),v),
       push:(p,v)=>{ const r=dbMod.push(dbMod.ref(database,p),v); return r.key; },
       update:(p,v)=>dbMod.update(dbMod.ref(database,p),v),
@@ -267,7 +267,10 @@ function renderLobby(){
    6. ENTREE EN SALLE + ABONNEMENT TEMPS REEL
    ============================================================ */
 function joinRoom(){
-  DB.set(basePath()+"/participants/"+uid, {pseudo:pseudo, ts:Date.now()});
+  room = room || {};
+  renderApp();
+  Promise.resolve(DB.set(basePath()+"/participants/"+uid, {pseudo:pseudo, ts:Date.now()}))
+    .catch(e=>{ console.error("Firebase write denied",e); const el=document.getElementById("stx"); if(el){ el.textContent="Firebase : "+e.message+" (règles à autoriser sur /rooms)"; el.className="status err"; } });
   if(unwatch) unwatch();
   unwatch = DB.watch(basePath(), (val)=>{ room = val||{}; renderApp(); });
 }
