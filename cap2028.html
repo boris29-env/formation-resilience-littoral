@@ -361,6 +361,8 @@ let anim = false;           // panneau d'animation ouvert
 let isAnimateur = sessionStorage.getItem("cap2028_anim")==="1"; // droits animateur
 let room = null;            // instantané complet de la salle
 let unwatch = null;
+let unwatchLib = null;      // abonnement à la bibliothèque enrichie
+let libCodev = [];          // situations ajoutées par les animateurs, partagées
 const root = document.getElementById("root");
 const topRight = document.getElementById("topRight");
 
@@ -377,6 +379,16 @@ function libBlock(selId,btnId,titre,items,label,btnTxt,extra){
   h+='</select><button class="btn sec sm" id="'+btnId+'" disabled>'+esc(btnTxt)+'</button>'+(extra||"")
    +'</div><div class="axrow" id="'+selId+'Ax"></div></div>';
   return h;
+}
+function renderLibCodevList(){
+  if(!libCodev.length) return '<p class="hint" style="font-size:12px">Aucun ajout pour l\'instant.</p>';
+  return libCodev.map(s=>{
+    const axes=(s.axes&&s.axes.length)?(' · axes : '+s.axes.join(", ")):"";
+    return '<div class="item" style="display:flex;gap:8px;align-items:flex-start">'
+      +'<div style="flex:1">'+esc(s.texte)+'<div class="who">ajouté par '+esc(s.by||"animateur")+axes+'</div></div>'
+      +'<button class="btn sec sm" data-libdel="'+esc(s.id)+'" title="Retirer de la bibliothèque" style="padding:4px 10px">×</button>'
+      +'</div>';
+  }).join("");
 }
 function bindLib(selId,btnId,items,onUse){
   const sel=document.getElementById(selId); if(!sel)return;
@@ -490,6 +502,19 @@ function joinRoom(){
     .catch(e=>{ console.error("Firebase write denied",e); const el=document.getElementById("stx"); if(el){ el.textContent="Firebase : "+e.message+" (règles à autoriser sur /rooms)"; el.className="status err"; } });
   if(unwatch) unwatch();
   unwatch = DB.watch(basePath(), (val)=>{ room = val||{}; renderApp(); });
+  watchLibrary();
+}
+/* Bibliothèque enrichie : situations ajoutées par les animateurs, partagées
+   entre tous les ateliers (chemin /library/codev/situations). */
+function watchLibrary(){
+  if(unwatchLib) return;
+  unwatchLib = DB.watch("library/codev/situations", val=>{
+    libCodev = val ? Object.keys(val).map(k=>Object.assign({id:k},val[k])).sort((a,b)=>(a.ts||0)-(b.ts||0)) : [];
+    if(anim) renderApp();
+  });
+}
+function codevSituations(){
+  return CONTENT.codev.situations.concat(libCodev.map(x=>Object.assign({},x,{_custom:true})));
 }
 function renderTop(){
   topRight.innerHTML =
@@ -593,7 +618,16 @@ function animPanel(st){
       +'<div class="row">';
     CODEV_PHASES.forEach((p,i)=>{ h+='<button class="btn '+((st.cvPhase||0)===i?"prim":"sec")+' sm" data-cvph="'+i+'">'+(i+1)+'</button>'; });
     h+='<span class="hint" style="margin:0 0 0 6px">'+esc(CODEV_PHASES[st.cvPhase||0])+'</span></div>'
-      +libBlock("cvLib","cvLibUse","Bibliothèque de situations (cas fictifs, si aucun volontaire)",CONTENT.codev.situations,s=>s.texte,"Proposer ce cas");
+      +libBlock("cvLib","cvLibUse","Bibliothèque de situations (cas fictifs, si aucun volontaire)",codevSituations(),s=>(s._custom?"✦ ":"")+s.texte,"Proposer ce cas")
+      +'<details class="lib" style="border-style:solid" id="cvLibEnrich"><summary>✏️ Enrichir la bibliothèque (ajouter une situation, '+libCodev.length+' ajout'+(libCodev.length>1?"s":"")+')</summary>'
+      +'<div style="margin-top:10px"><label>Énoncé (3-4 phrases, anonyme, situation réaliste)</label>'
+      +'<textarea id="cvLibAdd" maxlength="700" placeholder="Décrivez la situation. Aucun nom de personne ; restez factuel et générique."></textarea></div>'
+      +'<div class="row" style="margin-top:8px;align-items:flex-end"><div style="flex:1;min-width:140px"><label>Axes thématiques (A à H, séparés par des virgules)</label>'
+      +'<input id="cvLibAxes" type="text" maxlength="40" placeholder="ex : A, D"></div>'
+      +'<button class="btn prim sm" id="cvLibAddBtn">Ajouter à la bibliothèque</button></div>'
+      +'<p class="hint" style="margin-top:8px;font-size:11.5px">Les ajouts sont partagés et restent disponibles pour les ateliers suivants.</p>'
+      +'<div id="cvLibList" style="margin-top:8px">'+renderLibCodevList()+'</div>'
+      +'</details>';
   }
   if(st.active==="sixchapeaux"){
     h+='<h3>Chapeau en cours</h3><div class="hatbtns">';
@@ -638,11 +672,29 @@ function bindAnim(st){
   const rs=document.getElementById("aReset"); if(rs)rs.addEventListener("click",()=>{ if(confirm("Effacer les contributions de la méthode active ?")){ DB.remove(basePath()+"/data/"+st.active); status("Méthode réinitialisée",true); } });
   /* bibliothèques de contenu */
   bindLib("dfLib","dfLibUse",CONTENT.designFiction.prompts,it=>{ setState({dfPrompt:it.texte}); status("Question prospective définie",true); });
-  bindLib("cvLib","cvLibUse",CONTENT.codev.situations,it=>{
+  bindLib("cvLib","cvLibUse",codevSituations(),it=>{
     DB.set(basePath()+"/data/codev/expose",it.texte);
     if(!st.cvClient)setState({cvClient:"Cas fictif"});
     status("Cas proposé comme exposé",true);
   });
+  /* Enrichissement de la bibliothèque codev (animateur seulement) */
+  const cvAdd=document.getElementById("cvLibAddBtn");
+  if(cvAdd)cvAdd.addEventListener("click",()=>{
+    const ta=document.getElementById("cvLibAdd");
+    const t=ta.value.trim();
+    if(!t){ status("Énoncé requis",false); ta.focus(); return; }
+    const axRaw=document.getElementById("cvLibAxes").value.trim();
+    const axes=axRaw.split(/[,;\s]+/).map(s=>s.toUpperCase()).filter(s=>/^[A-H]$/.test(s));
+    Promise.resolve(DB.push("library/codev/situations",{texte:t,axes:axes,by:pseudo,ts:Date.now()}))
+      .then(()=>{ status("Situation ajoutée à la bibliothèque",true); })
+      .catch(e=>{ status("Échec : "+e.message+" (autoriser /library dans les règles Firebase)",false); });
+    ta.value=""; document.getElementById("cvLibAxes").value="";
+    const det=document.getElementById("cvLibEnrich"); if(det)det.open=true;
+  });
+  root.querySelectorAll("[data-libdel]").forEach(b=>b.addEventListener("click",()=>{
+    if(!confirm("Retirer cette situation de la bibliothèque partagée ?"))return;
+    DB.remove("library/codev/situations/"+b.dataset.libdel);
+  }));
   bindLib("hatLib","hatLibUse",CONTENT.sixChapeaux.sujets,(it,i)=>{ setState({hatSujet:i}); status("Sujet défini : "+it.titre,true); });
   bindLib("dbLib","dbLibUse",CONTENT.debatMouvant.affirmations,it=>{ setState({dbAff:it.texte}); status("Affirmation définie",true); });
   bindLib("cfLib","cfLibUse",CONTENT.worldCafe.jeux,it=>{ setState({cafeTables:it.tables}); status("Thèmes des tables définis",true); });
