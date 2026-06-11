@@ -33,11 +33,19 @@
 :root{
   --teal:#175177;--teal-d:#0F3A57;--orange:#F19100;--cyan:#1ABCDA;
   --turq:#34D9D3;--jaune:#FBDC4B;--ink:#1B2733;--mut:#5C6B78;
-  --bg:#F4F7F9;--card:#fff;--line:#DCE5EB;
+  --bg:#EEF3F7;--card:#fff;--line:#DCE5EB;
+  --r:10px;--r-sm:7px;
+  --sh:0 1px 2px rgba(15,58,87,.06),0 4px 14px rgba(15,58,87,.05);
+  --sh-lg:0 10px 34px rgba(15,58,87,.14);
   --ff:"Segoe UI","Helvetica Neue",Arial,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--ff);color:var(--ink);background:var(--bg);line-height:1.45;min-height:100vh}
+body{font-family:var(--ff);color:var(--ink);line-height:1.45;min-height:100vh;
+  background:
+    radial-gradient(1100px 420px at 88% -8%, rgba(26,188,218,.13), transparent 60%),
+    radial-gradient(900px 380px at -6% 4%, rgba(241,145,0,.08), transparent 55%),
+    linear-gradient(180deg,#F4F8FB,#EAF1F6 60%,#E6EEF4);
+  background-attachment:fixed}
 .topbar{background:var(--teal);color:#fff;padding:9px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:20}
 .topbar .eye{font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.8}
 .topbar h1{font-size:15px;font-weight:700}
@@ -144,12 +152,93 @@ textarea{resize:vertical;min-height:60px}
 .sigchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .sigchip{background:#EDF4F8;border:1px solid var(--line);border-radius:14px;padding:4px 11px;font-size:12px;color:var(--teal);cursor:pointer;text-align:left}
 .sigchip:hover{border-color:var(--cyan);background:#E2F4F8}
+
+/* =================== REDESIGN v2 =================== */
+.panel{border-radius:var(--r);box-shadow:var(--sh);border-color:#E4EBF1}
+.panel h2{font-size:17px;letter-spacing:-.01em}
+.btn{border-radius:var(--r-sm);transition:transform .08s ease,box-shadow .15s ease,filter .12s ease}
+.btn.prim{background:linear-gradient(135deg,var(--teal),#1d6190);box-shadow:0 2px 8px rgba(23,81,119,.28)}
+.btn.warn{background:linear-gradient(135deg,#F19100,#e07e00);box-shadow:0 2px 8px rgba(224,126,0,.28)}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+input,textarea,select{border-radius:var(--r-sm);transition:border-color .12s,box-shadow .12s}
+input:focus,textarea:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(26,188,218,.16);outline:none}
+
+/* topbar : marque + phare */
+.topbar{padding:11px 18px}
+.topbar .brand{display:flex;align-items:center;gap:9px}
+.topbar .lh{font-size:18px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25))}
+.topbar h1{letter-spacing:.2px}
+.tag{border-radius:20px;padding:3px 11px;display:inline-flex;align-items:center;gap:4px}
+.tbtn{border-radius:20px;padding:6px 14px;transition:background .12s,box-shadow .12s;font-weight:600}
+.tbtn.anim-on{background:var(--jaune);color:var(--teal-d);border-color:var(--jaune)}
+
+/* méthodes : icône + survol */
+.mcard{border-radius:var(--r);padding:13px 13px 13px 13px;transition:transform .1s,border-color .12s,box-shadow .15s;position:relative;overflow:hidden}
+.mcard:hover{transform:translateY(-2px);box-shadow:var(--sh)}
+.mcard.on{box-shadow:0 4px 16px rgba(23,81,119,.16)}
+.mcard .mic{font-size:21px;line-height:1;margin-bottom:7px;display:block}
+.mcard.on::after{content:"●";position:absolute;top:9px;right:11px;color:var(--cyan);font-size:11px}
+
+/* écran d'accès (mot de passe) */
+.gate{max-width:430px;margin:7vh auto 40px;padding:0 16px;animation:gatein .4s ease}
+@keyframes gatein{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.gate .card{background:var(--card);border-radius:16px;box-shadow:var(--sh-lg);overflow:hidden}
+.gate .hero{background:linear-gradient(135deg,var(--teal-d),var(--teal) 65%,#1d6996);color:#fff;padding:30px 28px 26px;text-align:center;position:relative;overflow:hidden}
+.gate .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(440px 150px at 78% -30%,rgba(251,220,75,.30),transparent 70%)}
+.gate .beam{position:absolute;top:0;left:50%;width:230px;height:170px;transform:translateX(-50%);
+  background:conic-gradient(from 200deg at 50% 0,transparent 0deg,rgba(251,220,75,.22) 18deg,transparent 36deg);pointer-events:none}
+.gate .lh-big{font-size:46px;position:relative;filter:drop-shadow(0 3px 6px rgba(0,0,0,.3))}
+.gate .eyebrow{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;opacity:.85;margin-top:8px;position:relative}
+.gate .hero h1{font-size:25px;font-weight:800;margin-top:3px;position:relative;letter-spacing:-.5px}
+.gate .hero p{font-size:13px;opacity:.92;margin-top:7px;position:relative;line-height:1.5}
+.gate .body{padding:24px 28px 26px}
+.gate .body h2{font-size:15px;color:var(--teal);margin-bottom:4px}
+.gate .lockrow{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);margin-bottom:16px}
+.gate input{padding:13px 14px;font-size:15px;text-align:center;letter-spacing:.04em}
+.gate .btn{width:100%;justify-content:center;font-size:15px;padding:14px;margin-top:14px}
+.gate .foot{font-size:11.5px;color:var(--mut);text-align:center;margin-top:14px;line-height:1.5}
+.shake{animation:shk .4s}
+@keyframes shk{0%,100%{transform:none}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+
+/* lobby */
+.lobby .panel{border-radius:14px;box-shadow:var(--sh-lg)}
+.lobby .ribbon{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.lobby .ribbon .lh{font-size:30px}
+.lobby .ribbon .t{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);font-weight:700}
+.lobby .mlist span{transition:transform .1s,background .12s}
+.lobby .mlist span:hover{transform:translateY(-1px)}
+
+/* modale (mot de passe animateur) */
+.ovl{position:fixed;inset:0;background:rgba(15,58,87,.45);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px;animation:gatein .2s ease}
+.modal{background:#fff;border-radius:14px;box-shadow:var(--sh-lg);width:100%;max-width:380px;overflow:hidden}
+.modal .mh{background:linear-gradient(135deg,var(--teal-d),var(--teal));color:#fff;padding:18px 22px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:9px}
+.modal .mb{padding:20px 22px}
+.modal .mb p{font-size:13px;color:var(--mut);margin-bottom:12px}
+.modal input{padding:12px 13px;font-size:15px}
+.modal .mf{display:flex;gap:9px;margin-top:16px}
+.modal .mf .btn{flex:1;justify-content:center}
+
+/* état d'attente */
+.waiting{text-align:center;padding:30px 18px}
+.waiting .lh{font-size:40px;display:block;margin-bottom:6px;animation:bob 3s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.waiting h2{justify-content:center}
+.waiting .pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cyan);margin-right:6px;animation:pls 1.4s infinite}
+@keyframes pls{0%,100%{opacity:.3}50%{opacity:1}}
+.chip{transition:transform .1s}
+.chip:hover{transform:translateY(-1px)}
 </style>
 </head>
 <body>
 <div class="topbar">
-  <span class="eye">IGEDD · Mission 016714-01</span>
-  <h1>Cap 2028</h1>
+  <div class="brand">
+    <span class="lh">🗼</span>
+    <div>
+      <span class="eye">IGEDD · Mission 016714-01</span>
+      <h1>Cap 2028</h1>
+    </div>
+  </div>
   <div class="right" id="topRight"></div>
 </div>
 <div class="wrap" id="root"></div>
@@ -174,15 +263,31 @@ function firebaseReady(){
 }
 
 /* ============================================================
+   1 bis. CONTROLE D'ACCES (modifiez les deux mots de passe ici)
+   ------------------------------------------------------------
+   ACCESS.participant : exigé pour entrer dans l'atelier.
+   ACCESS.animateur   : exigé pour ouvrir le panneau d'animation.
+   Laissez "" pour désactiver un niveau.
+   NB : vérification côté navigateur. Pour un atelier fermé et
+   temporaire, cela dissuade les visiteurs de passage ; ce n'est
+   pas un secret inviolable (le code source reste lisible).
+   ============================================================ */
+const ACCESS = {
+  participant: "igedd2028",
+  animateur:   "anim2028"
+};
+const norm = s => (s||"").trim().toLowerCase();
+
+/* ============================================================
    2. CONSTANTES METIER
    ============================================================ */
 const METHODS = [
-  {id:"designfiction", t:"Design fiction",        d:"Écrire des scénarios prospectifs de sortie."},
-  {id:"codev",         t:"Codéveloppement",       d:"Une situation exposée, le groupe conseille."},
-  {id:"sixchapeaux",   t:"Six chapeaux",          d:"Penser un sujet sous six angles successifs."},
-  {id:"debatmouvant",  t:"Débat mouvant",         d:"Se positionner sur une affirmation clivante."},
-  {id:"worldcafe",     t:"World café",            d:"Trois tables thématiques, contributions croisées."},
-  {id:"cartoarg",      t:"Cartographie d'arguments", d:"Structurer le pour et le contre d'une thèse."}
+  {id:"designfiction", ic:"🔭", t:"Design fiction",        d:"Écrire des scénarios prospectifs de sortie."},
+  {id:"codev",         ic:"🤝", t:"Codéveloppement",       d:"Une situation exposée, le groupe conseille."},
+  {id:"sixchapeaux",   ic:"🎩", t:"Six chapeaux",          d:"Penser un sujet sous six angles successifs."},
+  {id:"debatmouvant",  ic:"⚖️", t:"Débat mouvant",         d:"Se positionner sur une affirmation clivante."},
+  {id:"worldcafe",     ic:"☕", t:"World café",            d:"Trois tables thématiques, contributions croisées."},
+  {id:"cartoarg",      ic:"🗺️", t:"Cartographie d'arguments", d:"Structurer le pour et le contre d'une thèse."}
 ];
 const HATS = [
   {id:"blanc", t:"Blanc · les faits",      c:"#5C6B78"},
@@ -253,6 +358,7 @@ let roomId = (params.get("salle")||"").trim().toLowerCase();
 let uid = localStorage.getItem("cap2028_uid"); if(!uid){ uid="u"+Math.random().toString(36).slice(2,10); localStorage.setItem("cap2028_uid",uid); }
 let pseudo = localStorage.getItem("cap2028_pseudo")||PHARES[Math.floor(Math.random()*PHARES.length)];
 let anim = false;           // panneau d'animation ouvert
+let isAnimateur = sessionStorage.getItem("cap2028_anim")==="1"; // droits animateur
 let room = null;            // instantané complet de la salle
 let unwatch = null;
 const root = document.getElementById("root");
@@ -284,20 +390,83 @@ function bindLib(selId,btnId,items,onUse){
 }
 
 /* ============================================================
+   4 bis. ECRAN D'ACCES (mot de passe participant)
+   ============================================================ */
+function gateOk(){ return !ACCESS.participant || sessionStorage.getItem("cap2028_gate")==="1"; }
+function renderGate(onPass){
+  topRight.innerHTML = '<span class="tag mode">'+(firebaseReady()?"Firebase":"Mode local")+'</span>';
+  root.innerHTML =
+   '<div class="gate"><div class="card">'
+   +'<div class="hero"><div class="beam"></div>'
+   +'<div class="lh-big">🗼</div>'
+   +'<div class="eyebrow">IGEDD · Mission 016714-01</div>'
+   +'<h1>Cap 2028</h1>'
+   +'<p>Atelier d\'intelligence collective sur la préparation des sorties d\'emplois fonctionnels.</p>'
+   +'</div>'
+   +'<div class="body">'
+   +'<h2>Accès réservé</h2>'
+   +'<div class="lockrow">🔒 Saisissez le mot de passe communiqué par l\'animateur.</div>'
+   +'<input id="gatePw" type="password" placeholder="Mot de passe" autocomplete="off" data-go="gateGo">'
+   +'<button class="btn prim" id="gateGo">Accéder à l\'atelier</button>'
+   +'<p class="status err" id="gateErr" style="text-align:center"></p>'
+   +'<p class="foot">Espace temporaire et fermé. Aucun compte, aucune inscription.</p>'
+   +'</div></div></div>';
+  const tryGo=()=>{
+    const pw=document.getElementById("gatePw");
+    if(norm(pw.value)===norm(ACCESS.participant)){
+      sessionStorage.setItem("cap2028_gate","1"); onPass();
+    } else {
+      document.getElementById("gateErr").textContent="Mot de passe incorrect.";
+      const c=root.querySelector(".card"); c.classList.remove("shake"); void c.offsetWidth; c.classList.add("shake");
+      pw.value=""; pw.focus();
+    }
+  };
+  document.getElementById("gateGo").addEventListener("click",tryGo);
+  setTimeout(()=>{ const el=document.getElementById("gatePw"); if(el)el.focus(); },60);
+}
+
+/* Modale générique de saisie de mot de passe (animateur) */
+function askPassword(titre,texte,expected,onOk){
+  const ovl=document.createElement("div"); ovl.className="ovl";
+  ovl.innerHTML='<div class="modal"><div class="mh">🧭 '+esc(titre)+'</div>'
+   +'<div class="mb"><p>'+esc(texte)+'</p>'
+   +'<input id="mPw" type="password" placeholder="Mot de passe animateur" autocomplete="off">'
+   +'<p class="status err" id="mErr" style="text-align:center"></p>'
+   +'<div class="mf"><button class="btn sec" id="mCancel">Annuler</button><button class="btn prim" id="mOk">Valider</button></div>'
+   +'</div></div>';
+  document.body.appendChild(ovl);
+  const close=()=>ovl.remove();
+  const tryOk=()=>{
+    const v=document.getElementById("mPw").value;
+    if(norm(v)===norm(expected)){ close(); onOk(); }
+    else{
+      document.getElementById("mErr").textContent="Mot de passe incorrect.";
+      const m=ovl.querySelector(".modal"); m.classList.remove("shake"); void m.offsetWidth; m.classList.add("shake");
+      const p=document.getElementById("mPw"); p.value=""; p.focus();
+    }
+  };
+  document.getElementById("mOk").addEventListener("click",tryOk);
+  document.getElementById("mCancel").addEventListener("click",close);
+  ovl.addEventListener("click",e=>{ if(e.target===ovl)close(); });
+  document.getElementById("mPw").addEventListener("keydown",e=>{ if(e.key==="Enter"){e.preventDefault();tryOk();} if(e.key==="Escape")close(); });
+  setTimeout(()=>document.getElementById("mPw").focus(),60);
+}
+
+/* ============================================================
    5. LOBBY (rejoindre une salle, sans inscription)
    ============================================================ */
 function renderLobby(){
   topRight.innerHTML = '<span class="tag mode">'+(firebaseReady()?"Firebase":"Mode local")+'</span>';
   root.innerHTML =
    '<div class="lobby"><div class="panel">'
-   +'<h2>Rejoindre l\'atelier</h2>'
+   +'<div class="ribbon"><span class="lh">🗼</span><div><div class="t">IGEDD · Cap 2028</div><h2 style="margin:0">Rejoindre l\'atelier</h2></div></div>'
    +'<p class="hint">Intelligence collective de la mission n° 016714-01, « Comment bien préparer les sorties d\'emplois fonctionnels de l\'IGEDD ? ». Aucun compte requis.</p>'
    +'<div style="margin-bottom:12px"><label>Code de la salle</label>'
    +'<input id="lbRoom" type="text" value="'+esc(roomId)+'" placeholder="ex : igedd-2028" autocomplete="off" data-go="lbGo"></div>'
    +'<div style="margin-bottom:16px"><label>Votre pseudonyme (un phare, par défaut)</label>'
    +'<input id="lbPseudo" type="text" value="'+esc(pseudo)+'" maxlength="24" autocomplete="off" data-go="lbGo"></div>'
    +'<button class="btn prim" id="lbGo" style="width:100%;justify-content:center;font-size:15px;padding:13px">Entrer dans la salle</button>'
-   +'<div class="mlist">'+METHODS.map(m=>'<span>'+esc(m.t)+'</span>').join("")+'</div>'
+   +'<div class="mlist">'+METHODS.map(m=>'<span>'+m.ic+' '+esc(m.t)+'</span>').join("")+'</div>'
    +(firebaseReady()?'':'<p class="note">Firebase non configuré : mode local actif. La synchronisation fonctionne entre onglets d\'un même navigateur, utile pour tester. Renseignez FIREBASE_CONFIG pour une session multi-postes.</p>')
    +'</div></div>';
   document.getElementById("lbGo").addEventListener("click",()=>{
@@ -327,8 +496,17 @@ function renderTop(){
     '<span class="tag mode">'+(DB.mode==="firebase"?"Firebase":"Local")+'</span>'
    +'<span class="tag room">Salle '+esc(roomId)+'</span>'
    +'<span class="tag me">⚓ '+esc(pseudo)+'</span>'
-   +'<button class="tbtn" id="animToggle">🧭 Animation</button>';
-  document.getElementById("animToggle").addEventListener("click",()=>{ anim=!anim; renderApp(); });
+   +'<button class="tbtn'+(anim?" anim-on":"")+'" id="animToggle">'+(isAnimateur?"🧭 Animation":"🔒 Animation")+'</button>';
+  document.getElementById("animToggle").addEventListener("click",openAnim);
+}
+/* Ouvre le panneau d'animation, sous réserve du mot de passe animateur. */
+function openAnim(){
+  if(isAnimateur || !ACCESS.animateur){
+    isAnimateur=true; anim=!anim; renderApp(); return;
+  }
+  askPassword("Espace animateur","Le pilotage de l'atelier est réservé à l'animateur. Saisissez le mot de passe animateur.",ACCESS.animateur,()=>{
+    isAnimateur=true; sessionStorage.setItem("cap2028_anim","1"); anim=true; renderApp();
+  });
 }
 
 /* ============================================================
@@ -366,9 +544,10 @@ function renderApp(){
   let h = animPanel(st);
   const active = st.active;
   if(!active){
-    h += '<div class="panel"><h2>En attente de lancement</h2>'
-       + '<div class="help">L\'animateur choisit une méthode dans le panneau « Animation » en haut a droite. L\'écran de chacun suivra automatiquement.</div>'
-       + '<h3>Présents dans la salle</h3><div class="crew" id="crew"></div></div>';
+    h += '<div class="panel"><div class="waiting"><span class="lh">🗼</span>'
+       + '<h2><span class="pulse"></span>En attente de lancement</h2>'
+       + '<p class="hint" style="max-width:520px;margin:8px auto 0">L\'animateur choisit une méthode dans le panneau « Animation » en haut à droite. L\'écran de chacun suivra automatiquement.</p>'
+       + '</div><h3>Présents dans la salle</h3><div class="crew" id="crew"></div></div>';
   } else if(active==="designfiction") h += viewDesignFiction(st);
   else if(active==="codev")          h += viewCodev(st);
   else if(active==="sixchapeaux")    h += viewHats(st);
@@ -400,7 +579,7 @@ function animPanel(st){
   let h='<div class="animpanel"><h3>🧭 Commandes d\'animation</h3>'
    +'<p class="hint" style="margin-bottom:8px">Choisissez la méthode active. Tout le monde bascule en direct.</p>'
    +'<div class="methods">';
-  METHODS.forEach(m=>{ h+='<button class="mcard'+(st.active===m.id?" on":"")+'" data-m="'+m.id+'"><div class="mt">'+esc(m.t)+'</div><div class="md">'+esc(m.d)+'</div></button>'; });
+  METHODS.forEach(m=>{ h+='<button class="mcard'+(st.active===m.id?" on":"")+'" data-m="'+m.id+'"><span class="mic">'+m.ic+'</span><div class="mt">'+esc(m.t)+'</div><div class="md">'+esc(m.d)+'</div></button>'; });
   h+='</div>';
   /* commandes propres a la methode active */
   if(st.active==="designfiction"){
@@ -699,7 +878,8 @@ function doExport(){
    ============================================================ */
 (async function(){
   await initBackend();
-  if(roomId){ renderTop(); joinRoom(); } else { renderLobby(); }
+  const enter=()=>{ if(roomId){ renderTop(); joinRoom(); } else { renderLobby(); } };
+  if(gateOk()) enter(); else renderGate(enter);
 })();
 </script>
 </body>
