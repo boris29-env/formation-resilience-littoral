@@ -228,6 +228,16 @@ input:focus,textarea:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 
 @keyframes pls{0%,100%{opacity:.3}50%{opacity:1}}
 .chip{transition:transform .1s}
 .chip:hover{transform:translateY(-1px)}
+
+/* aide contextuelle au survol */
+.help-ic{display:inline-flex;width:16px;height:16px;border-radius:50%;background:#EDF4F8;color:var(--teal);font-size:11px;font-weight:700;align-items:center;justify-content:center;cursor:help;position:relative;border:1px solid var(--line);vertical-align:middle;margin-left:5px;line-height:1;user-select:none}
+.help-ic:hover,.help-ic:focus{background:var(--teal);color:#fff;outline:none;border-color:var(--teal)}
+.help-ic::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:12px;font-weight:400;padding:9px 12px;border-radius:7px;width:max-content;max-width:280px;text-align:left;line-height:1.45;opacity:0;pointer-events:none;transition:opacity .12s;box-shadow:var(--sh-lg);z-index:55;white-space:normal}
+.help-ic::before{content:"";position:absolute;bottom:calc(100% + 3px);left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--ink);opacity:0;transition:opacity .12s;pointer-events:none}
+.help-ic:hover::after,.help-ic:hover::before,.help-ic:focus::after,.help-ic:focus::before{opacity:1}
+/* éviter le débordement à droite quand le ? est proche du bord */
+.help-ic.right::after{left:auto;right:0;transform:none}
+.help-ic.right::before{left:auto;right:5px;transform:none}
 </style>
 </head>
 <body>
@@ -369,6 +379,8 @@ const topRight = document.getElementById("topRight");
 function basePath(){ return "rooms/"+roomId; }
 function setState(patch){ return DB.update(basePath()+"/state", patch); }
 function esc(s){ const d=document.createElement("div"); d.textContent=(s==null)?"":String(s); return d.innerHTML; }
+/* Bulle d'aide à côté d'un libellé. Passez "right" pour aligner à droite si proche du bord. */
+function help(txt,pos){ return ' <span class="help-ic'+(pos?" "+pos:"")+'" tabindex="0" data-tip="'+esc(txt)+'" aria-label="Aide : '+esc(txt)+'">?</span>'; }
 function status(msg,ok){ const el=document.getElementById("stx"); if(!el)return; el.textContent=msg; el.className="status "+(ok?"ok":"err"); setTimeout(()=>{ if(el&&el.textContent===msg)el.textContent=""; },2800); }
 
 /* ---- bibliothèques de contenu (panneau animation) ---- */
@@ -473,9 +485,9 @@ function renderLobby(){
    '<div class="lobby"><div class="panel">'
    +'<div class="ribbon"><span class="lh">🗼</span><div><div class="t">IGEDD · Cap 2028</div><h2 style="margin:0">Rejoindre l\'atelier</h2></div></div>'
    +'<p class="hint">Intelligence collective de la mission n° 016714-01, « Comment bien préparer les sorties d\'emplois fonctionnels de l\'IGEDD ? ». Aucun compte requis.</p>'
-   +'<div style="margin-bottom:12px"><label>Code de la salle</label>'
+   +'<div style="margin-bottom:12px"><label>Code de la salle'+help("Code court partagé par l\'animateur (lettres, chiffres et tirets). Tout le monde rejoint la même salle en saisissant le même code.")+'</label>'
    +'<input id="lbRoom" type="text" value="'+esc(roomId)+'" placeholder="ex : igedd-2028" autocomplete="off" data-go="lbGo"></div>'
-   +'<div style="margin-bottom:16px"><label>Votre pseudonyme (un phare, par défaut)</label>'
+   +'<div style="margin-bottom:16px"><label>Votre pseudonyme (un phare, par défaut)'+help("Identifiant visible des autres participants. Choisissez un nom de phare pour rester anonyme, ou votre prénom si vous préférez.")+'</label>'
    +'<input id="lbPseudo" type="text" value="'+esc(pseudo)+'" maxlength="24" autocomplete="off" data-go="lbGo"></div>'
    +'<button class="btn prim" id="lbGo" style="width:100%;justify-content:center;font-size:15px;padding:13px">Entrer dans la salle</button>'
    +'<div class="mlist">'+METHODS.map(m=>'<span>'+m.ic+' '+esc(m.t)+'</span>').join("")+'</div>'
@@ -608,21 +620,21 @@ function animPanel(st){
   h+='</div>';
   /* commandes propres a la methode active */
   if(st.active==="designfiction"){
-    h+='<h3>Question prospective</h3><div class="row"><input id="dfPrompt" type="text" value="'+esc(st.dfPrompt||"Et si, en 2030, la sortie d\'emploi fonctionnel était devenue un atout de carrière reconnu ?")+'" data-go="dfSet"><button class="btn prim sm" id="dfSet">Définir</button></div>'
+    h+='<h3>Question prospective'+help("Question d\'horizon 2030-2032 qui cadre l\'exercice de design fiction. Une question ouverte « Et si... », poussant à imaginer un futur plausible.")+'</h3><div class="row"><input id="dfPrompt" type="text" value="'+esc(st.dfPrompt||"Et si, en 2030, la sortie d\'emploi fonctionnel était devenue un atout de carrière reconnu ?")+'" data-go="dfSet"><button class="btn prim sm" id="dfSet">Définir</button></div>'
       +libBlock("dfLib","dfLibUse","Bibliothèque de questions prospectives",CONTENT.designFiction.prompts,p=>(p.noir?"⚠ ":"")+p.texte,"Utiliser");
   }
   if(st.active==="codev"){
     const cur=(room&&room.participants&&room.participants[uid])?pseudo:pseudo;
-    h+='<h3>Pilotage du codéveloppement</h3>'
-      +'<div class="row" style="margin-bottom:8px"><div style="flex:1;min-width:160px"><label>Pseudonyme de la personne qui expose</label><input id="cvClient" type="text" value="'+esc(st.cvClient||"")+'" placeholder="ex : '+esc(cur)+'"></div><button class="btn prim sm" id="cvClientSet">Définir</button></div>'
+    h+='<h3>Pilotage du codéveloppement'+help("Désignez l\'exposant et avancez les cinq étapes au rythme du groupe. L\'exposant aura seul accès à l\'écriture de l\'exposé, du contrat et du plan.")+'</h3>'
+      +'<div class="row" style="margin-bottom:8px"><div style="flex:1;min-width:160px"><label>Pseudonyme de la personne qui expose'+help("Saisissez exactement le pseudonyme tel que la personne l\'a renseigné en arrivant dans la salle. Sans cela, elle ne pourra pas écrire sa situation.")+'</label><input id="cvClient" type="text" value="'+esc(st.cvClient||"")+'" placeholder="ex : '+esc(cur)+'"></div><button class="btn prim sm" id="cvClientSet">Définir</button></div>'
       +'<div class="row">';
     CODEV_PHASES.forEach((p,i)=>{ h+='<button class="btn '+((st.cvPhase||0)===i?"prim":"sec")+' sm" data-cvph="'+i+'">'+(i+1)+'</button>'; });
     h+='<span class="hint" style="margin:0 0 0 6px">'+esc(CODEV_PHASES[st.cvPhase||0])+'</span></div>'
       +libBlock("cvLib","cvLibUse","Bibliothèque de situations (cas fictifs, si aucun volontaire)",codevSituations(),s=>(s._custom?"✦ ":"")+s.texte,"Proposer ce cas")
       +'<details class="lib" style="border-style:solid" id="cvLibEnrich"><summary>✏️ Enrichir la bibliothèque (ajouter une situation, '+libCodev.length+' ajout'+(libCodev.length>1?"s":"")+')</summary>'
-      +'<div style="margin-top:10px"><label>Énoncé (3-4 phrases, anonyme, situation réaliste)</label>'
+      +'<div style="margin-top:10px"><label>Énoncé (3-4 phrases, anonyme, situation réaliste)'+help("Décrivez un dilemme concret de sortie d\'emploi fonctionnel : contexte, tension, point d\'arbitrage. Anonyme : aucun nom de personne, aucun détail identifiable.")+'</label>'
       +'<textarea id="cvLibAdd" maxlength="700" placeholder="Décrivez la situation. Aucun nom de personne ; restez factuel et générique."></textarea></div>'
-      +'<div class="row" style="margin-top:8px;align-items:flex-end"><div style="flex:1;min-width:140px"><label>Axes thématiques (A à H, séparés par des virgules)</label>'
+      +'<div class="row" style="margin-top:8px;align-items:flex-end"><div style="flex:1;min-width:140px"><label>Axes thématiques (A à H, séparés par des virgules)'+help("Une ou plusieurs lettres parmi A à H. A organisation interne, B parcours, C marque employeur, D indemnitaire/statutaire, E territorial/MIGT, F réseaux, G déontologie, H coopération institutionnelle.")+'</label>'
       +'<input id="cvLibAxes" type="text" maxlength="40" placeholder="ex : A, D"></div>'
       +'<button class="btn prim sm" id="cvLibAddBtn">Ajouter à la bibliothèque</button></div>'
       +'<p class="hint" style="margin-top:8px;font-size:11.5px">Les ajouts sont partagés et restent disponibles pour les ateliers suivants.</p>'
@@ -630,7 +642,7 @@ function animPanel(st){
       +'</details>';
   }
   if(st.active==="sixchapeaux"){
-    h+='<h3>Chapeau en cours</h3><div class="hatbtns">';
+    h+='<h3>Chapeau en cours'+help("Choisissez l\'angle sous lequel le groupe réfléchit maintenant. Faites tourner les six chapeaux dans un ordre raisonné (typiquement : blanc, rouge, jaune, noir, vert, bleu).")+'</h3><div class="hatbtns">';
     HATS.forEach(ht=>{ h+='<button class="hatbtn'+(st.hat===ht.id?" on":"")+'" data-hat="'+ht.id+'" style="border-color:'+ht.c+';color:'+ht.c+'">'+esc(ht.t)+'</button>'; });
     h+='</div>'
       +libBlock("hatLib","hatLibUse","Bibliothèque de sujets (avec une consigne par chapeau)",CONTENT.sixChapeaux.sujets,s=>s.titre,"Utiliser");
@@ -638,18 +650,18 @@ function animPanel(st){
     if(cs)h+='<p class="hint" style="margin-top:6px">Sujet en cours : <b>'+esc(cs.titre)+'</b></p>';
   }
   if(st.active==="debatmouvant"){
-    h+='<h3>Affirmation à débattre</h3><div class="row"><input id="dbAff" type="text" value="'+esc(st.dbAff||"Sans accompagnement formalisé dès le recrutement, la sortie d\'emploi fonctionnel restera subie.")+'" data-go="dbSet"><button class="btn prim sm" id="dbSet">Définir</button><button class="btn warn sm" id="dbNew">Nouveau débat</button></div>'
+    h+='<h3>Affirmation à débattre'+help("Énoncé clivant, défendable des deux côtés. Le bouton « Nouveau débat » remet à zéro positions et arguments pour passer à une autre affirmation.")+'</h3><div class="row"><input id="dbAff" type="text" value="'+esc(st.dbAff||"Sans accompagnement formalisé dès le recrutement, la sortie d\'emploi fonctionnel restera subie.")+'" data-go="dbSet"><button class="btn prim sm" id="dbSet">Définir</button><button class="btn warn sm" id="dbNew">Nouveau débat</button></div>'
       +libBlock("dbLib","dbLibUse","Bibliothèque d\'affirmations clivantes",CONTENT.debatMouvant.affirmations,a=>a.texte,"Utiliser");
   }
   if(st.active==="worldcafe"){
     const tb=st.cafeTables||["",""," "];
-    h+='<h3>Thèmes des trois tables</h3>';
+    h+='<h3>Thèmes des trois tables'+help("Trois questions ou thèmes cohérents entre eux. Les participants choisissent leur table puis tournent pour croiser les regards.")+'</h3>';
     for(let i=0;i<3;i++){ h+='<div class="row" style="margin-bottom:6px"><input id="cf'+i+'" type="text" value="'+esc(tb[i]||"")+'" placeholder="Thème de la table '+(i+1)+'"></div>'; }
     h+='<button class="btn prim sm" id="cfSet">Définir les thèmes</button>'
       +libBlock("cfLib","cfLibUse","Jeux de tables prêts à l\'emploi",CONTENT.worldCafe.jeux,j=>j.nom+" : "+j.tables.join(" · "),"Utiliser");
   }
   if(st.active==="cartoarg"){
-    h+='<h3>Thèse à cartographier</h3><div class="row"><input id="caTh" type="text" value="'+esc(st.caThesis||"L\'IGEDD doit valoriser explicitement le passage en inspection comme label de carrière.")+'" data-go="caSet"><button class="btn prim sm" id="caSet">Définir</button></div>'
+    h+='<h3>Thèse à cartographier'+help("Affirmation à étayer. Le groupe construit l\'arbre des pour et des contre. Le bouton « Pré-amorcer » dépose les amorces livrées dans la bibliothèque pour éviter la page blanche.")+'</h3><div class="row"><input id="caTh" type="text" value="'+esc(st.caThesis||"L\'IGEDD doit valoriser explicitement le passage en inspection comme label de carrière.")+'" data-go="caSet"><button class="btn prim sm" id="caSet">Définir</button></div>'
       +libBlock("caLib","caLibUse","Bibliothèque de thèses (avec amorces pour et contre)",CONTENT.cartoArguments.theses,t=>t.texte,"Utiliser",
         '<button class="btn warn sm" id="caSeed" disabled title="Définit la thèse et dépose ses amorces pour et contre dans l\'arbre">Pré-amorcer</button>');
   }
@@ -723,12 +735,12 @@ function viewDesignFiction(st){
   let h='<div class="panel"><h2>Design fiction</h2>'
    +'<div class="help">À partir d\'un signal faible que vous observez aujourd\'hui, formulez une hypothèse de futur, puis racontez en une phrase ce que cela change pour la sortie d\'emploi fonctionnel.</div>'
    +'<p style="font-weight:700;color:var(--teal);font-size:15px;margin-bottom:12px">'+esc(st.dfPrompt||"Et si, en 2030...")+'</p>'
-   +'<div class="row" style="align-items:flex-start"><div style="flex:1;min-width:160px"><label>Signal faible observé aujourd\'hui</label><input id="dfSig" type="text" maxlength="140"></div>'
-   +'<div style="flex:1;min-width:160px"><label>Hypothèse « Et si... »</label><input id="dfHyp" type="text" maxlength="140"></div></div>'
+   +'<div class="row" style="align-items:flex-start"><div style="flex:1;min-width:160px"><label>Signal faible observé aujourd\'hui'+help("Un fait ou une tendance discrète mais réelle, déjà observable, qui pourrait s\'amplifier d\'ici 2030. Pas une prédiction : une amorce concrète.")+'</label><input id="dfSig" type="text" maxlength="140"></div>'
+   +'<div style="flex:1;min-width:160px"><label>Hypothèse « Et si... »'+help("Un futur imaginé à partir du signal. Formulez en une phrase commençant par « Et si... » qui pousse l\'idée à sa logique.","right")+'</label><input id="dfHyp" type="text" maxlength="140"></div></div>'
    +'<details class="sigbox" id="dfSigBox"><summary>💡 Besoin d\'inspiration ? Signaux faibles à explorer</summary><div class="sigchips">'
    + CONTENT.designFiction.signauxFaibles.map(s=>'<button class="sigchip" data-sig="'+esc(s)+'">'+esc(s)+'</button>').join("")
    +'</div></details>'
-   +'<div style="margin:8px 0"><label>Conséquence, en une phrase</label><textarea id="dfRec" maxlength="240"></textarea></div>'
+   +'<div style="margin:8px 0"><label>Conséquence, en une phrase'+help("Ce que cette hypothèse changerait concrètement pour la préparation des sorties d\'emploi fonctionnel. Restez factuel, en une phrase.")+'</label><textarea id="dfRec" maxlength="240"></textarea></div>'
    +'<button class="btn prim sm" id="dfAdd">Ajouter ce scénario</button>'
    +'<h3>Scénarios du groupe</h3><div id="dfList">'
    + (cards.length?cards.map(c=>'<div class="dfcard"><div class="lab">Signal</div><div class="val">'+esc(c.sig)+'</div><div class="lab">Et si</div><div class="val">'+esc(c.hyp)+'</div><div class="lab">Conséquence</div><div class="val">'+esc(c.rec)+'</div><div class="who" style="font-size:10px;color:var(--mut)">pavillon '+esc(c.by)+'</div></div>').join(""):'<p class="hint">Aucun scénario pour l\'instant.</p>')
@@ -748,26 +760,26 @@ function viewCodev(st){
    +'<div class="help">Une personne expose une situation réelle de sortie d\'emploi fonctionnel. Le groupe questionne, puis propose. '+(st.cvClient?('Exposant : <b>'+esc(st.cvClient)+'</b>.'):'En attente de la désignation de l\'exposant par l\'animateur.')+'</div>'
    +'<p class="hint" style="font-weight:700;color:var(--teal)">Étape '+(phase+1)+' / 5 : '+esc(CODEV_PHASES[phase])+'</p>';
   /* exposé */
-  h+='<h3>1. La situation exposée</h3>';
+  h+='<h3>1. La situation exposée'+help("L\'exposant décrit en quelques phrases une situation réelle qu\'il vit ou anticipe (sortie d\'emploi fonctionnel). Factuel, anonyme si nécessaire, sans solution déjà arrêtée.")+'</h3>';
   if(isClient && phase<=1){
     h+='<div class="row" style="align-items:flex-start"><textarea id="cvExpose" maxlength="700" placeholder="Décrivez la situation">'+esc(d.expose||"")+'</textarea></div><button class="btn prim sm" id="cvExposeSave">Enregistrer mon exposé</button>';
   } else {
     h+='<div class="item">'+(d.expose?esc(d.expose):'<span class="hint">En attente de l\'exposé.</span>')+'</div>';
   }
   /* questions */
-  h+='<h3>2. Questions de clarification</h3>';
+  h+='<h3>2. Questions de clarification'+help("Posez des questions ouvertes pour mieux comprendre la situation. À ce stade, on cherche à clarifier, pas à conseiller.")+'</h3>';
   if(phase===1){ h+='<div class="row"><input id="cvQ" type="text" maxlength="200" placeholder="Votre question" data-go="cvQAdd"><button class="btn prim sm" id="cvQAdd">Poser</button></div>'; }
   h+='<div id="cvQList" style="margin-top:8px">'+(questions.length?questions.map(q=>'<div class="item">'+esc(q.text)+'<div class="who">'+esc(q.by)+'</div></div>').join(""):'<p class="hint">Aucune question.</p>')+'</div>';
   /* contrat */
-  h+='<h3>3. La demande (contrat)</h3>';
+  h+='<h3>3. La demande (contrat)'+help("L\'exposant formule précisément ce sur quoi il attend l\'avis du groupe. Une question, un dilemme, un point d\'arbitrage : pas tout en même temps.")+'</h3>';
   if(isClient && phase>=2){ h+='<div class="row" style="align-items:flex-start"><textarea id="cvContrat" maxlength="400" placeholder="Sur quoi voulez-vous l\'avis du groupe ?">'+esc(d.contrat||"")+'</textarea></div><button class="btn prim sm" id="cvContratSave">Enregistrer la demande</button>'; }
   else { h+='<div class="item">'+(d.contrat?esc(d.contrat):'<span class="hint">En attente de la demande.</span>')+'</div>'; }
   /* suggestions */
-  h+='<h3>4. Suggestions du groupe</h3>';
+  h+='<h3>4. Suggestions du groupe'+help("Proposez sans imposer : « à votre place, je... », « avez-vous envisagé... ». Restez orienté vers la demande formulée à l\'étape 3.")+'</h3>';
   if(phase===3){ h+='<div class="row"><input id="cvS" type="text" maxlength="220" placeholder="Votre suggestion" data-go="cvSAdd"><button class="btn prim sm" id="cvSAdd">Proposer</button></div>'; }
   h+='<div id="cvSList" style="margin-top:8px">'+(suggestions.length?suggestions.map(s=>'<div class="item">'+esc(s.text)+'<div class="who">'+esc(s.by)+'</div></div>').join(""):'<p class="hint">Aucune suggestion.</p>')+'</div>';
   /* plan */
-  h+='<h3>5. Plan d\'action</h3>';
+  h+='<h3>5. Plan d\'action'+help("L\'exposant synthétise ce qu\'il retient et indique deux ou trois actions concrètes qu\'il compte mettre en oeuvre. Bref, daté quand c\'est possible.")+'</h3>';
   if(isClient && phase>=4){ h+='<div class="row" style="align-items:flex-start"><textarea id="cvPlan" maxlength="500" placeholder="Ce que je retiens et compte mettre en oeuvre">'+esc(d.plan||"")+'</textarea></div><button class="btn prim sm" id="cvPlanSave">Enregistrer le plan</button>'; }
   else { h+='<div class="item">'+(d.plan?esc(d.plan):'<span class="hint">En attente de la synthèse.</span>')+'</div>'; }
   return h+'</div>';
@@ -782,7 +794,7 @@ function viewHats(st){
   let h='<div class="panel"><h2>Les six chapeaux'+(suj?(' · '+esc(suj.titre)):'')+'</h2>'
    +'<div class="help">Tout le groupe réfléchit sous le même angle au même moment. Angle en cours, défini par l\'animateur : <b style="color:'+ht.c+'">'+esc(ht.t)+'</b>.</div>';
   if(suj&&suj.consignes[hat])h+='<div class="consigne"><div class="ct">Consigne · '+esc(ht.t)+'</div>'+esc(suj.consignes[hat])+'</div>';
-  h+='<div class="row"><input id="hatTxt" type="text" maxlength="220" placeholder="Votre contribution sous l\'angle « '+esc(ht.t)+' »" data-go="hatAdd"><button class="btn prim sm" id="hatAdd">Ajouter</button></div>'
+  h+='<div class="row" style="align-items:flex-end"><div style="flex:1;min-width:200px"><label>Contribution'+help("Restez strictement dans l\'angle du chapeau en cours. Une seule idée à la fois, courte. Les autres angles viendront après.")+'</label><input id="hatTxt" type="text" maxlength="220" placeholder="Votre contribution sous l\'angle « '+esc(ht.t)+' »" data-go="hatAdd"></div><button class="btn prim sm" id="hatAdd">Ajouter</button></div>'
    +'<div class="cols g3" style="margin-top:14px" id="hatCols">';
   HATS.forEach(x=>{
     const items=all.filter(c=>c.hat===x.id);
@@ -805,6 +817,7 @@ function viewDebate(st){
   let h='<div class="panel"><h2>Débat mouvant</h2>'
    +'<div class="help">Positionnez-vous, puis argumentez. Vous pouvez changer d\'avis à tout moment.</div>'
    +'<p style="font-weight:700;color:var(--teal);font-size:15px;margin-bottom:6px">'+esc(st.dbAff||"...")+'</p>'
+   +'<p class="hint" style="margin-top:8px;font-size:12px">Votre position'+help("« D\'accord » et « Pas d\'accord » assument une thèse pour le débat. « Nuancé » : vous voyez les deux côtés. Le décompte se met à jour en direct.")+'</p>'
    +'<div class="stancebtns">'
    +'<button class="stbtn pour'+(mine==="pour"?" on":"")+'" data-st="pour">Plutôt d\'accord</button>'
    +'<button class="stbtn nuance'+(mine==="nuance"?" on":"")+'" data-st="nuance">Nuancé</button>'
@@ -812,7 +825,7 @@ function viewDebate(st){
    +'<div class="tally"><span>D\'accord</span><div class="track"><div class="fill" style="background:#1E7B3C;width:'+(counts.pour/tot*100)+'%"></div></div><b>'+counts.pour+'</b></div>'
    +'<div class="tally"><span>Nuancé</span><div class="track"><div class="fill" style="background:var(--orange);width:'+(counts.nuance/tot*100)+'%"></div></div><b>'+counts.nuance+'</b></div>'
    +'<div class="tally"><span>Pas d\'accord</span><div class="track"><div class="fill" style="background:#B3261E;width:'+(counts.contre/tot*100)+'%"></div></div><b>'+counts.contre+'</b></div>'
-   +'<div class="row" style="margin-top:12px"><input id="dbArg" type="text" maxlength="220" placeholder="Un argument (rattaché à votre position)" data-go="dbArgAdd"><button class="btn prim sm" id="dbArgAdd">Argumenter</button></div>'
+   +'<div class="row" style="margin-top:12px;align-items:flex-end"><div style="flex:1;min-width:200px"><label>Argument'+help("Un argument court et concret qui soutient votre position actuelle. Pas une question, pas une nuance générale. Vous pouvez en poser plusieurs.")+'</label><input id="dbArg" type="text" maxlength="220" placeholder="Un argument (rattaché à votre position)" data-go="dbArgAdd"></div><button class="btn prim sm" id="dbArgAdd">Argumenter</button></div>'
    +'<div class="cols g3" style="margin-top:12px">'
    +'<div class="col" style="--ac:#1E7B3C"><h4 style="color:#1E7B3C;border-color:#1E7B3C">Pour</h4>'+args.filter(a=>a.stance==="pour").map(a=>'<div class="item" style="--ac:#1E7B3C">'+esc(a.text)+'<div class="who">'+esc(a.by)+'</div></div>').join("")+'</div>'
    +'<div class="col" style="--ac:var(--orange)"><h4 style="color:#9a5b00;border-color:var(--orange)">Nuancé</h4>'+args.filter(a=>a.stance==="nuance").map(a=>'<div class="item" style="--ac:var(--orange)">'+esc(a.text)+'<div class="who">'+esc(a.by)+'</div></div>').join("")+'</div>'
@@ -827,9 +840,9 @@ function viewCafe(st){
   const d=(room&&room.data&&room.data.worldcafe)||{};
   let h='<div class="panel"><h2>World café</h2>'
    +'<div class="help">Trois tables, trois thèmes. Choisissez une table, déposez vos idées, puis changez de table quand l\'animateur le propose, pour croiser les regards.</div>'
-   +'<div class="row" style="margin-bottom:10px"><div style="flex:1;min-width:160px"><label>Votre table</label><select id="cfTable">'
+   +'<div class="row" style="margin-bottom:10px"><div style="flex:1;min-width:160px"><label>Votre table'+help("Choisissez la table où vous voulez déposer cette idée. Changez de table quand l\'animateur invite à tourner : croiser les angles est l\'intérêt du format.")+'</label><select id="cfTable">'
    + tables.map((t,i)=>'<option value="'+i+'">Table '+(i+1)+(t?' : '+esc(t):'')+'</option>').join("")
-   +'</select></div><div style="flex:2;min-width:200px"><label>Votre idée</label><input id="cfTxt" type="text" maxlength="220" data-go="cfAdd"></div><button class="btn prim sm" id="cfAdd" style="align-self:flex-end">Déposer</button></div>'
+   +'</select></div><div style="flex:2;min-width:200px"><label>Votre idée'+help("Une idée par dépôt, courte, en réponse au thème de la table choisie. Vous pouvez prolonger une idée déjà posée par les précédents passages.")+'</label><input id="cfTxt" type="text" maxlength="220" data-go="cfAdd"></div><button class="btn prim sm" id="cfAdd" style="align-self:flex-end">Déposer</button></div>'
    +'<div class="cols g3">';
   for(let i=0;i<3;i++){
     const items=listOf(d[i]);
@@ -856,11 +869,11 @@ function viewCarto(st){
     });
   } else { h+='<p class="hint">Aucun argument pour l\'instant.</p>'; }
   h+='</div><h3>Ajouter un argument</h3>'
-   +'<div class="row" style="align-items:flex-start"><div style="min-width:120px"><label>Sens</label><select id="caType"><option value="pour">Pour</option><option value="contre">Contre</option></select></div>'
-   +'<div style="min-width:180px"><label>Se rattache à</label><select id="caParent"><option value="root">La thèse</option>'
+   +'<div class="row" style="align-items:flex-start"><div style="min-width:120px"><label>Sens'+help("« Pour » : votre argument soutient la thèse (ou le parent choisi). « Contre » : il l\'affaiblit ou la limite.")+'</label><select id="caType"><option value="pour">Pour</option><option value="contre">Contre</option></select></div>'
+   +'<div style="min-width:180px"><label>Se rattache à'+help("« La thèse » pour un argument de premier niveau. Choisissez un argument existant pour le préciser, le nuancer ou le contredire (deuxième niveau).")+'</label><select id="caParent"><option value="root">La thèse</option>'
    + roots.map(r=>'<option value="'+r.id+'">'+(r.type==="pour"?"[Pour] ":"[Contre] ")+esc(r.text.slice(0,40))+'</option>').join("")
    +'</select></div>'
-   +'<div style="flex:1;min-width:200px"><label>Argument</label><input id="caTxt" type="text" maxlength="220" data-go="caAdd"></div>'
+   +'<div style="flex:1;min-width:200px"><label>Argument'+help("Énoncé court et autonome (compréhensible sans son contexte). Si vous voulez nuancer, créez plutôt un argument enfant rattaché au premier.")+'</label><input id="caTxt" type="text" maxlength="220" data-go="caAdd"></div>'
    +'<button class="btn prim sm" id="caAdd" style="align-self:flex-end">Ajouter</button></div>';
   return h+'</div>';
 }
