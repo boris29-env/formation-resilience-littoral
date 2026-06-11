@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cap 2028, atelier d'intelligence collective, IGEDD 016714-01</title>
+<!--
+  ============================================================================
+  CAP 2028, atelier d'intelligence collective (mission IGEDD n° 016714-01)
+  Application autonome, un seul fichier, destinée a GitHub Pages + Firebase.
+
+  MISE EN ROUTE
+  1. Creez un projet Firebase, activez "Realtime Database" (mode test pour
+     debuter), et collez votre configuration dans FIREBASE_CONFIG ci-dessous.
+  2. Si FIREBASE_CONFIG n'est pas renseigne, l'application bascule en mode
+     local (localStorage), synchronise entre onglets d'un meme navigateur :
+     pratique pour tester seul, sans synchronisation entre postes distants.
+  3. Acces participant : un simple lien, un code de salle, un pseudonyme.
+     Aucun compte, aucune inscription.
+
+  REGLES REALTIME DATABASE conseillees pour un atelier ferme et temporaire
+  (a durcir ensuite, par exemple via un code de salle non devinable) :
+    {
+      "rules": {
+        "rooms": {
+          "$room": { ".read": true, ".write": true }
+        }
+      }
+    }
+  ============================================================================
+-->
+<style>
+:root{
+  --teal:#175177;--teal-d:#0F3A57;--orange:#F19100;--cyan:#1ABCDA;
+  --turq:#34D9D3;--jaune:#FBDC4B;--ink:#1B2733;--mut:#5C6B78;
+  --bg:#F4F7F9;--card:#fff;--line:#DCE5EB;
+  --ff:"Segoe UI","Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--ff);color:var(--ink);background:var(--bg);line-height:1.45;min-height:100vh}
+.topbar{background:var(--teal);color:#fff;padding:9px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+.topbar .eye{font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.8}
+.topbar h1{font-size:15px;font-weight:700}
+.topbar .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.tag{font-size:11px;border-radius:3px;padding:2px 9px;font-weight:700}
+.tag.room{background:var(--orange);color:#fff}
+.tag.me{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.3)}
+.tag.mode{background:var(--jaune);color:var(--teal-d)}
+.tbtn{border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;border-radius:4px;padding:5px 11px;font-size:13px;cursor:pointer}
+.tbtn:hover{background:rgba(255,255,255,.12)}
+.wrap{max-width:1060px;margin:0 auto;padding:18px 14px 64px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px;margin-bottom:14px}
+.panel h2{font-size:16px;color:var(--teal);margin-bottom:6px}
+.panel h3{font-size:12px;color:var(--teal);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px}
+.hint{font-size:13px;color:var(--mut);margin-bottom:10px}
+.help{font-size:13px;background:#EDF4F8;border-left:3px solid var(--cyan);padding:10px 12px;border-radius:0 4px 4px 0;margin-bottom:12px}
+.note{font-size:12px;color:var(--mut);border-top:1px dashed var(--line);margin-top:12px;padding-top:10px}
+.status{font-size:12px;min-height:15px;margin-top:6px}
+.ok{color:#1E7B3C}.err{color:#B3261E}
+.btn{font-family:var(--ff);font-size:14px;font-weight:600;border:none;border-radius:5px;padding:10px 16px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{filter:brightness(1.07)}.btn:active{filter:brightness(.93)}
+.btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+.btn.prim{background:var(--teal);color:#fff}
+.btn.sec{background:#fff;color:var(--teal);border:1.5px solid var(--teal)}
+.btn.warn{background:var(--orange);color:#fff}
+.btn.sm{font-size:12px;padding:6px 11px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+label{font-size:12px;color:var(--mut);font-weight:600;display:block;margin-bottom:4px}
+input,textarea,select{font-family:var(--ff);font-size:14px;border:1px solid var(--line);border-radius:4px;padding:9px 10px;width:100%;background:#fff;color:var(--ink)}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--cyan);outline-offset:1px}
+textarea{resize:vertical;min-height:60px}
+/* methode picker */
+.methods{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:720px){.methods{grid-template-columns:1fr 1fr}}
+@media(max-width:460px){.methods{grid-template-columns:1fr}}
+.mcard{border:1.5px solid var(--line);border-radius:6px;padding:12px;background:#fff;cursor:pointer;text-align:left}
+.mcard:hover{border-color:var(--cyan)}
+.mcard.on{border-color:var(--teal);background:#EDF4F8}
+.mcard .mt{font-weight:700;color:var(--teal);font-size:14px}
+.mcard .md{font-size:12px;color:var(--mut);margin-top:3px}
+/* animation panel */
+.animpanel{background:#FFF8E9;border:1.5px solid var(--jaune);border-radius:6px;padding:14px;margin-bottom:14px}
+.animpanel h3{margin-top:0}
+/* cards / columns */
+.cols{display:grid;gap:12px}
+.col{background:#FBFDFE;border:1px solid var(--line);border-radius:6px;padding:10px;min-height:80px}
+.col h4{font-size:12px;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--ac,var(--teal));padding-bottom:5px;margin-bottom:8px;color:var(--teal)}
+.item{background:#fff;border:1px solid var(--line);border-left:3px solid var(--ac,var(--teal));border-radius:3px;padding:7px 9px;font-size:13px;margin-bottom:6px}
+.item .who{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+.item.mine{border-left-color:var(--cyan)}
+.dfcard{background:#fff;border:1px solid var(--line);border-radius:5px;padding:10px 12px;margin-bottom:8px}
+.dfcard .lab{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--orange);font-weight:700}
+.dfcard .val{font-size:13.5px;margin:2px 0 6px}
+/* hats */
+.hatbtns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.hatbtn{border:2px solid var(--line);border-radius:18px;padding:6px 13px;font-size:13px;font-weight:700;cursor:pointer;background:#fff}
+.hatbtn.on{box-shadow:0 0 0 3px rgba(26,188,218,.3)}
+/* debate */
+.stancebtns{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 14px}
+.stbtn{flex:1;min-width:120px;border:2px solid;border-radius:6px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;background:#fff}
+.stbtn.pour{border-color:#1E7B3C;color:#1E7B3C}.stbtn.pour.on{background:#EAF7EE}
+.stbtn.contre{border-color:#B3261E;color:#B3261E}.stbtn.contre.on{background:#FDEEED}
+.stbtn.nuance{border-color:var(--orange);color:#9a5b00}.stbtn.nuance.on{background:#FFF1DE}
+.tally{display:grid;grid-template-columns:90px 1fr 36px;gap:8px;align-items:center;margin-bottom:6px;font-size:13px}
+.track{background:#EDF2F6;border-radius:3px;height:20px;overflow:hidden}
+.fill{height:100%;border-radius:3px;transition:width .35s}
+/* tree */
+.tree .root{background:var(--teal);color:#fff;border-radius:5px;padding:10px 12px;font-weight:700;margin-bottom:10px}
+.tree .arg{border-radius:4px;padding:7px 10px;margin:5px 0;font-size:13.5px;border:1px solid var(--line)}
+.tree .pour{border-left:4px solid #1E7B3C;background:#F4FBF6}
+.tree .contre{border-left:4px solid #B3261E;background:#FDF6F5}
+.tree .lvl2{margin-left:26px}
+.tree .who{font-size:10px;color:var(--mut);text-transform:uppercase;margin-top:3px}
+.export{width:100%;height:150px;font-family:monospace;font-size:11px}
+.crew{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:#fff;border:1px solid var(--line);border-radius:14px;padding:3px 11px;font-size:12px;color:var(--teal);font-weight:600}
+.lobby{max-width:440px;margin:60px auto;padding:0 14px}
+.lobby .panel{padding:24px}
+.lobby h2{font-size:18px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="eye">IGEDD · Mission 016714-01</span>
+  <h1>Cap 2028</h1>
+  <div class="right" id="topRight"></div>
+</div>
+<div class="wrap" id="root"></div>
+
+<script type="module">
+"use strict";
+
+/* ============================================================
+   1. CONFIGURATION FIREBASE  (collez la votre ici)
+   ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey:        "VOTRE_API_KEY",
+  authDomain:    "VOTRE_PROJET.firebaseapp.com",
+  databaseURL:   "https://VOTRE_PROJET-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:     "VOTRE_PROJET",
+  appId:         "VOTRE_APP_ID"
+};
+function firebaseReady(){
+  return FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.indexOf("VOTRE_") !== 0;
+}
+
+/* ============================================================
+   2. CONSTANTES METIER
+   ============================================================ */
+const METHODS = [
+  {id:"designfiction", t:"Design fiction",        d:"Écrire des scénarios prospectifs de sortie."},
+  {id:"codev",         t:"Codéveloppement",       d:"Une situation exposée, le groupe conseille."},
+  {id:"sixchapeaux",   t:"Six chapeaux",          d:"Penser un sujet sous six angles successifs."},
+  {id:"debatmouvant",  t:"Débat mouvant",         d:"Se positionner sur une affirmation clivante."},
+  {id:"worldcafe",     t:"World café",            d:"Trois tables thématiques, contributions croisées."},
+  {id:"cartoarg",      t:"Cartographie d'arguments", d:"Structurer le pour et le contre d'une thèse."}
+];
+const HATS = [
+  {id:"blanc", t:"Blanc · les faits",      c:"#5C6B78"},
+  {id:"rouge", t:"Rouge · le ressenti",    c:"#B3261E"},
+  {id:"noir",  t:"Noir · les risques",     c:"#1B2733"},
+  {id:"jaune", t:"Jaune · les bénéfices",  c:"#C79A00"},
+  {id:"vert",  t:"Vert · les idées",       c:"#1E7B3C"},
+  {id:"bleu",  t:"Bleu · l'organisation",  c:"#175177"}
+];
+const CODEV_PHASES = [
+  "Exposé de la situation",
+  "Clarification (questions du groupe)",
+  "Contrat (la demande précise)",
+  "Consultation (suggestions du groupe)",
+  "Synthèse et plan d'action"
+];
+const PHARES = ["Cordouan","Ar-Men","La Jument","Kéréon","Créac'h","La Vieille","Goulphar",
+  "Les Baleines","La Coubre","Cap Fréhel","Eckmühl","Chassiron","Gatteville","Planier",
+  "Cap Camarat","La Garoupe","Île Vierge","Le Stiff","Barfleur","Penmarc'h","Sein","Le Four"];
+
+/* ============================================================
+   3. COUCHE DE DONNEES (Firebase OU repli local)
+   ============================================================ */
+let DB = null;
+async function initBackend(){
+  if(firebaseReady()){
+    const appMod = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+    const dbMod  = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
+    const app = appMod.initializeApp(FIREBASE_CONFIG);
+    const database = dbMod.getDatabase(app);
+    DB = {
+      mode:"firebase",
+      watch:(p,cb)=>{ const r=dbMod.ref(database,p); return dbMod.onValue(r,s=>cb(s.val())); },
+      set:(p,v)=>dbMod.set(dbMod.ref(database,p),v),
+      push:(p,v)=>{ const r=dbMod.push(dbMod.ref(database,p),v); return r.key; },
+      update:(p,v)=>dbMod.update(dbMod.ref(database,p),v),
+      remove:(p)=>dbMod.remove(dbMod.ref(database,p))
+    };
+  } else {
+    DB = makeLocalAdapter();
+  }
+}
+function makeLocalAdapter(){
+  const KEY="cap2028_local";
+  const watchers=[];
+  const read =()=>{ try{return JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){return {}} };
+  const write=(t)=>{ localStorage.setItem(KEY,JSON.stringify(t)); notify(); };
+  const parts=p=>p.split("/").filter(Boolean);
+  const getAt=(t,p)=>{ let c=t; for(const k of parts(p)){ if(c==null)return null; c=c[k]; } return c==null?null:c; };
+  const setAt=(t,p,v)=>{ const ks=parts(p); let c=t; for(let i=0;i<ks.length-1;i++){ if(typeof c[ks[i]]!=="object"||c[ks[i]]==null)c[ks[i]]={}; c=c[ks[i]]; } if(v===undefined||v===null)delete c[ks[ks.length-1]]; else c[ks[ks.length-1]]=v; };
+  function notify(){ const t=read(); watchers.forEach(w=>{ try{ w.cb(getAt(t,w.path)); }catch(e){} }); }
+  window.addEventListener("storage",e=>{ if(e.key===KEY)notify(); });
+  return {
+    mode:"local",
+    watch:(p,cb)=>{ const w={path:p,cb}; watchers.push(w); cb(getAt(read(),p)); return ()=>{ const i=watchers.indexOf(w); if(i>=0)watchers.splice(i,1); }; },
+    set:(p,v)=>{ const t=read(); setAt(t,p,v); write(t); },
+    push:(p,v)=>{ const id="k"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); const t=read(); setAt(t,p+"/"+id,v); write(t); return id; },
+    update:(p,v)=>{ const t=read(); for(const k in v)setAt(t,p+"/"+k,v[k]); write(t); },
+    remove:(p)=>{ const t=read(); setAt(t,p,undefined); write(t); }
+  };
+}
+
+/* ============================================================
+   4. ETAT APPLICATIF
+   ============================================================ */
+const params = new URLSearchParams(location.search);
+let roomId = (params.get("salle")||"").trim().toLowerCase();
+let uid = localStorage.getItem("cap2028_uid"); if(!uid){ uid="u"+Math.random().toString(36).slice(2,10); localStorage.setItem("cap2028_uid",uid); }
+let pseudo = localStorage.getItem("cap2028_pseudo")||PHARES[Math.floor(Math.random()*PHARES.length)];
+let anim = false;           // panneau d'animation ouvert
+let room = null;            // instantané complet de la salle
+let unwatch = null;
+const root = document.getElementById("root");
+const topRight = document.getElementById("topRight");
+
+function basePath(){ return "rooms/"+roomId; }
+function setState(patch){ return DB.update(basePath()+"/state", patch); }
+function esc(s){ const d=document.createElement("div"); d.textContent=(s==null)?"":String(s); return d.innerHTML; }
+function status(msg,ok){ const el=document.getElementById("stx"); if(!el)return; el.textContent=msg; el.className="status "+(ok?"ok":"err"); setTimeout(()=>{ if(el&&el.textContent===msg)el.textContent=""; },2800); }
+
+/* ============================================================
+   5. LOBBY (rejoindre une salle, sans inscription)
+   ============================================================ */
+function renderLobby(){
+  topRight.innerHTML = '<span class="tag mode">'+(firebaseReady()?"Firebase":"Mode local")+'</span>';
+  root.innerHTML =
+   '<div class="lobby"><div class="panel">'
+   +'<h2>Rejoindre l\'atelier</h2>'
+   +'<p class="hint">Intelligence collective de la mission n° 016714-01, « Comment bien préparer les sorties d\'emplois fonctionnels de l\'IGEDD ? ». Aucun compte requis.</p>'
+   +'<div style="margin-bottom:12px"><label>Code de la salle</label>'
+   +'<input id="lbRoom" type="text" value="'+esc(roomId)+'" placeholder="ex : igedd-2028" autocomplete="off"></div>'
+   +'<div style="margin-bottom:16px"><label>Votre pseudonyme (un phare, par défaut)</label>'
+   +'<input id="lbPseudo" type="text" value="'+esc(pseudo)+'" maxlength="24" autocomplete="off"></div>'
+   +'<button class="btn prim" id="lbGo" style="width:100%;justify-content:center;font-size:15px;padding:13px">Entrer dans la salle</button>'
+   +(firebaseReady()?'':'<p class="note">Firebase non configuré : mode local actif. La synchronisation fonctionne entre onglets d\'un même navigateur, utile pour tester. Renseignez FIREBASE_CONFIG pour une session multi-postes.</p>')
+   +'</div></div>';
+  document.getElementById("lbGo").addEventListener("click",()=>{
+    const r=document.getElementById("lbRoom").value.trim().toLowerCase().replace(/[^a-z0-9-]/g,"-");
+    const p=document.getElementById("lbPseudo").value.trim();
+    if(!r){ alert("Indiquez un code de salle."); return; }
+    roomId=r; pseudo=p||PHARES[Math.floor(Math.random()*PHARES.length)];
+    localStorage.setItem("cap2028_pseudo",pseudo);
+    const u=new URL(location.href); u.searchParams.set("salle",roomId); history.replaceState(null,"",u);
+    joinRoom();
+  });
+}
+
+/* ============================================================
+   6. ENTREE EN SALLE + ABONNEMENT TEMPS REEL
+   ============================================================ */
+function joinRoom(){
+  DB.set(basePath()+"/participants/"+uid, {pseudo:pseudo, ts:Date.now()});
+  if(unwatch) unwatch();
+  unwatch = DB.watch(basePath(), (val)=>{ room = val||{}; renderApp(); });
+}
+function renderTop(){
+  topRight.innerHTML =
+    '<span class="tag mode">'+(DB.mode==="firebase"?"Firebase":"Local")+'</span>'
+   +'<span class="tag room">Salle '+esc(roomId)+'</span>'
+   +'<span class="tag me">⚓ '+esc(pseudo)+'</span>'
+   +'<button class="tbtn" id="animToggle">🧭 Animation</button>';
+  document.getElementById("animToggle").addEventListener("click",()=>{ anim=!anim; renderApp(); });
+}
+
+/* ============================================================
+   7. RENDU PRINCIPAL
+   ============================================================ */
+function renderApp(){
+  renderTop();
+  const st = (room&&room.state)||{};
+  let h = animPanel(st);
+  const active = st.active;
+  if(!active){
+    h += '<div class="panel"><h2>En attente de lancement</h2>'
+       + '<div class="help">L\'animateur choisit une méthode dans le panneau « Animation » en haut a droite. L\'écran de chacun suivra automatiquement.</div>'
+       + '<h3>Présents dans la salle</h3><div class="crew" id="crew"></div></div>';
+  } else if(active==="designfiction") h += viewDesignFiction(st);
+  else if(active==="codev")          h += viewCodev(st);
+  else if(active==="sixchapeaux")    h += viewHats(st);
+  else if(active==="debatmouvant")   h += viewDebate(st);
+  else if(active==="worldcafe")      h += viewCafe(st);
+  else if(active==="cartoarg")       h += viewCarto(st);
+  h += '<p class="status" id="stx"></p>';
+  root.innerHTML = h;
+  bindAnim(st); bindActive(active,st); fillCrew();
+}
+function fillCrew(){
+  const el=document.getElementById("crew"); if(!el)return;
+  const ps = (room&&room.participants)||{};
+  const list = Object.values(ps);
+  el.innerHTML = list.length ? list.map(p=>'<span class="chip">⚓ '+esc(p.pseudo)+'</span>').join("") : '<span class="hint">Personne pour l\'instant.</span>';
+}
+
+/* ---- panneau animation ---- */
+function animPanel(st){
+  if(!anim) return "";
+  let h='<div class="animpanel"><h3>🧭 Commandes d\'animation</h3>'
+   +'<p class="hint" style="margin-bottom:8px">Choisissez la méthode active. Tout le monde bascule en direct.</p>'
+   +'<div class="methods">';
+  METHODS.forEach(m=>{ h+='<button class="mcard'+(st.active===m.id?" on":"")+'" data-m="'+m.id+'"><div class="mt">'+esc(m.t)+'</div><div class="md">'+esc(m.d)+'</div></button>'; });
+  h+='</div>';
+  /* commandes propres a la methode active */
+  if(st.active==="designfiction"){
+    h+='<h3>Question prospective</h3><div class="row"><input id="dfPrompt" type="text" value="'+esc(st.dfPrompt||"Et si, en 2030, la sortie d\'emploi fonctionnel était devenue un atout de carrière reconnu ?")+'"><button class="btn prim sm" id="dfSet">Définir</button></div>';
+  }
+  if(st.active==="codev"){
+    const cur=(room&&room.participants&&room.participants[uid])?pseudo:pseudo;
+    h+='<h3>Pilotage du codéveloppement</h3>'
+      +'<div class="row" style="margin-bottom:8px"><div style="flex:1;min-width:160px"><label>Pseudonyme de la personne qui expose</label><input id="cvClient" type="text" value="'+esc(st.cvClient||"")+'" placeholder="ex : '+esc(cur)+'"></div><button class="btn prim sm" id="cvClientSet">Définir</button></div>'
+      +'<div class="row">';
+    CODEV_PHASES.forEach((p,i)=>{ h+='<button class="btn '+((st.cvPhase||0)===i?"prim":"sec")+' sm" data-cvph="'+i+'">'+(i+1)+'</button>'; });
+    h+='<span class="hint" style="margin:0 0 0 6px">'+esc(CODEV_PHASES[st.cvPhase||0])+'</span></div>';
+  }
+  if(st.active==="sixchapeaux"){
+    h+='<h3>Chapeau en cours</h3><div class="hatbtns">';
+    HATS.forEach(ht=>{ h+='<button class="hatbtn'+(st.hat===ht.id?" on":"")+'" data-hat="'+ht.id+'" style="border-color:'+ht.c+';color:'+ht.c+'">'+esc(ht.t)+'</button>'; });
+    h+='</div>';
+  }
+  if(st.active==="debatmouvant"){
+    h+='<h3>Affirmation à débattre</h3><div class="row"><input id="dbAff" type="text" value="'+esc(st.dbAff||"Sans accompagnement formalisé dès le recrutement, la sortie d\'emploi fonctionnel restera subie.")+'"><button class="btn prim sm" id="dbSet">Définir</button><button class="btn warn sm" id="dbNew">Nouveau débat</button></div>';
+  }
+  if(st.active==="worldcafe"){
+    const tb=st.cafeTables||["",""," "];
+    h+='<h3>Thèmes des trois tables</h3>';
+    for(let i=0;i<3;i++){ h+='<div class="row" style="margin-bottom:6px"><input id="cf'+i+'" type="text" value="'+esc(tb[i]||"")+'" placeholder="Thème de la table '+(i+1)+'"></div>'; }
+    h+='<button class="btn prim sm" id="cfSet">Définir les thèmes</button>';
+  }
+  if(st.active==="cartoarg"){
+    h+='<h3>Thèse à cartographier</h3><div class="row"><input id="caTh" type="text" value="'+esc(st.caThesis||"L\'IGEDD doit valoriser explicitement le passage en inspection comme label de carrière.")+'"><button class="btn prim sm" id="caSet">Définir</button></div>';
+  }
+  h+='<h3>Salle</h3><div class="row"><button class="btn prim sm" id="aExport">Exporter (JSON)</button><button class="btn warn sm" id="aReset">Réinitialiser la méthode</button></div>'
+   +'<textarea class="export" id="exportBox" hidden readonly></textarea></div>';
+  return h;
+}
+function bindAnim(st){
+  if(!anim) return;
+  root.querySelectorAll("[data-m]").forEach(b=>b.addEventListener("click",()=>setState({active:b.dataset.m})));
+  const dfs=document.getElementById("dfSet"); if(dfs)dfs.addEventListener("click",()=>setState({dfPrompt:document.getElementById("dfPrompt").value.trim()}));
+  const cvc=document.getElementById("cvClientSet"); if(cvc)cvc.addEventListener("click",()=>setState({cvClient:document.getElementById("cvClient").value.trim()}));
+  root.querySelectorAll("[data-cvph]").forEach(b=>b.addEventListener("click",()=>setState({cvPhase:parseInt(b.dataset.cvph,10)})));
+  root.querySelectorAll("[data-hat]").forEach(b=>b.addEventListener("click",()=>setState({hat:b.dataset.hat})));
+  const dbs=document.getElementById("dbSet"); if(dbs)dbs.addEventListener("click",()=>setState({dbAff:document.getElementById("dbAff").value.trim()}));
+  const dbn=document.getElementById("dbNew"); if(dbn)dbn.addEventListener("click",()=>{ DB.remove(basePath()+"/data/debatmouvant"); setState({dbTour:(st.dbTour||0)+1}); });
+  const cfs=document.getElementById("cfSet"); if(cfs)cfs.addEventListener("click",()=>setState({cafeTables:[0,1,2].map(i=>document.getElementById("cf"+i).value.trim())}));
+  const cas=document.getElementById("caSet"); if(cas)cas.addEventListener("click",()=>setState({caThesis:document.getElementById("caTh").value.trim()}));
+  const ex=document.getElementById("aExport"); if(ex)ex.addEventListener("click",doExport);
+  const rs=document.getElementById("aReset"); if(rs)rs.addEventListener("click",()=>{ if(confirm("Effacer les contributions de la méthode active ?")){ DB.remove(basePath()+"/data/"+st.active); status("Méthode réinitialisée",true); } });
+}
+
+/* ============================================================
+   8. VUES DES SIX METHODES
+   ============================================================ */
+
+/* ---- D1. Design fiction ---- */
+function viewDesignFiction(st){
+  const cards = dataList("designfiction");
+  let h='<div class="panel"><h2>Design fiction</h2>'
+   +'<div class="help">À partir d\'un signal faible que vous observez aujourd\'hui, formulez une hypothèse de futur, puis racontez en une phrase ce que cela change pour la sortie d\'emploi fonctionnel.</div>'
+   +'<p style="font-weight:700;color:var(--teal);font-size:15px;margin-bottom:12px">'+esc(st.dfPrompt||"Et si, en 2030...")+'</p>'
+   +'<div class="row" style="align-items:flex-start"><div style="flex:1;min-width:160px"><label>Signal faible observé aujourd\'hui</label><input id="dfSig" type="text" maxlength="140"></div>'
+   +'<div style="flex:1;min-width:160px"><label>Hypothèse « Et si... »</label><input id="dfHyp" type="text" maxlength="140"></div></div>'
+   +'<div style="margin:8px 0"><label>Conséquence, en une phrase</label><textarea id="dfRec" maxlength="240"></textarea></div>'
+   +'<button class="btn prim sm" id="dfAdd">Ajouter ce scénario</button>'
+   +'<h3>Scénarios du groupe</h3><div id="dfList">'
+   + (cards.length?cards.map(c=>'<div class="dfcard"><div class="lab">Signal</div><div class="val">'+esc(c.sig)+'</div><div class="lab">Et si</div><div class="val">'+esc(c.hyp)+'</div><div class="lab">Conséquence</div><div class="val">'+esc(c.rec)+'</div><div class="who" style="font-size:10px;color:var(--mut)">pavillon '+esc(c.by)+'</div></div>').join(""):'<p class="hint">Aucun scénario pour l\'instant.</p>')
+   +'</div></div>';
+  return h;
+}
+
+/* ---- D2. Codéveloppement ---- */
+function viewCodev(st){
+  const phase = st.cvPhase||0;
+  const client = (st.cvClient||"").toLowerCase();
+  const isClient = client && pseudo.toLowerCase()===client;
+  const d = (room&&room.data&&room.data.codev)||{};
+  const questions = listOf(d.questions);
+  const suggestions = listOf(d.suggestions);
+  let h='<div class="panel"><h2>Codéveloppement</h2>'
+   +'<div class="help">Une personne expose une situation réelle de sortie d\'emploi fonctionnel. Le groupe questionne, puis propose. '+(st.cvClient?('Exposant : <b>'+esc(st.cvClient)+'</b>.'):'En attente de la désignation de l\'exposant par l\'animateur.')+'</div>'
+   +'<p class="hint" style="font-weight:700;color:var(--teal)">Étape '+(phase+1)+' / 5 : '+esc(CODEV_PHASES[phase])+'</p>';
+  /* exposé */
+  h+='<h3>1. La situation exposée</h3>';
+  if(isClient && phase<=1){
+    h+='<div class="row" style="align-items:flex-start"><textarea id="cvExpose" maxlength="700" placeholder="Décrivez la situation">'+esc(d.expose||"")+'</textarea></div><button class="btn prim sm" id="cvExposeSave">Enregistrer mon exposé</button>';
+  } else {
+    h+='<div class="item">'+(d.expose?esc(d.expose):'<span class="hint">En attente de l\'exposé.</span>')+'</div>';
+  }
+  /* questions */
+  h+='<h3>2. Questions de clarification</h3>';
+  if(phase===1){ h+='<div class="row"><input id="cvQ" type="text" maxlength="200" placeholder="Votre question"><button class="btn prim sm" id="cvQAdd">Poser</button></div>'; }
+  h+='<div id="cvQList" style="margin-top:8px">'+(questions.length?questions.map(q=>'<div class="item">'+esc(q.text)+'<div class="who">'+esc(q.by)+'</div></div>').join(""):'<p class="hint">Aucune question.</p>')+'</div>';
+  /* contrat */
+  h+='<h3>3. La demande (contrat)</h3>';
+  if(isClient && phase>=2){ h+='<div class="row" style="align-items:flex-start"><textarea id="cvContrat" maxlength="400" placeholder="Sur quoi voulez-vous l\'avis du groupe ?">'+esc(d.contrat||"")+'</textarea></div><button class="btn prim sm" id="cvContratSave">Enregistrer la demande</button>'; }
+  else { h+='<div class="item">'+(d.contrat?esc(d.contrat):'<span class="hint">En attente de la demande.</span>')+'</div>'; }
+  /* suggestions */
+  h+='<h3>4. Suggestions du groupe</h3>';
+  if(phase===3){ h+='<div class="row"><input id="cvS" type="text" maxlength="220" placeholder="Votre suggestion"><button class="btn prim sm" id="cvSAdd">Proposer</button></div>'; }
+  h+='<div id="cvSList" style="margin-top:8px">'+(suggestions.length?suggestions.map(s=>'<div class="item">'+esc(s.text)+'<div class="who">'+esc(s.by)+'</div></div>').join(""):'<p class="hint">Aucune suggestion.</p>')+'</div>';
+  /* plan */
+  h+='<h3>5. Plan d\'action</h3>';
+  if(isClient && phase>=4){ h+='<div class="row" style="align-items:flex-start"><textarea id="cvPlan" maxlength="500" placeholder="Ce que je retiens et compte mettre en oeuvre">'+esc(d.plan||"")+'</textarea></div><button class="btn prim sm" id="cvPlanSave">Enregistrer le plan</button>'; }
+  else { h+='<div class="item">'+(d.plan?esc(d.plan):'<span class="hint">En attente de la synthèse.</span>')+'</div>'; }
+  return h+'</div>';
+}
+
+/* ---- D3. Six chapeaux ---- */
+function viewHats(st){
+  const hat = st.hat || HATS[0].id;
+  const ht = HATS.find(x=>x.id===hat)||HATS[0];
+  const all = dataList("sixchapeaux");
+  let h='<div class="panel"><h2>Les six chapeaux</h2>'
+   +'<div class="help">Tout le groupe réfléchit sous le même angle au même moment. Angle en cours, défini par l\'animateur : <b style="color:'+ht.c+'">'+esc(ht.t)+'</b>.</div>'
+   +'<div class="row"><input id="hatTxt" type="text" maxlength="220" placeholder="Votre contribution sous l\'angle « '+esc(ht.t)+' »"><button class="btn prim sm" id="hatAdd">Ajouter</button></div>'
+   +'<div class="cols" style="grid-template-columns:repeat(3,1fr);margin-top:14px" id="hatCols">';
+  HATS.forEach(x=>{
+    h+='<div class="col" style="--ac:'+x.c+'"><h4 style="color:'+x.c+';border-color:'+x.c+'">'+esc(x.t)+'</h4>';
+    all.filter(c=>c.hat===x.id).forEach(c=>{ h+='<div class="item" style="--ac:'+x.c+'">'+esc(c.text)+'<div class="who">'+esc(c.by)+'</div></div>'; });
+    h+='</div>';
+  });
+  return h+'</div></div>';
+}
+
+/* ---- D4. Débat mouvant ---- */
+function viewDebate(st){
+  const d=(room&&room.data&&room.data.debatmouvant)||{};
+  const positions=d.positions||{};
+  const args=listOf(d.args);
+  const mine=positions[uid]?positions[uid].stance:null;
+  const counts={pour:0,contre:0,nuance:0};
+  Object.values(positions).forEach(p=>{ if(counts[p.stance]!=null)counts[p.stance]++; });
+  const tot=Math.max(1,counts.pour+counts.contre+counts.nuance);
+  let h='<div class="panel"><h2>Débat mouvant</h2>'
+   +'<div class="help">Positionnez-vous, puis argumentez. Vous pouvez changer d\'avis à tout moment.</div>'
+   +'<p style="font-weight:700;color:var(--teal);font-size:15px;margin-bottom:6px">'+esc(st.dbAff||"...")+'</p>'
+   +'<div class="stancebtns">'
+   +'<button class="stbtn pour'+(mine==="pour"?" on":"")+'" data-st="pour">Plutôt d\'accord</button>'
+   +'<button class="stbtn nuance'+(mine==="nuance"?" on":"")+'" data-st="nuance">Nuancé</button>'
+   +'<button class="stbtn contre'+(mine==="contre"?" on":"")+'" data-st="contre">Plutôt pas d\'accord</button></div>'
+   +'<div class="tally"><span>D\'accord</span><div class="track"><div class="fill" style="background:#1E7B3C;width:'+(counts.pour/tot*100)+'%"></div></div><b>'+counts.pour+'</b></div>'
+   +'<div class="tally"><span>Nuancé</span><div class="track"><div class="fill" style="background:var(--orange);width:'+(counts.nuance/tot*100)+'%"></div></div><b>'+counts.nuance+'</b></div>'
+   +'<div class="tally"><span>Pas d\'accord</span><div class="track"><div class="fill" style="background:#B3261E;width:'+(counts.contre/tot*100)+'%"></div></div><b>'+counts.contre+'</b></div>'
+   +'<div class="row" style="margin-top:12px"><input id="dbArg" type="text" maxlength="220" placeholder="Un argument (rattaché à votre position)"><button class="btn prim sm" id="dbArgAdd">Argumenter</button></div>'
+   +'<div class="cols" style="grid-template-columns:1fr 1fr 1fr;margin-top:12px">'
+   +'<div class="col" style="--ac:#1E7B3C"><h4 style="color:#1E7B3C;border-color:#1E7B3C">Pour</h4>'+args.filter(a=>a.stance==="pour").map(a=>'<div class="item" style="--ac:#1E7B3C">'+esc(a.text)+'<div class="who">'+esc(a.by)+'</div></div>').join("")+'</div>'
+   +'<div class="col" style="--ac:var(--orange)"><h4 style="color:#9a5b00;border-color:var(--orange)">Nuancé</h4>'+args.filter(a=>a.stance==="nuance").map(a=>'<div class="item" style="--ac:var(--orange)">'+esc(a.text)+'<div class="who">'+esc(a.by)+'</div></div>').join("")+'</div>'
+   +'<div class="col" style="--ac:#B3261E"><h4 style="color:#B3261E;border-color:#B3261E">Contre</h4>'+args.filter(a=>a.stance==="contre").map(a=>'<div class="item" style="--ac:#B3261E">'+esc(a.text)+'<div class="who">'+esc(a.by)+'</div></div>').join("")+'</div>'
+   +'</div></div>';
+  return h;
+}
+
+/* ---- D5. World café ---- */
+function viewCafe(st){
+  const tables=st.cafeTables||["Table 1","Table 2","Table 3"];
+  const d=(room&&room.data&&room.data.worldcafe)||{};
+  let h='<div class="panel"><h2>World café</h2>'
+   +'<div class="help">Trois tables, trois thèmes. Choisissez une table, déposez vos idées, puis changez de table quand l\'animateur le propose, pour croiser les regards.</div>'
+   +'<div class="row" style="margin-bottom:10px"><div style="flex:1;min-width:160px"><label>Votre table</label><select id="cfTable">'
+   + tables.map((t,i)=>'<option value="'+i+'">Table '+(i+1)+(t?' : '+esc(t):'')+'</option>').join("")
+   +'</select></div><div style="flex:2;min-width:200px"><label>Votre idée</label><input id="cfTxt" type="text" maxlength="220"></div><button class="btn prim sm" id="cfAdd" style="align-self:flex-end">Déposer</button></div>'
+   +'<div class="cols" style="grid-template-columns:repeat(3,1fr)">';
+  for(let i=0;i<3;i++){
+    const items=listOf(d[i]);
+    h+='<div class="col"><h4>'+esc(tables[i]||("Table "+(i+1)))+'</h4>'
+      + (items.length?items.map(x=>'<div class="item">'+esc(x.text)+'<div class="who">'+esc(x.by)+'</div></div>').join(""):'<p class="hint">Vide.</p>')
+      + '</div>';
+  }
+  return h+'</div></div>';
+}
+
+/* ---- D6. Cartographie d'arguments ---- */
+function viewCarto(st){
+  const list=dataList("cartoarg");
+  const roots=list.filter(a=>!a.parent||a.parent==="root");
+  let h='<div class="panel"><h2>Cartographie d\'arguments</h2>'
+   +'<div class="help">Construisez l\'arbre du pour et du contre. Un argument peut répondre à la thèse, ou préciser un argument déjà posé.</div>'
+   +'<div class="tree"><div class="root">'+esc(st.caThesis||"Thèse à définir")+'</div>';
+  if(roots.length){
+    roots.forEach(r=>{
+      h+='<div class="arg '+(r.type==="pour"?"pour":"contre")+'">'+(r.type==="pour"?"Pour : ":"Contre : ")+esc(r.text)+'<div class="who">'+esc(r.by)+'</div></div>';
+      list.filter(c=>c.parent===r.id).forEach(c=>{
+        h+='<div class="arg lvl2 '+(c.type==="pour"?"pour":"contre")+'">'+(c.type==="pour"?"Pour : ":"Contre : ")+esc(c.text)+'<div class="who">'+esc(c.by)+'</div></div>';
+      });
+    });
+  } else { h+='<p class="hint">Aucun argument pour l\'instant.</p>'; }
+  h+='</div><h3>Ajouter un argument</h3>'
+   +'<div class="row" style="align-items:flex-start"><div style="min-width:120px"><label>Sens</label><select id="caType"><option value="pour">Pour</option><option value="contre">Contre</option></select></div>'
+   +'<div style="min-width:180px"><label>Se rattache à</label><select id="caParent"><option value="root">La thèse</option>'
+   + roots.map(r=>'<option value="'+r.id+'">'+(r.type==="pour"?"[Pour] ":"[Contre] ")+esc(r.text.slice(0,40))+'</option>').join("")
+   +'</select></div>'
+   +'<div style="flex:1;min-width:200px"><label>Argument</label><input id="caTxt" type="text" maxlength="220"></div>'
+   +'<button class="btn prim sm" id="caAdd" style="align-self:flex-end">Ajouter</button></div>';
+  return h+'</div>';
+}
+
+/* ============================================================
+   9. LIAISONS DES VUES
+   ============================================================ */
+function bindActive(active,st){
+  if(active==="designfiction"){
+    const b=document.getElementById("dfAdd");
+    if(b)b.addEventListener("click",()=>{
+      const sig=document.getElementById("dfSig").value.trim();
+      const hyp=document.getElementById("dfHyp").value.trim();
+      const rec=document.getElementById("dfRec").value.trim();
+      if(!sig&&!hyp&&!rec)return;
+      DB.push(basePath()+"/data/designfiction",{sig,hyp,rec,by:pseudo,ts:Date.now()}); status("Scénario ajouté",true);
+    });
+  }
+  if(active==="codev"){
+    const save=(field,id)=>{ const el=document.getElementById(id); if(el)el.parentElement; };
+    const ex=document.getElementById("cvExposeSave"); if(ex)ex.addEventListener("click",()=>{ DB.set(basePath()+"/data/codev/expose",document.getElementById("cvExpose").value.trim()); status("Exposé enregistré",true); });
+    const ct=document.getElementById("cvContratSave"); if(ct)ct.addEventListener("click",()=>{ DB.set(basePath()+"/data/codev/contrat",document.getElementById("cvContrat").value.trim()); status("Demande enregistrée",true); });
+    const pl=document.getElementById("cvPlanSave"); if(pl)pl.addEventListener("click",()=>{ DB.set(basePath()+"/data/codev/plan",document.getElementById("cvPlan").value.trim()); status("Plan enregistré",true); });
+    const qa=document.getElementById("cvQAdd"); if(qa)qa.addEventListener("click",()=>{ const t=document.getElementById("cvQ").value.trim(); if(!t)return; DB.push(basePath()+"/data/codev/questions",{text:t,by:pseudo,ts:Date.now()}); });
+    const sa=document.getElementById("cvSAdd"); if(sa)sa.addEventListener("click",()=>{ const t=document.getElementById("cvS").value.trim(); if(!t)return; DB.push(basePath()+"/data/codev/suggestions",{text:t,by:pseudo,ts:Date.now()}); });
+  }
+  if(active==="sixchapeaux"){
+    const b=document.getElementById("hatAdd");
+    if(b)b.addEventListener("click",()=>{ const t=document.getElementById("hatTxt").value.trim(); if(!t)return; DB.push(basePath()+"/data/sixchapeaux",{hat:(st.hat||HATS[0].id),text:t,by:pseudo,ts:Date.now()}); });
+  }
+  if(active==="debatmouvant"){
+    root.querySelectorAll("[data-st]").forEach(b=>b.addEventListener("click",()=>{ DB.set(basePath()+"/data/debatmouvant/positions/"+uid,{stance:b.dataset.st,by:pseudo}); }));
+    const a=document.getElementById("dbArgAdd");
+    if(a)a.addEventListener("click",()=>{ const t=document.getElementById("dbArg").value.trim(); const pos=(room&&room.data&&room.data.debatmouvant&&room.data.debatmouvant.positions&&room.data.debatmouvant.positions[uid])?room.data.debatmouvant.positions[uid].stance:"nuance"; if(!t)return; DB.push(basePath()+"/data/debatmouvant/args",{stance:pos,text:t,by:pseudo,ts:Date.now()}); });
+  }
+  if(active==="worldcafe"){
+    const b=document.getElementById("cfAdd");
+    if(b)b.addEventListener("click",()=>{ const i=document.getElementById("cfTable").value; const t=document.getElementById("cfTxt").value.trim(); if(!t)return; DB.push(basePath()+"/data/worldcafe/"+i,{text:t,by:pseudo,ts:Date.now()}); document.getElementById("cfTxt").value=""; });
+  }
+  if(active==="cartoarg"){
+    const b=document.getElementById("caAdd");
+    if(b)b.addEventListener("click",()=>{ const ty=document.getElementById("caType").value; const pa=document.getElementById("caParent").value; const t=document.getElementById("caTxt").value.trim(); if(!t)return; DB.push(basePath()+"/data/cartoarg",{type:ty,parent:pa,text:t,by:pseudo,ts:Date.now()}); document.getElementById("caTxt").value=""; });
+  }
+}
+
+/* ============================================================
+   10. UTILITAIRES DONNEES + EXPORT
+   ============================================================ */
+function listOf(obj){ if(!obj||typeof obj!=="object")return []; return Object.keys(obj).map(k=>Object.assign({id:k},obj[k])).filter(x=>x&&typeof x==="object"&&("text" in x||"sig" in x)).sort((a,b)=>(a.ts||0)-(b.ts||0)); }
+function dataList(method){ const d=(room&&room.data&&room.data[method])||{}; return Object.keys(d).map(k=>Object.assign({id:k},d[k])).filter(x=>x&&typeof x==="object"&&(x.ts!==undefined)).sort((a,b)=>(a.ts||0)-(b.ts||0)); }
+
+function doExport(){
+  const out={ mission:"016714-01", outil:"Cap 2028", salle:roomId, date:new Date().toISOString(),
+    participants:Object.values((room&&room.participants)||{}).map(p=>p.pseudo),
+    etat:(room&&room.state)||{}, donnees:(room&&room.data)||{} };
+  const txt=JSON.stringify(out,null,1);
+  const box=document.getElementById("exportBox"); if(box){ box.hidden=false; box.value=txt; box.select(); }
+  try{ const blob=new Blob([txt],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="cap2028_"+roomId+"_"+Date.now()+".json"; a.click(); }catch(e){}
+  status("Export généré et téléchargé",true);
+}
+
+/* ============================================================
+   11. DEMARRAGE
+   ============================================================ */
+(async function(){
+  await initBackend();
+  if(roomId){ renderTop(); joinRoom(); } else { renderLobby(); }
+})();
+</script>
+</body>
+</html>
