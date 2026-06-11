@@ -238,6 +238,36 @@ input:focus,textarea:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 
 /* éviter le débordement à droite quand le ? est proche du bord */
 .help-ic.right::after{left:auto;right:0;transform:none}
 .help-ic.right::before{left:auto;right:5px;transform:none}
+
+/* ---- chrono partagé ---- */
+.timer-bar{position:sticky;top:54px;z-index:18;background:linear-gradient(135deg,var(--teal-d),var(--teal));color:#fff;padding:9px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 4px 14px rgba(15,58,87,.22);animation:gatein .25s ease}
+.timer-bar .tlabel{font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.92;min-width:80px}
+.timer-bar .tcount{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:1px;text-shadow:0 1px 2px rgba(0,0,0,.2);min-width:88px;text-align:center}
+.timer-bar .ttrack{flex:1;min-width:140px;height:9px;background:rgba(255,255,255,.18);border-radius:6px;overflow:hidden}
+.timer-bar .tfill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--jaune),var(--orange));border-radius:6px;transition:width .9s linear;box-shadow:0 0 12px rgba(251,220,75,.5)}
+.timer-bar.urgent{background:linear-gradient(135deg,#9a2010,#B3261E)}
+.timer-bar.urgent .tcount{animation:beat .85s infinite}
+@keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.timer-bar.done{background:linear-gradient(135deg,#185c2c,#1E7B3C)}
+.timer-bar.done .tcount{font-size:18px;letter-spacing:0}
+
+/* ---- avatar coloré ---- */
+.avatar{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;box-shadow:inset 0 -1px 0 rgba(0,0,0,.15);vertical-align:middle}
+.avatar.sm{width:18px;height:18px;font-size:10px}
+.chip .avatar{margin-right:5px}
+
+/* ---- levée de main ---- */
+.tbtn.hand-on{background:var(--jaune);color:var(--teal-d);border-color:var(--jaune);animation:wig .8s ease}
+@keyframes wig{0%,100%{transform:none}25%{transform:rotate(-7deg)}75%{transform:rotate(7deg)}}
+.hands-panel{background:linear-gradient(135deg,#FFF8E9,#FFEDC2);border:1.5px solid var(--jaune);border-radius:var(--r);padding:12px 14px;margin-bottom:14px;animation:gatein .25s ease}
+.hands-panel h3{margin-top:0;color:#9a5b00;font-size:13px;letter-spacing:.05em}
+.hand-chip{background:#fff;border:1.5px solid var(--jaune);border-radius:20px;padding:5px 12px 5px 5px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;margin:6px 6px 0 0;box-shadow:0 1px 3px rgba(154,91,0,.15)}
+.hand-chip .x{background:transparent;border:none;color:var(--mut);cursor:pointer;font-size:14px;padding:0 0 0 4px;line-height:1}
+.hand-chip .x:hover{color:#B3261E}
+
+/* ---- confetti ---- */
+.cf{position:fixed;pointer-events:none;font-size:18px;animation:cfdrop 1.6s ease-out forwards;z-index:80;will-change:transform,opacity}
+@keyframes cfdrop{0%{opacity:0;transform:translate(0,0) scale(.5) rotate(0)}10%{opacity:1;transform:translate(0,-20px) scale(1) rotate(40deg)}100%{opacity:0;transform:translate(var(--dx,0),140px) scale(.8) rotate(var(--rt,180deg))}}
 </style>
 </head>
 <body>
@@ -381,6 +411,93 @@ function setState(patch){ return DB.update(basePath()+"/state", patch); }
 function esc(s){ const d=document.createElement("div"); d.textContent=(s==null)?"":String(s); return d.innerHTML; }
 /* Bulle d'aide à côté d'un libellé. Passez "right" pour aligner à droite si proche du bord. */
 function help(txt,pos){ return ' <span class="help-ic'+(pos?" "+pos:"")+'" tabindex="0" data-tip="'+esc(txt)+'" aria-label="Aide : '+esc(txt)+'">?</span>'; }
+/* Avatar coloré dérivé du pseudonyme (couleur stable, lettre initiale). */
+const AV_COLORS=["#175177","#1E7B3C","#B3261E","#9a5b00","#0E7A8F","#7B1FA2","#C79A00","#0277BD","#34495E","#AD1457","#2E7D32","#E64A19"];
+function avatarHTML(pseudo,sm){
+  const p=(pseudo||"?").trim();
+  let s=0; for(let i=0;i<p.length;i++)s=(s*31+p.charCodeAt(i))>>>0;
+  const c=AV_COLORS[s%AV_COLORS.length];
+  return '<span class="avatar'+(sm?" sm":"")+'" style="background:'+c+'">'+esc(p.charAt(0).toUpperCase())+'</span>';
+}
+/* Petite pluie de confettis pour célébrer une contribution. */
+function confetti(){
+  const ems=["🎉","✨","💫","⭐","🌟","🎊","🔆"];
+  for(let i=0;i<12;i++){
+    const c=document.createElement("span"); c.className="cf";
+    c.textContent=ems[Math.floor(Math.random()*ems.length)];
+    c.style.left=(15+Math.random()*70)+"%"; c.style.top="42%";
+    c.style.setProperty("--dx",(Math.random()*260-130)+"px");
+    c.style.setProperty("--rt",(Math.random()*720-360)+"deg");
+    c.style.animationDelay=(Math.random()*.15)+"s";
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),1800);
+  }
+}
+/* Petit jingle de fin de chrono (sans dépendance). Silencieux si bloqué. */
+function chime(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    [880,1175,1480].forEach((f,i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=f;o.type="sine";
+      const t=ctx.currentTime+i*0.16;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(0.18,t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.55);
+      o.start(t);o.stop(t+0.6);
+    });
+  }catch(e){}
+}
+/* ---- chrono partagé ---- */
+let timerTicker=null, timerChimed=false;
+function ensureTimerTicker(){ if(timerTicker)return; timerTicker=setInterval(timerTick,500); timerTick(); }
+function timerTick(){
+  const t=room&&room.state&&room.state.timer;
+  let bar=document.getElementById("timerBar");
+  if(!t||!t.dur||!t.startedAt){
+    if(bar)bar.remove();
+    timerChimed=false;
+    return;
+  }
+  if(!bar){
+    bar=document.createElement("div");
+    bar.className="timer-bar"; bar.id="timerBar";
+    bar.innerHTML='<span class="tlabel"></span><span class="tcount">--:--</span><div class="ttrack"><div class="tfill"></div></div>';
+    document.body.insertBefore(bar,document.querySelector(".wrap"));
+    timerChimed=false;
+  }
+  const elapsed=(Date.now()-t.startedAt)/1000;
+  const remain=Math.max(0,t.dur-elapsed);
+  const pct=Math.max(0,Math.min(100,(remain/t.dur)*100));
+  const mm=Math.floor(remain/60), ss=Math.floor(remain%60).toString().padStart(2,"0");
+  bar.querySelector(".tlabel").textContent=t.label||"⏱ Chrono";
+  bar.querySelector(".tcount").textContent=remain<=0?"Temps écoulé":(mm+":"+ss);
+  bar.querySelector(".tfill").style.width=pct+"%";
+  bar.classList.toggle("urgent",remain<=10&&remain>0);
+  bar.classList.toggle("done",remain<=0);
+  if(remain<=0&&!timerChimed){ timerChimed=true; chime(); }
+}
+function startTimer(secs,label){ setState({timer:{dur:secs,startedAt:Date.now(),label:(label||"").trim()}}); }
+function stopTimer(){ DB.remove(basePath()+"/state/timer"); }
+/* ---- levée de main ---- */
+function handRaised(){ return !!(room&&room.hands&&room.hands[uid]); }
+function toggleHand(){
+  if(handRaised()) DB.remove(basePath()+"/hands/"+uid);
+  else DB.set(basePath()+"/hands/"+uid,{pseudo:pseudo,ts:Date.now()});
+}
+function handsPanel(){
+  const hh=(room&&room.hands)||{};
+  const keys=Object.keys(hh);
+  if(!keys.length)return "";
+  const ordered=keys.map(k=>Object.assign({uid:k},hh[k])).sort((a,b)=>(a.ts||0)-(b.ts||0));
+  return '<div class="hands-panel"><h3>✋ '+keys.length+(keys.length>1?" mains levées (ordre d\'arrivée)":" main levée")+'</h3><div>'
+    +ordered.map((p,i)=>'<span class="hand-chip" title="'+(i===0?"À la parole":"En file")+'">'
+       +avatarHTML(p.pseudo,1)+esc(p.pseudo)
+       +(isAnimateur?'<button class="x" data-handclear="'+esc(p.uid)+'" title="Donner la parole / effacer">✕</button>':'')
+       +'</span>').join("")
+    +'</div></div>';
+}
 function status(msg,ok){ const el=document.getElementById("stx"); if(!el)return; el.textContent=msg; el.className="status "+(ok?"ok":"err"); setTimeout(()=>{ if(el&&el.textContent===msg)el.textContent=""; },2800); }
 
 /* ---- bibliothèques de contenu (panneau animation) ---- */
@@ -529,12 +646,15 @@ function codevSituations(){
   return CONTENT.codev.situations.concat(libCodev.map(x=>Object.assign({},x,{_custom:true})));
 }
 function renderTop(){
+  const hr=handRaised();
   topRight.innerHTML =
     '<span class="tag mode">'+(DB.mode==="firebase"?"Firebase":"Local")+'</span>'
    +'<span class="tag room">Salle '+esc(roomId)+'</span>'
-   +'<span class="tag me">⚓ '+esc(pseudo)+'</span>'
+   +'<span class="tag me">'+avatarHTML(pseudo,1)+' '+esc(pseudo)+'</span>'
+   +'<button class="tbtn'+(hr?" hand-on":"")+'" id="handToggle" title="'+(hr?"Baisser la main":"Demander la parole")+'">✋ '+(hr?"Main levée":"Main")+'</button>'
    +'<button class="tbtn'+(anim?" anim-on":"")+'" id="animToggle">'+(isAnimateur?"🧭 Animation":"🔒 Animation")+'</button>';
   document.getElementById("animToggle").addEventListener("click",openAnim);
+  document.getElementById("handToggle").addEventListener("click",toggleHand);
 }
 /* Ouvre le panneau d'animation, sous réserve du mot de passe animateur. */
 function openAnim(){
@@ -576,9 +696,12 @@ function restoreFields(snap){
 
 function renderApp(){
   renderTop();
+  ensureTimerTicker();
+  timerTick();
   const snap=snapshotFields();
   const st = (room&&room.state)||{};
   let h = animPanel(st);
+  h += handsPanel();
   const active = st.active;
   if(!active){
     h += '<div class="panel"><div class="waiting"><span class="lh">🗼</span>'
@@ -607,7 +730,7 @@ function fillCrew(){
   const el=document.getElementById("crew"); if(!el)return;
   const ps = (room&&room.participants)||{};
   const list = Object.values(ps);
-  el.innerHTML = list.length ? list.map(p=>'<span class="chip">⚓ '+esc(p.pseudo)+'</span>').join("") : '<span class="hint">Personne pour l\'instant.</span>';
+  el.innerHTML = list.length ? list.map(p=>'<span class="chip">'+avatarHTML(p.pseudo,1)+' '+esc(p.pseudo)+'</span>').join("") : '<span class="hint">Personne pour l\'instant.</span>';
 }
 
 /* ---- panneau animation ---- */
@@ -618,6 +741,14 @@ function animPanel(st){
    +'<div class="methods">';
   METHODS.forEach(m=>{ h+='<button class="mcard'+(st.active===m.id?" on":"")+'" data-m="'+m.id+'"><span class="mic">'+m.ic+'</span><div class="mt">'+esc(m.t)+'</div><div class="md">'+esc(m.d)+'</div></button>'; });
   h+='</div>';
+  /* ---- chrono partagé ---- */
+  const tact = st.timer && st.timer.dur;
+  h+='<h3>🕐 Chrono partagé'+help("Lance un décompte visible par tous, sonore à la fin. Idéal pour rythmer un tour (3 min par chapeau, 5 min par table, etc.).")+'</h3>'
+    +'<div class="row" style="margin-bottom:6px">'
+    + [1,2,3,5,7,10].map(m=>'<button class="btn '+(tact?"sec":"sec")+' sm" data-tmr="'+(m*60)+'">'+m+' min</button>').join("")
+    + (tact?'<button class="btn warn sm" id="tmrStop" style="margin-left:auto">Arrêter</button>':'')
+    +'</div>'
+    +'<div class="row"><input id="tmrLab" type="text" placeholder="Étiquette du chrono (ex : Chapeau noir, Table 2, Débat)" value="'+esc((st.timer&&st.timer.label)||"")+'" style="flex:1"></div>';
   /* commandes propres a la methode active */
   if(st.active==="designfiction"){
     h+='<h3>Question prospective'+help("Question d\'horizon 2030-2032 qui cadre l\'exercice de design fiction. Une question ouverte « Et si... », poussant à imaginer un futur plausible.")+'</h3><div class="row"><input id="dfPrompt" type="text" value="'+esc(st.dfPrompt||"Et si, en 2030, la sortie d\'emploi fonctionnel était devenue un atout de carrière reconnu ?")+'" data-go="dfSet"><button class="btn prim sm" id="dfSet">Définir</button></div>'
@@ -670,8 +801,17 @@ function animPanel(st){
   return h;
 }
 function bindAnim(st){
+  /* boutons globaux disponibles aussi hors panneau d'animation : */
+  root.querySelectorAll("[data-handclear]").forEach(b=>b.addEventListener("click",()=>{
+    DB.remove(basePath()+"/hands/"+b.dataset.handclear);
+  }));
   if(!anim) return;
   root.querySelectorAll("[data-m]").forEach(b=>b.addEventListener("click",()=>setState({active:b.dataset.m})));
+  root.querySelectorAll("[data-tmr]").forEach(b=>b.addEventListener("click",()=>{
+    const lab=(document.getElementById("tmrLab")||{}).value||"";
+    startTimer(parseInt(b.dataset.tmr,10),lab);
+  }));
+  const ts=document.getElementById("tmrStop"); if(ts)ts.addEventListener("click",stopTimer);
   const dfs=document.getElementById("dfSet"); if(dfs)dfs.addEventListener("click",()=>setState({dfPrompt:document.getElementById("dfPrompt").value.trim()}));
   const cvc=document.getElementById("cvClientSet"); if(cvc)cvc.addEventListener("click",()=>setState({cvClient:document.getElementById("cvClient").value.trim()}));
   root.querySelectorAll("[data-cvph]").forEach(b=>b.addEventListener("click",()=>setState({cvPhase:parseInt(b.dataset.cvph,10)})));
@@ -890,6 +1030,7 @@ function bindActive(active,st){
       if(!sig&&!hyp&&!rec)return;
       eSig.value="";eHyp.value="";eRec.value="";
       DB.push(basePath()+"/data/designfiction",{sig,hyp,rec,by:pseudo,ts:Date.now()}); status("Scénario ajouté",true);
+      confetti(); if(handRaised())DB.remove(basePath()+"/hands/"+uid);
     });
     root.querySelectorAll("[data-sig]").forEach(c=>c.addEventListener("click",()=>{
       const el=document.getElementById("dfSig"); if(el){ el.value=c.dataset.sig; el.focus(); }
@@ -905,20 +1046,20 @@ function bindActive(active,st){
   }
   if(active==="sixchapeaux"){
     const b=document.getElementById("hatAdd");
-    if(b)b.addEventListener("click",()=>{ const el=document.getElementById("hatTxt"); const t=el.value.trim(); if(!t)return; el.value=""; DB.push(basePath()+"/data/sixchapeaux",{hat:(st.hat||HATS[0].id),text:t,by:pseudo,ts:Date.now()}); });
+    if(b)b.addEventListener("click",()=>{ const el=document.getElementById("hatTxt"); const t=el.value.trim(); if(!t)return; el.value=""; DB.push(basePath()+"/data/sixchapeaux",{hat:(st.hat||HATS[0].id),text:t,by:pseudo,ts:Date.now()}); confetti(); if(handRaised())DB.remove(basePath()+"/hands/"+uid); });
   }
   if(active==="debatmouvant"){
     root.querySelectorAll("[data-st]").forEach(b=>b.addEventListener("click",()=>{ DB.set(basePath()+"/data/debatmouvant/positions/"+uid,{stance:b.dataset.st,by:pseudo}); }));
     const a=document.getElementById("dbArgAdd");
-    if(a)a.addEventListener("click",()=>{ const el=document.getElementById("dbArg"); const t=el.value.trim(); const pos=(room&&room.data&&room.data.debatmouvant&&room.data.debatmouvant.positions&&room.data.debatmouvant.positions[uid])?room.data.debatmouvant.positions[uid].stance:"nuance"; if(!t)return; el.value=""; DB.push(basePath()+"/data/debatmouvant/args",{stance:pos,text:t,by:pseudo,ts:Date.now()}); });
+    if(a)a.addEventListener("click",()=>{ const el=document.getElementById("dbArg"); const t=el.value.trim(); const pos=(room&&room.data&&room.data.debatmouvant&&room.data.debatmouvant.positions&&room.data.debatmouvant.positions[uid])?room.data.debatmouvant.positions[uid].stance:"nuance"; if(!t)return; el.value=""; DB.push(basePath()+"/data/debatmouvant/args",{stance:pos,text:t,by:pseudo,ts:Date.now()}); confetti(); if(handRaised())DB.remove(basePath()+"/hands/"+uid); });
   }
   if(active==="worldcafe"){
     const b=document.getElementById("cfAdd");
-    if(b)b.addEventListener("click",()=>{ const i=document.getElementById("cfTable").value; const t=document.getElementById("cfTxt").value.trim(); if(!t)return; DB.push(basePath()+"/data/worldcafe/"+i,{text:t,by:pseudo,ts:Date.now()}); document.getElementById("cfTxt").value=""; });
+    if(b)b.addEventListener("click",()=>{ const i=document.getElementById("cfTable").value; const t=document.getElementById("cfTxt").value.trim(); if(!t)return; DB.push(basePath()+"/data/worldcafe/"+i,{text:t,by:pseudo,ts:Date.now()}); document.getElementById("cfTxt").value=""; confetti(); if(handRaised())DB.remove(basePath()+"/hands/"+uid); });
   }
   if(active==="cartoarg"){
     const b=document.getElementById("caAdd");
-    if(b)b.addEventListener("click",()=>{ const ty=document.getElementById("caType").value; const pa=document.getElementById("caParent").value; const t=document.getElementById("caTxt").value.trim(); if(!t)return; DB.push(basePath()+"/data/cartoarg",{type:ty,parent:pa,text:t,by:pseudo,ts:Date.now()}); document.getElementById("caTxt").value=""; });
+    if(b)b.addEventListener("click",()=>{ const ty=document.getElementById("caType").value; const pa=document.getElementById("caParent").value; const t=document.getElementById("caTxt").value.trim(); if(!t)return; DB.push(basePath()+"/data/cartoarg",{type:ty,parent:pa,text:t,by:pseudo,ts:Date.now()}); document.getElementById("caTxt").value=""; confetti(); if(handRaised())DB.remove(basePath()+"/hands/"+uid); });
   }
 }
 
