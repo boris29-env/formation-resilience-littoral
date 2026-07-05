@@ -743,6 +743,96 @@ img { display: block; max-width: 100%; }
   background: rgba(11,27,43,0.04);
 }
 
+/* Sim main column : scène + graphiques */
+.sim-main {
+  display: flex; flex-direction: column; min-width: 0;
+  border-right: 1px solid var(--line);
+}
+.sim-meta-stats { flex-wrap: wrap; max-width: 460px; }
+.sim-meta-stat .range {
+  display: block;
+  font-family: var(--mono); font-size: 9.5px;
+  color: var(--ink-2); opacity: 0.8; margin-top: 3px;
+}
+.sim-scene-legend {
+  position: absolute; left: 18px; bottom: 14px;
+  display: flex; gap: 8px; flex-wrap: wrap;
+  pointer-events: none;
+}
+.sim-legend-chip {
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(6px);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 10px; font-family: var(--mono);
+  color: var(--ink-2);
+  display: inline-flex; gap: 6px; align-items: center;
+}
+.sim-legend-swatch { width: 14px; height: 0; border-top: 2px dashed var(--ink); }
+.sim-legend-swatch.band {
+  width: 14px; height: 10px; border-top: 0;
+  background: rgba(232,110,85,0.30); border-radius: 2px;
+}
+.sim-legend-swatch.storm { border-top: 2px dashed var(--coral-deep); }
+
+.sim-chart-panel {
+  border-top: 1px solid var(--line);
+  background: var(--foam);
+  padding: 14px 18px 12px;
+}
+.sim-chart-tabs { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+.sim-chart-tab {
+  font-size: 11px; font-weight: 600;
+  padding: 6px 12px; border-radius: 999px;
+  background: rgba(11,27,43,0.05); color: var(--ink-2);
+  transition: all 0.15s;
+}
+.sim-chart-tab:hover { background: rgba(11,27,43,0.10); }
+.sim-chart-tab.active { background: var(--ink); color: var(--paper); }
+.sim-chart-wrap { position: relative; height: 200px; }
+.sim-chart-wrap canvas { width: 100% !important; height: 100% !important; }
+.sim-chart-note {
+  font-size: 11px; color: var(--ink-2); opacity: 0.75;
+  margin-top: 8px; line-height: 1.5;
+}
+
+/* Paramètres scientifiques avancés */
+.sim-adv {
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--paper);
+}
+.sim-adv summary {
+  list-style: none; cursor: pointer;
+  padding: 12px 14px;
+  font-size: 12px; font-weight: 600;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.sim-adv summary::-webkit-details-marker { display: none; }
+.sim-adv summary::after { content: "+"; font-family: var(--mono); opacity: 0.5; }
+.sim-adv[open] summary::after { content: "–"; }
+.sim-adv-body { padding: 2px 14px 14px; display: flex; flex-direction: column; gap: 14px; }
+.adv-row { font-size: 12px; }
+.adv-row-head { display: flex; justify-content: space-between; margin-bottom: 6px; gap: 10px; }
+.adv-value { font-family: var(--mono); font-weight: 600; white-space: nowrap; }
+input.adv-range {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px; border-radius: 999px;
+  background: rgba(11,27,43,0.12); outline: 0; cursor: pointer;
+}
+input.adv-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--ink); border: 2px solid var(--paper);
+  box-shadow: var(--shadow-sm); cursor: pointer;
+}
+input.adv-range::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--ink); border: 2px solid var(--paper); cursor: pointer;
+}
+.adv-check { display: flex; align-items: center; gap: 10px; font-size: 12px; cursor: pointer; }
+.adv-check input { accent-color: var(--coral); width: 14px; height: 14px; cursor: pointer; }
+.adv-note { font-size: 10.5px; opacity: 0.6; line-height: 1.45; margin-top: 4px; }
+
 /* =========================================================
    3D IMMERSION
 ========================================================= */
@@ -1219,6 +1309,7 @@ input.imm-range::-moz-range-thumb {
   .atlas-layout { grid-template-columns: 1fr; }
   .atlas-side { height: 480px; }
   .sim-stage { grid-template-columns: 1fr; }
+  .sim-main { border-right: 0; border-bottom: 1px solid var(--line); }
   .flood-layout { grid-template-columns: 1fr; }
   .card-kpi { grid-column: span 6; }
   .card-chart-wide, .card-chart-narrow, .card-budget, .card-stake { grid-column: span 12; }
@@ -1296,8 +1387,8 @@ input.imm-range::-moz-range-thumb {
           <div class="kpi-label">communes littorales métropolitaines suivies</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-num">1,1<small>m</small></div>
-          <div class="kpi-label">élévation médiane du niveau marin · scénario SSP3-7.0 (2100)</div>
+          <div class="kpi-num">0,68<small>m</small></div>
+          <div class="kpi-label">élévation médiane du niveau marin en 2100 · SSP3-7.0 (GIEC AR6, vs 1995-2014)</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-num">50<small>k</small></div>
@@ -1395,24 +1486,45 @@ input.imm-range::-moz-range-thumb {
     <div class="section-eyebrow">02 · Simulateur d'évolution</div>
     <h2 class="section-title">Faites <em>défiler le temps</em>,<br>jusqu'en 2100.</h2>
     <p class="section-lead">
-      Une scène vivante qui s'anime au rythme de votre curseur&nbsp;: élévation
-      du niveau marin, recul du trait de côte, perte de plage, biens menacés.
-      Quatre scénarios climatiques du GIEC, comparables d'un clic.
+      Le simulateur croise les projections décennales du GIEC AR6 (médiane et
+      intervalle probable 17–83&nbsp;%) avec trois modèles morphologiques
+      publiés&nbsp;: règle de Bruun pour les plages, réponse en
+      &radic;(taux d'élévation) pour les falaises, bilan sédimentaire pour les
+      marais. Il calcule aussi l'amplification de fréquence des submersions
+      extrêmes. Chaque chiffre est accompagné de son incertitude.
     </p>
   </div>
 
   <div class="sim-stage">
+    <div class="sim-main">
     <div class="sim-stage-canvas">
       <canvas id="sceneCanvas"></canvas>
       <div class="sim-year-overlay"><small>Année</small><span id="simYear">2025</span></div>
       <div class="sim-meta">
         <div class="sim-meta-item" id="simScenarioName">SSP2-4.5 · trajectoire intermédiaire</div>
         <div class="sim-meta-stats">
-          <div class="sim-meta-stat">Niveau marin <strong id="simSeaLevel">+0,00 m</strong></div>
-          <div class="sim-meta-stat">Recul cumulé <strong id="simRetreat">0 m</strong></div>
-          <div class="sim-meta-stat">Plage perdue <strong id="simBeach">0%</strong></div>
+          <div class="sim-meta-stat">Niveau marin <strong id="simSeaLevel">+0,00 m</strong><span class="range" id="simSeaRange">probable +0,00 à +0,00 m</span></div>
+          <div class="sim-meta-stat">Recul cumulé <strong id="simRetreat">0 m</strong><span class="range" id="simRetreatRange">probable 0–0 m</span></div>
+          <div class="sim-meta-stat"><span id="simStat3Label">Plage perdue</span> <strong id="simBeach">0%</strong><span class="range" id="simStat3Sub">largeur initiale 90 m</span></div>
+          <div class="sim-meta-stat">Centennale 2025 <strong id="simReturn">1 / 100 ans</strong><span class="range" id="simReturnSub">fréquence inchangée</span></div>
         </div>
       </div>
+      <div class="sim-scene-legend">
+        <span class="sim-legend-chip"><span class="sim-legend-swatch"></span>trait de côte 2025</span>
+        <span class="sim-legend-chip"><span class="sim-legend-swatch band"></span>intervalle probable 17–83&nbsp;%</span>
+        <span class="sim-legend-chip" id="legendStorm"><span class="sim-legend-swatch storm"></span>enveloppe tempête</span>
+      </div>
+    </div>
+
+    <div class="sim-chart-panel">
+      <div class="sim-chart-tabs">
+        <button class="sim-chart-tab active" data-chart="sea">Niveau marin</button>
+        <button class="sim-chart-tab" data-chart="retreat">Recul du littoral</button>
+        <button class="sim-chart-tab" data-chart="extremes">Fréquence des extrêmes</button>
+      </div>
+      <div class="sim-chart-wrap"><canvas id="simChart"></canvas></div>
+      <div class="sim-chart-note" id="simChartNote"></div>
+    </div>
     </div>
 
     <div class="sim-controls">
@@ -1484,6 +1596,32 @@ input.imm-range::-moz-range-thumb {
             <span class="scenario-temp">19%</span>
           </label>
         </div>
+      </div>
+
+      <div class="sim-block">
+        <details class="sim-adv">
+          <summary>Paramètres scientifiques</summary>
+          <div class="sim-adv-body">
+            <div class="adv-row">
+              <div class="adv-row-head"><span>Pente du profil actif (règle de Bruun)</span><span class="adv-value" id="advTanbVal">1,5&nbsp;%</span></div>
+              <input type="range" class="adv-range" id="advTanb" min="0.5" max="3" step="0.1" value="1.5">
+              <div class="adv-note">Recul ≈ élévation ÷ pente&nbsp;: à 1,5&nbsp;%, +1&nbsp;cm de mer ≈ 0,7&nbsp;m de recul (Bruun, 1962).</div>
+            </div>
+            <div class="adv-row">
+              <div class="adv-row-head"><span>Mouvement vertical du sol</span><span class="adv-value" id="advVlmVal">0,0 mm/an</span></div>
+              <input type="range" class="adv-range" id="advVlm" min="-1" max="4" step="0.1" value="0">
+              <div class="adv-note">Subsidence (+) ou soulèvement (−) local&nbsp;: s'ajoute à l'élévation relative du niveau marin.</div>
+            </div>
+            <div class="adv-row">
+              <div class="adv-row-head"><span>Accrétion sédimentaire du marais</span><span class="adv-value" id="advAccVal">4,0 mm/an</span></div>
+              <input type="range" class="adv-range" id="advAcc" min="0" max="10" step="0.5" value="4">
+              <div class="adv-note">Capacité du marais à «&nbsp;suivre&nbsp;» la mer&nbsp;: il se noie quand la mer monte plus vite que lui (Kirwan et al., 2016).</div>
+            </div>
+            <label class="adv-check"><input type="checkbox" id="advStorm" checked>Enveloppe d'érosion de tempête (épisodique)</label>
+            <label class="adv-check"><input type="checkbox" id="advLowConf">Instabilité antarctique · SSP5-8.5 (confiance faible)</label>
+            <div class="adv-note">Processus de calotte à confiance faible du GIEC AR6&nbsp;: jusqu'à +1,60&nbsp;m en 2100 (83<sup>e</sup> centile).</div>
+          </div>
+        </details>
       </div>
     </div>
   </div>
@@ -1605,7 +1743,7 @@ input.imm-range::-moz-range-thumb {
             <div class="flood-card-icon">100</div>
             <div>
               <div class="flood-card-title">Centennale 2025</div>
-              <div class="flood-card-meta">Surcote 2,10 m · niveau marin +0,15 m</div>
+              <div class="flood-card-meta">Surcote 2,10 m · niveau marin actuel</div>
             </div>
             <div class="flood-card-prob">retour 100 ans</div>
           </div>
@@ -1613,7 +1751,7 @@ input.imm-range::-moz-range-thumb {
             <div class="flood-card-icon">+50</div>
             <div>
               <div class="flood-card-title">Centennale 2050 · SSP3-7.0</div>
-              <div class="flood-card-meta">Surcote 2,10 m · niveau marin +0,45 m</div>
+              <div class="flood-card-meta">Surcote 2,10 m · mer +0,22 m (médiane AR6)</div>
             </div>
             <div class="flood-card-prob">retour 100 ans</div>
           </div>
@@ -1621,7 +1759,7 @@ input.imm-range::-moz-range-thumb {
             <div class="flood-card-icon">+100</div>
             <div>
               <div class="flood-card-title">Centennale 2100 · SSP5-8.5</div>
-              <div class="flood-card-meta">Surcote 2,40 m · niveau marin +1,15 m</div>
+              <div class="flood-card-meta">Surcote 2,40 m · mer +0,77 m, jusqu'à +1,6 m (AR6)</div>
             </div>
             <div class="flood-card-prob">retour 100 ans</div>
           </div>
@@ -1778,11 +1916,17 @@ input.imm-range::-moz-range-thumb {
       <div class="method-col">
         <h4>Modèles &amp; références</h4>
         <p>
-          Projections de niveau marin tirées du 6<sup>e</sup> rapport AR6 du GIEC
-          (Box 9.1, scénarios SSP). Recul morphologique calé sur l'indicateur
-          national Cerema (méthode «&nbsp;TCMOY&nbsp;») et la BD Histolitt SHOM.
-          Aléas de submersion croisés avec les Plans de Prévention des Risques
-          Littoraux (PPRL) approuvés.
+          Niveau marin&nbsp;: projections décennales du 6<sup>e</sup> rapport du GIEC
+          (AR6, ch.&nbsp;9, table&nbsp;9.9), médiane et intervalle probable
+          17<sup>e</sup>–83<sup>e</sup> centiles par scénario SSP, avec option
+          «&nbsp;confiance faible&nbsp;» pour l'instabilité de la calotte antarctique
+          (jusqu'à +1,60&nbsp;m en 2100). Côtes sableuses&nbsp;: tendance historique
+          Cerema (méthode «&nbsp;TCMOY&nbsp;») + règle de Bruun R&nbsp;=&nbsp;ΔS/tanβ
+          (Bruun, 1962). Falaises tendres&nbsp;: récession en racine carrée du taux
+          d'élévation (Walkden &amp; Dickson, 2008). Marais&nbsp;: bilan altitudinal
+          accrétion&nbsp;/&nbsp;mer (Kirwan et al., 2016). Fréquence des extrêmes&nbsp;:
+          amplification exponentielle des niveaux de retour, loi de Gumbel
+          (Vitousek et al., 2017). Submersion croisée avec les PPRL approuvés.
         </p>
       </div>
       <div class="method-col">
@@ -1861,11 +2005,157 @@ const RISK_LABEL = {
 };
 
 const SCENARIOS = {
-  ssp126: { name: 'SSP1-2.6 · Accord de Paris respecté', tempLabel: '+1,5°C', sea2100: 0.45, factor: 0.7 },
-  ssp245: { name: 'SSP2-4.5 · trajectoire intermédiaire', tempLabel: '+2,7°C', sea2100: 0.70, factor: 1.0 },
-  ssp370: { name: 'SSP3-7.0 · politiques actuelles', tempLabel: '+3,6°C', sea2100: 0.95, factor: 1.4 },
-  ssp585: { name: 'SSP5-8.5 · trajectoire extrême', tempLabel: '+4,4°C', sea2100: 1.25, factor: 1.9 }
+  ssp126: { name: 'SSP1-2.6 · Accord de Paris respecté', tempLabel: '+1,5°C', factor: 0.7 },
+  ssp245: { name: 'SSP2-4.5 · trajectoire intermédiaire', tempLabel: '+2,7°C', factor: 1.0 },
+  ssp370: { name: 'SSP3-7.0 · politiques actuelles', tempLabel: '+3,6°C', factor: 1.4 },
+  ssp585: { name: 'SSP5-8.5 · trajectoire extrême', tempLabel: '+4,4°C', factor: 1.9 }
 };
+
+/* =========================================================
+   MOTEUR SCIENTIFIQUE
+   — Niveau marin : projections décennales GIEC AR6 (ch. 9,
+     table 9.9 / outil de projection NASA-IPCC), médiane et
+     intervalle probable 17e–83e centiles, en m vs 1995-2014.
+   — Érosion : Bruun (1962) pour les plages, Walkden & Dickson
+     (2008) pour les falaises tendres, bilan d'accrétion
+     (Kirwan et al. 2016) pour les marais.
+   — Extrêmes : amplification de fréquence exponentielle
+     (loi de Gumbel, Vitousek et al. 2017).
+========================================================= */
+const AR6_YEARS = [2020, 2030, 2040, 2050, 2060, 2070, 2080, 2090, 2100];
+const AR6 = {
+  ssp126: {
+    med: [0.06, 0.09, 0.14, 0.19, 0.24, 0.29, 0.34, 0.39, 0.44],
+    lo:  [0.05, 0.08, 0.11, 0.16, 0.19, 0.23, 0.26, 0.29, 0.32],
+    hi:  [0.07, 0.11, 0.17, 0.25, 0.31, 0.38, 0.46, 0.54, 0.62],
+  },
+  ssp245: {
+    med: [0.06, 0.09, 0.14, 0.20, 0.26, 0.33, 0.40, 0.48, 0.56],
+    lo:  [0.05, 0.08, 0.12, 0.17, 0.21, 0.26, 0.31, 0.37, 0.44],
+    hi:  [0.07, 0.11, 0.18, 0.26, 0.33, 0.42, 0.51, 0.63, 0.76],
+  },
+  ssp370: {
+    med: [0.06, 0.09, 0.15, 0.22, 0.29, 0.37, 0.46, 0.57, 0.68],
+    lo:  [0.05, 0.08, 0.12, 0.18, 0.24, 0.30, 0.37, 0.46, 0.55],
+    hi:  [0.07, 0.11, 0.18, 0.27, 0.36, 0.46, 0.58, 0.73, 0.90],
+  },
+  ssp585: {
+    med: [0.06, 0.10, 0.16, 0.23, 0.32, 0.42, 0.53, 0.65, 0.77],
+    lo:  [0.05, 0.09, 0.13, 0.20, 0.27, 0.35, 0.44, 0.53, 0.63],
+    hi:  [0.07, 0.12, 0.19, 0.29, 0.40, 0.53, 0.68, 0.84, 1.01],
+  },
+  // SSP5-8.5 avec processus de calotte à confiance faible (MICI)
+  ssp585lc: {
+    med: [0.06, 0.10, 0.17, 0.26, 0.37, 0.50, 0.63, 0.76, 0.88],
+    lo:  [0.05, 0.09, 0.13, 0.20, 0.27, 0.35, 0.44, 0.53, 0.63],
+    hi:  [0.07, 0.13, 0.22, 0.35, 0.52, 0.72, 0.97, 1.27, 1.60],
+  },
+};
+
+// Paramètres physiques ajustables (panneau « Paramètres scientifiques »)
+const ADV = {
+  tanb: 0.015,     // pente du profil actif (Bruun) — 1,5 %
+  vlm: 0,          // mouvement vertical du sol, mm/an (subsidence > 0)
+  accretion: 4,    // accrétion verticale du marais, mm/an
+  storm: true,     // afficher l'enveloppe d'érosion épisodique
+  lowConf: false,  // processus antarctiques à confiance faible (SSP5-8.5)
+  lambda: 0.125,   // paramètre d'échelle de Gumbel des niveaux extrêmes, m
+};
+const HIST_RATE = 3.0; // taux d'élévation de référence 1995-2014, mm/an
+const DEFAULT_RATE = { sandy: 1.8, cliff: 0.35, marsh: 0.8 }; // m/an historiques
+const STORM_RETREAT = { sandy: 25, cliff: 4, marsh: 8 };      // m, épisodique
+
+function interpDec(arr, year) {
+  const y = Math.min(2100, Math.max(2020, year));
+  const i = Math.min(AR6_YEARS.length - 2, Math.floor((y - 2020) / 10));
+  const t = (y - AR6_YEARS[i]) / 10;
+  return arr[i] + (arr[i + 1] - arr[i]) * t;
+}
+function slTable(scenarioKey) {
+  return (scenarioKey === 'ssp585' && ADV.lowConf) ? AR6.ssp585lc : AR6[scenarioKey];
+}
+// Élévation relative à 2025 (m), médiane + intervalle probable, VLM inclus
+function seaLevelRange(year, scenarioKey) {
+  const t = slTable(scenarioKey);
+  const vlm = ADV.vlm / 1000 * (year - 2025);
+  return {
+    med: interpDec(t.med, year) - interpDec(t.med, 2025) + vlm,
+    lo:  interpDec(t.lo,  year) - interpDec(t.lo,  2025) + vlm,
+    hi:  interpDec(t.hi,  year) - interpDec(t.hi,  2025) + vlm,
+  };
+}
+function seaLevelAtYear(year, scenarioKey) {
+  return seaLevelRange(year, scenarioKey).med;
+}
+// Élévation absolue vs 1995-2014 (m) — pour les fiches communes
+function seaLevelAbs(year, scenarioKey) {
+  const t = slTable(scenarioKey);
+  return { med: interpDec(t.med, year), lo: interpDec(t.lo, year), hi: interpDec(t.hi, year) };
+}
+// Taux d'élévation relatif (mm/an), dérivée centrée sur ±5 ans
+function slRate(year, scenarioKey, key = 'med') {
+  const t = slTable(scenarioKey)[key];
+  const y1 = Math.max(2020, year - 5), y2 = Math.min(2100, year + 5);
+  return (interpDec(t, y2) - interpDec(t, y1)) / (y2 - y1) * 1000 + ADV.vlm;
+}
+// Falaises tendres : ε(t) = ε_hist × √(taux/taux_hist), intégré depuis 2025
+function cliffCumul(year, scenarioKey, baseRate, key = 'med') {
+  let sum = 0, y = 2025;
+  while (y < year) {
+    const step = Math.min(1, year - y);
+    const r = Math.max(0.3, slRate(y + step / 2, scenarioKey, key));
+    sum += baseRate * Math.sqrt(r / HIST_RATE) * step;
+    y += step;
+  }
+  return sum;
+}
+// Marais : déficit vertical cumulé (m) quand la mer monte plus vite que l'accrétion
+function marshDeficit(year, scenarioKey, key = 'med') {
+  let sum = 0, y = 2025;
+  while (y < year) {
+    const step = Math.min(1, year - y);
+    sum += Math.max(0, slRate(y + step / 2, scenarioKey, key) - ADV.accretion) / 1000 * step;
+    y += step;
+  }
+  return sum;
+}
+function marshLossPct(year, scenarioKey) {
+  // plateforme tidale ~40 cm de marge altitudinale avant noyade complète
+  return Math.min(100, marshDeficit(year, scenarioKey, 'med') / 0.4 * 100);
+}
+// Recul cumulé depuis 2025 (m) : médiane + intervalle probable
+function retreatRange(year, scenarioKey, coastType, baseRate) {
+  const yrs = Math.max(0, year - 2025);
+  if (coastType === 'cliff') {
+    return {
+      med: cliffCumul(year, scenarioKey, baseRate, 'med'),
+      lo:  cliffCumul(year, scenarioKey, baseRate * 0.8, 'lo'),
+      hi:  cliffCumul(year, scenarioKey, baseRate * 1.2, 'hi'),
+    };
+  }
+  if (coastType === 'marsh') {
+    // recul du front + conversion interne liée au déficit altitudinal
+    return {
+      med: baseRate * yrs + marshDeficit(year, scenarioKey, 'med') * 20,
+      lo:  baseRate * yrs * 0.7 + marshDeficit(year, scenarioKey, 'lo') * 20,
+      hi:  baseRate * yrs * 1.3 + marshDeficit(year, scenarioKey, 'hi') * 20,
+    };
+  }
+  // sableux : tendance chronique + règle de Bruun R = ΔS / tanβ
+  const rise = seaLevelRange(year, scenarioKey);
+  const b = 1 / ADV.tanb;
+  return {
+    med: baseRate * yrs + Math.max(0, rise.med) * b,
+    lo:  baseRate * yrs * 0.75 + Math.max(0, rise.lo) * b,
+    hi:  baseRate * yrs * 1.25 + Math.max(0, rise.hi) * b,
+  };
+}
+// Amplification de fréquence de l'événement centennal actuel
+function centennialReturn(year, scenarioKey) {
+  const af = Math.exp(Math.max(0, seaLevelRange(year, scenarioKey).med) / ADV.lambda);
+  return { af, T: Math.max(1, 100 / af) };
+}
+function fmtM(v, dec = 2) { return v.toFixed(dec).replace('.', ','); }
 
 /* =========================================================
    STATE
@@ -1885,17 +2175,9 @@ const state = {
   immBuildings: true,
 };
 
-function seaLevelAtYear(year, scenarioKey) {
-  const s = SCENARIOS[scenarioKey];
-  const t = Math.max(0, (year - 2025) / 75);
-  return s.sea2100 * (t * t * 0.85 + t * 0.15);
-}
+// Compatibilité : recul médian pour une côte sableuse (fiches communes, dashboard)
 function retreatAtYear(year, scenarioKey, baseRate) {
-  const s = SCENARIOS[scenarioKey];
-  const yrs = year - 2025;
-  const linear = baseRate * yrs;
-  const accel = baseRate * yrs * yrs * 0.012 * s.factor;
-  return linear + accel;
+  return retreatRange(year, scenarioKey, 'sandy', baseRate).med;
 }
 
 /* =========================================================
@@ -2149,11 +2431,18 @@ function selectCommune(id) {
   renderCommuneList();
 }
 
+function communeCoastType(c) {
+  const t = c.type.toLowerCase();
+  if (t.includes('falaise')) return 'cliff';
+  if (t.includes('marais') || t.includes('delta') || t.includes('polder') || t.includes('estuaire') || t.includes('estuarien')) return 'marsh';
+  return 'sandy';
+}
 function showCommuneDetail(c) {
-  const sea2100 = (SCENARIOS[state.scenario].sea2100 * 100).toFixed(0);
-  const retreat2050 = retreatAtYear(2050, state.scenario, c.retreat).toFixed(0);
-  const retreat2100 = retreatAtYear(2100, state.scenario, c.retreat).toFixed(0);
-  const pct = Math.min(100, (retreat2100 / 220) * 100);
+  const ct = communeCoastType(c);
+  const sea2100 = seaLevelAbs(2100, state.scenario);
+  const r2050 = retreatRange(2050, state.scenario, ct, c.retreat);
+  const r2100 = retreatRange(2100, state.scenario, ct, c.retreat);
+  const pct = Math.min(100, (r2100.med / 180) * 100);
 
   document.getElementById('communeDetail').innerHTML = `
     <button class="cd-back" id="cdBack">← retour à la liste</button>
@@ -2187,9 +2476,13 @@ function showCommuneDetail(c) {
       </div>
       <div class="cd-projection-bar"><div class="cd-projection-bar-fill" style="width:${pct}%"></div></div>
       <div class="cd-projection-text">
-        Recul cumulé estimé&nbsp;: <strong>${retreat2050}&nbsp;m en 2050</strong> ·
-        <strong>${retreat2100}&nbsp;m en 2100</strong>.
-        Élévation marine projetée&nbsp;: <strong>+${sea2100}&nbsp;cm</strong>.
+        Recul cumulé estimé&nbsp;: <strong>${Math.round(r2050.med)}&nbsp;m en 2050</strong>
+        <small>[${Math.round(r2050.lo)}–${Math.round(r2050.hi)}]</small> ·
+        <strong>${Math.round(r2100.med)}&nbsp;m en 2100</strong>
+        <small>[${Math.round(r2100.lo)}–${Math.round(r2100.hi)}]</small>.
+        Élévation marine 2100 (GIEC AR6, vs 1995-2014)&nbsp;:
+        <strong>+${Math.round(sea2100.med * 100)}&nbsp;cm</strong>
+        <small>[${Math.round(sea2100.lo * 100)}–${Math.round(sea2100.hi * 100)}]</small>.
       </div>
     </div>
     <div class="cd-actions">
@@ -2241,10 +2534,9 @@ function drawScene() {
   sceneCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   sceneCtx.clearRect(0, 0, w, h);
 
-  const yearProgress = (state.year - 2025) / 75;
-  const sea = SCENARIOS[state.scenario];
-  const seaRise = seaLevelAtYear(state.year, state.scenario); // metres
-  const seaRiseNorm = Math.min(1, seaRise / 1.5);
+  const rise = seaLevelRange(state.year, state.scenario);
+  const R = retreatRange(state.year, state.scenario, state.coastType, DEFAULT_RATE[state.coastType]);
+  const sim = { rise, R };
 
   // Sky
   const sky = sceneCtx.createLinearGradient(0, 0, 0, h * 0.6);
@@ -2254,12 +2546,74 @@ function drawScene() {
   sceneCtx.fillRect(0, 0, w, h);
 
   // Choose drawing by coast type
-  if (state.coastType === 'cliff') drawCliff(w, h, seaRiseNorm);
-  else if (state.coastType === 'marsh') drawMarsh(w, h, seaRiseNorm);
-  else drawSandyCoast(w, h, seaRiseNorm);
+  if (state.coastType === 'cliff') drawCliff(w, h, sim);
+  else if (state.coastType === 'marsh') drawMarsh(w, h, sim);
+  else drawSandyCoast(w, h, sim);
 
   sceneT += 1;
   requestAnimationFrame(drawScene);
+}
+
+/* --- Annotations scientifiques communes --- */
+function drawGhostShoreline(x, yTop, yBot, label = '2025') {
+  sceneCtx.save();
+  sceneCtx.strokeStyle = 'rgba(11,27,43,0.75)';
+  sceneCtx.setLineDash([5, 4]);
+  sceneCtx.lineWidth = 1.4;
+  sceneCtx.beginPath();
+  sceneCtx.moveTo(x, yTop); sceneCtx.lineTo(x, yBot);
+  sceneCtx.stroke();
+  sceneCtx.setLineDash([]);
+  sceneCtx.fillStyle = 'rgba(11,27,43,0.85)';
+  sceneCtx.font = '600 10px JetBrains Mono';
+  sceneCtx.fillText(label, x + 5, yTop + 12);
+  sceneCtx.restore();
+}
+function drawUncertaintyBand(xLo, xHi, yTop, yBot) {
+  if (xHi - xLo < 2) return;
+  sceneCtx.save();
+  sceneCtx.fillStyle = 'rgba(232,110,85,0.16)';
+  sceneCtx.fillRect(xLo, yTop, xHi - xLo, yBot - yTop);
+  sceneCtx.strokeStyle = 'rgba(232,110,85,0.55)';
+  sceneCtx.setLineDash([3, 3]);
+  sceneCtx.lineWidth = 1;
+  sceneCtx.beginPath(); sceneCtx.moveTo(xLo, yTop); sceneCtx.lineTo(xLo, yBot); sceneCtx.stroke();
+  sceneCtx.beginPath(); sceneCtx.moveTo(xHi, yTop); sceneCtx.lineTo(xHi, yBot); sceneCtx.stroke();
+  sceneCtx.setLineDash([]);
+  sceneCtx.restore();
+}
+function drawStormLine(x, yTop, yBot) {
+  if (!ADV.storm) return;
+  sceneCtx.save();
+  sceneCtx.strokeStyle = 'rgba(184,64,40,0.8)';
+  sceneCtx.setLineDash([2, 4]);
+  sceneCtx.lineWidth = 1.4;
+  sceneCtx.beginPath();
+  sceneCtx.moveTo(x, yTop); sceneCtx.lineTo(x, yBot);
+  sceneCtx.stroke();
+  sceneCtx.setLineDash([]);
+  sceneCtx.fillStyle = 'rgba(184,64,40,0.95)';
+  sceneCtx.font = '600 9px JetBrains Mono';
+  sceneCtx.fillText('tempête', x + 4, yTop + 11);
+  sceneCtx.restore();
+}
+function drawScaleBar(w, h, pxPerM, metres) {
+  const len = metres * pxPerM;
+  const x = w - len - 26, y = h - 20;
+  sceneCtx.save();
+  sceneCtx.strokeStyle = 'rgba(11,27,43,0.8)';
+  sceneCtx.lineWidth = 1.5;
+  sceneCtx.beginPath();
+  sceneCtx.moveTo(x, y); sceneCtx.lineTo(x + len, y);
+  sceneCtx.moveTo(x, y - 4); sceneCtx.lineTo(x, y + 4);
+  sceneCtx.moveTo(x + len, y - 4); sceneCtx.lineTo(x + len, y + 4);
+  sceneCtx.stroke();
+  sceneCtx.fillStyle = 'rgba(11,27,43,0.85)';
+  sceneCtx.font = '600 10px JetBrains Mono';
+  sceneCtx.textAlign = 'center';
+  sceneCtx.fillText(`${metres} m`, x + len / 2, y - 7);
+  sceneCtx.textAlign = 'left';
+  sceneCtx.restore();
 }
 
 function waterGradient(seaTop, h) {
@@ -2287,11 +2641,15 @@ function drawWaves(seaTop, w, h, intensity = 1) {
   sceneCtx.globalAlpha = 1;
 }
 
-function drawSandyCoast(w, h, seaRiseNorm) {
+function drawSandyCoast(w, h, sim) {
+  const pxPerM = (w * 0.5) / 260; // domaine ~260 m de recul sur la moitié de la scène
+  const riseNorm = Math.min(1, Math.max(0, sim.rise.med) / 1.3);
   const baseSeaTop = h * 0.62;
-  const seaTop = baseSeaTop - seaRiseNorm * h * 0.16;
-  const baseBeachStart = w * 0.42;
-  const beachStart = baseBeachStart + seaRiseNorm * w * 0.22;
+  const seaTop = baseSeaTop - riseNorm * h * 0.14;
+  const shore0 = w * 0.40; // trait de côte 2025 (référence)
+  const beachStart = Math.min(w * 0.86, shore0 + sim.R.med * pxPerM);
+  const shoreLo = Math.min(w * 0.86, shore0 + sim.R.lo * pxPerM);
+  const shoreHi = Math.min(w * 0.90, shore0 + sim.R.hi * pxPerM);
 
   // Sun
   sceneCtx.fillStyle = '#F4B400'; sceneCtx.globalAlpha = 0.4;
@@ -2313,7 +2671,7 @@ function drawSandyCoast(w, h, seaRiseNorm) {
   sceneCtx.fillStyle = waterGradient(seaTop, h);
   sceneCtx.beginPath();
   sceneCtx.moveTo(0, seaTop);
-  // shore curve advancing inland with seaRiseNorm
+  // shore curve advancing inland with retreat
   for (let x = 0; x <= beachStart; x += 6) {
     const t = x / beachStart;
     const yy = seaTop + Math.sin(t * Math.PI * 2 + sceneT * 0.01) * 3;
@@ -2357,7 +2715,13 @@ function drawSandyCoast(w, h, seaRiseNorm) {
     sceneCtx.beginPath(); sceneCtx.ellipse(px, py + 2, 3, 6, 0, 0, Math.PI * 2); sceneCtx.fill();
   }
 
-  // Buildings (some flooded if seaTop reaches them)
+  // Incertitude 17e–83e centiles + enveloppe de tempête + référence 2025
+  drawUncertaintyBand(shoreLo, shoreHi, seaTop - 28, h * 0.96);
+  drawStormLine(Math.min(w * 0.92, beachStart + STORM_RETREAT.sandy * pxPerM), seaTop - 16, h * 0.82);
+  drawGhostShoreline(shore0, seaTop - 36, h * 0.96);
+
+  // Buildings : perdus / menacés / hors d'atteinte selon le recul
+  const stormPx = ADV.storm ? STORM_RETREAT.sandy * pxPerM : 0;
   const buildings = [
     { x: 0.72, w: 18, h: 28 },
     { x: 0.80, w: 14, h: 22 },
@@ -2366,33 +2730,45 @@ function drawSandyCoast(w, h, seaRiseNorm) {
   ];
   buildings.forEach(b => {
     const bx = b.x * w, by = h * 0.78;
-    const flooded = seaTop > by + 8;
-    sceneCtx.fillStyle = flooded ? 'rgba(11,27,43,0.45)' : '#0B1B2B';
+    const lost = bx < beachStart;
+    const threatened = !lost && bx < shoreHi + stormPx;
+    sceneCtx.fillStyle = lost ? 'rgba(11,27,43,0.35)' : (threatened ? 'rgba(184,64,40,0.9)' : '#0B1B2B');
     sceneCtx.fillRect(bx, by - b.h, b.w, b.h);
     sceneCtx.beginPath();
     sceneCtx.moveTo(bx - 3, by - b.h);
     sceneCtx.lineTo(bx + b.w / 2, by - b.h - 12);
     sceneCtx.lineTo(bx + b.w + 3, by - b.h);
     sceneCtx.closePath(); sceneCtx.fill();
+    if (threatened) {
+      sceneCtx.strokeStyle = 'rgba(255,255,255,0.9)'; sceneCtx.lineWidth = 1.2;
+      sceneCtx.strokeRect(bx, by - b.h, b.w, b.h);
+    }
   });
 
-  // Submerged building indicator
-  if (seaRiseNorm > 0.5) {
+  if (sim.R.med * pxPerM > w * 0.28) {
     sceneCtx.fillStyle = 'rgba(232,110,85,0.95)';
     sceneCtx.font = '600 11px JetBrains Mono';
     sceneCtx.fillText('⚠ ZONE D\'EXPOSITION', w * 0.70, h * 0.42);
   }
+
+  drawScaleBar(w, h, pxPerM, 50);
 }
 
-function drawCliff(w, h, seaRiseNorm) {
-  const seaTop = h * 0.55 - seaRiseNorm * h * 0.12;
+function drawCliff(w, h, sim) {
+  const pxPerM = (w * 0.35) / 60; // domaine ~60 m de recul de falaise
+  const riseNorm = Math.min(1, Math.max(0, sim.rise.med) / 1.3);
+  const seaTop = h * 0.55 - riseNorm * h * 0.10;
+  const edge0 = w * 0.42; // pied de falaise 2025
+  const cliffEdge = Math.min(w * 0.80, edge0 + sim.R.med * pxPerM);
+  const edgeLo = Math.min(w * 0.80, edge0 + sim.R.lo * pxPerM);
+  const edgeHi = Math.min(w * 0.84, edge0 + sim.R.hi * pxPerM);
+
   // Sea
   sceneCtx.fillStyle = waterGradient(seaTop, h);
-  sceneCtx.fillRect(0, seaTop, w * 0.55, h - seaTop);
-  drawWaves(seaTop, w * 0.55, h, 1.3);
+  sceneCtx.fillRect(0, seaTop, cliffEdge, h - seaTop);
+  drawWaves(seaTop, cliffEdge, h, 1.3);
 
   // Cliff
-  const cliffEdge = w * 0.45 + seaRiseNorm * w * 0.10; // recule
   sceneCtx.fillStyle = '#E8DCBE';
   sceneCtx.beginPath();
   sceneCtx.moveTo(cliffEdge, h);
@@ -2404,7 +2780,25 @@ function drawCliff(w, h, seaRiseNorm) {
   }
   sceneCtx.lineTo(w, h); sceneCtx.closePath(); sceneCtx.fill();
 
-  // Cliff vertical strata
+  // Encoche basale (sapement par les vagues)
+  sceneCtx.fillStyle = 'rgba(11,27,43,0.30)';
+  sceneCtx.beginPath();
+  sceneCtx.moveTo(cliffEdge, seaTop + 4);
+  sceneCtx.quadraticCurveTo(cliffEdge + 14, seaTop + 10, cliffEdge, seaTop + 26);
+  sceneCtx.closePath(); sceneCtx.fill();
+
+  // Éboulis au pied (proportionnels au recul cumulé)
+  if (sim.R.med > 2) {
+    sceneCtx.fillStyle = 'rgba(196,180,140,0.9)';
+    const n = Math.min(7, 2 + Math.floor(sim.R.med / 8));
+    for (let i = 0; i < n; i++) {
+      const rx = cliffEdge - 6 - i * 9;
+      const rr = 4 + (i * 37 % 5);
+      sceneCtx.beginPath(); sceneCtx.arc(rx, seaTop + 2, rr, 0, Math.PI * 2); sceneCtx.fill();
+    }
+  }
+
+  // Cliff strata
   sceneCtx.strokeStyle = 'rgba(11,27,43,0.18)';
   sceneCtx.lineWidth = 1;
   for (let i = 0; i < 6; i++) {
@@ -2424,40 +2818,57 @@ function drawCliff(w, h, seaRiseNorm) {
   sceneCtx.lineTo(w, h * 0.32); sceneCtx.lineTo(cliffEdge, h * 0.32);
   sceneCtx.closePath(); sceneCtx.fill();
 
-  // Houses on cliff
-  const houseDistance = w * 0.16 - seaRiseNorm * w * 0.12; // moves closer to edge
+  // Incertitude + tempête + référence 2025 (en haut de falaise)
+  drawUncertaintyBand(edgeLo, edgeHi, h * 0.18, h * 0.34);
+  drawStormLine(Math.min(w * 0.86, cliffEdge + STORM_RETREAT.cliff * pxPerM), h * 0.18, h * 0.34);
+  drawGhostShoreline(edge0, h * 0.14, h * 0.60);
+
+  // Maisons implantées à distance fixe du bord 2025 (8, 22 et 45 m)
+  const stormM = ADV.storm ? STORM_RETREAT.cliff : 0;
   const houses = [
-    { offX: 30, w: 22, h: 34, hashed: seaRiseNorm > 0.6 },
-    { offX: 80, w: 18, h: 26, hashed: seaRiseNorm > 0.85 },
-    { offX: 140, w: 26, h: 38, hashed: false },
+    { offM: 8,  w: 22, h: 34 },
+    { offM: 22, w: 18, h: 26 },
+    { offM: 45, w: 26, h: 38 },
   ];
-  houses.forEach((b, i) => {
-    const bx = cliffEdge + b.offX;
+  houses.forEach(b => {
+    const bx = edge0 + b.offM * pxPerM;
     const by = h * 0.30 - 4;
-    sceneCtx.fillStyle = b.hashed ? 'rgba(232,110,85,0.85)' : '#0B1B2B';
+    const lost = cliffEdge >= bx;
+    const threatened = !lost && (edgeHi + stormM * pxPerM) >= bx;
+    if (lost) {
+      // ruine : ne reste qu'une trace au sol
+      sceneCtx.fillStyle = 'rgba(11,27,43,0.25)';
+      sceneCtx.fillRect(bx, by - 3, b.w, 3);
+      return;
+    }
+    sceneCtx.fillStyle = threatened ? 'rgba(184,64,40,0.9)' : '#0B1B2B';
     sceneCtx.fillRect(bx, by - b.h, b.w, b.h);
     sceneCtx.beginPath();
     sceneCtx.moveTo(bx - 3, by - b.h);
     sceneCtx.lineTo(bx + b.w / 2, by - b.h - 12);
     sceneCtx.lineTo(bx + b.w + 3, by - b.h);
     sceneCtx.closePath(); sceneCtx.fill();
-    if (b.hashed) {
-      sceneCtx.strokeStyle = '#fff'; sceneCtx.lineWidth = 1.5;
-      sceneCtx.beginPath(); sceneCtx.moveTo(bx, by - b.h); sceneCtx.lineTo(bx + b.w, by); sceneCtx.stroke();
-      sceneCtx.beginPath(); sceneCtx.moveTo(bx + b.w, by - b.h); sceneCtx.lineTo(bx, by); sceneCtx.stroke();
+    if (threatened) {
+      sceneCtx.strokeStyle = 'rgba(255,255,255,0.9)'; sceneCtx.lineWidth = 1.2;
+      sceneCtx.strokeRect(bx, by - b.h, b.w, b.h);
     }
   });
 
-  // Edge warning
-  if (seaRiseNorm > 0.5) {
-    sceneCtx.fillStyle = 'rgba(232,110,85,0.95)';
-    sceneCtx.font = '600 11px JetBrains Mono';
-    sceneCtx.fillText('Recul actif', cliffEdge + 4, h * 0.28);
-  }
+  // Vitesse de recul instantanée (modèle √ du taux d'élévation)
+  const rate = DEFAULT_RATE.cliff * Math.sqrt(Math.max(0.3, slRate(state.year, state.scenario, 'med')) / HIST_RATE);
+  sceneCtx.fillStyle = 'rgba(232,110,85,0.95)';
+  sceneCtx.font = '600 11px JetBrains Mono';
+  sceneCtx.fillText(`recul ${fmtM(rate)} m/an`, cliffEdge + 6, h * 0.27);
+
+  drawScaleBar(w, h, pxPerM, 20);
 }
 
-function drawMarsh(w, h, seaRiseNorm) {
-  const seaTop = h * 0.40 - seaRiseNorm * h * 0.08;
+function drawMarsh(w, h, sim) {
+  const riseNorm = Math.min(1, Math.max(0, sim.rise.med) / 1.3);
+  const seaTop = h * 0.40 - riseNorm * h * 0.08;
+  const lossPct = marshLossPct(state.year, state.scenario);
+  const rate = slRate(state.year, state.scenario, 'med');
+
   // Sea + flooded marsh
   sceneCtx.fillStyle = waterGradient(seaTop, h);
   sceneCtx.fillRect(0, seaTop, w, h - seaTop);
@@ -2466,9 +2877,9 @@ function drawMarsh(w, h, seaRiseNorm) {
   // Reed clumps
   sceneCtx.fillStyle = 'rgba(92,138,79,0.8)';
   for (let i = 0; i < 80; i++) {
-    const px = Math.random() * w;
-    const py = seaTop + Math.random() * (h - seaTop) * 0.4 + 20;
-    const above = py < seaTop + (h - seaTop) * (0.2 + seaRiseNorm * 0.2);
+    const px = (i * 137.5) % w;
+    const py = seaTop + ((i * 61) % 100) / 100 * (h - seaTop) * 0.4 + 20;
+    const above = py < seaTop + (h - seaTop) * (0.2 + riseNorm * 0.2);
     if (!above) continue;
     sceneCtx.fillRect(px, py, 1, 8);
     sceneCtx.fillRect(px + 2, py - 2, 1, 10);
@@ -2482,15 +2893,17 @@ function drawMarsh(w, h, seaRiseNorm) {
   sceneCtx.lineTo(w, seaTop + 4); sceneCtx.lineTo(0, seaTop + 4);
   sceneCtx.closePath(); sceneCtx.fill();
 
-  if (seaRiseNorm > 0.7) {
+  if (sim.rise.med > 0.55) {
     // Dyke overtopped
-    sceneCtx.fillStyle = 'rgba(232,110,85,0.85)';
+    sceneCtx.fillStyle = 'rgba(232,110,85,0.9)';
     sceneCtx.font = '600 11px JetBrains Mono';
-    sceneCtx.fillText('⚠ digue submergée', w * 0.4, seaTop - 14);
+    sceneCtx.fillText('⚠ digue submergée', w * 0.4, seaTop - 34);
   }
 
-  // Polders behind
-  sceneCtx.fillStyle = '#A8B687';
+  // Polders behind : la couleur bascule du vert (accrétion suffisante)
+  // au brun (déficit) selon le bilan sédimentaire
+  const drowning = Math.min(1, lossPct / 100);
+  sceneCtx.fillStyle = drowning > 0.5 ? '#9AA37E' : '#A8B687';
   sceneCtx.fillRect(0, seaTop + 4, w, h - seaTop - 4);
   // grid lines
   sceneCtx.strokeStyle = 'rgba(11,27,43,0.15)'; sceneCtx.lineWidth = 1;
@@ -2504,6 +2917,34 @@ function drawMarsh(w, h, seaRiseNorm) {
     sceneCtx.moveTo((i / 8) * w, seaTop + 4); sceneCtx.lineTo((i / 8) * w, h);
     sceneCtx.stroke();
   }
+
+  // Noyade progressive : l'eau gagne sur le polder à mesure que le
+  // déficit altitudinal (mer − accrétion) se creuse
+  if (lossPct > 0.5) {
+    const polderTop = seaTop + 4;
+    const floodH = (h - polderTop) * drowning;
+    const grad = sceneCtx.createLinearGradient(0, polderTop, 0, polderTop + floodH);
+    grad.addColorStop(0, 'rgba(42,140,140,0.62)');
+    grad.addColorStop(1, 'rgba(42,140,140,0.30)');
+    sceneCtx.fillStyle = grad;
+    sceneCtx.beginPath();
+    sceneCtx.moveTo(0, polderTop);
+    sceneCtx.lineTo(w, polderTop);
+    for (let x = w; x >= 0; x -= 6) {
+      const yy = polderTop + floodH + Math.sin(x * 0.03 + sceneT * 0.02) * 3;
+      sceneCtx.lineTo(x, yy);
+    }
+    sceneCtx.closePath(); sceneCtx.fill();
+    sceneCtx.fillStyle = 'rgba(11,27,43,0.85)';
+    sceneCtx.font = '600 10px JetBrains Mono';
+    sceneCtx.fillText(`marais submergé : ${Math.round(lossPct)} %`, 16, polderTop + 18);
+  }
+
+  // Bilan sédimentaire affiché : accrétion vs vitesse de la mer
+  sceneCtx.fillStyle = 'rgba(11,27,43,0.85)';
+  sceneCtx.font = '600 10px JetBrains Mono';
+  const balance = ADV.accretion >= rate ? '≥ mer : le marais suit' : '< mer : le marais se noie';
+  sceneCtx.fillText(`accrétion ${fmtM(ADV.accretion, 1)} mm/an ${balance} (${fmtM(rate, 1)} mm/an)`, 16, h * 0.34);
 }
 
 drawScene();
@@ -2513,22 +2954,59 @@ drawScene();
 ========================================================= */
 const simTrack = document.getElementById('simTrack');
 const simThumb = document.getElementById('simThumb');
+let simChart = null, simChartCursorYear = 2025, simChartMode = 'sea';
 function setYear(y, animate = true) {
-  state.year = Math.max(2025, Math.min(2100, Math.round(y)));
+  // année fractionnaire conservée (lecture fluide) ; l'affichage arrondit
+  state.year = Math.max(2025, Math.min(2100, y));
   const ratio = (state.year - 2025) / 75;
+  const shownYear = Math.round(state.year);
   simThumb.style.left = (ratio * 100) + '%';
-  simThumb.setAttribute('data-year', state.year);
-  document.getElementById('simYear').textContent = state.year;
+  simThumb.setAttribute('data-year', shownYear);
+  document.getElementById('simYear').textContent = shownYear;
   updateSimReadouts();
+  // déplace le curseur temporel du graphique (au plus 1 fois par an simulé)
+  if (simChart && Math.abs(state.year - simChartCursorYear) >= 1) {
+    simChartCursorYear = state.year;
+    simChart.update('none');
+  }
 }
 function updateSimReadouts() {
-  const sea = seaLevelAtYear(state.year, state.scenario);
-  document.getElementById('simSeaLevel').textContent = `+${sea.toFixed(2).replace('.', ',')} m`;
-  const ret = retreatAtYear(state.year, state.scenario, 1.8);
-  document.getElementById('simRetreat').textContent = `${ret.toFixed(0)} m`;
-  const beach = Math.min(100, ret * 1.6);
-  document.getElementById('simBeach').textContent = `${beach.toFixed(0)}%`;
-  document.getElementById('simScenarioName').textContent = SCENARIOS[state.scenario].name;
+  const y = state.year, scn = state.scenario, type = state.coastType;
+  const rise = seaLevelRange(y, scn);
+  document.getElementById('simSeaLevel').textContent = `+${fmtM(rise.med)} m`;
+  document.getElementById('simSeaRange').textContent = `probable +${fmtM(rise.lo)} à +${fmtM(rise.hi)} m`;
+
+  const R = retreatRange(y, scn, type, DEFAULT_RATE[type]);
+  document.getElementById('simRetreat').textContent = `${Math.round(R.med)} m`;
+  document.getElementById('simRetreatRange').textContent = `probable ${Math.round(R.lo)}–${Math.round(R.hi)} m`;
+
+  const lbl = document.getElementById('simStat3Label');
+  const val = document.getElementById('simBeach');
+  const sub = document.getElementById('simStat3Sub');
+  if (type === 'cliff') {
+    const rate = DEFAULT_RATE.cliff * Math.sqrt(Math.max(0.3, slRate(y, scn, 'med')) / HIST_RATE);
+    lbl.textContent = 'Vitesse de recul';
+    val.textContent = `${fmtM(rate)} m/an`;
+    sub.textContent = `×${fmtM(rate / DEFAULT_RATE.cliff, 1)} vs 1995-2014`;
+  } else if (type === 'marsh') {
+    const p = marshLossPct(y, scn);
+    lbl.textContent = 'Marais submergé';
+    val.textContent = `${Math.round(p)}%`;
+    sub.textContent = `déficit ${Math.round(marshDeficit(y, scn) * 1000)} mm cumulés`;
+  } else {
+    lbl.textContent = 'Plage perdue';
+    val.textContent = `${Math.round(Math.min(100, R.med / 0.9))}%`;
+    sub.textContent = 'largeur initiale 90 m';
+  }
+
+  const { af, T } = centennialReturn(y, scn);
+  document.getElementById('simReturn').textContent =
+    T <= 1.05 ? 'quasi annuelle' : `1 / ${Math.round(T)} ans`;
+  document.getElementById('simReturnSub').textContent =
+    af < 1.05 ? 'fréquence inchangée' : `×${af >= 10 ? Math.round(af) : fmtM(af, 1)} plus fréquente`;
+
+  document.getElementById('simScenarioName').textContent =
+    SCENARIOS[scn].name + (scn === 'ssp585' && ADV.lowConf ? ' + instabilité antarctique' : '');
 }
 function trackPointer(ev) {
   const rect = simTrack.getBoundingClientRect();
@@ -2577,6 +3055,7 @@ document.querySelectorAll('#scenarioGroup .scenario-option').forEach(opt => {
     opt.classList.add('selected');
     state.scenario = opt.dataset.key;
     updateSimReadouts();
+    refreshSimChart();
     if (state.selectedCommune) showCommuneDetail(COMMUNES.find(c => c.id === state.selectedCommune));
     updateDashboardKpis();
   });
@@ -2586,6 +3065,196 @@ document.querySelectorAll('#coastTypeGroup .scenario-option').forEach(opt => {
     document.querySelectorAll('#coastTypeGroup .scenario-option').forEach(x => x.classList.remove('selected'));
     opt.classList.add('selected');
     state.coastType = opt.dataset.key;
+    updateSimReadouts();
+    refreshSimChart();
+  });
+});
+
+/* =========================================================
+   5b · PARAMÈTRES SCIENTIFIQUES AVANCÉS
+========================================================= */
+function bindAdvRange(id, valId, apply, format) {
+  const input = document.getElementById(id);
+  const out = document.getElementById(valId);
+  input.addEventListener('input', () => {
+    const v = parseFloat(input.value);
+    apply(v);
+    out.textContent = format(v);
+    updateSimReadouts();
+    refreshSimChart();
+  });
+}
+bindAdvRange('advTanb', 'advTanbVal', v => { ADV.tanb = v / 100; }, v => `${fmtM(v, 1)} %`);
+bindAdvRange('advVlm', 'advVlmVal', v => { ADV.vlm = v; }, v => `${v >= 0 ? '+' : ''}${fmtM(v, 1)} mm/an`);
+bindAdvRange('advAcc', 'advAccVal', v => { ADV.accretion = v; }, v => `${fmtM(v, 1)} mm/an`);
+document.getElementById('advStorm').addEventListener('change', e => {
+  ADV.storm = e.target.checked;
+  document.getElementById('legendStorm').style.display = ADV.storm ? '' : 'none';
+});
+document.getElementById('advLowConf').addEventListener('change', e => {
+  ADV.lowConf = e.target.checked;
+  updateSimReadouts();
+  refreshSimChart();
+  if (state.selectedCommune) showCommuneDetail(COMMUNES.find(c => c.id === state.selectedCommune));
+});
+
+/* =========================================================
+   5c · GRAPHIQUES SCIENTIFIQUES DU SIMULATEUR
+   (fan chart AR6, recul par scénario, période de retour)
+========================================================= */
+const SIM_PALETTE = { ssp126: '#5C8A4F', ssp245: '#F4B400', ssp370: '#E86E55', ssp585: '#B84028' };
+const SIM_CHART_NOTES = {
+  sea: 'Élévation relative à 2025 (mouvement vertical du sol inclus). Trait épais = scénario actif ; bande = intervalle probable 17e–83e centiles (GIEC AR6, ch. 9, table 9.9). Cochez « instabilité antarctique » pour le haut de la distribution à confiance faible.',
+  retreat: 'Recul cumulé pour le type de littoral sélectionné : tendance historique + règle de Bruun R = ΔS/tanβ (plages) ; accélération en √(taux d’élévation) (falaises tendres, Walkden & Dickson 2008) ; recul du front + déficit d’accrétion (marais, Kirwan et al. 2016).',
+  extremes: 'Période de retour de l’événement centennal de 2025 à mesure que la mer monte : amplification exponentielle N = N₀·e^(ΔS/λ), λ = 12,5 cm (Vitousek et al. 2017 ; GIEC AR6). Quand la courbe atteint 1 an, la « centennale » devient annuelle.',
+};
+const SIM_CHART_YLABEL = { sea: 'm (vs 2025)', retreat: 'm de recul', extremes: 'période de retour (ans)' };
+const CH_YEARS = [];
+for (let y = 2025; y <= 2100; y += 5) CH_YEARS.push(y);
+
+function simSeriesValue(mode, yearVal, scn) {
+  if (mode === 'sea') return seaLevelRange(yearVal, scn).med;
+  if (mode === 'retreat') return retreatRange(yearVal, scn, state.coastType, DEFAULT_RATE[state.coastType]).med;
+  return centennialReturn(yearVal, scn).T;
+}
+function hexA(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+function buildSimChartData() {
+  const active = state.scenario;
+  const datasets = [];
+  // bande d'incertitude 17-83 % du scénario actif (niveau marin & recul)
+  if (simChartMode !== 'extremes') {
+    const loData = CH_YEARS.map(y => ({
+      x: y,
+      y: simChartMode === 'sea'
+        ? seaLevelRange(y, active).lo
+        : retreatRange(y, active, state.coastType, DEFAULT_RATE[state.coastType]).lo
+    }));
+    const hiData = CH_YEARS.map(y => ({
+      x: y,
+      y: simChartMode === 'sea'
+        ? seaLevelRange(y, active).hi
+        : retreatRange(y, active, state.coastType, DEFAULT_RATE[state.coastType]).hi
+    }));
+    datasets.push({
+      label: '_lo', data: loData, borderWidth: 0, pointRadius: 0, fill: false,
+    });
+    datasets.push({
+      label: 'intervalle probable 17–83 %', data: hiData, borderWidth: 0, pointRadius: 0,
+      fill: '-1', backgroundColor: hexA(SIM_PALETTE[active], 0.14),
+    });
+  }
+  Object.keys(SCENARIOS).forEach(scn => {
+    datasets.push({
+      label: `${SCENARIOS[scn].name.split(' · ')[0]} (${SCENARIOS[scn].tempLabel})`,
+      data: CH_YEARS.map(y => ({ x: y, y: simSeriesValue(simChartMode, y, scn) })),
+      borderColor: scn === active ? SIM_PALETTE[scn] : hexA(SIM_PALETTE[scn], 0.45),
+      borderWidth: scn === active ? 3 : 1.4,
+      pointRadius: 0, tension: 0.35, fill: false,
+    });
+  });
+  return { datasets };
+}
+const yearCursorPlugin = {
+  id: 'yearCursor',
+  afterDatasetsDraw(chart) {
+    const xs = chart.scales.x;
+    if (!xs) return;
+    const x = xs.getPixelForValue(state.year);
+    const { top, bottom } = chart.chartArea;
+    if (x < chart.chartArea.left || x > chart.chartArea.right) return;
+    const c = chart.ctx;
+    c.save();
+    c.strokeStyle = 'rgba(11,27,43,0.55)';
+    c.setLineDash([4, 3]);
+    c.lineWidth = 1;
+    c.beginPath(); c.moveTo(x, top); c.lineTo(x, bottom); c.stroke();
+    c.setLineDash([]);
+    c.fillStyle = '#0B1B2B';
+    c.font = '600 10px JetBrains Mono';
+    c.textAlign = 'center';
+    const label = String(Math.round(state.year));
+    const tw = c.measureText(label).width + 10;
+    c.beginPath();
+    c.roundRect(x - tw / 2, top - 2, tw, 15, 4);
+    c.fill();
+    c.fillStyle = '#F6F1E7';
+    c.fillText(label, x, top + 9);
+    c.restore();
+  }
+};
+function simChartScales() {
+  const yScale = simChartMode === 'extremes'
+    ? {
+        type: 'logarithmic', min: 1, max: 120,
+        grid: { color: 'rgba(11,27,43,0.06)' },
+        ticks: {
+          font: { family: 'JetBrains Mono', size: 9 }, color: '#5C5852',
+          callback: v => [1, 2, 5, 10, 25, 50, 100].includes(v) ? `${v} ans` : null,
+        },
+        title: { display: true, text: SIM_CHART_YLABEL.extremes, font: { family: 'Inter', size: 10 } },
+      }
+    : {
+        type: 'linear', beginAtZero: true,
+        grid: { color: 'rgba(11,27,43,0.06)' },
+        ticks: { font: { family: 'JetBrains Mono', size: 9 }, color: '#5C5852' },
+        title: { display: true, text: SIM_CHART_YLABEL[simChartMode], font: { family: 'Inter', size: 10 } },
+      };
+  return {
+    x: {
+      type: 'linear', min: 2025, max: 2100,
+      grid: { color: 'rgba(11,27,43,0.06)' },
+      ticks: { stepSize: 15, font: { family: 'JetBrains Mono', size: 9 }, color: '#5C5852', callback: v => v },
+    },
+    y: yScale,
+  };
+}
+simChart = new Chart(document.getElementById('simChart').getContext('2d'), {
+  type: 'line',
+  data: buildSimChartData(),
+  options: {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    interaction: { mode: 'nearest', axis: 'x', intersect: false },
+    plugins: {
+      legend: {
+        position: 'top', align: 'end',
+        labels: {
+          boxWidth: 9, boxHeight: 9, font: { family: 'Inter', size: 10 },
+          filter: item => item.text !== '_lo',
+        },
+      },
+      tooltip: {
+        filter: item => item.dataset.label !== '_lo' && item.dataset.label !== 'intervalle probable 17–83 %',
+        callbacks: {
+          title: items => items.length ? `${Math.round(items[0].parsed.x)}` : '',
+          label: c => {
+            const v = c.parsed.y;
+            if (simChartMode === 'extremes') return `${c.dataset.label}: 1 / ${v < 2 ? fmtM(v, 1) : Math.round(v)} ans`;
+            return `${c.dataset.label}: ${simChartMode === 'sea' ? '+' + fmtM(v) : Math.round(v)} m`;
+          },
+        },
+      },
+    },
+    scales: simChartScales(),
+  },
+  plugins: [yearCursorPlugin],
+});
+function refreshSimChart() {
+  if (!simChart) return;
+  simChart.data = buildSimChartData();
+  simChart.options.scales = simChartScales();
+  simChart.update();
+}
+document.getElementById('simChartNote').textContent = SIM_CHART_NOTES.sea;
+document.querySelectorAll('.sim-chart-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.sim-chart-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    simChartMode = tab.dataset.chart;
+    document.getElementById('simChartNote').textContent = SIM_CHART_NOTES[simChartMode];
+    refreshSimChart();
   });
 });
 
