@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Miquelon · salle de décision littorale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:'Marianne';font-weight:400;font-style:normal;font-display:swap;src:url('https://cdn.jsdelivr.net/gh/numerique-gouv/dsfr@v1.10.2/dist/fonts/Marianne-Regular.woff2') format('woff2');}
+@font-face{font-family:'Marianne';font-weight:500;font-style:normal;font-display:swap;src:url('https://cdn.jsdelivr.net/gh/numerique-gouv/dsfr@v1.10.2/dist/fonts/Marianne-Medium.woff2') format('woff2');}
+@font-face{font-family:'Marianne';font-weight:700;font-style:normal;font-display:swap;src:url('https://cdn.jsdelivr.net/gh/numerique-gouv/dsfr@v1.10.2/dist/fonts/Marianne-Bold.woff2') format('woff2');}
+:root{
+  --bf500:#000091;--bf700:#21213F;--rm500:#E1000F;
+  --ink:#161616;--muted:#666666;--line:#E5E5E5;--soft:#F6F6F6;
+  --teal:#009099;--ocean:#1C7293;--amber:#B07E1B;--terra:#B65A3C;--green:#2F7D5B;--slate:#4E7081;
+  --sans:'Marianne',Arial,sans-serif;--mono:'IBM Plex Mono','Courier New',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{background:#fff;color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--bf500)}
+.topbar{position:sticky;top:0;z-index:500;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 6px rgba(0,0,0,.04);display:flex;align-items:center;justify-content:space-between;padding:10px 24px;gap:14px;flex-wrap:wrap}
+.tb-l{display:flex;align-items:center;gap:12px;min-width:0}
+.tb-logo{width:46px;height:46px;background:var(--bf500);color:#fff;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;text-align:center;line-height:1.1;flex-shrink:0}
+.tb-t1{font-size:15px;font-weight:700;line-height:1.15}
+.tb-t2{font-size:11px;color:var(--muted);margin-top:2px}
+.tb-r a{font-size:12.5px;text-decoration:none;border:1px solid var(--line);border-radius:6px;padding:7px 12px;color:var(--ink)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.hero{padding:42px 0 26px;border-bottom:1px solid var(--line)}
+.hero h1{font-size:34px;font-weight:700;line-height:1.15;letter-spacing:-.01em;max-width:860px}
+.hero .sub{font-size:16.5px;color:var(--muted);margin-top:12px;max-width:820px}
+.facts{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.fact{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:12.5px}
+.fact b{display:block;font-size:17px;font-weight:700;color:var(--bf500);font-family:var(--mono)}
+.method{margin-top:20px;border-left:3px solid var(--bf500);background:var(--soft);padding:13px 16px;border-radius:0 8px 8px 0;font-size:13.5px;max-width:900px}
+section.ps{padding:38px 0;border-bottom:1px solid var(--line)}
+.sec-hd{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+.sec-num{font-family:var(--mono);font-size:13px;color:var(--bf500);font-weight:500}
+h2.sec-title{font-size:24px;font-weight:700;letter-spacing:-.005em}
+.sec-intro{font-size:14.5px;color:var(--muted);margin-bottom:18px;max-width:860px}
+/* jumeau */
+#twin-stage{position:relative;background:#0b1d2a;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+#twin-canvas{display:block;width:100%;height:560px;cursor:grab}
+#twin-canvas:active{cursor:grabbing}
+#twin-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#cfe3ee;font-size:13.5px;font-family:var(--mono);background:#0b1d2a;flex-direction:column;gap:10px}
+.spin{width:26px;height:26px;border:3px solid rgba(255,255,255,.2);border-top-color:#cfe3ee;border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#twin-hud{position:absolute;top:12px;left:12px;background:rgba(8,22,33,.82);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:12px 14px;color:#eaf3f8;width:300px;max-width:calc(100% - 24px)}
+#twin-hud h3{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#9fc3d4;margin-bottom:8px}
+.hud-row{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px}
+.hud-row label{flex-shrink:0;width:118px;color:#bcd6e2}
+.hud-row input[type=range]{flex:1;accent-color:#3ea6c7}
+.hud-val{font-family:var(--mono);font-size:12.5px;width:62px;text-align:right;color:#fff}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.chip{font-size:10.5px;font-family:var(--mono);background:rgba(62,166,199,.16);border:1px solid rgba(62,166,199,.5);color:#bfe3f0;border-radius:20px;padding:3px 9px;cursor:pointer;user-select:none}
+.chip:hover{background:rgba(62,166,199,.32)}
+.chip.ghost{background:transparent;border-color:rgba(255,255,255,.25);color:#9db8c4}
+#twin-stats{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:8px;max-width:240px}
+.stat{background:rgba(8,22,33,.82);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:9px 13px;color:#eaf3f8}
+.stat b{display:block;font-family:var(--mono);font-size:21px;font-weight:500;line-height:1.1}
+.stat span{font-size:10.5px;color:#9fc3d4;line-height:1.3;display:block;margin-top:2px}
+.stat.alert b{color:#ff8d8d}
+#twin-views{position:absolute;left:12px;bottom:12px;display:flex;gap:6px;flex-wrap:wrap}
+#twin-tip{position:absolute;pointer-events:none;background:rgba(8,22,33,.92);color:#eaf3f8;font-size:11.5px;font-family:var(--mono);padding:5px 9px;border-radius:6px;display:none;z-index:5;white-space:nowrap}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+.lg{display:flex;align-items:center;gap:6px}
+.lg i{width:14px;height:14px;border-radius:3px;display:inline-block}
+.caveats{margin-top:14px;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:12px 16px;font-size:12.5px;color:var(--muted)}
+.caveats b{color:var(--ink)}
+/* options */
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:14px;margin-top:6px}
+.opt{border:1px solid var(--line);border-radius:10px;padding:16px;border-top:4px solid var(--slate);background:#fff}
+.opt h3{font-size:16.5px;font-weight:700;margin-bottom:7px}
+.opt .o-sub{font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px}
+.opt dl{font-size:12.8px}
+.opt dt{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:9px}
+.opt dd{margin-top:3px}
+.grille{margin-top:26px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.grille-hd{background:var(--soft);padding:13px 16px;border-bottom:1px solid var(--line)}
+.grille-hd h3{font-size:16px;font-weight:700}
+.grille-hd p{font-size:12.5px;color:var(--muted);margin-top:3px}
+.grille table{width:100%;border-collapse:collapse;font-size:12.5px}
+.grille th,.grille td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:center}
+.grille th{background:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700}
+.grille td:first-child,.grille th:first-child{text-align:left;font-weight:700;font-size:12.5px;text-transform:none;letter-spacing:0;color:var(--ink)}
+.grille select{font-family:var(--mono);font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:#fff;color:var(--ink)}
+.grille-foot{display:flex;gap:20px;align-items:flex-start;padding:16px;flex-wrap:wrap}
+#radar{flex-shrink:0}
+.radar-note{font-size:12.5px;color:var(--muted);max-width:420px}
+/* trajectoires */
+.traj-box{border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:6px}
+#traj-canvas{width:100%;display:block;cursor:pointer}
+.traj-ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:12.5px}
+.traj-ctl input[type=text]{border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:12.5px;width:230px}
+.traj-ctl select{border:1px solid var(--line);border-radius:6px;padding:6px;font-size:12.5px}
+.btn{background:var(--bf500);color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12.5px;cursor:pointer;font-weight:500;font-family:var(--sans)}
+.btn.ghost{background:#fff;color:var(--bf500);border:1px solid var(--bf500)}
+.btn.soft{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+/* relevé */
+.releve{border:1px solid var(--line);border-radius:10px;padding:20px;background:#fff}
+.releve h3{font-size:15px;font-weight:700;margin:14px 0 6px}
+.releve h3:first-child{margin-top:0}
+.releve ul{padding-left:20px;font-size:13.5px}
+.releve li{margin-top:4px}
+.quest{margin-top:6px}
+.quest label{display:flex;gap:9px;align-items:flex-start;font-size:13.5px;padding:7px 0;border-bottom:1px dashed var(--line);cursor:pointer}
+.quest input{margin-top:3px;accent-color:var(--bf500)}
+.actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+footer{padding:30px 0 50px;font-size:12px;color:var(--muted)}
+footer h4{font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;color:var(--ink)}
+@media print{
+  body *{visibility:hidden}
+  #sec-releve,#sec-releve *{visibility:visible}
+  #sec-releve{position:absolute;left:0;top:0;width:100%}
+  .actions{display:none}
+}
+@media(max-width:760px){#twin-canvas{height:420px}#twin-stats{position:static;flex-direction:row;margin:10px}#twin-hud{position:static;width:auto;margin:10px}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-l">
+    <div class="tb-logo">MQ<br>2100</div>
+    <div>
+      <div class="tb-t1">Miquelon · salle de décision littorale</div>
+      <div class="tb-t2">jumeau numérique d'aide à la délibération, non prescriptif</div>
+    </div>
+  </div>
+  <div class="tb-r"><a href="atelier-outremer.html">← plateforme littoraux ultramarins</a></div>
+</div>
+
+<div class="wrap">
+
+<div class="hero">
+  <h1>Un village, un cordon de galets, la mer des deux côtés. Les choix appartiennent au territoire.</h1>
+  <div class="sub">Le bourg de Miquelon est établi sur un cordon de galets bas, entre la mer et l'étang. Un plan de prévention des risques littoraux a été approuvé en 2018, la tempête Fiona a touché l'archipel en septembre 2022, et la collectivité a engagé une réflexion sur la relocalisation progressive du village vers les hauteurs. Cet outil donne à voir, à tester et à comparer : il ne recommande rien.</div>
+  <div class="facts" id="facts-strip">
+    <div class="fact"><b id="f-nbat">…</b>bâtiments représentés (OpenStreetMap)</div>
+    <div class="fact"><b id="f-medz">…</b>altitude médiane du sol bâti (RGE ALTI)</div>
+    <div class="fact"><b id="f-mnt">…</b>points de terrain mesurés (IGN)</div>
+    <div class="fact"><b>2018</b>PPRL approuvé</div>
+    <div class="fact"><b>2022</b>tempête Fiona</div>
+  </div>
+  <div class="method"><b>Posture de la mission :</b> instruire sans trancher. Les simulations ci-dessous reposent sur des données publiques mesurées (relief IGN RGE ALTI, bâti OpenStreetMap, orthophotographie IGN) et sur un modèle volontairement simple dont les limites sont affichées. Aucun niveau réglementaire n'est fixé ici : les niveaux de référence opposables sont ceux du PPRL. L'outil sert la délibération du conseil territorial, de la commune et de l'État, chacun dans son rôle.</div>
+</div>
+
+<!-- 01 JUMEAU -->
+<section class="ps" id="sec-jumeau">
+  <div class="sec-hd"><span class="sec-num">01</span><h2 class="sec-title">Le jumeau numérique du cordon</h2></div>
+  <div class="sec-intro">Relief réel mesuré au mètre près, bâti réel, orthophotographie drapée. Faites varier le niveau d'eau et observez ce qui se passe : chaque bâtiment dont le sol passe sous le niveau simulé s'allume. Tournez, zoomez, survolez un bâtiment pour lire son altitude.</div>
+  <div id="twin-stage">
+    <canvas id="twin-canvas"></canvas>
+    <div id="twin-loading"><div class="spin"></div><span id="twin-load-txt">chargement du terrain…</span></div>
+    <div id="twin-hud">
+      <h3>Simulation</h3>
+      <div class="hud-row"><label>niveau d'eau</label><input type="range" id="sl-niveau" min="0" max="5" step="0.05" value="0"><span class="hud-val" id="v-niveau">0,00 m</span></div>
+      <div class="hud-row"><label>relief ×</label><input type="range" id="sl-exag" min="1" max="6" step="0.5" value="2.5"><span class="hud-val" id="v-exag">×2,5</span></div>
+      <div class="chips">
+        <span class="chip" data-add="0.44" title="moyenne globale médiane 2100, scénario SSP1-2.6 (GIEC AR6), à ajouter au niveau marin local">+0,44 GIEC bas</span>
+        <span class="chip" data-add="0.56" title="moyenne globale médiane 2100, scénario SSP2-4.5 (GIEC AR6)">+0,56 GIEC médian</span>
+        <span class="chip" data-add="0.77" title="moyenne globale médiane 2100, scénario SSP5-8.5 (GIEC AR6)">+0,77 GIEC haut</span>
+        <span class="chip ghost" id="chip-reset">remise à zéro</span>
+        <span class="chip ghost" id="chip-anim">▶ montée animée</span>
+      </div>
+    </div>
+    <div id="twin-stats">
+      <div class="stat alert"><b id="st-bat">0</b><span>bâtiments dont le sol est sous le niveau simulé</span></div>
+      <div class="stat"><b id="st-pct">0 %</b><span>part du bâti du bourg</span></div>
+      <div class="stat"><b id="st-ha">0 ha</b><span>terres émergées passant sous le niveau</span></div>
+    </div>
+    <div id="twin-views">
+      <span class="chip" data-view="ensemble">vue d'ensemble</span>
+      <span class="chip" data-view="bourg">le bourg</span>
+      <span class="chip" data-view="cordon">le cordon</span>
+      <span class="chip" data-view="etang">l'étang</span>
+    </div>
+    <div id="twin-tip"></div>
+  </div>
+  <div class="legend">
+    <span class="lg"><i style="background:#d8d2c8;border:1px solid #b9b2a6"></i>bâtiment hors d'eau au niveau simulé</span>
+    <span class="lg"><i style="background:#E1000F"></i>sol sous le niveau simulé</span>
+    <span class="lg"><i style="background:#1C7293;opacity:.65"></i>plan d'eau simulé</span>
+  </div>
+  <div class="caveats"><b>Limites assumées du modèle :</b> simulation statique dite « baignoire » (pas de propagation de houle, pas de franchissement de cordon, pas de durée de submersion) ; altitudes en référence RGE ALTI, dont la correspondance avec les niveaux marins locaux relève des références hydrographiques du SHOM ; hauteur des bâtiments forfaitaire, sans valeur descriptive ; repères GIEC AR6 exprimés en moyennes globales médianes à 2100, à composer avec le niveau de pleine mer et la surcote locale documentés par le PPRL. Cet écran ne remplace ni le PPRL ni une étude réglementaire : il rend la discussion possible.</div>
+</section>
+
+<!-- 02 OPTIONS -->
+<section class="ps" id="sec-options">
+  <div class="sec-hd"><span class="sec-num">02</span><h2 class="sec-title">Quatre chemins ouverts</h2></div>
+  <div class="sec-intro">Les familles d'options de la stratégie nationale de gestion intégrée du trait de côte, déclinées pour Miquelon. Aucune n'est recommandée ici : chacune est décrite par ce qu'elle implique pour l'autorité qui la choisirait, ses conditions de réussite et ses points de vigilance.</div>
+  <div class="opts">
+    <div class="opt" style="border-top-color:var(--slate)">
+      <h3>Protéger</h3>
+      <div class="o-sub">ouvrages, rechargements, confortement du cordon</div>
+      <dl>
+        <dt>ce que cela implique</dt><dd>un entretien permanent et un engagement budgétaire récurrent ; une maîtrise d'ouvrage outillée ; l'acceptation d'un risque résiduel en cas de dépassement.</dd>
+        <dt>conditions de réussite</dt><dd>connaissance fine de la dynamique sédimentaire du cordon ; capacité à entretenir dans la durée, y compris après alternance politique.</dd>
+        <dt>points de vigilance</dt><dd>sentiment de sécurité supérieur à la protection réelle ; report possible de l'érosion sur les secteurs voisins ; difficulté croissante avec l'élévation du niveau marin.</dd>
+      </dl>
+    </div>
+    <div class="opt" style="border-top-color:var(--amber)">
+      <h3>Composer</h3>
+      <div class="o-sub">adapter le bâti et les réseaux, vivre avec l'eau</div>
+      <dl>
+        <dt>ce que cela implique</dt><dd>des règles de construction adaptées (planchers surélevés, zones refuges), des réseaux conçus pour être submergés puis remis en service, une culture du risque entretenue.</dd>
+        <dt>conditions de réussite</dt><dd>population informée et exercée ; alerte et évacuation fiables ; assurabilité préservée.</dd>
+        <dt>points de vigilance</dt><dd>l'aléa n'est pas réduit ; la fréquence des perturbations peut éroder l'acceptation au fil du temps.</dd>
+      </dl>
+    </div>
+    <div class="opt" style="border-top-color:var(--green)">
+      <h3>Replier</h3>
+      <div class="o-sub">relocalisation progressive vers les hauteurs</div>
+      <dl>
+        <dt>ce que cela implique</dt><dd>une maîtrise foncière sur les hauts, une programmation longue (viabilisation, équipements, logements), un accompagnement social et patrimonial du déplacement. Une démarche de ce type est engagée localement.</dd>
+        <dt>conditions de réussite</dt><dd>un rythme choisi plutôt que subi ; des départs volontaires avant les départs contraints ; le maintien de la vie de village pendant la transition.</dd>
+        <dt>points de vigilance</dt><dd>décision difficilement réversible ; attachement des habitants au bourg historique ; double fonctionnement transitoire à organiser.</dd>
+      </dl>
+    </div>
+    <div class="opt" style="border-top-color:var(--ocean)">
+      <h3>Veille active</h3>
+      <div class="o-sub">suivre, se préparer, décider au bon moment</div>
+      <dl>
+        <dt>ce que cela implique</dt><dd>un suivi instrumenté du cordon et des submersions, des seuils de bascule définis à l'avance, des décisions préparées mais différées.</dd>
+        <dt>conditions de réussite</dt><dd>discipline d'observation dans la durée ; gouvernance capable de décider quand un seuil est atteint, sans attendre la crise.</dd>
+        <dt>points de vigilance</dt><dd>le report de décision peut devenir une décision par défaut ; une tempête peut imposer son propre calendrier.</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="grille">
+    <div class="grille-hd">
+      <h3>Grille de délibération</h3>
+      <p>l'outil ne note pas les options : c'est l'assemblée délibérante qui les apprécie, critère par critère, de 0 (très défavorable) à 4 (très favorable). Le graphique restitue uniquement vos appréciations. Les cases laissées « à débattre » n'apparaissent pas.</p>
+    </div>
+    <table id="grille-table"></table>
+    <div class="grille-foot">
+      <canvas id="radar" width="360" height="320"></canvas>
+      <div class="radar-note">
+        <p>Chaque polygone est le portrait d'une option tel que <i>vous</i> l'avez apprécié. Deux assemblées différentes produiront deux portraits différents : c'est le but. La comparaison des portraits, et des désaccords qu'ils révèlent, constitue la matière de la délibération.</p>
+        <p style="margin-top:8px"><button class="btn soft" id="grille-reset">réinitialiser la grille</button></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 TRAJECTOIRES -->
+<section class="ps" id="sec-traj">
+  <div class="sec-hd"><span class="sec-num">03</span><h2 class="sec-title">Composer une trajectoire dans le temps</h2></div>
+  <div class="sec-intro">Les options ne s'excluent pas : elles se séquencent. La méthode des trajectoires d'adaptation, appliquée à Miquelon dans le projet INSeaPTION (Cerema, 2021), consiste à choisir des chemins et des points de bascule observables plutôt qu'une solution unique et définitive. Cliquez sur les cases pour activer une option sur une période ; ajoutez les seuils qui déclencheraient un changement de chemin.</div>
+  <div class="traj-box">
+    <canvas id="traj-canvas" height="300"></canvas>
+    <div class="traj-ctl">
+      <span>ajouter un point de bascule :</span>
+      <select id="tp-year"></select>
+      <input type="text" id="tp-label" placeholder="seuil observable (ex. : n submersions du bourg en un hiver)" maxlength="80">
+      <button class="btn ghost" id="tp-add">ajouter</button>
+      <button class="btn soft" id="traj-reset">réinitialiser</button>
+      <button class="btn soft" id="traj-png">exporter l'image</button>
+    </div>
+  </div>
+</section>
+
+<!-- 04 RELEVÉ -->
+<section class="ps" id="sec-releve">
+  <div class="sec-hd"><span class="sec-num">04</span><h2 class="sec-title">Relevé de délibération</h2></div>
+  <div class="sec-intro">Ce relevé se construit automatiquement à partir de vos manipulations. Il constitue une trace de séance, pas un engagement : il peut être imprimé, annexé à un compte rendu, ou rechargé lors d'une séance ultérieure.</div>
+  <div class="releve">
+    <h3>Exposition simulée</h3>
+    <ul id="rl-expo"><li>aucune simulation effectuée pour l'instant.</li></ul>
+    <h3>Appréciations portées sur les options</h3>
+    <ul id="rl-grille"><li>grille non renseignée.</li></ul>
+    <h3>Trajectoire esquissée</h3>
+    <ul id="rl-traj"><li>aucune trajectoire composée.</li></ul>
+    <h3>Questions à instruire avant de décider</h3>
+    <div class="quest" id="rl-quest"></div>
+    <div class="actions">
+      <button class="btn" onclick="window.print()">imprimer le relevé</button>
+      <button class="btn ghost" id="sess-save">exporter la séance (fichier)</button>
+      <label class="btn soft" style="cursor:pointer">recharger une séance<input type="file" id="sess-load" accept=".json" style="display:none"></label>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <h4>Sources et limites</h4>
+  <p>Relief : RGE ALTI, IGN, service altimétrie de la Géoplateforme. Bâti : OpenStreetMap (licence ODbL), altitude du sol échantillonnée sur le RGE ALTI. Orthophotographie : IGN, Géoplateforme. Repères d'élévation du niveau marin : GIEC, 6e rapport d'évaluation (AR6), moyennes globales médianes à 2100 par scénario. Méthode des trajectoires d'adaptation : projet INSeaPTION (Cerema, 2021) ; Magnan et Duvat (2018). Le modèle de submersion est statique et non réglementaire ; les niveaux opposables sont ceux du plan de prévention des risques littoraux approuvé en 2018. Aucune valeur affichée n'est inventée : tout chiffre est soit mesuré (IGN, OSM), soit calculé à l'écran, soit cité avec sa source.</p>
+</footer>
+
+</div><!-- /wrap -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+'use strict';
+/* ============ données ============ */
+const DATA_DIR='data/jumeau/';
+let MNT=null,BATI=null,scene,camera,renderer,controls,terrain,waterMesh,bGroup;
+let batMeshes=[],batSorted=[],landSorted=[],cellAreaM2=0;
+let mPerLon=0,mPerLat=111320,CX=0,CY=0,W_M=0,H_M=0;
+let niveau=0,exag=2.5,animOn=false;
+const $=id=>document.getElementById(id);
+const fmt=(v,d=2)=>v.toFixed(d).replace('.',',');
+
+function lonLatToM(lon,lat){return [ (lon-CX)*mPerLon, (lat-CY)*mPerLat ];}
+
+async function boot(){
+  try{
+    $('twin-load-txt').textContent='chargement du relief (RGE ALTI)…';
+    MNT=await (await fetch(DATA_DIR+'mnt_miquelon.json')).json();
+    $('twin-load-txt').textContent='chargement du bâti (OpenStreetMap)…';
+    BATI=await (await fetch(DATA_DIR+'bati_miquelon.json')).json();
+    const bb=MNT.bbox;
+    CX=(bb.w+bb.e)/2; CY=(bb.s+bb.n)/2;
+    mPerLon=111320*Math.cos(CY*Math.PI/180);
+    W_M=(bb.e-bb.w)*mPerLon; H_M=(bb.n-bb.s)*mPerLat;
+    cellAreaM2=(W_M/(MNT.nx-1))*(H_M/(MNT.ny-1));
+    // stats d'accueil (tout est calculé, rien d'inventé)
+    $('f-nbat').textContent=BATI.bats.length;
+    const zs=BATI.bats.map(b=>b.z).sort((a,b)=>a-b);
+    $('f-medz').textContent=fmt(zs[Math.floor(zs.length/2)]/100,1)+' m';
+    $('f-mnt').textContent=(MNT.nx*MNT.ny).toLocaleString('fr-FR');
+    batSorted=zs;
+    landSorted=MNT.z.filter(v=>v>0).sort((a,b)=>a-b);
+    $('twin-load-txt').textContent='construction du jumeau…';
+    await new Promise(r=>setTimeout(r,30));
+    init3D();
+    $('twin-loading').style.display='none';
+    majExposition();
+  }catch(e){
+    $('twin-load-txt').textContent='données du jumeau indisponibles ('+e.message+'). Les autres modules restent utilisables.';
+    const sp=document.querySelector('#twin-loading .spin');if(sp)sp.style.display='none';
+  }
+}
+
+function init3D(){
+  const cnv=$('twin-canvas');
+  renderer=new THREE.WebGLRenderer({canvas:cnv,antialias:true});
+  renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+  scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x0b1d2a);
+  scene.fog=new THREE.Fog(0x0b1d2a,4200,9000);
+  camera=new THREE.PerspectiveCamera(48,2,5,20000);
+  controls=new THREE.OrbitControls(camera,cnv);
+  controls.enableDamping=true;controls.dampingFactor=.08;
+  controls.maxPolarAngle=Math.PI/2.05;controls.minDistance=120;controls.maxDistance=7000;
+  scene.add(new THREE.HemisphereLight(0xcfe8f5,0x2a3438,0.95));
+  const sun=new THREE.DirectionalLight(0xfff3df,0.85);
+  sun.position.set(-1800,2200,-900);scene.add(sun);
+
+  // terrain
+  const nx=MNT.nx,ny=MNT.ny;
+  const geo=new THREE.PlaneGeometry(W_M,H_M,nx-1,ny-1);
+  const pos=geo.attributes.position;
+  for(let jg=0;jg<ny;jg++)for(let i=0;i<nx;i++){
+    const jd=ny-1-jg;                       // ligne géométrie 0 = nord = dernière ligne de données
+    pos.setZ(jg*nx+i, MNT.z[jd*nx+i]/100);
+  }
+  geo.computeVertexNormals();
+  const tex=new THREE.TextureLoader().load(DATA_DIR+'ortho_miquelon.jpg');
+  tex.anisotropy=4;
+  terrain=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({map:tex}));
+  terrain.rotateX(-Math.PI/2);
+  terrain.scale.y=exag;
+  scene.add(terrain);
+
+  // bâtiments extrudés (hauteur forfaitaire de représentation : 4 m, sans valeur descriptive)
+  bGroup=new THREE.Group();
+  const matDry=new THREE.MeshLambertMaterial({color:0xd8d2c8});
+  const matWet=new THREE.MeshLambertMaterial({color:0xE1000F});
+  for(const b of BATI.bats){
+    const sh=new THREE.Shape();
+    b.p.forEach((pt,i)=>{const [x,y]=lonLatToM(pt[0],pt[1]);if(i===0)sh.moveTo(x,y);else sh.lineTo(x,y);});
+    const g=new THREE.ExtrudeGeometry(sh,{depth:4,bevelEnabled:false});
+    const m=new THREE.Mesh(g,matDry);
+    m.rotateX(-Math.PI/2);
+    m.position.y=b.z/100;
+    m.userData={z:b.z,n:b.n,t:b.t};
+    bGroup.add(m);batMeshes.push(m);
+  }
+  bGroup.scale.y=exag;
+  bGroup.userData={matDry,matWet};
+  scene.add(bGroup);
+
+  // plan d'eau
+  waterMesh=new THREE.Mesh(
+    new THREE.PlaneGeometry(W_M*2.5,H_M*2.5),
+    new THREE.MeshLambertMaterial({color:0x1C7293,transparent:true,opacity:.62}));
+  waterMesh.rotateX(-Math.PI/2);
+  waterMesh.position.y=0;
+  scene.add(waterMesh);
+
+  setView('ensemble');
+  resize();window.addEventListener('resize',resize);
+  // survol : altitude du sol du bâtiment
+  const ray=new THREE.Raycaster(),mou=new THREE.Vector2(),tip=$('twin-tip');
+  cnv.addEventListener('mousemove',ev=>{
+    const r=cnv.getBoundingClientRect();
+    mou.x=((ev.clientX-r.left)/r.width)*2-1;mou.y=-((ev.clientY-r.top)/r.height)*2+1;
+    ray.setFromCamera(mou,camera);
+    const hit=ray.intersectObjects(batMeshes,false)[0];
+    if(hit){
+      const u=hit.object.userData;
+      tip.style.display='block';
+      tip.style.left=(ev.clientX-r.left+14)+'px';tip.style.top=(ev.clientY-r.top+10)+'px';
+      tip.textContent=(u.n?u.n+' · ':'')+(u.t?u.t+' · ':'')+'sol '+fmt(u.z/100,1)+' m (RGE ALTI)';
+    }else tip.style.display='none';
+  });
+  cnv.addEventListener('mouseleave',()=>{tip.style.display='none';});
+  (function loop(){requestAnimationFrame(loop);
+    if(animOn){const sl=$('sl-niveau');let v=+sl.value+0.012;if(v>=+sl.max){v=+sl.max;animOn=false;$('chip-anim').textContent='▶ montée animée';}sl.value=v;onNiveau();}
+    controls.update();renderer.render(scene,camera);})();
+}
+
+function resize(){
+  const cnv=$('twin-canvas');
+  const w=cnv.clientWidth,h=cnv.clientHeight;
+  renderer.setSize(w,h,false);
+  camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+
+const VIEWS={
+  ensemble:{pos:[-300,2400,3000],tgt:[0,0,0]},
+  bourg:  {ll:[-56.3793,47.0966],d:[260,330,420]},
+  cordon: {ll:[-56.3815,47.1060],d:[-150,260,560]},
+  etang:  {ll:[-56.3770,47.0870],d:[420,420,520]}
+};
+function setView(k){
+  const v=VIEWS[k];let tgt=[0,0,0];
+  if(v.ll){const [x,y]=lonLatToM(v.ll[0],v.ll[1]);tgt=[x,2.5*exag,-y];camera.position.set(x+v.d[0],v.d[1],-y+v.d[2]);}
+  else camera.position.set(...v.pos);
+  controls.target.set(...tgt);controls.update();
+}
+document.querySelectorAll('#twin-views .chip').forEach(c=>c.addEventListener('click',()=>setView(c.dataset.view)));
+
+/* compte sous le niveau (recherche binaire sur tableaux triés en cm) */
+function countBelow(sorted,cm){let lo=0,hi=sorted.length;while(lo<hi){const m=(lo+hi)>>1;if(sorted[m]<cm)lo=m+1;else hi=m;}return lo;}
+
+function onNiveau(){
+  niveau=+$('sl-niveau').value;
+  $('v-niveau').textContent=fmt(niveau)+' m';
+  if(waterMesh)waterMesh.position.y=niveau*exag;
+  majExposition();
+}
+function majExposition(){
+  if(!batSorted.length)return;
+  const cm=Math.round(niveau*100);
+  const nb=countBelow(batSorted,cm);
+  $('st-bat').textContent=nb;
+  $('st-pct').textContent=fmt(100*nb/batSorted.length,0)+' %';
+  const cells=countBelow(landSorted,cm);
+  $('st-ha').textContent=fmt(cells*cellAreaM2/10000,1)+' ha';
+  if(bGroup){const {matWet,matDry}=bGroup.userData;
+    for(const m of batMeshes)m.material=(m.userData.z<cm)?matWet:matDry;}
+  majReleveExpo();
+}
+$('sl-niveau').addEventListener('input',onNiveau);
+$('sl-exag').addEventListener('input',()=>{
+  exag=+$('sl-exag').value;$('v-exag').textContent='×'+fmt(exag,1);
+  if(terrain)terrain.scale.y=exag;if(bGroup)bGroup.scale.y=exag;
+  if(waterMesh)waterMesh.position.y=niveau*exag;
+});
+document.querySelectorAll('#twin-hud .chip[data-add]').forEach(c=>c.addEventListener('click',()=>{
+  const sl=$('sl-niveau');sl.value=Math.min(+sl.max,(+sl.value)+(+c.dataset.add));onNiveau();
+}));
+$('chip-reset').addEventListener('click',()=>{$('sl-niveau').value=0;onNiveau();});
+$('chip-anim').addEventListener('click',()=>{animOn=!animOn;if(animOn&&+$('sl-niveau').value>=+$('sl-niveau').max){$('sl-niveau').value=0;}$('chip-anim').textContent=animOn?'⏸ pause':'▶ montée animée';});
+
+/* ============ grille de délibération ============ */
+const OPTIONS=[{k:'proteger',n:'Protéger',c:'#4E7081'},{k:'composer',n:'Composer',c:'#B07E1B'},{k:'replier',n:'Replier',c:'#2F7D5B'},{k:'veille',n:'Veille active',c:'#1C7293'}];
+const CRITERES=['sécurité des personnes','continuité de la vie du village','réversibilité de la décision','attachement et patrimoine','soutenabilité pour la collectivité'];
+let grille={};   // grille[opt][critIdx] = 0..4 ou undefined
+try{grille=JSON.parse(localStorage.getItem('jm_grille')||'{}');}catch(e){grille={};}
+function buildGrille(){
+  const t=$('grille-table');
+  let h='<tr><th>option</th>'+CRITERES.map(c=>'<th>'+c+'</th>').join('')+'</tr>';
+  for(const o of OPTIONS){
+    h+='<tr><td style="border-left:4px solid '+o.c+'">'+o.n+'</td>';
+    for(let i=0;i<CRITERES.length;i++){
+      const v=(grille[o.k]||{})[i];
+      h+='<td><select data-o="'+o.k+'" data-c="'+i+'"><option value="">à débattre</option>'
+        +[0,1,2,3,4].map(n=>'<option value="'+n+'"'+(v===n?' selected':'')+'>'+n+'</option>').join('')+'</select></td>';
+    }
+    h+='</tr>';
+  }
+  t.innerHTML=h;
+  t.querySelectorAll('select').forEach(s=>s.addEventListener('change',()=>{
+    const o=s.dataset.o,c=+s.dataset.c;
+    grille[o]=grille[o]||{};
+    if(s.value==='')delete grille[o][c];else grille[o][c]=+s.value;
+    localStorage.setItem('jm_grille',JSON.stringify(grille));
+    drawRadar();majReleveGrille();
+  }));
+}
+function drawRadar(){
+  const cv=$('radar'),ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const cx=cv.width/2,cy=cv.height/2+6,R=108,n=CRITERES.length;
+  ctx.strokeStyle='#E5E5E5';ctx.fillStyle='#666';ctx.font='10px Marianne,Arial';
+  for(let ring=1;ring<=4;ring++){ctx.beginPath();
+    for(let i=0;i<=n;i++){const a=-Math.PI/2+i*2*Math.PI/n;const r=R*ring/4;
+      const x=cx+r*Math.cos(a),y=cy+r*Math.sin(a);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+    ctx.stroke();}
+  for(let i=0;i<n;i++){const a=-Math.PI/2+i*2*Math.PI/n;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+R*Math.cos(a),cy+R*Math.sin(a));ctx.stroke();
+    const lx=cx+(R+14)*Math.cos(a),ly=cy+(R+14)*Math.sin(a);
+    ctx.textAlign=Math.abs(Math.cos(a))<.3?'center':(Math.cos(a)>0?'left':'right');
+    const words=CRITERES[i].split(' ');
+    const mid=Math.ceil(words.length/2);
+    ctx.fillText(words.slice(0,mid).join(' '),lx,ly-4);
+    ctx.fillText(words.slice(mid).join(' '),lx,ly+7);
+  }
+  for(const o of OPTIONS){
+    const g=grille[o.k]||{};
+    const pts=[];
+    for(let i=0;i<n;i++){if(g[i]===undefined){pts.length=0;break;}
+      const a=-Math.PI/2+i*2*Math.PI/n,r=R*g[i]/4;
+      pts.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]);}
+    if(!pts.length)continue;
+    ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();
+    ctx.strokeStyle=o.c;ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle=o.c+'22';ctx.fill();
+  }
+  let lx=12,ly=cv.height-10;ctx.textAlign='left';ctx.font='10.5px Marianne,Arial';
+  for(const o of OPTIONS){ctx.fillStyle=o.c;ctx.fillRect(lx,ly-8,9,9);ctx.fillStyle='#161616';ctx.fillText(o.n,lx+13,ly);lx+=13+ctx.measureText(o.n).width+16;}
+}
+$('grille-reset').addEventListener('click',()=>{grille={};localStorage.removeItem('jm_grille');buildGrille();drawRadar();majReleveGrille();});
+
+/* ============ trajectoires ============ */
+const T0=2025,T1=2100,STEP=5,NCOL=(T1-T0)/STEP;
+let traj={};      // traj[opt] = Set de colonnes actives
+let flags=[];     // {year,label}
+try{const s=JSON.parse(localStorage.getItem('jm_traj')||'{}');for(const k in s)traj[k]=new Set(s[k]);}catch(e){}
+try{flags=JSON.parse(localStorage.getItem('jm_flags')||'[]');}catch(e){flags=[];}
+const TC=$('traj-canvas');
+function trajLayout(){
+  const w=TC.clientWidth||900;TC.width=w*2;TC.height=600;TC.style.height='300px';
+  const ctx=TC.getContext('2d');ctx.scale(2,2);
+  return {ctx,w,h:300,x0:120,y0:34,cw:(w-140)/NCOL,rh:46};
+}
+function drawTraj(){
+  const {ctx,w,h,x0,y0,cw,rh}=trajLayout();
+  ctx.clearRect(0,0,w,h);
+  ctx.font='11px Marianne,Arial';ctx.fillStyle='#666';ctx.textAlign='center';
+  for(let c=0;c<=NCOL;c++){const x=x0+c*cw;
+    if(c%2===0)ctx.fillText(T0+c*STEP,x, y0-12);
+    ctx.strokeStyle='#F0F0F0';ctx.beginPath();ctx.moveTo(x,y0-6);ctx.lineTo(x,y0+OPTIONS.length*rh);ctx.stroke();}
+  OPTIONS.forEach((o,r)=>{
+    const y=y0+r*rh;
+    ctx.textAlign='left';ctx.fillStyle='#161616';ctx.font='12px Marianne,Arial';
+    ctx.fillText(o.n,10,y+rh/2+4);
+    const set=traj[o.k]||new Set();
+    for(let c=0;c<NCOL;c++){
+      const x=x0+c*cw;
+      ctx.fillStyle=set.has(c)?o.c:'#F6F6F6';
+      ctx.strokeStyle='#E5E5E5';
+      ctx.beginPath();ctx.roundRect?ctx.roundRect(x+2,y+8,cw-4,rh-16,4):ctx.rect(x+2,y+8,cw-4,rh-16);ctx.fill();ctx.stroke();
+    }
+  });
+  ctx.textAlign='left';
+  for(const f of flags){
+    const x=x0+(f.year-T0)/STEP*cw;
+    ctx.strokeStyle='#E1000F';ctx.setLineDash([5,4]);
+    ctx.beginPath();ctx.moveTo(x,y0-6);ctx.lineTo(x,y0+OPTIONS.length*rh+8);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#E1000F';ctx.font='10.5px Marianne,Arial';
+    ctx.save();ctx.translate(x+4,y0+OPTIONS.length*rh+22);ctx.fillText('⚑ '+f.year+' · '+f.label,0,0);ctx.restore();
+  }
+  ctx.fillStyle='#999';ctx.font='10px Marianne,Arial';
+  ctx.fillText('cliquer une case pour activer ou désactiver une option sur la période',10,h-6);
+}
+TC.addEventListener('click',ev=>{
+  const r=TC.getBoundingClientRect();
+  const {x0,y0,cw,rh}=trajLayout();
+  const x=ev.clientX-r.left,y=ev.clientY-r.top;
+  const c=Math.floor((x-x0)/cw),row=Math.floor((y-y0)/rh);
+  if(c<0||c>=NCOL||row<0||row>=OPTIONS.length){drawTraj();return;}
+  const k=OPTIONS[row].k;traj[k]=traj[k]||new Set();
+  traj[k].has(c)?traj[k].delete(c):traj[k].add(c);
+  persistTraj();drawTraj();majReleveTraj();
+});
+function persistTraj(){const s={};for(const k in traj)s[k]=[...traj[k]];localStorage.setItem('jm_traj',JSON.stringify(s));localStorage.setItem('jm_flags',JSON.stringify(flags));}
+(function(){const sel=$('tp-year');for(let y=T0;y<=T1;y+=STEP)sel.innerHTML+='<option>'+y+'</option>';})();
+$('tp-add').addEventListener('click',()=>{
+  const label=$('tp-label').value.trim();if(!label)return;
+  flags.push({year:+$('tp-year').value,label});$('tp-label').value='';
+  persistTraj();drawTraj();majReleveTraj();
+});
+$('traj-reset').addEventListener('click',()=>{traj={};flags=[];persistTraj();drawTraj();majReleveTraj();});
+$('traj-png').addEventListener('click',()=>{
+  const a=document.createElement('a');a.download='trajectoire_miquelon.png';a.href=TC.toDataURL('image/png');a.click();
+});
+
+/* ============ relevé ============ */
+const QUESTIONS=[
+ "le niveau de référence du PPRL et ses majorations climatiques sont-ils compris et partagés par l'assemblée et par la population ?",
+ "quels équipements et services (école, mairie, port, réseaux, lieux de culte) sont exposés au niveau testé et qui en dépend au quotidien ?",
+ "la maîtrise foncière sur les hauteurs est-elle établie (disponibilité, statut, viabilisation, calendrier) ?",
+ "quel séquencement évite que les décisions irréversibles soient prises dans l'urgence d'après-tempête ?",
+ "quels seuils observables (fréquence des submersions, recul du cordon, sinistralité) déclencheraient le passage d'une étape à la suivante, et qui constate qu'un seuil est atteint ?",
+ "comment la population est-elle associée à chaque étape (information, consultation, participation aux choix) ?",
+ "quelles ressources la collectivité peut-elle mobiliser dans la durée et auprès de qui, sans préjuger des montants ?",
+ "que deviennent les espaces libérés le cas échéant (renaturation, usages réversibles, mémoire des lieux) ?",
+ "comment la continuité de la vie de village est-elle assurée pendant une éventuelle transition (double fonctionnement, services itinérants) ?",
+ "quel dispositif de suivi (observatoire, jumeau actualisé, retours d'expérience) et quelle instance de révision périodique des choix ?"
+];
+let quests={};try{quests=JSON.parse(localStorage.getItem('jm_quests')||'{}');}catch(e){quests={};}
+function buildQuests(){
+  $('rl-quest').innerHTML=QUESTIONS.map((q,i)=>
+    '<label><input type="checkbox" data-q="'+i+'"'+(quests[i]?' checked':'')+'> <span>'+q+'</span></label>').join('');
+  $('rl-quest').querySelectorAll('input').forEach(c=>c.addEventListener('change',()=>{
+    quests[c.dataset.q]=c.checked;localStorage.setItem('jm_quests',JSON.stringify(quests));
+  }));
+}
+let simusTestees=[];
+function majReleveExpo(){
+  const cm=Math.round(niveau*100);
+  if(cm>0){
+    const nb=countBelow(batSorted,cm);
+    const entry='niveau '+fmt(niveau)+' m (réf. RGE ALTI) : '+nb+' bâtiment(s) sur '+batSorted.length+' avec sol sous le niveau, '+fmt(countBelow(landSorted,cm)*cellAreaM2/10000,1)+' ha de terres émergées concernés';
+    simusTestees=simusTestees.filter(s=>!s.startsWith('niveau '+fmt(niveau)));
+    simusTestees.push(entry);if(simusTestees.length>6)simusTestees.shift();
+  }
+  $('rl-expo').innerHTML=simusTestees.length?simusTestees.map(s=>'<li>'+s+'</li>').join(''):'<li>aucune simulation effectuée pour l\'instant.</li>';
+}
+function majReleveGrille(){
+  const out=[];
+  for(const o of OPTIONS){
+    const g=grille[o.k]||{};const vals=CRITERES.map((c,i)=>g[i]!==undefined?c+' : '+g[i]+'/4':null).filter(Boolean);
+    if(vals.length)out.push('<li><b>'+o.n+'</b> · '+vals.join(' ; ')+'</li>');
+  }
+  $('rl-grille').innerHTML=out.length?out.join(''):'<li>grille non renseignée.</li>';
+}
+function majReleveTraj(){
+  const out=[];
+  for(const o of OPTIONS){
+    const set=traj[o.k];if(!set||!set.size)continue;
+    const cols=[...set].sort((a,b)=>a-b);
+    const runs=[];let st=cols[0],pr=cols[0];
+    for(let i=1;i<=cols.length;i++){if(cols[i]!==pr+1){runs.push([st,pr]);st=cols[i];}pr=cols[i];}
+    out.push('<li><b>'+o.n+'</b> · '+runs.map(r=>(T0+r[0]*STEP)+'-'+(T0+(r[1]+1)*STEP)).join(', ')+'</li>');
+  }
+  for(const f of flags)out.push('<li>point de bascule '+f.year+' : '+f.label+'</li>');
+  $('rl-traj').innerHTML=out.length?out.join(''):'<li>aucune trajectoire composée.</li>';
+}
+$('sess-save').addEventListener('click',()=>{
+  const s={};for(const k in traj)s[k]=[...traj[k]];
+  const blob=new Blob([JSON.stringify({date:new Date().toISOString(),niveau,grille,traj:s,flags,quests,simus:simusTestees},null,1)],{type:'application/json'});
+  const a=document.createElement('a');a.download='seance_miquelon_'+new Date().toISOString().slice(0,10)+'.json';
+  a.href=URL.createObjectURL(blob);a.click();
+});
+$('sess-load').addEventListener('change',ev=>{
+  const f=ev.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{try{
+    const d=JSON.parse(rd.result);
+    if(d.grille)grille=d.grille;if(d.flags)flags=d.flags;if(d.quests)quests=d.quests;
+    if(d.traj){traj={};for(const k in d.traj)traj[k]=new Set(d.traj[k]);}
+    if(d.simus)simusTestees=d.simus;
+    localStorage.setItem('jm_grille',JSON.stringify(grille));persistTraj();localStorage.setItem('jm_quests',JSON.stringify(quests));
+    buildGrille();drawRadar();drawTraj();buildQuests();majReleveGrille();majReleveTraj();majReleveExpo();
+  }catch(e){alert('fichier de séance illisible : '+e.message);}};
+  rd.readAsText(f);
+});
+
+buildGrille();drawRadar();drawTraj();buildQuests();majReleveGrille();majReleveTraj();
+window.addEventListener('resize',()=>drawTraj());
+boot();
+</script>
+</body>
+</html>

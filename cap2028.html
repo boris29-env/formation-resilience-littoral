@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cap 2028, atelier d'intelligence collective, IGEDD 016714-01</title>
+<!--
+  ============================================================================
+  CAP 2028, atelier d'intelligence collective (mission IGEDD n° 016714-01)
+  Application autonome, un seul fichier, destinée a GitHub Pages + Firebase.
+
+  MISE EN ROUTE
+  1. Creez un projet Firebase, activez "Realtime Database" (mode test pour
+     debuter), et collez votre configuration dans FIREBASE_CONFIG ci-dessous.
+  2. Si FIREBASE_CONFIG n'est pas renseigne, l'application bascule en mode
+     local (localStorage), synchronise entre onglets d'un meme navigateur :
+     pratique pour tester seul, sans synchronisation entre postes distants.
+  3. Acces participant : un simple lien, un code de salle, un pseudonyme.
+     Aucun compte, aucune inscription.
+
+  REGLES REALTIME DATABASE conseillees pour un atelier ferme et temporaire
+  (a durcir ensuite, par exemple via un code de salle non devinable) :
+    {
+      "rules": {
+        "rooms": {
+          "$room": { ".read": true, ".write": true }
+        }
+      }
+    }
+  ============================================================================
+-->
+<style>
+:root{
+  --teal:#175177;--teal-d:#0F3A57;--orange:#F19100;--cyan:#1ABCDA;
+  --turq:#34D9D3;--jaune:#FBDC4B;--ink:#1B2733;--mut:#5C6B78;
+  --bg:#EEF3F7;--card:#fff;--line:#DCE5EB;
+  --r:10px;--r-sm:7px;
+  --sh:0 1px 2px rgba(15,58,87,.06),0 4px 14px rgba(15,58,87,.05);
+  --sh-lg:0 10px 34px rgba(15,58,87,.14);
+  --ff:"Segoe UI","Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--ff);color:var(--ink);line-height:1.45;min-height:100vh;
+  background:
+    radial-gradient(1100px 420px at 88% -8%, rgba(26,188,218,.13), transparent 60%),
+    radial-gradient(900px 380px at -6% 4%, rgba(241,145,0,.08), transparent 55%),
+    linear-gradient(180deg,#F4F8FB,#EAF1F6 60%,#E6EEF4);
+  background-attachment:fixed}
+.topbar{background:var(--teal);color:#fff;padding:9px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+.topbar .eye{font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.8}
+.topbar h1{font-size:15px;font-weight:700}
+.topbar .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.tag{font-size:11px;border-radius:3px;padding:2px 9px;font-weight:700}
+.tag.room{background:var(--orange);color:#fff}
+.tag.me{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.3)}
+.tag.mode{background:var(--jaune);color:var(--teal-d)}
+.tbtn{border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;border-radius:4px;padding:5px 11px;font-size:13px;cursor:pointer}
+.tbtn:hover{background:rgba(255,255,255,.12)}
+.wrap{max-width:1060px;margin:0 auto;padding:18px 14px 64px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px;margin-bottom:14px}
+.panel h2{font-size:16px;color:var(--teal);margin-bottom:6px}
+.panel h3{font-size:12px;color:var(--teal);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px}
+.hint{font-size:13px;color:var(--mut);margin-bottom:10px}
+.help{font-size:13px;background:#EDF4F8;border-left:3px solid var(--cyan);padding:10px 12px;border-radius:0 4px 4px 0;margin-bottom:12px}
+.note{font-size:12px;color:var(--mut);border-top:1px dashed var(--line);margin-top:12px;padding-top:10px}
+.status{font-size:12px;min-height:15px;margin-top:6px}
+.ok{color:#1E7B3C}.err{color:#B3261E}
+.btn{font-family:var(--ff);font-size:14px;font-weight:600;border:none;border-radius:5px;padding:10px 16px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{filter:brightness(1.07)}.btn:active{filter:brightness(.93)}
+.btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+.btn.prim{background:var(--teal);color:#fff}
+.btn.sec{background:#fff;color:var(--teal);border:1.5px solid var(--teal)}
+.btn.warn{background:var(--orange);color:#fff}
+.btn.sm{font-size:12px;padding:6px 11px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+label{font-size:12px;color:var(--mut);font-weight:600;display:block;margin-bottom:4px}
+input,textarea,select{font-family:var(--ff);font-size:14px;border:1px solid var(--line);border-radius:4px;padding:9px 10px;width:100%;background:#fff;color:var(--ink)}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--cyan);outline-offset:1px}
+textarea{resize:vertical;min-height:60px}
+/* methode picker */
+.methods{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:720px){.methods{grid-template-columns:1fr 1fr}}
+@media(max-width:460px){.methods{grid-template-columns:1fr}}
+.mcard{border:1.5px solid var(--line);border-radius:6px;padding:12px;background:#fff;cursor:pointer;text-align:left}
+.mcard:hover{border-color:var(--cyan)}
+.mcard.on{border-color:var(--teal);background:#EDF4F8}
+.mcard .mt{font-weight:700;color:var(--teal);font-size:14px}
+.mcard .md{font-size:12px;color:var(--mut);margin-top:3px}
+/* animation panel */
+.animpanel{background:#FFF8E9;border:1.5px solid var(--jaune);border-radius:6px;padding:14px;margin-bottom:14px}
+.animpanel h3{margin-top:0}
+/* cards / columns */
+.cols{display:grid;gap:12px}
+.col{background:#FBFDFE;border:1px solid var(--line);border-radius:6px;padding:10px;min-height:80px}
+.col h4{font-size:12px;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--ac,var(--teal));padding-bottom:5px;margin-bottom:8px;color:var(--teal)}
+.item{background:#fff;border:1px solid var(--line);border-left:3px solid var(--ac,var(--teal));border-radius:3px;padding:7px 9px;font-size:13px;margin-bottom:6px}
+.item .who{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+.item.mine{border-left-color:var(--cyan)}
+.dfcard{background:#fff;border:1px solid var(--line);border-radius:5px;padding:10px 12px;margin-bottom:8px}
+.dfcard .lab{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--orange);font-weight:700}
+.dfcard .val{font-size:13.5px;margin:2px 0 6px}
+/* hats */
+.hatbtns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.hatbtn{border:2px solid var(--line);border-radius:18px;padding:6px 13px;font-size:13px;font-weight:700;cursor:pointer;background:#fff}
+.hatbtn.on{box-shadow:0 0 0 3px rgba(26,188,218,.3)}
+/* debate */
+.stancebtns{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 14px}
+.stbtn{flex:1;min-width:120px;border:2px solid;border-radius:6px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;background:#fff}
+.stbtn.pour{border-color:#1E7B3C;color:#1E7B3C}.stbtn.pour.on{background:#EAF7EE}
+.stbtn.contre{border-color:#B3261E;color:#B3261E}.stbtn.contre.on{background:#FDEEED}
+.stbtn.nuance{border-color:var(--orange);color:#9a5b00}.stbtn.nuance.on{background:#FFF1DE}
+.tally{display:grid;grid-template-columns:90px 1fr 36px;gap:8px;align-items:center;margin-bottom:6px;font-size:13px}
+.track{background:#EDF2F6;border-radius:3px;height:20px;overflow:hidden}
+.fill{height:100%;border-radius:3px;transition:width .35s}
+/* tree */
+.tree .root{background:var(--teal);color:#fff;border-radius:5px;padding:10px 12px;font-weight:700;margin-bottom:10px}
+.tree .arg{border-radius:4px;padding:7px 10px;margin:5px 0;font-size:13.5px;border:1px solid var(--line)}
+.tree .pour{border-left:4px solid #1E7B3C;background:#F4FBF6}
+.tree .contre{border-left:4px solid #B3261E;background:#FDF6F5}
+.tree .lvl2{margin-left:26px}
+.tree .who{font-size:10px;color:var(--mut);text-transform:uppercase;margin-top:3px}
+.export{width:100%;height:150px;font-family:monospace;font-size:11px}
+.crew{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:#fff;border:1px solid var(--line);border-radius:14px;padding:3px 11px;font-size:12px;color:var(--teal);font-weight:600}
+.lobby{max-width:460px;margin:48px auto;padding:0 14px}
+.lobby .panel{padding:26px;box-shadow:0 6px 24px rgba(15,58,87,.10)}
+.lobby h2{font-size:19px}
+.lobby .mlist{display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 2px}
+.lobby .mlist span{font-size:11px;background:#EDF4F8;color:var(--teal);border-radius:12px;padding:2px 9px;font-weight:600}
+/* ---- polish général ---- */
+.topbar{background:linear-gradient(120deg,var(--teal-d),var(--teal) 70%);box-shadow:0 1px 8px rgba(15,58,87,.28)}
+.panel{box-shadow:0 1px 3px rgba(27,39,51,.05)}
+@keyframes pop{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.item,.dfcard,.tree .arg{animation:pop .25s ease}
+.col h4 .count{float:right;background:var(--ac,var(--teal));color:#fff;border-radius:10px;font-size:10px;padding:1px 7px;letter-spacing:0}
+.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:760px){.g3{grid-template-columns:1fr}}
+/* bibliothèques (panneau animation) */
+.lib{background:#fff;border:1.5px dashed var(--teal);border-radius:6px;padding:10px 12px;margin:10px 0 4px}
+.lib>label{color:var(--teal);margin-bottom:6px}
+.lib select{flex:1;min-width:220px}
+.axrow{font-size:11.5px;color:var(--mut);margin-top:7px;min-height:14px}
+.ax{display:inline-block;background:var(--teal);color:#fff;font-size:10px;font-weight:700;border-radius:3px;padding:1px 6px;margin-right:3px;cursor:help}
+/* consigne du chapeau / sujet */
+.consigne{background:#FFF8E9;border-left:3px solid var(--orange);padding:10px 12px;border-radius:0 4px 4px 0;margin-bottom:12px;font-size:13.5px}
+.consigne .ct{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--orange);font-weight:700;margin-bottom:2px}
+/* signaux faibles (inspiration) */
+.sigbox{margin:10px 0 4px}
+.sigbox summary{cursor:pointer;font-size:12.5px;color:var(--teal);font-weight:600;user-select:none}
+.sigbox summary:hover{text-decoration:underline}
+.sigchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sigchip{background:#EDF4F8;border:1px solid var(--line);border-radius:14px;padding:4px 11px;font-size:12px;color:var(--teal);cursor:pointer;text-align:left}
+.sigchip:hover{border-color:var(--cyan);background:#E2F4F8}
+
+/* =================== REDESIGN v2 =================== */
+.panel{border-radius:var(--r);box-shadow:var(--sh);border-color:#E4EBF1}
+.panel h2{font-size:17px;letter-spacing:-.01em}
+.btn{border-radius:var(--r-sm);transition:transform .08s ease,box-shadow .15s ease,filter .12s ease}
+.btn.prim{background:linear-gradient(135deg,var(--teal),#1d6190);box-shadow:0 2px 8px rgba(23,81,119,.28)}
+.btn.warn{background:linear-gradient(135deg,#F19100,#e07e00);box-shadow:0 2px 8px rgba(224,126,0,.28)}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+input,textarea,select{border-radius:var(--r-sm);transition:border-color .12s,box-shadow .12s}
+input:focus,textarea:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(26,188,218,.16);outline:none}
+
+/* topbar : marque + phare */
+.topbar{padding:11px 18px}
+.topbar .brand{display:flex;align-items:center;gap:9px}
+.topbar .lh{font-size:18px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25))}
+.topbar h1{letter-spacing:.2px}
+.tag{border-radius:20px;padding:3px 11px;display:inline-flex;align-items:center;gap:4px}
+.tbtn{border-radius:20px;padding:6px 14px;transition:background .12s,box-shadow .12s;font-weight:600}
+.tbtn.anim-on{background:var(--jaune);color:var(--teal-d);border-color:var(--jaune)}
+
+/* méthodes : icône + survol */
+.mcard{border-radius:var(--r);padding:13px 13px 13px 13px;transition:transform .1s,border-color .12s,box-shadow .15s;position:relative;overflow:hidden}
+.mcard:hover{transform:translateY(-2px);box-shadow:var(--sh)}
+.mcard.on{box-shadow:0 4px 16px rgba(23,81,119,.16)}
+.mcard .mic{font-size:21px;line-height:1;margin-bottom:7px;display:block}
+.mcard.on::after{content:"●";position:absolute;top:9px;right:11px;color:var(--cyan);font-size:11px}
+
+/* écran d'accès (mot de passe) */
+.gate{max-width:430px;margin:7vh auto 40px;padding:0 16px;animation:gatein .4s ease}
+@keyframes gatein{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.gate .card{background:var(--card);border-radius:16px;box-shadow:var(--sh-lg);overflow:hidden}
+.gate .hero{background:linear-gradient(135deg,var(--teal-d),var(--teal) 65%,#1d6996);color:#fff;padding:30px 28px 26px;text-align:center;position:relative;overflow:hidden}
+.gate .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(440px 150px at 78% -30%,rgba(251,220,75,.30),transparent 70%)}
+.gate .beam{position:absolute;top:0;left:50%;width:230px;height:170px;transform:translateX(-50%);
+  background:conic-gradient(from 200deg at 50% 0,transparent 0deg,rgba(251,220,75,.22) 18deg,transparent 36deg);pointer-events:none}
+.gate .lh-big{font-size:46px;position:relative;filter:drop-shadow(0 3px 6px rgba(0,0,0,.3))}
+.gate .eyebrow{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;opacity:.85;margin-top:8px;position:relative}
+.gate .hero h1{font-size:25px;font-weight:800;margin-top:3px;position:relative;letter-spacing:-.5px}
+.gate .hero p{font-size:13px;opacity:.92;margin-top:7px;position:relative;line-height:1.5}
+.gate .body{padding:24px 28px 26px}
+.gate .body h2{font-size:15px;color:var(--teal);margin-bottom:4px}
+.gate .lockrow{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);margin-bottom:16px}
+.gate input{padding:13px 14px;font-size:15px;text-align:center;letter-spacing:.04em}
+.gate .btn{width:100%;justify-content:center;font-size:15px;padding:14px;margin-top:14px}
+.gate .foot{font-size:11.5px;color:var(--mut);text-align:center;margin-top:14px;line-height:1.5}
+.shake{animation:shk .4s}
+@keyframes shk{0%,100%{transform:none}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+
+/* lobby */
+.lobby .panel{border-radius:14px;box-shadow:var(--sh-lg)}
+.lobby .ribbon{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.lobby .ribbon .lh{font-size:30px}
+.lobby .ribbon .t{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);font-weight:700}
+.lobby .mlist span{transition:transform .1s,background .12s}
+.lobby .mlist span:hover{transform:translateY(-1px)}
+
+/* modale (mot de passe animateur) */
+.ovl{position:fixed;inset:0;background:rgba(15,58,87,.45);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px;animation:gatein .2s ease}
+.modal{background:#fff;border-radius:14px;box-shadow:var(--sh-lg);width:100%;max-width:380px;overflow:hidden}
+.modal .mh{background:linear-gradient(135deg,var(--teal-d),var(--teal));color:#fff;padding:18px 22px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:9px}
+.modal .mb{padding:20px 22px}
+.modal .mb p{font-size:13px;color:var(--mut);margin-bottom:12px}
+.modal input{padding:12px 13px;font-size:15px}
+.modal .mf{display:flex;gap:9px;margin-top:16px}
+.modal .mf .btn{flex:1;justify-content:center}
+
+/* état d'attente */
+.waiting{text-align:center;padding:30px 18px}
+.waiting .lh{font-size:40px;display:block;margin-bottom:6px;animation:bob 3s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.waiting h2{justify-content:center}
+.waiting .pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cyan);margin-right:6px;animation:pls 1.4s infinite}
+@keyframes pls{0%,100%{opacity:.3}50%{opacity:1}}
+.chip{transition:transform .1s}
+.chip:hover{transform:translateY(-1px)}
+
+/* aide contextuelle au survol */
+.help-ic{display:inline-flex;width:16px;height:16px;border-radius:50%;background:#EDF4F8;color:var(--teal);font-size:11px;font-weight:700;align-items:center;justify-content:center;cursor:help;position:relative;border:1px solid var(--line);vertical-align:middle;margin-left:5px;line-height:1;user-select:none}
+.help-ic:hover,.help-ic:focus{background:var(--teal);color:#fff;outline:none;border-color:var(--teal)}
+.help-ic::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:12px;font-weight:400;padding:9px 12px;border-radius:7px;width:max-content;max-width:280px;text-align:left;line-height:1.45;opacity:0;pointer-events:none;transition:opacity .12s;box-shadow:var(--sh-lg);z-index:55;white-space:normal}
+.help-ic::before{content:"";position:absolute;bottom:calc(100% + 3px);left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--ink);opacity:0;transition:opacity .12s;pointer-events:none}
+.help-ic:hover::after,.help-ic:hover::before,.help-ic:focus::after,.help-ic:focus::before{opacity:1}
+/* éviter le débordement à droite quand le ? est proche du bord */
+.help-ic.right::after{left:auto;right:0;transform:none}
+.help-ic.right::before{left:auto;right:5px;transform:none}
+
+/* ---- chrono partagé ---- */
+.timer-bar{position:sticky;top:54px;z-index:18;background:linear-gradient(135deg,var(--teal-d),var(--teal));color:#fff;padding:9px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;box-shadow:0 4px 14px rgba(15,58,87,.22);animation:gatein .25s ease}
+.timer-bar .tlabel{font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.92;min-width:80px}
+.timer-bar .tcount{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:1px;text-shadow:0 1px 2px rgba(0,0,0,.2);min-width:88px;text-align:center}
+.timer-bar .ttrack{flex:1;min-width:140px;height:9px;background:rgba(255,255,255,.18);border-radius:6px;overflow:hidden}
+.timer-bar .tfill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--jaune),var(--orange));border-radius:6px;transition:width .9s linear;box-shadow:0 0 12px rgba(251,220,75,.5)}
+.timer-bar.urgent{background:linear-gradient(135deg,#9a2010,#B3261E)}
+.timer-bar.urgent .tcount{animation:beat .85s infinite}
+@keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.timer-bar.done{background:linear-gradient(135deg,#185c2c,#1E7B3C)}
+.timer-bar.done .tcount{font-size:18px;letter-spacing:0}
+
+/* ---- avatar coloré ---- */
+.avatar{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;box-shadow:inset 0 -1px 0 rgba(0,0,0,.15);vertical-align:middle}
+.avatar.sm{width:18px;height:18px;font-size:10px}
+.chip .avatar{margin-right:5px}
+
+/* ---- levée de main ---- */
+.tbtn.hand-on{background:var(--jaune);color:var(--teal-d);border-color:var(--jaune);animation:wig .8s ease}
+@keyframes wig{0%,100%{transform:none}25%{transform:rotate(-7deg)}75%{transform:rotate(7deg)}}
+.hands-panel{background:linear-gradient(135deg,#FFF8E9,#FFEDC2);border:1.5px solid var(--jaune);border-radius:var(--r);padding:12px 14px;margin-bottom:14px;animation:gatein .25s ease}
+.hands-panel h3{margin-top:0;color:#9a5b00;font-size:13px;letter-spacing:.05em}
+.hand-chip{background:#fff;border:1.5px solid var(--jaune);border-radius:20px;padding:5px 12px 5px 5px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px;margin:6px 6px 0 0;box-shadow:0 1px 3px rgba(154,91,0,.15)}
+.hand-chip .x{background:transparent;border:none;color:var(--mut);cursor:pointer;font-size:14px;padding:0 0 0 4px;line-height:1}
+.hand-chip .x:hover{color:#B3261E}
+
+/* ---- confetti ---- */
+.cf{position:fixed;pointer-events:none;font-size:18px;animation:cfdrop 1.6s ease-out forwards;z-index:80;will-change:transform,opacity}
+@keyframes cfdrop{0%{opacity:0;transform:translate(0,0) scale(.5) rotate(0)}10%{opacity:1;transform:translate(0,-20px) scale(1) rotate(40deg)}100%{opacity:0;transform:translate(var(--dx,0),140px) scale(.8) rotate(var(--rt,180deg))}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <span class="lh">🗼</span>
+    <div>
+      <span class="eye">IGEDD · Mission 016714-01</span>
+      <h1>Cap 2028</h1>
+    </div>
+  </div>
+  <div class="right" id="topRight"></div>
+</div>
+<div class="wrap" id="root"></div>
+
+<script type="module">
+"use strict";
+import {CONTENT, AXES} from "./content.js";
+
+/* ============================================================
+   1. CONFIGURATION FIREBASE  (collez la votre ici)
+   ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey:        "AIzaSyA0ktFbiYj45_nB6bw8COTQ1qWikzA3LAE",
+  authDomain:    "resilience-8c52d.firebaseapp.com",
+  databaseURL:   "https://resilience-8c52d-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:     "resilience-8c52d",
+  storageBucket: "resilience-8c52d.firebasestorage.app",
+  appId:         "1:873364138425:web:d7e0f93b192f91d9f06e68"
+};
+function firebaseReady(){
+  return FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.indexOf("VOTRE_") !== 0;
+}
+
+/* ============================================================
+   1 bis. CONTROLE D'ACCES (modifiez les deux mots de passe ici)
+   ------------------------------------------------------------
+   ACCESS.participant : exigé pour entrer dans l'atelier.
+   ACCESS.animateur   : exigé pour ouvrir le panneau d'animation.
+   Laissez "" pour désactiver un niveau.
+   NB : vérification côté navigateur. Pour un atelier fermé et
+   temporaire, cela dissuade les visiteurs de passage ; ce n'est
+   pas un secret inviolable (le code source reste lisible).
+   ============================================================ */
+const ACCESS = {
+  participant: "igedd2028",
+  animateur:   "anim2028"
+};
+const norm = s => (s||"").trim().toLowerCase();
+
+/* ============================================================
+   2. CONSTANTES METIER
+   ============================================================ */
+const METHODS = [
+  {id:"designfiction", ic:"🔭", t:"Design fiction",        d:"Écrire des scénarios prospectifs de sortie."},
+  {id:"codev",         ic:"🤝", t:"Codéveloppement",       d:"Une situation exposée, le groupe conseille."},
+  {id:"sixchapeaux",   ic:"🎩", t:"Six chapeaux",          d:"Penser un sujet sous six angles successifs."},
+  {id:"debatmouvant",  ic:"⚖️", t:"Débat mouvant",         d:"Se positionner sur une affirmation clivante."},
+  {id:"worldcafe",     ic:"☕", t:"World café",            d:"Trois tables thématiques, contributions croisées."},
+  {id:"cartoarg",      ic:"🗺️", t:"Cartographie d'arguments", d:"Structurer le pour et le contre d'une thèse."}
+];
+const HATS = [
+  {id:"blanc", t:"Blanc · les faits",      c:"#5C6B78"},
+  {id:"rouge", t:"Rouge · le ressenti",    c:"#B3261E"},
+  {id:"noir",  t:"Noir · les risques",     c:"#1B2733"},
+  {id:"jaune", t:"Jaune · les bénéfices",  c:"#C79A00"},
+  {id:"vert",  t:"Vert · les idées",       c:"#1E7B3C"},
+  {id:"bleu",  t:"Bleu · l'organisation",  c:"#175177"}
+];
+const CODEV_PHASES = [
+  "Exposé de la situation",
+  "Clarification (questions du groupe)",
+  "Contrat (la demande précise)",
+  "Consultation (suggestions du groupe)",
+  "Synthèse et plan d'action"
+];
+const PHARES = ["Cordouan","Ar-Men","La Jument","Kéréon","Créac'h","La Vieille","Goulphar",
+  "Les Baleines","La Coubre","Cap Fréhel","Eckmühl","Chassiron","Gatteville","Planier",
+  "Cap Camarat","La Garoupe","Île Vierge","Le Stiff","Barfleur","Penmarc'h","Sein","Le Four"];
+
+/* ============================================================
+   3. COUCHE DE DONNEES (Firebase OU repli local)
+   ============================================================ */
+let DB = null;
+async function initBackend(){
+  if(firebaseReady()){
+    const appMod = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+    const dbMod  = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js");
+    const app = appMod.initializeApp(FIREBASE_CONFIG);
+    const database = dbMod.getDatabase(app);
+    DB = {
+      mode:"firebase",
+      watch:(p,cb)=>{ const r=dbMod.ref(database,p); return dbMod.onValue(r,s=>cb(s.val()),err=>{ console.error("Firebase read denied on "+p,err); const el=document.getElementById("stx"); if(el){ el.textContent="Firebase : "+err.message+" (vérifier les règles pour /rooms)"; el.className="status err"; } }); },
+      set:(p,v)=>dbMod.set(dbMod.ref(database,p),v),
+      push:(p,v)=>{ const r=dbMod.push(dbMod.ref(database,p),v); return r.key; },
+      update:(p,v)=>dbMod.update(dbMod.ref(database,p),v),
+      remove:(p)=>dbMod.remove(dbMod.ref(database,p))
+    };
+  } else {
+    DB = makeLocalAdapter();
+  }
+}
+function makeLocalAdapter(){
+  const KEY="cap2028_local";
+  const watchers=[];
+  const read =()=>{ try{return JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){return {}} };
+  const write=(t)=>{ localStorage.setItem(KEY,JSON.stringify(t)); notify(); };
+  const parts=p=>p.split("/").filter(Boolean);
+  const getAt=(t,p)=>{ let c=t; for(const k of parts(p)){ if(c==null)return null; c=c[k]; } return c==null?null:c; };
+  const setAt=(t,p,v)=>{ const ks=parts(p); let c=t; for(let i=0;i<ks.length-1;i++){ if(typeof c[ks[i]]!=="object"||c[ks[i]]==null)c[ks[i]]={}; c=c[ks[i]]; } if(v===undefined||v===null)delete c[ks[ks.length-1]]; else c[ks[ks.length-1]]=v; };
+  function notify(){ const t=read(); watchers.forEach(w=>{ try{ w.cb(getAt(t,w.path)); }catch(e){} }); }
+  window.addEventListener("storage",e=>{ if(e.key===KEY)notify(); });
+  return {
+    mode:"local",
+    watch:(p,cb)=>{ const w={path:p,cb}; watchers.push(w); cb(getAt(read(),p)); return ()=>{ const i=watchers.indexOf(w); if(i>=0)watchers.splice(i,1); }; },
+    set:(p,v)=>{ const t=read(); setAt(t,p,v); write(t); },
+    push:(p,v)=>{ const id="k"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); const t=read(); setAt(t,p+"/"+id,v); write(t); return id; },
+    update:(p,v)=>{ const t=read(); for(const k in v)setAt(t,p+"/"+k,v[k]); write(t); },
+    remove:(p)=>{ const t=read(); setAt(t,p,undefined); write(t); }
+  };
+}
+
+/* ============================================================
+   4. ETAT APPLICATIF
+   ============================================================ */
+const params = new URLSearchParams(location.search);
+let roomId = (params.get("salle")||"").trim().toLowerCase();
+let uid = localStorage.getItem("cap2028_uid"); if(!uid){ uid="u"+Math.random().toString(36).slice(2,10); localStorage.setItem("cap2028_uid",uid); }
+let pseudo = localStorage.getItem("cap2028_pseudo")||PHARES[Math.floor(Math.random()*PHARES.length)];
+let anim = false;           // panneau d'animation ouvert
+let isAnimateur = sessionStorage.getItem("cap2028_anim")==="1"; // droits animateur
+let room = null;            // instantané complet de la salle
+let unwatch = null;
+let unwatchLib = null;      // abonnement à la bibliothèque enrichie
+let libCodev = [];          // situations ajoutées par les animateurs, partagées
+const root = document.getElementById("root");
+const topRight = document.getElementById("topRight");
+
+function basePath(){ return "rooms/"+roomId; }
+function setState(patch){ return DB.update(basePath()+"/state", patch); }
+function esc(s){ const d=document.createElement("div"); d.textContent=(s==null)?"":String(s); return d.innerHTML; }
+/* Bulle d'aide à côté d'un libellé. Passez "right" pour aligner à droite si proche du bord. */
+function help(txt,pos){ return ' <span class="help-ic'+(pos?" "+pos:"")+'" tabindex="0" data-tip="'+esc(txt)+'" aria-label="Aide : '+esc(txt)+'">?</span>'; }
+/* Avatar coloré dérivé du pseudonyme (couleur stable, lettre initiale). */
+const AV_COLORS=["#175177","#1E7B3C","#B3261E","#9a5b00","#0E7A8F","#7B1FA2","#C79A00","#0277BD","#34495E","#AD1457","#2E7D32","#E64A19"];
+function avatarHTML(pseudo,sm){
+  const p=(pseudo||"?").trim();
+  let s=0; for(let i=0;i<p.length;i++)s=(s*31+p.charCodeAt(i))>>>0;
+  const c=AV_COLORS[s%AV_COLORS.length];
+  return '<span class="avatar'+(sm?" sm":"")+'" style="background:'+c+'">'+esc(p.charAt(0).toUpperCase())+'</span>';
+}
+/* Petite pluie de confettis pour célébrer une contribution. */
+function confetti(){
+  const ems=["🎉","✨","💫","⭐","🌟","🎊","🔆"];
+  for(let i=0;i<12;i++){
+    const c=document.createElement("span"); c.className="cf";
+    c.textContent=ems[Math.floor(Math.random()*ems.length)];
+    c.style.left=(15+Math.random()*70)+"%"; c.style.top="42%";
+    c.style.setProperty("--dx",(Math.random()*260-130)+"px");
+    c.style.setProperty("--rt",(Math.random()*720-360)+"deg");
+    c.style.animationDelay=(Math.random()*.15)+"s";
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),1800);
+  }
+}
+/* Petit jingle de fin de chrono (sans dépendance). Silencieux si bloqué. */
+function chime(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    [880,1175,1480].forEach((f,i)=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=f;o.type="sine";
+      const t=ctx.currentTime+i*0.16;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(0.18,t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.55);
+      o.start(t);o.stop(t+0.6);
+    });
+  }catch(e){}
+}
+/* ---- chrono partagé ---- */
+let timerTicker=null, timerChimed=false;
+function ensureTimerTicker(){ if(timerTicker)return; timerTicker=setInterval(timerTick,500); timerTick(); }
+function timerTick(){
+  const t=room&&room.state&&room.state.timer;
+  let bar=document.getElementById("timerBar");
+  if(!t||!t.dur||!t.startedAt){
+    if(bar)bar.remove();
+    timerChimed=false;
+    return;
+  }
+  if(!bar){
+    bar=document.createElement("div");
+    bar.className="timer-bar"; bar.id="timerBar";
+    bar.innerHTML='<span class="tlabel"></span><span class="tcount">--:--</span><div class="ttrack"><div class="tfill"></div></div>';
+    document.body.insertBefore(bar,document.querySelector(".wrap"));
+    timerChimed=false;
+  }
+  const elapsed=(Date.now()-t.startedAt)/1000;
+  const remain=Math.max(0,t.dur-elapsed);
+  const pct=Math.max(0,Math.min(100,(remain/t.dur)*100));
+  const mm=Math.floor(remain/60), ss=Math.floor(remain%60).toString().padStart(2,"0");
+  bar.querySelector(".tlabel").textContent=t.label||"⏱ Chrono";
+  bar.querySelector(".tcount").textContent=remain<=0?"Temps écoulé":(mm+":"+ss);
+  bar.querySelector(".tfill").style.width=pct+"%";
+  bar.classList.toggle("urgent",remain<=10&&remain>0);
+  bar.classList.toggle("done",remain<=0);
+  if(remain<=0&&!timerChimed){ timerChimed=true; chime(); }
+}
+function startTimer(secs,label){ setState({timer:{dur:secs,startedAt:Date.now(),label:(label||"").trim()}}); }
+function stopTimer(){ DB.remove(basePath()+"/state/timer"); }
+/* ---- levée de main ---- */
+function handRaised(){ return !!(room&&room.hands&&room.hands[uid]); }
+function toggleHand(){
+  if(handRaised()) DB.remove(basePath()+"/hands/"+uid);
+  else DB.set(basePath()+"/hands/"+uid,{pseudo:pseudo,ts:Date.now()});
+}
+function handsPanel(){
+  const hh=(room&&room.hands)||{};
+  const keys=Object.keys(hh);
+  if(!keys.length)return "";
+  const ordered=keys.map(k=>Object.assign({uid:k},hh[k])).sort((a,b)=>(a.ts||0)-(b.ts||0));
+  return '<div class="hands-panel"><h3>✋ '+keys.length+(keys.length>1?" mains levées (ordre d\'arrivée)":" main levée")+'</h3><div>'
+    +ordered.map((p,i)=>'<span class="hand-chip" title="'+(i===0?"À la parole":"En file")+'">'
+       +avatarHTML(p.pseudo,1)+esc(p.pseudo)
+       +(isAnimateur?'<button class="x" data-handclear="'+esc(p.uid)+'" title="Donner la parole / effacer">✕</button>':'')
+       +'</span>').join("")
+    +'</div></div>';
+}
+function status(msg,ok){ const el=document.getElementById("stx"); if(!el)return; el.textContent=msg; el.className="status "+(ok?"ok":"err"); setTimeout(()=>{ if(el&&el.textContent===msg)el.textContent=""; },2800); }
+
+/* ---- bibliothèques de contenu (panneau animation) ---- */
+function axChips(axes){ return (axes||[]).map(a=>'<span class="ax" title="'+esc(AXES[a]||a)+'">'+a+'</span>').join(""); }
+function libBlock(selId,btnId,titre,items,label,btnTxt,extra){
+  let h='<div class="lib"><label>📚 '+esc(titre)+'</label><div class="row"><select id="'+selId+'"><option value="">Choisir dans la bibliothèque…</option>';
+  items.forEach((it,i)=>{ const t=label(it); h+='<option value="'+i+'">'+esc(t.length>95?t.slice(0,93)+"…":t)+'</option>'; });
+  h+='</select><button class="btn sec sm" id="'+btnId+'" disabled>'+esc(btnTxt)+'</button>'+(extra||"")
+   +'</div><div class="axrow" id="'+selId+'Ax"></div></div>';
+  return h;
+}
+function renderLibCodevList(){
+  if(!libCodev.length) return '<p class="hint" style="font-size:12px">Aucun ajout pour l\'instant.</p>';
+  return libCodev.map(s=>{
+    const axes=(s.axes&&s.axes.length)?(' · axes : '+s.axes.join(", ")):"";
+    return '<div class="item" style="display:flex;gap:8px;align-items:flex-start">'
+      +'<div style="flex:1">'+esc(s.texte)+'<div class="who">ajouté par '+esc(s.by||"animateur")+axes+'</div></div>'
+      +'<button class="btn sec sm" data-libdel="'+esc(s.id)+'" title="Retirer de la bibliothèque" style="padding:4px 10px">×</button>'
+      +'</div>';
+  }).join("");
+}
+function bindLib(selId,btnId,items,onUse){
+  const sel=document.getElementById(selId); if(!sel)return;
+  const btn=document.getElementById(btnId);
+  sel.addEventListener("change",()=>{
+    const i=sel.value; if(btn)btn.disabled=(i==="");
+    const ax=document.getElementById(selId+"Ax");
+    if(ax)ax.innerHTML=(i===""||!items[i].axes)?"":("Axes : "+axChips(items[i].axes)+" "+items[i].axes.map(a=>AXES[a]).join(" · "));
+  });
+  if(btn)btn.addEventListener("click",()=>{ const i=sel.value; if(i==="")return; onUse(items[i],parseInt(i,10)); });
+}
+
+/* ============================================================
+   4 bis. ECRAN D'ACCES (mot de passe participant)
+   ============================================================ */
+function gateOk(){ return !ACCESS.participant || sessionStorage.getItem("cap2028_gate")==="1"; }
+function renderGate(onPass){
+  topRight.innerHTML = '<span class="tag mode">'+(firebaseReady()?"Firebase":"Mode local")+'</span>';
+  root.innerHTML =
+   '<div class="gate"><div class="card">'
+   +'<div class="hero"><div class="beam"></div>'
+   +'<div class="lh-big">🗼</div>'
+   +'<div class="eyebrow">IGEDD · Mission 016714-01</div>'
+   +'<h1>Cap 2028</h1>'
+   +'<p>Atelier d\'intelligence collective sur la préparation des sorties d\'emplois fonctionnels.</p>'
+   +'</div>'
+   +'<div class="body">'
+   +'<h2>Accès réservé</h2>'
+   +'<div class="lockrow">🔒 Saisissez le mot de passe communiqué par l\'animateur.</div>'
+   +'<input id="gatePw" type="password" placeholder="Mot de passe" autocomplete="off" data-go="gateGo">'
+   +'<button class="btn prim" id="gateGo">Accéder à l\'atelier</button>'
+   +'<p class="status err" id="gateErr" style="text-align:center"></p>'
+   +'<p class="foot">Espace temporaire et fermé. Aucun compte, aucune inscription.</p>'
+   +'</div></div></div>';
+  const tryGo=()=>{
+    const pw=document.getElementById("gatePw");
+    if(norm(pw.value)===norm(ACCESS.participant)){
+      sessionStorage.setItem("cap2028_gate","1"); onPass();
+    } else {
+      document.getElementById("gateErr").textContent="Mot de passe incorrect.";
+      const c=root.querySelector(".card"); c.classList.remove("shake"); void c.offsetWidth; c.classList.add("shake");
+      pw.value=""; pw.focus();
+    }
+  };
+  document.getElementById("gateGo").addEventListener("click",tryGo);
+  setTimeout(()=>{ const el=document.getElementById("gatePw"); if(el)el.focus(); },60);
+}
+
+/* Modale générique de saisie de mot de passe (animateur) */
+function askPassword(titre,texte,expected,onOk){
+  const ovl=document.createElement("div"); ovl.className="ovl";
+  ovl.innerHTML='<div class="modal"><div class="mh">🧭 '+esc(titre)+'</div>'
+   +'<div class="mb"><p>'+esc(texte)+'</p>'
+   +'<input id="mPw" type="password" placeholder="Mot de passe animateur" autocomplete="off">'
+   +'<p class="status err" id="mErr" style="text-align:center"></p>'
+   +'<div class="mf"><button class="btn sec" id="mCancel">Annuler</button><button class="btn prim" id="mOk">Valider</button></div>'
+   +'</div></div>';
+  document.body.appendChild(ovl);
+  const close=()=>ovl.remove();
+  const tryOk=()=>{
+    const v=document.getElementById("mPw").value;
+    if(norm(v)===norm(expected)){ close(); onOk(); }
+    else{
+      document.getElementById("mErr").textContent="Mot de passe incorrect.";
+      const m=ovl.querySelector(".modal"); m.classList.remove("shake"); void m.offsetWidth; m.classList.add("shake");
+      const p=document.getElementById("mPw"); p.value=""; p.focus();
+    }
+  };
+  document.getElementById("mOk").addEventListener("click",tryOk);
+  document.getElementById("mCancel").addEventListener("click",close);
+  ovl.addEventListener("click",e=>{ if(e.target===ovl)close(); });
+  document.getElementById("mPw").addEventListener("keydown",e=>{ if(e.key==="Enter"){e.preventDefault();tryOk();} if(e.key==="Escape")close(); });
+  setTimeout(()=>document.getElementById("mPw").focus(),60);
+}
+
+/* ============================================================
+   5. LOBBY (rejoindre une salle, sans inscription)
+   ============================================================ */
+function renderLobby(){
+  topRight.innerHTML = '<span class="tag mode">'+(firebaseReady()?"Firebase":"Mode local")+'</span>';
+  root.innerHTML =
+   '<div class="lobby"><div class="panel">'
+   +'<div class="ribbon"><span class="lh">🗼</span><div><div class="t">IGEDD · Cap 2028</div><h2 style="margin:0">Rejoindre l\'atelier</h2></div></div>'
+   +'<p class="hint">Intelligence collective de la mission n° 016714-01, « Comment bien préparer les sorties d\'emplois fonctionnels de l\'IGEDD ? ». Aucun compte requis.</p>'
+   +'<div style="margin-bottom:12px"><label>Code de la salle'+help("Code court partagé par l\'animateur (lettres, chiffres et tirets). Tout le monde rejoint la même salle en saisissant le même code.")+'</label>'
+   +'<input id="lbRoom" type="text" value="'+esc(roomId)+'" placeholder="ex : igedd-2028" autocomplete="off" data-go="lbGo"></div>'
+   +'<div style="margin-bottom:16px"><label>Votre pseudonyme (un phare, par défaut)'+help("Identifiant visible des autres participants. Choisissez un nom de phare pour rester anonyme, ou votre prénom si vous préférez.")+'</label>'
+   +'<input id="lbPseudo" type="text" value="'+esc(pseudo)+'" maxlength="24" autocomplete="off" data-go="lbGo"></div>'
+   +'<button class="btn prim" id="lbGo" style="width:100%;justify-content:center;font-size:15px;padding:13px">Entrer dans la salle</button>'
+   +'<div class="mlist">'+METHODS.map(m=>'<span>'+m.ic+' '+esc(m.t)+'</span>').join("")+'</div>'
+   +(firebaseReady()?'':'<p class="note">Firebase non configuré : mode local actif. La synchronisation fonctionne entre onglets d\'un même navigateur, utile pour tester. Renseignez FIREBASE_CONFIG pour une session multi-postes.</p>')
+   +'</div></div>';
+  document.getElementById("lbGo").addEventListener("click",()=>{
+    const r=document.getElementById("lbRoom").value.trim().toLowerCase().replace(/[^a-z0-9-]/g,"-");
+    const p=document.getElementById("lbPseudo").value.trim();
+    if(!r){ alert("Indiquez un code de salle."); return; }
+    roomId=r; pseudo=p||PHARES[Math.floor(Math.random()*PHARES.length)];
+    localStorage.setItem("cap2028_pseudo",pseudo);
+    const u=new URL(location.href); u.searchParams.set("salle",roomId); history.replaceState(null,"",u);
+    joinRoom();
+  });
+}
+
+/* ============================================================
+   6. ENTREE EN SALLE + ABONNEMENT TEMPS REEL
+   ============================================================ */
+function joinRoom(){
+  room = room || {};
+  renderApp();
+  Promise.resolve(DB.set(basePath()+"/participants/"+uid, {pseudo:pseudo, ts:Date.now()}))
+    .catch(e=>{ console.error("Firebase write denied",e); const el=document.getElementById("stx"); if(el){ el.textContent="Firebase : "+e.message+" (règles à autoriser sur /rooms)"; el.className="status err"; } });
+  if(unwatch) unwatch();
+  unwatch = DB.watch(basePath(), (val)=>{ room = val||{}; renderApp(); });
+  watchLibrary();
+}
+/* Bibliothèque enrichie : situations ajoutées par les animateurs, partagées
+   entre tous les ateliers (chemin /library/codev/situations). */
+function watchLibrary(){
+  if(unwatchLib) return;
+  unwatchLib = DB.watch("library/codev/situations", val=>{
+    libCodev = val ? Object.keys(val).map(k=>Object.assign({id:k},val[k])).sort((a,b)=>(a.ts||0)-(b.ts||0)) : [];
+    if(anim) renderApp();
+  });
+}
+function codevSituations(){
+  return CONTENT.codev.situations.concat(libCodev.map(x=>Object.assign({},x,{_custom:true})));
+}
+function renderTop(){
+  const hr=handRaised();
+  topRight.innerHTML =
+    '<span class="tag mode">'+(DB.mode==="firebase"?"Firebase":"Local")+'</span>'
+   +'<span class="tag room">Salle '+esc(roomId)+'</span>'
+   +'<span class="tag me">'+avatarHTML(pseudo,1)+' '+esc(pseudo)+'</span>'
+   +'<button class="tbtn'+(hr?" hand-on":"")+'" id="handToggle" title="'+(hr?"Baisser la main":"Demander la parole")+'">✋ '+(hr?"Main levée":"Main")+'</button>'
+   +'<button class="tbtn'+(anim?" anim-on":"")+'" id="animToggle">'+(isAnimateur?"🧭 Animation":"🔒 Animation")+'</button>';
+  document.getElementById("animToggle").addEventListener("click",openAnim);
+  document.getElementById("handToggle").addEventListener("click",toggleHand);
+}
+/* Ouvre le panneau d'animation, sous réserve du mot de passe animateur. */
+function openAnim(){
+  if(isAnimateur || !ACCESS.animateur){
+    isAnimateur=true; anim=!anim; renderApp(); return;
+  }
+  askPassword("Espace animateur","Le pilotage de l'atelier est réservé à l'animateur. Saisissez le mot de passe animateur.",ACCESS.animateur,()=>{
+    isAnimateur=true; sessionStorage.setItem("cap2028_anim","1"); anim=true; renderApp();
+  });
+}
+
+/* ============================================================
+   7. RENDU PRINCIPAL
+   ============================================================ */
+/* Conserve les saisies en cours lors des re-rendus déclenchés par le temps
+   réel : sans cela, chaque contribution d'un autre participant effacerait
+   le texte que l'on est en train de taper. */
+function snapshotFields(){
+  const snap={vals:{},focus:null,selS:0,selE:0,open:{}};
+  root.querySelectorAll("input[id],textarea[id],select[id]").forEach(el=>{ snap.vals[el.id]=el.value; });
+  root.querySelectorAll("details[id]").forEach(el=>{ snap.open[el.id]=el.open; });
+  const ae=document.activeElement;
+  if(ae&&ae.id&&(ae.id in snap.vals)){ snap.focus=ae.id; try{ snap.selS=ae.selectionStart; snap.selE=ae.selectionEnd; }catch(e){} }
+  return snap;
+}
+function restoreFields(snap){
+  for(const id in snap.vals){
+    const el=document.getElementById(id); if(!el)continue;
+    if(el.tagName==="SELECT"){
+      if(snap.vals[id]!==""&&el.value!==snap.vals[id]&&Array.prototype.some.call(el.options,o=>o.value===snap.vals[id])){
+        el.value=snap.vals[id]; el.dispatchEvent(new Event("change"));
+      }
+    }
+    else if(id===snap.focus){ el.value=snap.vals[id]; el.focus(); try{ el.setSelectionRange(snap.selS,snap.selE); }catch(e){} }
+    else if(el.value===""&&snap.vals[id]!=="") el.value=snap.vals[id];
+  }
+  for(const id in snap.open){ const el=document.getElementById(id); if(el)el.open=snap.open[id]; }
+}
+
+function renderApp(){
+  renderTop();
+  ensureTimerTicker();
+  timerTick();
+  const snap=snapshotFields();
+  const st = (room&&room.state)||{};
+  let h = animPanel(st);
+  h += handsPanel();
+  const active = st.active;
+  if(!active){
+    h += '<div class="panel"><div class="waiting"><span class="lh">🗼</span>'
+       + '<h2><span class="pulse"></span>En attente de lancement</h2>'
+       + '<p class="hint" style="max-width:520px;margin:8px auto 0">L\'animateur choisit une méthode dans le panneau « Animation » en haut à droite. L\'écran de chacun suivra automatiquement.</p>'
+       + '</div><h3>Présents dans la salle</h3><div class="crew" id="crew"></div></div>';
+  } else if(active==="designfiction") h += viewDesignFiction(st);
+  else if(active==="codev")          h += viewCodev(st);
+  else if(active==="sixchapeaux")    h += viewHats(st);
+  else if(active==="debatmouvant")   h += viewDebate(st);
+  else if(active==="worldcafe")      h += viewCafe(st);
+  else if(active==="cartoarg")       h += viewCarto(st);
+  h += '<p class="status" id="stx"></p>';
+  root.innerHTML = h;
+  bindAnim(st); bindActive(active,st);
+  restoreFields(snap);
+  fillCrew();
+}
+/* Touche Entrée : valide le champ (bouton désigné par data-go) */
+root.addEventListener("keydown",e=>{
+  if(e.key!=="Enter")return;
+  const t=e.target;
+  if(t&&t.tagName==="INPUT"&&t.dataset.go){ e.preventDefault(); const b=document.getElementById(t.dataset.go); if(b)b.click(); }
+});
+function fillCrew(){
+  const el=document.getElementById("crew"); if(!el)return;
+  const ps = (room&&room.participants)||{};
+  const list = Object.values(ps);
+  el.innerHTML = list.length ? list.map(p=>'<span class="chip">'+avatarHTML(p.pseudo,1)+' '+esc(p.pseudo)+'</span>').join("") : '<span class="hint">Personne pour l\'instant.</span>';
+}
+
+/* ---- panneau animation ---- */
+function animPanel(st){
+  if(!anim) return "";
+  let h='<div class="animpanel"><h3>🧭 Commandes d\'animation</h3>'
+   +'<p class="hint" style="margin-bottom:8px">Choisissez la méthode active. Tout le monde bascule en direct.</p>'
+   +'<div class="methods">';
+  METHODS.forEach(m=>{ h+='<button class="mcard'+(st.active===m.id?" on":"")+'" data-m="'+m.id+'"><span class="mic">'+m.ic+'</span><div class="mt">'+esc(m.t)+'</div><div class="md">'+esc(m.d)+'</div></button>'; });
+  h+='</div>';
+  /* ---- chrono partagé ---- */
+  const tact = st.timer && st.timer.dur;
+  h+='<h3>🕐 Chrono partagé'+help("Lance un décompte visible par tous, sonore à la fin. Idéal pour rythmer un tour (3 min par chapeau, 5 min par table, etc.).")+'</h3>'
+    +'<div class="row" style="margin-bottom:6px">'
+    + [1,2,3,5,7,10].map(m=>'<button class="btn '+(tact?"sec":"sec")+' sm" data-tmr="'+(m*60)+'">'+m+' min</button>').join("")
+    + (tact?'<button class="btn warn sm" id="tmrStop" style="margin-left:auto">Arrêter</button>':'')
+    +'</div>'
+    +'<div class="row"><input id="tmrLab" type="text" placeholder="Étiquette du chrono (ex : Chapeau noir, Table 2, Débat)" value="'+esc((st.timer&&st.timer.label)||"")+'" style="flex:1"></div>';
+  /* commandes propres a la methode active */
+  if(st.active==="designfiction"){
+    h+='<h3>Question prospective'+help("Question d\'horizon 2030-2032 qui cadre l\'exercice de design fiction. Une question ouverte « Et si... », poussant à imaginer un futur plausible.")+'</h3><div class="row"><input id="dfPrompt" type="text" value="'+esc(st.dfPrompt||"Et si, en 2030, la sortie d\'emploi fonctionnel était devenue un atout de carrière reconnu ?")+'" data-go="dfSet"><button class="btn prim sm" id="dfSet">Définir</button></div>'
+      +libBlock("dfLib","dfLibUse","Bibliothèque de questions prospectives",CONTENT.designFiction.prompts,p=>(p.noir?"⚠ ":"")+p.texte,"Utiliser");
+  }
+  if(st.active==="codev"){
+    const cur=(room&&room.participants&&room.participants[uid])?pseudo:pseudo;
+    h+='<h3>Pilotage du codéveloppement'+help("Désignez l\'exposant et avancez les cinq étapes au rythme du groupe. L\'exposant aura seul accès à l\'écriture de l\'exposé, du contrat et du plan.")+'</h3>'
+      +'<div class="row" style="margin-bottom:8px"><div style="flex:1;min-width:160px"><label>Pseudonyme de la personne qui expose'+help("Saisissez exactement le pseudonyme tel que la personne l\'a renseigné en arrivant dans la salle. Sans cela, elle ne pourra pas écrire sa situation.")+'</label><input id="cvClient" type="text" value="'+esc(st.cvClient||"")+'" placeholder="ex : '+esc(cur)+'"></div><button class="btn prim sm" id="cvClientSet">Définir</button></div>'
+      +'<div class="row">';
+    CODEV_PHASES.forEach((p,i)=>{ h+='<button class="btn '+((st.cvPhase||0)===i?"prim":"sec")+' sm" data-cvph="'+i+'">'+(i+1)+'</button>'; });
+    h+='<span class="hint" style="margin:0 0 0 6px">'+esc(CODEV_PHASES[st.cvPhase||0])+'</span></div>'
+      +libBlock("cvLib","cvLibUse","Bibliothèque de situations (cas fictifs, si aucun volontaire)",codevSituations(),s=>(s._custom?"✦ ":"")+s.texte,"Proposer ce cas")
+      +'<details class="lib" style="border-style:solid" id="cvLibEnrich"><summary>✏️ Enrichir la bibliothèque (ajouter une situation, '+libCodev.length+' ajout'+(libCodev.length>1?"s":"")+')</summary>'
+      +'<div style="margin-top:10px"><label>Énoncé (3-4 phrases, anonyme, situation réaliste)'+help("Décrivez un dilemme concret de sortie d\'emploi fonctionnel : contexte, tension, point d\'arbitrage. Anonyme : aucun nom de personne, aucun détail identifiable.")+'</label>'
+      +'<textarea id="cvLibAdd" maxlength="700" placeholder="Décrivez la situation. Aucun nom de personne ; restez factuel et générique."></textarea></div>'
+      +'<div class="row" style="margin-top:8px;align-items:flex-end"><div style="flex:1;min-width:140px"><label>Axes thématiques (A à H, séparés par des virgules)'+help("Une ou plusieurs lettres parmi A à H. A organisation interne, B parcours, C marque employeur, D indemnitaire/statutaire, E territorial/MIGT, F réseaux, G déontologie, H coopération institutionnelle.")+'</label>'
+      +'<input id="cvLibAxes" type="text" maxlength="40" placeholder="ex : A, D"></div>'
+      +'<button class="btn prim sm" id="cvLibAddBtn">Ajouter à la bibliothèque</button></div>'
+      +'<p class="hint" style="margin-top:8px;font-size:11.5px">Les ajouts sont partagés et restent disponibles pour les ateliers suivants.</p>'
+      +'<div id="cvLibList" style="margin-top:8px">'+renderLibCodevList()+'</div>'
+      +'</details>';
+  }
+  if(st.active==="sixchapeaux"){
+    h+='<h3>Chapeau en cours'+help("Choisissez l\'angle sous lequel le groupe réfléchit maintenant. Faites tourner les six chapeaux dans un ordre raisonné (typiquement : blanc, rouge, jaune, noir, vert, bleu).")+'</h3><div class="hatbtns">';
+    HATS.forEach(ht=>{ h+='<button class="hatbtn'+(st.hat===ht.id?" on":"")+'" data-hat="'+ht.id+'" style="border-color:'+ht.c+';color:'+ht.c+'">'+esc(ht.t)+'</button>'; });
+    h+='</div>'
+      +libBlock("hatLib","hatLibUse","Bibliothèque de sujets (avec une consigne par chapeau)",CONTENT.sixChapeaux.sujets,s=>s.titre,"Utiliser");
+    const cs=CONTENT.sixChapeaux.sujets[st.hatSujet];
+    if(cs)h+='<p class="hint" style="margin-top:6px">Sujet en cours : <b>'+esc(cs.titre)+'</b></p>';
+  }
+  if(st.active==="debatmouvant"){
+    h+='<h3>Affirmation à débattre'+help("Énoncé clivant, défendable des deux côtés. Le bouton « Nouveau débat » remet à zéro positions et arguments pour passer à une autre affirmation.")+'</h3><div class="row"><input id="dbAff" type="text" value="'+esc(st.dbAff||"Sans accompagnement formalisé dès le recrutement, la sortie d\'emploi fonctionnel restera subie.")+'" data-go="dbSet"><button class="btn prim sm" id="dbSet">Définir</button><button class="btn warn sm" id="dbNew">Nouveau débat</button></div>'
+      +libBlock("dbLib","dbLibUse","Bibliothèque d\'affirmations clivantes",CONTENT.debatMouvant.affirmations,a=>a.texte,"Utiliser");
+  }
+  if(st.active==="worldcafe"){
+    const tb=st.cafeTables||["",""," "];
+    h+='<h3>Thèmes des trois tables'+help("Trois questions ou thèmes cohérents entre eux. Les participants choisissent leur table puis tournent pour croiser les regards.")+'</h3>';
+    for(let i=0;i<3;i++){ h+='<div class="row" style="margin-bottom:6px"><input id="cf'+i+'" type="text" value="'+esc(tb[i]||"")+'" placeholder="Thème de la table '+(i+1)+'"></div>'; }
+    h+='<button class="btn prim sm" id="cfSet">Définir les thèmes</button>'
+      +libBlock("cfLib","cfLibUse","Jeux de tables prêts à l\'emploi",CONTENT.worldCafe.jeux,j=>j.nom+" : "+j.tables.join(" · "),"Utiliser");
+  }
+  if(st.active==="cartoarg"){
+    h+='<h3>Thèse à cartographier'+help("Affirmation à étayer. Le groupe construit l\'arbre des pour et des contre. Le bouton « Pré-amorcer » dépose les amorces livrées dans la bibliothèque pour éviter la page blanche.")+'</h3><div class="row"><input id="caTh" type="text" value="'+esc(st.caThesis||"L\'IGEDD doit valoriser explicitement le passage en inspection comme label de carrière.")+'" data-go="caSet"><button class="btn prim sm" id="caSet">Définir</button></div>'
+      +libBlock("caLib","caLibUse","Bibliothèque de thèses (avec amorces pour et contre)",CONTENT.cartoArguments.theses,t=>t.texte,"Utiliser",
+        '<button class="btn warn sm" id="caSeed" disabled title="Définit la thèse et dépose ses amorces pour et contre dans l\'arbre">Pré-amorcer</button>');
+  }
+  h+='<h3>Salle</h3><div class="row"><button class="btn prim sm" id="aExport">Exporter (JSON)</button><button class="btn warn sm" id="aReset">Réinitialiser la méthode</button></div>'
+   +'<textarea class="export" id="exportBox" hidden readonly></textarea></div>';
+  return h;
+}
+function bindAnim(st){
+  /* boutons globaux disponibles aussi hors panneau d'animation : */
+  root.querySelectorAll("[data-handclear]").forEach(b=>b.addEventListener("click",()=>{
+    DB.remove(basePath()+"/hands/"+b.dataset.handclear);
+  }));
+  if(!anim) return;
+  root.querySelectorAll("[data-m]").forEach(b=>b.addEventListener("click",()=>setState({active:b.dataset.m})));
+  root.querySelectorAll("[data-tmr]").forEach(b=>b.addEventListener("click",()=>{
+    const lab=(document.getElementById("tmrLab")||{}).value||"";
+    startTimer(parseInt(b.dataset.tmr,10),lab);
+  }));
+  const ts=document.getElementById("tmrStop"); if(ts)ts.addEventListener("click",stopTimer);
+  const dfs=document.getElementById("dfSet"); if(dfs)dfs.addEventListener("click",()=>setState({dfPrompt:document.getElementById("dfPrompt").value.trim()}));
+  const cvc=document.getElementById("cvClientSet"); if(cvc)cvc.addEventListener("click",()=>setState({cvClient:document.getElementById("cvClient").value.trim()}));
+  root.querySelectorAll("[data-cvph]").forEach(b=>b.addEventListener("click",()=>setState({cvPhase:parseInt(b.dataset.cvph,10)})));
+  root.querySelectorAll("[data-hat]").forEach(b=>b.addEventListener("click",()=>setState({hat:b.dataset.hat})));
+  const dbs=document.getElementById("dbSet"); if(dbs)dbs.addEventListener("click",()=>setState({dbAff:document.getElementById("dbAff").value.trim()}));
+  const dbn=document.getElementById("dbNew"); if(dbn)dbn.addEventListener("click",()=>{ DB.remove(basePath()+"/data/debatmouvant"); setState({dbTour:(st.dbTour||0)+1}); });
+  const cfs=document.getElementById("cfSet"); if(cfs)cfs.addEventListener("click",()=>setState({cafeTables:[0,1,2].map(i=>document.getElementById("cf"+i).value.trim())}));
+  const cas=document.getElementById("caSet"); if(cas)cas.addEventListener("click",()=>setState({caThesis:document.getElementById("caTh").value.trim()}));
+  const ex=document.getElementById("aExport"); if(ex)ex.addEventListener("click",doExport);
+  const rs=document.getElementById("aReset"); if(rs)rs.addEventListener("click",()=>{ if(confirm("Effacer les contributions de la méthode active ?")){ DB.remove(basePath()+"/data/"+st.active); status("Méthode réinitialisée",true); } });
+  /* bibliothèques de contenu */
+  bindLib("dfLib","dfLibUse",CONTENT.designFiction.prompts,it=>{ setState({dfPrompt:it.texte}); status("Question prospective définie",true); });
+  bindLib("cvLib","cvLibUse",codevSituations(),it=>{
+    DB.set(basePath()+"/data/codev/expose",it.texte);
+    if(!st.cvClient)setState({cvClient:"Cas fictif"});
+    status("Cas proposé comme exposé",true);
+  });
+  /* Enrichissement de la bibliothèque codev (animateur seulement) */
+  const cvAdd=document.getElementById("cvLibAddBtn");
+  if(cvAdd)cvAdd.addEventListener("click",()=>{
+    const ta=document.getElementById("cvLibAdd");
+    const t=ta.value.trim();
+    if(!t){ status("Énoncé requis",false); ta.focus(); return; }
+    const axRaw=document.getElementById("cvLibAxes").value.trim();
+    const axes=axRaw.split(/[,;\s]+/).map(s=>s.toUpperCase()).filter(s=>/^[A-H]$/.test(s));
+    Promise.resolve(DB.push("library/codev/situations",{texte:t,axes:axes,by:pseudo,ts:Date.now()}))
+      .then(()=>{ status("Situation ajoutée à la bibliothèque",true); })
+      .catch(e=>{ status("Échec : "+e.message+" (autoriser /library dans les règles Firebase)",false); });
+    ta.value=""; document.getElementById("cvLibAxes").value="";
+    const det=document.getElementById("cvLibEnrich"); if(det)det.open=true;
+  });
+  root.querySelectorAll("[data-libdel]").forEach(b=>b.addEventListener("click",()=>{
+    if(!confirm("Retirer cette situation de la bibliothèque partagée ?"))return;
+    DB.remove("library/codev/situations/"+b.dataset.libdel);
+  }));
+  bindLib("hatLib","hatLibUse",CONTENT.sixChapeaux.sujets,(it,i)=>{ setState({hatSujet:i}); status("Sujet défini : "+it.titre,true); });
+  bindLib("dbLib","dbLibUse",CONTENT.debatMouvant.affirmations,it=>{ setState({dbAff:it.texte}); status("Affirmation définie",true); });
+  bindLib("cfLib","cfLibUse",CONTENT.worldCafe.jeux,it=>{ setState({cafeTables:it.tables}); status("Thèmes des tables définis",true); });
+  bindLib("caLib","caLibUse",CONTENT.cartoArguments.theses,it=>{ setState({caThesis:it.texte}); status("Thèse définie",true); });
+  const caL=document.getElementById("caLib"), caS=document.getElementById("caSeed");
+  if(caL&&caS){
+    caL.addEventListener("change",()=>{ caS.disabled=(caL.value===""); });
+    caS.addEventListener("click",()=>{
+      const i=caL.value; if(i==="")return;
+      const th=CONTENT.cartoArguments.theses[i];
+      if(!confirm("Définir cette thèse et déposer "+th.amorces.length+" amorces dans l'arbre ?"))return;
+      setState({caThesis:th.texte});
+      th.amorces.forEach((a,j)=>DB.push(basePath()+"/data/cartoarg",{type:a.type,parent:a.parent||"root",text:a.texte,by:"amorce",ts:Date.now()+j}));
+      status("Thèse définie et amorces déposées",true);
+    });
+  }
+}
+
+/* ============================================================
+   8. VUES DES SIX METHODES
+   ============================================================ */
+
+/* ---- D1. Design fiction ---- */
+function viewDesignFiction(st){
+  const cards = dataList("designfiction");
+  let h='<div class="panel"><h2>Design fiction</h2>'
+   +'<div class="help">À partir d\'un signal faible que vous observez aujourd\'hui, formulez une hypothèse de futur, puis racontez en une phrase ce que cela change pour la sortie d\'emploi fonctionnel.</div>'
+   +'<p style="font-weight:700;color:var(--teal);font-size:15px;margin-bottom:12px">'+esc(st.dfPrompt||"Et si, en 2030...")+'</p>'
+   +'<div class="row" style="align-items:flex-start"><div style="flex:1;min-width:160px"><label>Signal faible observé aujourd\'hui'+help("Un fait ou une tendance discrète mais réelle, déjà observable, qui pourrait s\'amplifier d\'ici 2030. Pas une prédiction : une amorce concrète.")+'</label><input id="dfSig" type="text" maxlength="140"></div>'
+   +'<div style="flex:1;min-width:160px"><label>Hypothèse « Et si... »'+help("Un futur imaginé à partir du signal. Formulez en une phrase commençant par « Et si... » qui pousse l\'idée à sa logique.","right")+'</label><input id="dfHyp" type="text" maxlength="140"></div></div>'
+   +'<details class="sigbox" id="dfSigBox"><summary>💡 Besoin d\'inspiration ? Signaux faibles à explorer</summary><div class="sigchips">'
+   + CONTENT.designFiction.signauxFaibles.map(s=>'<button class="sigchip" data-sig="'+esc(s)+'">'+esc(s)+'</button>').join("")
+   +'</div></details>'
+   +'<div style="margin:8px 0"><label>Conséquence, en une phrase'+help("Ce que cette hypothèse changerait concrètement pour la préparation des sorties d\'emploi fonctionnel. Restez factuel, en une phrase.")+'</label><textarea id="dfRec" maxlength="240"></textarea></div>'
+   +'<button class="btn prim sm" id="dfAdd">Ajouter ce scénario</button>'
+   +'<h3>Scénarios du groupe</h3><div id="dfList">'
+   + (cards.length?cards.map(c=>'<div class="dfcard"><div class="lab">Signal</div><div class="val">'+esc(c.sig)+'</div><div class="lab">Et si</div><div class="val">'+esc(c.hyp)+'</div><div class="lab">Conséquence</div><div class="val">'+esc(c.rec)+'</div><div class="who" style="font-size:10px;color:var(--mut)">pavillon '+esc(c.by)+'</div></div>').join(""):'<p class="hint">Aucun scénario pour l\'instant.</p>')
+   +'</div></div>';
+  return h;
+}
+
+/* ---- D2. Codéveloppement ---- */
+function viewCodev(st){
+  const phase = st.cvPhase||0;
+  const client = (st.cvClient||"").toLowerCase();
+  const isClient = client && pseudo.toLowerCase()===client;
+  const d = (room&&room.data&&room.data.codev)||{};
+  const questions = listOf(d.questions);
+  const suggestions = listOf(d.suggestions);
+  let h='<div class="panel"><h2>Codéveloppement</h2>'
+   +'<div class="help">Une personne expose une situation réelle de sortie d\'emploi fonctionnel. Le groupe questionne, puis propose. '+(st.cvClient?('Exposant : <b>'+esc(st.cvClient)+'</b>.'):'En attente de la désignation de l\'exposant par l\'animateur.')+'</div>'
+   +'<p class="hint" style="font-weight:700;color:var(--teal)">Étape '+(phase+1)+' / 5 : '+esc(CODEV_PHASES[phase])+'</p>';
+  /* exposé */
+  h+='<h3>1. La situation exposée'+help("L\'exposant décrit en quelques phrases une situation réelle qu\'il vit ou anticipe (sortie d\'emploi fonctionnel). Factuel, anonyme si nécessaire, sans solution déjà arrêtée.")+'</h3>';
+  if(isClient && phase<=1){
+    h+='<div class="row" style="align-items:flex-start"><textarea id="cvExpose" maxlength="700" placeholder="Décrivez la situation">'+esc(d.expose||"")+'</textarea></div><button class="btn prim sm" id="cvExposeSave">Enregistrer mon exposé</button>';
+  } else {
+    h+='<div class="item">'+(d.expose?esc(d.expose):'<span class="hint">En attente de l\'exposé.</span>')+'</div>';
+  }
+  /* questions */
+  h+='<h3>2. Questions de clarification'+help("Posez des questions ouvertes pour mieux comprendre la situation. À ce stade, on cherche à clarifier, pas à conseiller.")+'</h3>';
+  if(phase===1){ h+='<div class="row"><input id="cvQ" type="text" maxlength="200" placeholder="Votre question" data-go="cvQAdd"><button class="btn prim sm" id="cvQAdd">Poser</button></div>'; }
+  h+='<div id="cvQList" style="margin-top:8px">'+(questions.length?questions.map(q=>'<div class="item">'+esc(q.text)+'<div class="who">'+esc(q.by)+'</div></div>').join(""):'<p class="hint">Aucune question.</p>')+'</div>';
+  /* contrat */
+  h+='<h3>3. La demande (contrat)'+help("L\'exposant formule précisément ce sur quoi il attend l\'avis du groupe. Une question, un dilemme, un point d\'arbitrage : pas tout en même temps.")+'</h3>';
+  if(isClient && phase>=2){ h+='<div class="row" style="align-items:flex-start"><textarea id="cvContrat" maxlength="400" placeholder="Sur quoi voulez-vous l\'avis du groupe ?">'+esc(d.contrat||"")+'</textarea></div><button class="btn prim sm" id="cvContratSave">Enregistrer la demande</button>'; }
+  else { h+='<div class="item">'+(d.contrat?esc(d.contrat):'<span class="hint">En attente de la demande.</span>')+'</div>'; }
+  /* suggestions */
+  h+='<h3>4. Suggestions du groupe'+help("Proposez sans imposer : « à votre place, je... », « avez-vous envisagé... ». Restez orienté vers la demande formulée à l\'étape 3.")+'</h3>';
+  if(phase===3){ h+='<div class="row"><input id="cvS" type="text" maxlength="220" placeholder="Votre suggestion" data-go="cvSAdd"><button class="btn prim sm" id="cvSAdd">Proposer</button></div>'; }
+  h+='<div id="cvSList" style="margin-top:8px">'+(suggestions.length?suggestions.map(s=>'<div class="item">'+esc(s.text)+'<div class="who">'+esc(s.by)+'</div></div>').join(""):'<p class="hint">Aucune suggestion.</p>')+'</div>';
+  /* plan */
+  h+='<h3>5. Plan d\'action'+help("L\'exposant synthétise ce qu\'il retient et indique deux ou trois actions concrètes qu\'il compte mettre en oeuvre. Bref, daté quand c\'est possible.")+'</h3>';
+  if(isClient && phase>=4){ h+='<div class="row" style="align-items:flex-start"><textarea id="cvPlan" maxlength="500" placeholder="Ce que je retiens et compte mettre en oeuvre">'+esc(d.plan||"")+'</textarea></div><button class="btn prim sm" id="cvPlanSave">Enregistrer le plan</button>'; }
+  else { h+='<div class="item">'+(d.plan?esc(d.plan):'<span class="hint">En attente de la synthèse.</span>')+'</div>'; }
+  return h+'</div>';
+}
+
+/* ---- D3. Six chapeaux ---- */
+function viewHats(st){
+  const hat = st.hat || HATS[0].id;
+  const ht = HATS.find(x=>x.id===hat)||HATS[0];
+  const all = dataList("sixchapeaux");
+  const suj = CONTENT.sixChapeaux.sujets[st.hatSujet];
+  let h='<div class="panel"><h2>Les six chapeaux'+(suj?(' · '+esc(suj.titre)):'')+'</h2>'
+   +'<div class="help">Tout le groupe réfléchit sous le même angle au même moment. Angle en cours, défini par l\'animateur : <b style="color:'+ht.c+'">'+esc(ht.t)+'</b>.</div>';
+  if(suj&&suj.consignes[hat])h+='<div class="consigne"><div class="ct">Consigne · '+esc(ht.t)+'</div>'+esc(suj.consignes[hat])+'</div>';
+  h+='<div class="row" style="align-items:flex-end"><div style="flex:1;min-width:200px"><label>Contribution'+help("Restez strictement dans l\'angle du chapeau en cours. Une seule idée à la fois, courte. Les autres angles viendront après.")+'</label><input id="hatTxt" type="text" maxlength="220" placeholder="Votre contribution sous l\'angle « '+esc(ht.t)+' »" data-go="hatAdd"></div><button class="btn prim sm" id="hatAdd">Ajouter</button></div>'
+   +'<div class="cols g3" style="margin-top:14px" id="hatCols">';
+  HATS.forEach(x=>{
+    const items=all.filter(c=>c.hat===x.id);
+    h+='<div class="col" style="--ac:'+x.c+'"><h4 style="color:'+x.c+';border-color:'+x.c+'">'+esc(x.t)+(items.length?'<span class="count">'+items.length+'</span>':'')+'</h4>';
+    items.forEach(c=>{ h+='<div class="item" style="--ac:'+x.c+'">'+esc(c.text)+'<div class="who">'+esc(c.by)+'</div></div>'; });
+    h+='</div>';
+  });
+  return h+'</div></div>';
+}
+
+/* ---- D4. Débat mouvant ---- */
+function viewDebate(st){
+  const d=(room&&room.data&&room.data.debatmouvant)||{};
+  const positions=d.positions||{};
+  const args=listOf(d.args);
+  const mine=positions[uid]?positions[uid].stance:null;
+  const counts={pour:0,contre:0,nuance:0};
+  Object.values(positions).forEach(p=>{ if(counts[p.stance]!=null)counts[p.stance]++; });
+  const tot=Math.max(1,counts.pour+counts.contre+counts.nuance);
+  let h='<div class="panel"><h2>Débat mouvant</h2>'
+   +'<div class="help">Positionnez-vous, puis argumentez. Vous pouvez changer d\'avis à tout moment.</div>'
+   +'<p style="font-weight:700;color:var(--teal);font-size:15px;margin-bottom:6px">'+esc(st.dbAff||"...")+'</p>'
+   +'<p class="hint" style="margin-top:8px;font-size:12px">Votre position'+help("« D\'accord » et « Pas d\'accord » assument une thèse pour le débat. « Nuancé » : vous voyez les deux côtés. Le décompte se met à jour en direct.")+'</p>'
+   +'<div class="stancebtns">'
+   +'<button class="stbtn pour'+(mine==="pour"?" on":"")+'" data-st="pour">Plutôt d\'accord</button>'
+   +'<button class="stbtn nuance'+(mine==="nuance"?" on":"")+'" data-st="nuance">Nuancé</button>'
+   +'<button class="stbtn contre'+(mine==="contre"?" on":"")+'" data-st="contre">Plutôt pas d\'accord</button></div>'
+   +'<div class="tally"><span>D\'accord</span><div class="track"><div class="fill" style="background:#1E7B3C;width:'+(counts.pour/tot*100)+'%"></div></div><b>'+counts.pour+'</b></div>'
+   +'<div class="tally"><span>Nuancé</span><div class="track"><div class="fill" style="background:var(--orange);width:'+(counts.nuance/tot*100)+'%"></div></div><b>'+counts.nuance+'</b></div>'
+   +'<div class="tally"><span>Pas d\'accord</span><div class="track"><div class="fill" style="background:#B3261E;width:'+(counts.contre/tot*100)+'%"></div></div><b>'+counts.contre+'</b></div>'
+   +'<div class="row" style="margin-top:12px;align-items:flex-end"><div style="flex:1;min-width:200px"><label>Argument'+help("Un argument court et concret qui soutient votre position actuelle. Pas une question, pas une nuance générale. Vous pouvez en poser plusieurs.")+'</label><input id="dbArg" type="text" maxlength="220" placeholder="Un argument (rattaché à votre position)" data-go="dbArgAdd"></div><button class="btn prim sm" id="dbArgAdd">Argumenter</button></div>'
+   +'<div class="cols g3" style="margin-top:12px">'
+   +'<div class="col" style="--ac:#1E7B3C"><h4 style="color:#1E7B3C;border-color:#1E7B3C">Pour</h4>'+args.filter(a=>a.stance==="pour").map(a=>'<div class="item" style="--ac:#1E7B3C">'+esc(a.text)+'<div class="who">'+esc(a.by)+'</div></div>').join("")+'</div>'
+   +'<div class="col" style="--ac:var(--orange)"><h4 style="color:#9a5b00;border-color:var(--orange)">Nuancé</h4>'+args.filter(a=>a.stance==="nuance").map(a=>'<div class="item" style="--ac:var(--orange)">'+esc(a.text)+'<div class="who">'+esc(a.by)+'</div></div>').join("")+'</div>'
+   +'<div class="col" style="--ac:#B3261E"><h4 style="color:#B3261E;border-color:#B3261E">Contre</h4>'+args.filter(a=>a.stance==="contre").map(a=>'<div class="item" style="--ac:#B3261E">'+esc(a.text)+'<div class="who">'+esc(a.by)+'</div></div>').join("")+'</div>'
+   +'</div></div>';
+  return h;
+}
+
+/* ---- D5. World café ---- */
+function viewCafe(st){
+  const tables=st.cafeTables||["Table 1","Table 2","Table 3"];
+  const d=(room&&room.data&&room.data.worldcafe)||{};
+  let h='<div class="panel"><h2>World café</h2>'
+   +'<div class="help">Trois tables, trois thèmes. Choisissez une table, déposez vos idées, puis changez de table quand l\'animateur le propose, pour croiser les regards.</div>'
+   +'<div class="row" style="margin-bottom:10px"><div style="flex:1;min-width:160px"><label>Votre table'+help("Choisissez la table où vous voulez déposer cette idée. Changez de table quand l\'animateur invite à tourner : croiser les angles est l\'intérêt du format.")+'</label><select id="cfTable">'
+   + tables.map((t,i)=>'<option value="'+i+'">Table '+(i+1)+(t?' : '+esc(t):'')+'</option>').join("")
+   +'</select></div><div style="flex:2;min-width:200px"><label>Votre idée'+help("Une idée par dépôt, courte, en réponse au thème de la table choisie. Vous pouvez prolonger une idée déjà posée par les précédents passages.")+'</label><input id="cfTxt" type="text" maxlength="220" data-go="cfAdd"></div><button class="btn prim sm" id="cfAdd" style="align-self:flex-end">Déposer</button></div>'
+   +'<div class="cols g3">';
+  for(let i=0;i<3;i++){
+    const items=listOf(d[i]);
+    h+='<div class="col"><h4>'+esc(tables[i]||("Table "+(i+1)))+(items.length?'<span class="count">'+items.length+'</span>':'')+'</h4>'
+      + (items.length?items.map(x=>'<div class="item">'+esc(x.text)+'<div class="who">'+esc(x.by)+'</div></div>').join(""):'<p class="hint">Vide.</p>')
+      + '</div>';
+  }
+  return h+'</div></div>';
+}
+
+/* ---- D6. Cartographie d'arguments ---- */
+function viewCarto(st){
+  const list=dataList("cartoarg");
+  const roots=list.filter(a=>!a.parent||a.parent==="root");
+  let h='<div class="panel"><h2>Cartographie d\'arguments</h2>'
+   +'<div class="help">Construisez l\'arbre du pour et du contre. Un argument peut répondre à la thèse, ou préciser un argument déjà posé.</div>'
+   +'<div class="tree"><div class="root">'+esc(st.caThesis||"Thèse à définir")+'</div>';
+  if(roots.length){
+    roots.forEach(r=>{
+      h+='<div class="arg '+(r.type==="pour"?"pour":"contre")+'">'+(r.type==="pour"?"Pour : ":"Contre : ")+esc(r.text)+'<div class="who">'+esc(r.by)+'</div></div>';
+      list.filter(c=>c.parent===r.id).forEach(c=>{
+        h+='<div class="arg lvl2 '+(c.type==="pour"?"pour":"contre")+'">'+(c.type==="pour"?"Pour : ":"Contre : ")+esc(c.text)+'<div class="who">'+esc(c.by)+'</div></div>';
+      });
+    });
+  } else { h+='<p class="hint">Aucun argument pour l\'instant.</p>'; }
+  h+='</div><h3>Ajouter un argument</h3>'
+   +'<div class="row" style="align-items:flex-start"><div style="min-width:120px"><label>Sens'+help("« Pour » : votre argument soutient la thèse (ou le parent choisi). « Contre » : il l\'affaiblit ou la limite.")+'</label><select id="caType"><option value="pour">Pour</option><option value="contre">Contre</option></select></div>'
+   +'<div style="min-width:180px"><label>Se rattache à'+help("« La thèse » pour un argument de premier niveau. Choisissez un argument existant pour le préciser, le nuancer ou le contredire (deuxième niveau).")+'</label><select id="caParent"><option value="root">La thèse</option>'
+   + roots.map(r=>'<option value="'+r.id+'">'+(r.type==="pour"?"[Pour] ":"[Contre] ")+esc(r.text.slice(0,40))+'</option>').join("")
+   +'</select></div>'
+   +'<div style="flex:1;min-width:200px"><label>Argument'+help("Énoncé court et autonome (compréhensible sans son contexte). Si vous voulez nuancer, créez plutôt un argument enfant rattaché au premier.")+'</label><input id="caTxt" type="text" maxlength="220" data-go="caAdd"></div>'
+   +'<button class="btn prim sm" id="caAdd" style="align-self:flex-end">Ajouter</button></div>';
+  return h+'</div>';
+}
+
+/* ============================================================
+   9. LIAISONS DES VUES
+   ============================================================ */
+function bindActive(active,st){
+  if(active==="designfiction"){
+    const b=document.getElementById("dfAdd");
+    if(b)b.addEventListener("click",()=>{
+      const eSig=document.getElementById("dfSig"),eHyp=document.getElementById("dfHyp"),eRec=document.getElementById("dfRec");
+      const sig=eSig.value.trim(), hyp=eHyp.value.trim(), rec=eRec.value.trim();
+      if(!sig&&!hyp&&!rec)return;
+      eSig.value="";eHyp.value="";eRec.value="";
+      DB.push(basePath()+"/data/designfiction",{sig,hyp,rec,by:pseudo,ts:Date.now()}); status("Scénario ajouté",true);
+      confetti(); if(handRaised())DB.remove(basePath()+"/hands/"+uid);
+    });
+    root.querySelectorAll("[data-sig]").forEach(c=>c.addEventListener("click",()=>{
+      const el=document.getElementById("dfSig"); if(el){ el.value=c.dataset.sig; el.focus(); }
+    }));
+  }
+  if(active==="codev"){
+    const save=(field,id)=>{ const el=document.getElementById(id); if(el)el.parentElement; };
+    const ex=document.getElementById("cvExposeSave"); if(ex)ex.addEventListener("click",()=>{ DB.set(basePath()+"/data/codev/expose",document.getElementById("cvExpose").value.trim()); status("Exposé enregistré",true); });
+    const ct=document.getElementById("cvContratSave"); if(ct)ct.addEventListener("click",()=>{ DB.set(basePath()+"/data/codev/contrat",document.getElementById("cvContrat").value.trim()); status("Demande enregistrée",true); });
+    const pl=document.getElementById("cvPlanSave"); if(pl)pl.addEventListener("click",()=>{ DB.set(basePath()+"/data/codev/plan",document.getElementById("cvPlan").value.trim()); status("Plan enregistré",true); });
+    const qa=document.getElementById("cvQAdd"); if(qa)qa.addEventListener("click",()=>{ const el=document.getElementById("cvQ"); const t=el.value.trim(); if(!t)return; el.value=""; DB.push(basePath()+"/data/codev/questions",{text:t,by:pseudo,ts:Date.now()}); });
+    const sa=document.getElementById("cvSAdd"); if(sa)sa.addEventListener("click",()=>{ const el=document.getElementById("cvS"); const t=el.value.trim(); if(!t)return; el.value=""; DB.push(basePath()+"/data/codev/suggestions",{text:t,by:pseudo,ts:Date.now()}); });
+  }
+  if(active==="sixchapeaux"){
+    const b=document.getElementById("hatAdd");
+    if(b)b.addEventListener("click",()=>{ const el=document.getElementById("hatTxt"); const t=el.value.trim(); if(!t)return; el.value=""; DB.push(basePath()+"/data/sixchapeaux",{hat:(st.hat||HATS[0].id),text:t,by:pseudo,ts:Date.now()}); confetti(); if(handRaised())DB.remove(basePath()+"/hands/"+uid); });
+  }
+  if(active==="debatmouvant"){
+    root.querySelectorAll("[data-st]").forEach(b=>b.addEventListener("click",()=>{ DB.set(basePath()+"/data/debatmouvant/positions/"+uid,{stance:b.dataset.st,by:pseudo}); }));
+    const a=document.getElementById("dbArgAdd");
+    if(a)a.addEventListener("click",()=>{ const el=document.getElementById("dbArg"); const t=el.value.trim(); const pos=(room&&room.data&&room.data.debatmouvant&&room.data.debatmouvant.positions&&room.data.debatmouvant.positions[uid])?room.data.debatmouvant.positions[uid].stance:"nuance"; if(!t)return; el.value=""; DB.push(basePath()+"/data/debatmouvant/args",{stance:pos,text:t,by:pseudo,ts:Date.now()}); confetti(); if(handRaised())DB.remove(basePath()+"/hands/"+uid); });
+  }
+  if(active==="worldcafe"){
+    const b=document.getElementById("cfAdd");
+    if(b)b.addEventListener("click",()=>{ const i=document.getElementById("cfTable").value; const t=document.getElementById("cfTxt").value.trim(); if(!t)return; DB.push(basePath()+"/data/worldcafe/"+i,{text:t,by:pseudo,ts:Date.now()}); document.getElementById("cfTxt").value=""; confetti(); if(handRaised())DB.remove(basePath()+"/hands/"+uid); });
+  }
+  if(active==="cartoarg"){
+    const b=document.getElementById("caAdd");
+    if(b)b.addEventListener("click",()=>{ const ty=document.getElementById("caType").value; const pa=document.getElementById("caParent").value; const t=document.getElementById("caTxt").value.trim(); if(!t)return; DB.push(basePath()+"/data/cartoarg",{type:ty,parent:pa,text:t,by:pseudo,ts:Date.now()}); document.getElementById("caTxt").value=""; confetti(); if(handRaised())DB.remove(basePath()+"/hands/"+uid); });
+  }
+}
+
+/* ============================================================
+   10. UTILITAIRES DONNEES + EXPORT
+   ============================================================ */
+function listOf(obj){ if(!obj||typeof obj!=="object")return []; return Object.keys(obj).map(k=>Object.assign({id:k},obj[k])).filter(x=>x&&typeof x==="object"&&("text" in x||"sig" in x)).sort((a,b)=>(a.ts||0)-(b.ts||0)); }
+function dataList(method){ const d=(room&&room.data&&room.data[method])||{}; return Object.keys(d).map(k=>Object.assign({id:k},d[k])).filter(x=>x&&typeof x==="object"&&(x.ts!==undefined)).sort((a,b)=>(a.ts||0)-(b.ts||0)); }
+
+function doExport(){
+  const out={ mission:"016714-01", outil:"Cap 2028", salle:roomId, date:new Date().toISOString(),
+    participants:Object.values((room&&room.participants)||{}).map(p=>p.pseudo),
+    etat:(room&&room.state)||{}, donnees:(room&&room.data)||{} };
+  const txt=JSON.stringify(out,null,1);
+  const box=document.getElementById("exportBox"); if(box){ box.hidden=false; box.value=txt; box.select(); }
+  try{ const blob=new Blob([txt],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="cap2028_"+roomId+"_"+Date.now()+".json"; a.click(); }catch(e){}
+  status("Export généré et téléchargé",true);
+}
+
+/* ============================================================
+   11. DEMARRAGE
+   ============================================================ */
+(async function(){
+  await initBackend();
+  const enter=()=>{ if(roomId){ renderTop(); joinRoom(); } else { renderLobby(); } };
+  if(gateOk()) enter(); else renderGate(enter);
+})();
+</script>
+</body>
+</html>
