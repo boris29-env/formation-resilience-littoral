@@ -87,6 +87,11 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
+    cursor: pointer;
+  }
+  .card:hover {
+    border-color: #1F5C5C;
+    box-shadow: 0 1px 4px rgba(31,92,92,0.25);
   }
   .card .photo {
     width: 130px;
@@ -154,6 +159,77 @@
     section.section-block { page-break-before: always; }
     section.section-block:first-of-type { page-break-before: auto; }
   }
+
+  /* Fiche agent (modale) : ouverte au clic sur une carte */
+  #fiche-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 30, 30, 0.55);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  #fiche-overlay.open { display: flex; }
+  #fiche-card {
+    background: #fff;
+    border-radius: 8px;
+    max-width: 440px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px;
+    position: relative;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    text-align: center;
+  }
+  #fiche-card .fiche-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    border: none;
+    background: none;
+    font-size: 20px;
+    line-height: 1;
+    color: #777;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  #fiche-card .fiche-close:hover { color: #1F5C5C; }
+  #fiche-card .photo, #fiche-card .photo-placeholder {
+    width: 220px;
+    height: 146px;
+    margin: 0 auto 12px auto;
+  }
+  #fiche-card .fiche-name {
+    font-size: 19px;
+    font-weight: bold;
+    color: #1F5C5C;
+  }
+  #fiche-card .fiche-age { font-size: 14px; font-weight: normal; color: #666; }
+  #fiche-card .badge { max-width: 160px; margin: 8px auto; }
+  #fiche-card .fiche-section {
+    font-size: 12.5px;
+    color: #4A7A7A;
+    margin-top: 6px;
+  }
+  #fiche-card .fiche-row {
+    text-align: left;
+    font-size: 13px;
+    margin-top: 12px;
+    border-top: 1px solid #EEE;
+    padding-top: 10px;
+  }
+  #fiche-card .fiche-row .label {
+    font-weight: bold;
+    color: #555;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    display: block;
+    margin-bottom: 2px;
+  }
 </style>
 </head>
 <body>
@@ -172,6 +248,13 @@
     </div>
   </div>
   <div id="sections"></div>
+</div>
+
+<div id="fiche-overlay" onclick="if (event.target === this) window.__closeFiche()">
+  <div id="fiche-card">
+    <button class="fiche-close" title="Fermer" onclick="window.__closeFiche()">&times;</button>
+    <div id="fiche-content"></div>
+  </div>
 </div>
 
 <script>
@@ -251,7 +334,7 @@ function personCard(p) {
 
   const ageHtml = p.age ? `<span class="age"> · ${escapeHtml(p.age)} ans</span>` : '';
 
-  return `<div class="card">
+  return `<div class="card" onclick="window.__openFiche(${p.id})" title="Ouvrir la fiche de ${escapeHtml(nomComplet)}">
     ${photoHtml}
     <div class="name">${escapeHtml(nomComplet)}${ageHtml}</div>
     ${badgeHtml}
@@ -281,7 +364,15 @@ function render(rows) {
       grade: String(r.Grade || '').trim(),
       photo: String(r.Photo_url || '').trim(),
       age: (r.Age === null || r.Age === undefined || r.Age === '') ? '' : String(r.Age).trim(),
+      id: r.id,
     }));
+
+  // Index par id, pour que le clic sur une carte puisse retrouver la fiche
+  // complète de la personne sans dépendre d'une vue Grist liée.
+  window.__peopleById = {};
+  for (const p of people) {
+    if (p.id) window.__peopleById[p.id] = p;
+  }
 
   const groups = {};
   for (const p of people) {
@@ -353,9 +444,90 @@ grist.ready({
   ],
 });
 
+// Construit le contenu HTML de la fiche agrandie à partir des données déjà
+// reçues par le widget (pas d'appel Grist supplémentaire nécessaire).
+function ficheContentHtml(p) {
+  const nomComplet = `${p.prenom} ${(p.prenom||'').toUpperCase() === p.prenom ? p.nom : String(p.nom||'').toUpperCase()}`;
+  const photoHtml = p.photo
+    ? `<img class="photo" src="${escapeHtml(p.photo)}" alt="${escapeHtml(p.nom)}" onerror="this.outerHTML='<div class=&quot;photo-placeholder&quot;>(photo indisponible)</div>'">`
+    : `<div class="photo-placeholder">(pas de photo)</div>`;
+
+  let badgeHtml = '';
+  if (p.groupe) {
+    const color = GROUP_COLORS[p.groupe] || 'var(--group-other)';
+    const label = /^I{1,3}$/.test(p.groupe) ? `Groupe ${p.groupe}` : p.groupe;
+    badgeHtml = `<div class="badge" style="background:${color}">${escapeHtml(label)}</div>`;
+  }
+
+  const sectionLabel = SECTION_NAMES[p.section] || p.section || '';
+  const sectionHtml = sectionLabel ? `<div class="fiche-section">${escapeHtml(sectionLabel)}</div>` : '';
+
+  const { annee, mois } = parseDebut(p.debut);
+  let promoHtml = '';
+  if (annee || p.numeroPromo) {
+    const dateArrivee = annee ? (mois ? `${mois} ${annee}` : annee) : '';
+    const label = p.numeroPromo
+      ? `Promo n°${p.numeroPromo}${dateArrivee ? ' — arrivée IGEDD : ' + dateArrivee : ''}`
+      : `Promo (arrivée IGEDD) : ${dateArrivee}`;
+    promoHtml = `<div class="fiche-row"><span class="label">Arrivée</span>${escapeHtml(label)}</div>`;
+  }
+
+  const corpsGrade = [p.corps, p.grade].filter(Boolean).join(' — ');
+  const corpsGradeHtml = corpsGrade ? `<div class="fiche-row"><span class="label">Corps / grade</span>${escapeHtml(corpsGrade)}</div>` : '';
+
+  const compHtml = (p.c1 || p.c2)
+    ? `<div class="fiche-row"><span class="label">Compétences clés</span>${escapeHtml([p.c1, p.c2].filter(Boolean).join(' ; '))}</div>`
+    : '';
+
+  const incompletHtml = (!p.section && !p.c1)
+    ? `<div class="fiche-row" style="color:#B00000;font-style:italic;">Données incomplètes pour cet agent.</div>`
+    : '';
+
+  const ageHtml = p.age ? `<span class="fiche-age"> · ${escapeHtml(p.age)} ans</span>` : '';
+
+  return `
+    ${photoHtml}
+    <div class="fiche-name">${escapeHtml(nomComplet)}${ageHtml}</div>
+    ${sectionHtml}
+    ${badgeHtml}
+    ${promoHtml}
+    ${corpsGradeHtml}
+    ${compHtml}
+    ${incompletHtml}
+  `;
+}
+
+// Clic sur une carte : ouvre une fiche agrandie dans une fenêtre modale, à
+// partir des données déjà présentes côté widget (aucune vue Grist liée n'est
+// nécessaire). NB : un test en direct a montré qu'un widget personnalisé ne
+// peut pas être choisi comme source "Sélectionner par" dans cette instance
+// Grist — une vue Fiche liée n'était donc pas possible ; les deux appels
+// ci-dessous restent en complément, au cas où, mais sans effet visible garanti.
+window.__openFiche = function (rowId) {
+  if (!rowId) return;
+  try { grist.setCursorPos({ rowId: rowId }); } catch (e) { /* ignore */ }
+  try { grist.setSelectedRows([rowId]); } catch (e) { /* ignore */ }
+
+  const p = window.__peopleById && window.__peopleById[rowId];
+  if (!p) return;
+  document.getElementById('fiche-content').innerHTML = ficheContentHtml(p);
+  document.getElementById('fiche-overlay').classList.add('open');
+};
+
+window.__closeFiche = function () {
+  document.getElementById('fiche-overlay').classList.remove('open');
+};
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') window.__closeFiche();
+});
+
 grist.onRecords((rows) => {
   const mapped = grist.mapColumnNames(rows) || rows;
-  render(mapped);
+  // grist.mapColumnNames ne conserve pas forcément l'id de ligne : on le
+  // reprend depuis les lignes brutes (même ordre, même longueur).
+  const withIds = mapped.map((m, i) => Object.assign({}, m, { id: rows[i] && rows[i].id }));
+  render(withIds);
 });
 </script>
 </body>
