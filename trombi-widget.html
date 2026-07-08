@@ -61,6 +61,17 @@
     padding-bottom: 4px;
     margin: 0 0 10px 0;
   }
+  .promo-block {
+    margin: 14px 0 18px 0;
+  }
+  .promo-block h3 {
+    font-size: 12.5px;
+    font-weight: bold;
+    color: #4A7A7A;
+    border-bottom: 1px solid #B9D3D3;
+    padding-bottom: 3px;
+    margin: 0 0 8px 0;
+  }
   .grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -147,7 +158,7 @@
 <div id="app" style="display:none">
   <div id="toolbar">
     <div>
-      <h1>Trombinoscope IGEDD — emplois fonctionnels</h1>
+      <h1>Trombinoscope IGEDD — Inspecteurs</h1>
       <div class="meta" id="meta"></div>
     </div>
     <div>
@@ -273,21 +284,41 @@ function render(rows) {
     return ka[0] - kb[0] || ka[1] - kb[1] || String(ka[2]).localeCompare(String(kb[2]));
   });
 
-  // Tri par numéro de promo (0 si absent), puis alphabétique par Nom.
-  function memberSortCompare(a, b) {
-    const pa = a.numeroPromo ? parseInt(a.numeroPromo, 10) || 0 : 0;
-    const pb = b.numeroPromo ? parseInt(b.numeroPromo, 10) || 0 : 0;
-    if (pa !== pb) return pa - pb;
-    return a.nom.localeCompare(b.nom);
+  function promoNum(p) {
+    return p.numeroPromo ? (parseInt(p.numeroPromo, 10) || 0) : 0;
+  }
+  function promoLabel(n) {
+    return n ? `Promo n°${n}` : 'Promo 0 - transfert de statut';
+  }
+
+  // Regroupe les membres d'une section en sous-parties par promo (promo 0 = transfert
+  // de statut, affichée en premier par ordre chronologique), triées par numéro
+  // croissant puis alphabétiquement par Nom à l'intérieur de chaque sous-partie.
+  function promoGroups(members) {
+    const byPromo = {};
+    for (const p of members) {
+      const n = promoNum(p);
+      (byPromo[n] = byPromo[n] || []).push(p);
+    }
+    const ns = Object.keys(byPromo).map(Number).sort((a, b) => a - b);
+    return ns.map(n => ({
+      n, label: promoLabel(n),
+      members: byPromo[n].slice().sort((a, b) => a.nom.localeCompare(b.nom)),
+    }));
   }
 
   const sectionsEl = document.getElementById('sections');
   sectionsEl.innerHTML = orderedSections.map(sec => {
-    const members = groups[sec].slice().sort(memberSortCompare);
+    const members = groups[sec];
     const label = SECTION_NAMES[sec] || sec || 'Section non renseignée';
+    const groupsHtml = promoGroups(members).map(g => `
+      <div class="promo-block">
+        <h3>${escapeHtml(g.label)} (${g.members.length})</h3>
+        <div class="grid">${g.members.map(personCard).join('')}</div>
+      </div>`).join('');
     return `<section class="section-block">
       <h2>${escapeHtml(label)} (${members.length})</h2>
-      <div class="grid">${members.map(personCard).join('')}</div>
+      ${groupsHtml}
     </section>`;
   }).join('');
 
