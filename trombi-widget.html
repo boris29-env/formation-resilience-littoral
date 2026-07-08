@@ -230,6 +230,17 @@
     display: block;
     margin-bottom: 2px;
   }
+  #fiche-card .fiche-edit-link {
+    display: inline-block;
+    background: #1F5C5C;
+    color: #fff;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: bold;
+    padding: 8px 14px;
+    border-radius: 4px;
+  }
+  #fiche-card .fiche-edit-link:hover { background: #164545; }
 </style>
 </head>
 <body>
@@ -444,6 +455,19 @@ grist.ready({
   ],
 });
 
+// Lien d'ancre Grist natif vers la fiche détail éditable de la page "Données"
+// (section "Fiche détail inspecteur", id de vue 21, table Inspecteurs, page p/1).
+// Format vérifié en direct : #a1.s<idSection>.r<idLigne> ouvre cette fiche en
+// incrustation par-dessus la page courante, avec tous les champs modifiables
+// comme sur la page Données. Cet id de section est propre à ce document Grist ;
+// si la fiche "Fiche détail inspecteur" est un jour supprimée puis recréée sur
+// la page Données, son id changera et ce lien devra être mis à jour.
+const DONNEES_FICHE_ANCHOR = 'https://grist.numerique.gouv.fr/o/docs/sWocxBfn2EBB/Emplois-fonctionnels-IGEDD/p/1#a1.s21.r';
+
+function ficheEditUrl(rowId) {
+  return DONNEES_FICHE_ANCHOR + rowId;
+}
+
 // Construit le contenu HTML de la fiche agrandie à partir des données déjà
 // reçues par le widget (pas d'appel Grist supplémentaire nécessaire).
 function ficheContentHtml(p) {
@@ -485,6 +509,13 @@ function ficheContentHtml(p) {
 
   const ageHtml = p.age ? `<span class="fiche-age"> · ${escapeHtml(p.age)} ans</span>` : '';
 
+  const editUrl = p.id ? ficheEditUrl(p.id) : '';
+  const editLinkHtml = editUrl
+    ? `<div class="fiche-row" style="border-top:none;text-align:center;padding-top:14px;">
+         <a class="fiche-edit-link" href="${escapeHtml(editUrl)}" target="_top" rel="noopener">Ouvrir la fiche complète (modifiable) →</a>
+       </div>`
+    : '';
+
   return `
     ${photoHtml}
     <div class="fiche-name">${escapeHtml(nomComplet)}${ageHtml}</div>
@@ -494,6 +525,7 @@ function ficheContentHtml(p) {
     ${corpsGradeHtml}
     ${compHtml}
     ${incompletHtml}
+    ${editLinkHtml}
   `;
 }
 
