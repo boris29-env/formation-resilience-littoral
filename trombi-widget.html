@@ -130,6 +130,16 @@
     margin-top: 4px;
     border-radius: 2px;
   }
+  .card .badge-accompagner {
+    font-size: 10px;
+    font-weight: bold;
+    padding: 3px 8px;
+    margin-top: 4px;
+    border-radius: 10px;
+    background: #C0392B;
+    color: #fff;
+    display: inline-block;
+  }
   .card .promo {
     font-size: 10.5px;
     font-style: italic;
@@ -345,10 +355,15 @@ function personCard(p) {
 
   const ageHtml = p.age ? `<span class="age"> · ${escapeHtml(p.age)} ans</span>` : '';
 
+  const accompagnerHtml = p.aAccompagner
+    ? `<div class="badge-accompagner" title="Fin de détachement à échéance proche, sans départ en retraite : personne à accompagner vers un nouveau poste.">À accompagner</div>`
+    : '';
+
   return `<div class="card" onclick="window.__openFiche(${p.id})" title="Ouvrir la fiche de ${escapeHtml(nomComplet)}">
     ${photoHtml}
     <div class="name">${escapeHtml(nomComplet)}${ageHtml}</div>
     ${badgeHtml}
+    ${accompagnerHtml}
     ${promoHtml}
     ${corpsGradeHtml}
     ${compHtml}
@@ -375,6 +390,7 @@ function render(rows) {
       grade: String(r.Grade || '').trim(),
       photo: String(r.Photo_url || '').trim(),
       age: (r.Age === null || r.Age === undefined || r.Age === '') ? '' : String(r.Age).trim(),
+      aAccompagner: r.A_accompagner === true,
       id: r.id,
     }));
 
@@ -452,6 +468,7 @@ grist.ready({
     { name: 'Corps', title: 'Corps', type: 'Text', optional: true },
     { name: 'Grade', title: 'Grade', type: 'Text', optional: true },
     { name: 'Photo_url', title: 'Photo_url', type: 'Text', optional: true },
+    { name: 'A_accompagner', title: 'A_accompagner', type: 'Bool', optional: true },
   ],
 });
 
@@ -509,6 +526,10 @@ function ficheContentHtml(p) {
 
   const ageHtml = p.age ? `<span class="fiche-age"> · ${escapeHtml(p.age)} ans</span>` : '';
 
+  const accompagnerHtml = p.aAccompagner
+    ? `<div class="badge-accompagner" title="Fin de détachement à échéance proche, sans départ en retraite : personne à accompagner vers un nouveau poste.">À accompagner</div>`
+    : '';
+
   const editUrl = p.id ? ficheEditUrl(p.id) : '';
   const editLinkHtml = editUrl
     ? `<div class="fiche-row" style="border-top:none;text-align:center;padding-top:14px;">
@@ -521,6 +542,7 @@ function ficheContentHtml(p) {
     <div class="fiche-name">${escapeHtml(nomComplet)}${ageHtml}</div>
     ${sectionHtml}
     ${badgeHtml}
+    ${accompagnerHtml}
     ${promoHtml}
     ${corpsGradeHtml}
     ${compHtml}
