@@ -112,6 +112,11 @@
     font-size: 13px;
     margin-top: 6px;
   }
+  .card .age {
+    font-weight: normal;
+    color: #555;
+    font-size: 11.5px;
+  }
   .card .badge {
     font-size: 11px;
     font-weight: bold;
@@ -244,9 +249,11 @@ function personCard(p) {
     ? `<div class="incomplet">Données incomplètes</div>`
     : '';
 
+  const ageHtml = p.age ? `<span class="age"> · ${escapeHtml(p.age)} ans</span>` : '';
+
   return `<div class="card">
     ${photoHtml}
-    <div class="name">${escapeHtml(nomComplet)}</div>
+    <div class="name">${escapeHtml(nomComplet)}${ageHtml}</div>
     ${badgeHtml}
     ${promoHtml}
     ${corpsGradeHtml}
@@ -273,6 +280,7 @@ function render(rows) {
       corps: String(r.Corps || '').trim(),
       grade: String(r.Grade || '').trim(),
       photo: String(r.Photo_url || '').trim(),
+      age: (r.Age === null || r.Age === undefined || r.Age === '') ? '' : String(r.Age).trim(),
     }));
 
   const groups = {};
@@ -334,6 +342,7 @@ grist.ready({
     { name: 'Groupe', title: 'Groupe', type: 'Any', optional: true },
     { name: 'Statut', title: 'Statut', type: 'Any', optional: true },
     { name: 'Debut', title: 'Debut', type: 'Any', optional: true },
+    { name: 'Age', title: 'Age', type: 'Any', optional: true },
     { name: 'Numero_promo', title: 'Numero_promo', type: 'Any', optional: true },
     { name: 'Competence_cle_1', title: 'Competence_cle_1', type: 'Text', optional: true },
     { name: 'Competence_cle_2', title: 'Competence_cle_2', type: 'Text', optional: true },
