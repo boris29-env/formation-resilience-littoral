@@ -91,6 +91,43 @@
   .echeance{ font-size:10.5px; color:var(--gray); white-space:nowrap; }
   .echeance.late{ color:var(--c5b); }
   #empty{ text-align:center; color:var(--gray); padding:40px; font-size:13px; }
+  .card{ position:relative; }
+  .card .editHint{
+    position:absolute; top:6px; right:6px; font-size:10px; color:var(--gray);
+    opacity:0; transition:opacity .1s;
+  }
+  .card:hover .editHint{ opacity:1; }
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(20,20,25,.4);
+    display:flex; align-items:center; justify-content:center; z-index:1000;
+  }
+  .modal{
+    background:#fff; border-radius:10px; padding:18px 20px; width:320px; max-width:90vw;
+    box-shadow:0 12px 32px rgba(0,0,0,.25);
+  }
+  .modal h2{ font-size:14px; margin:0 0 4px 0; color:#1c1e21; }
+  .modal .modalSub{ font-size:11px; color:var(--gray); margin-bottom:14px; }
+  .modal .field{ margin-bottom:12px; }
+  .modal .field label{
+    display:block; font-size:10.5px; font-weight:700; color:#666; margin-bottom:4px;
+    text-transform:uppercase; letter-spacing:.3px;
+  }
+  .modal select{
+    width:100%; padding:6px 8px; border:1px solid #d7d9dd; border-radius:6px; font-size:13px; background:#fff;
+  }
+  .checkbox-list{
+    max-height:150px; overflow-y:auto; border:1px solid #e4e5e8; border-radius:6px; padding:4px 8px;
+  }
+  .checkbox-list label{
+    display:flex; align-items:center; gap:6px; font-size:12.5px; padding:4px 0; cursor:pointer;
+  }
+  .checkbox-list label:not(:last-child){ border-bottom:1px solid #f0f1f3; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
+  .modal-actions button{
+    border:none; border-radius:6px; padding:7px 14px; font-size:12.5px; cursor:pointer;
+  }
+  #modalCancel{ background:#eee; color:#333; }
+  #modalSave{ background:#26282c; color:#fff; }
 </style>
 </head>
 <body>
@@ -110,6 +147,25 @@
 <div id="board"></div>
 <div id="empty" style="display:none">Chargement…</div>
 
+<div id="modalOverlay" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <h2 id="modalTitle"></h2>
+    <div class="modalSub" id="modalSub"></div>
+    <div class="field">
+      <label>Pilote</label>
+      <select id="piloteSelect"></select>
+    </div>
+    <div class="field">
+      <label>Co-pilotes</label>
+      <div id="copiloteList" class="checkbox-list"></div>
+    </div>
+    <div class="modal-actions">
+      <button id="modalCancel">Annuler</button>
+      <button id="modalSave">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const STAGES = [
   {key:"à examiner",          label:"À examiner",          bg:"var(--c1)", bc:"var(--c1b)"},
@@ -121,9 +177,11 @@ const STAGES = [
 ];
 
 let agentsById = {};
+let agentsList = [];
 let items = [];
 let typeFilter = "all";
 let pilotFilterId = "";
+let currentItem = null;
 
 function decodeList(v){
   if (Array.isArray(v) && v[0] === "L") return v.slice(1);
@@ -173,6 +231,9 @@ async function loadData(){
 
   agentsById = {};
   toRows(agentsRaw).forEach(a => { agentsById[a.id] = a.NomComplet || "?"; });
+  agentsList = toRows(agentsRaw)
+    .map(a => ({id: a.id, name: a.NomComplet || "?"}))
+    .sort((a,b) => a.name.localeCompare(b.name));
 
   const dossiers = toRows(dossiersRaw).map(r => ({
     type: "Dossier",
@@ -261,7 +322,10 @@ function render(){
       const pilonom = it.pilote ? (agentsById[it.pilote] || "?") : "—";
       const copilNames = it.copilotes.map(id => agentsById[id] || "?").filter(Boolean);
 
+      card.title = "Cliquer pour modifier le pilote / les co-pilotes";
+
       card.innerHTML = `
+        <span class="editHint">✎</span>
         <div class="rowtop">
           <span class="tag ${it.type.toLowerCase()}">${it.type}</span>
           ${it.confidentiel ? '<span class="lock" title="Confidentiel">🔒</span>' : ""}
@@ -282,6 +346,7 @@ function render(){
         e.dataTransfer.setData("text/plain", JSON.stringify({table: it.table, id: it.id}));
       });
       card.addEventListener("dragend", () => card.classList.remove("dragging"));
+      card.addEventListener("click", () => openAssignModal(it));
 
       body.appendChild(card);
     });
@@ -331,6 +396,58 @@ document.getElementById("pilotFilter").addEventListener("change", e => {
   render();
 });
 document.getElementById("refreshBtn").addEventListener("click", loadData);
+
+function openAssignModal(item){
+  currentItem = item;
+  document.getElementById("modalTitle").textContent = escapeHtml(item.titre);
+  document.getElementById("modalSub").textContent = item.type + (item.sous ? " · " + item.sous : "");
+
+  const piloteSel = document.getElementById("piloteSelect");
+  piloteSel.innerHTML = '<option value="">— Aucun —</option>' +
+    agentsList.map(a => `<option value="${a.id}">${escapeHtml(a.name)}</option>`).join("");
+  piloteSel.value = item.pilote ? String(item.pilote) : "";
+
+  const copiloteList = document.getElementById("copiloteList");
+  copiloteList.innerHTML = agentsList.map(a => `
+    <label><input type="checkbox" value="${a.id}" ${item.copilotes.includes(a.id) ? "checked" : ""}> ${escapeHtml(a.name)}</label>
+  `).join("");
+
+  document.getElementById("modalOverlay").style.display = "flex";
+}
+
+function closeAssignModal(){
+  document.getElementById("modalOverlay").style.display = "none";
+  currentItem = null;
+}
+
+document.getElementById("modalCancel").addEventListener("click", closeAssignModal);
+document.getElementById("modalOverlay").addEventListener("click", e => {
+  if (e.target.id === "modalOverlay") closeAssignModal();
+});
+
+document.getElementById("modalSave").addEventListener("click", async () => {
+  if (!currentItem) return;
+  const piloteVal = document.getElementById("piloteSelect").value;
+  const piloteId = piloteVal ? Number(piloteVal) : 0;
+  const copiloteIds = Array.from(document.querySelectorAll("#copiloteList input:checked")).map(el => Number(el.value));
+  const piloteField = currentItem.type === "Dossier" ? "Agent_referent" : "Agent_traitant";
+  const table = currentItem.table;
+  const id = currentItem.id;
+  const payload = {};
+  payload[piloteField] = piloteId;
+  payload["Co_pilotes"] = ["L"].concat(copiloteIds);
+
+  try {
+    document.getElementById("status").textContent = "Mise à jour…";
+    await grist.docApi.applyUserActions([
+      ["UpdateRecord", table, id, payload]
+    ]);
+    closeAssignModal();
+    await loadData();
+  } catch (err) {
+    document.getElementById("status").textContent = "Erreur : " + err.message;
+  }
+});
 
 grist.ready({requiredAccess: "full"});
 grist.onOptions(() => {});
