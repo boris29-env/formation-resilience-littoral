@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>Kanban Suivi cabinet</title>
 <script src="https://grist.numerique.gouv.fr/grist-plugin-api.js"></script>
+<script src="https://unpkg.com/docx@8.2.4/build/index.umd.js"></script>
 <style>
   :root{
     --c1:#e3ecfb; --c1b:#3b6fd4;
@@ -40,9 +41,10 @@
   select#pilotFilter{
     border:1px solid #d7d9dd; border-radius:8px; padding:6px 10px; font-size:12.5px; background:#fff;
   }
-  #refreshBtn{
+  #refreshBtn, #exportBtn{
     border:1px solid #d7d9dd; background:#fff; border-radius:8px; padding:6px 12px; cursor:pointer; font-size:12.5px;
   }
+  #exportBtn:disabled{ opacity:.5; cursor:default; }
   #status{ font-size:11.5px; color:var(--gray); margin-left:auto; }
   #board{
     display:flex; gap:10px; overflow-x:auto; align-items:flex-start;
@@ -141,6 +143,7 @@
   </div>
   <select id="pilotFilter"><option value="">Tous les pilotes</option></select>
   <button id="refreshBtn">⟳ Rafraîchir</button>
+  <button id="exportBtn">⬇ Export .docx</button>
   <span id="status"></span>
 </div>
 
@@ -208,6 +211,7 @@ function todayStr(){
 
 function isLate(dateVal, statut){
   if (!dateVal || statut === "pour archivage") return false;
+  // Grist Date columns come back as seconds-since-epoch (UTC midnight) when fetched via docApi
   const dateStr = typeof dateVal === "number"
     ? new Date(dateVal*1000).toISOString().slice(0,10)
     : String(dateVal).slice(0,10);
@@ -263,6 +267,7 @@ async function loadData(){
 
   items = dossiers.concat(courriers);
 
+  // pilote dropdown (only agents actually used as pilote or co-pilote)
   const usedIds = new Set();
   items.forEach(it => { if (it.pilote) usedIds.add(it.pilote); it.copilotes.forEach(id => usedIds.add(id)); });
   const sel = document.getElementById("pilotFilter");
@@ -347,6 +352,9 @@ function render(){
       });
       card.addEventListener("dragend", () => card.classList.remove("dragging"));
 
+      // Use mousedown/mouseup (not "click") so the modal reliably opens even though
+      // the card is draggable=true, which in some browsers/automation contexts can
+      // swallow the native click event.
       let downPos = null;
       card.addEventListener("mousedown", e => { downPos = {x: e.clientX, y: e.clientY}; });
       card.addEventListener("mouseup", e => {
@@ -406,6 +414,97 @@ document.getElementById("pilotFilter").addEventListener("change", e => {
   render();
 });
 document.getElementById("refreshBtn").addEventListener("click", loadData);
+
+async function exportReport(){
+  const btn = document.getElementById("exportBtn");
+  const statusEl = document.getElementById("status");
+  btn.disabled = true;
+  btn.textContent = "Génération…";
+  try {
+    const { Document, Paragraph, TextRun, HeadingLevel, Packer } = window.docx;
+
+    const filtered = items.filter(it => {
+      if (typeFilter !== "all" && it.type !== typeFilter) return false;
+      if (pilotFilterId && String(it.pilote) !== pilotFilterId && !it.copilotes.map(String).includes(pilotFilterId)) return false;
+      return true;
+    });
+
+    const children = [];
+    children.push(new Paragraph({
+      text: "Suivi cabinet — État d'avancement des dossiers et courriers",
+      heading: HeadingLevel.TITLE,
+    }));
+    const filtreTxt = [
+      typeFilter !== "all" ? typeFilter + "s" : null,
+      pilotFilterId ? "pilote : " + (agentsById[pilotFilterId] || "?") : null,
+    ].filter(Boolean).join(" · ");
+    children.push(new Paragraph({
+      children: [new TextRun({
+        text: "Généré le " + new Date().toLocaleDateString("fr-FR") + " à " + new Date().toLocaleTimeString("fr-FR") + (filtreTxt ? " — Filtre : " + filtreTxt : ""),
+        italics: true, size: 18, color: "888888",
+      })],
+      spacing: {after: 200},
+    }));
+
+    STAGES.forEach(stage => {
+      const colItems = filtered.filter(it => it.statut === stage.key);
+      children.push(new Paragraph({
+        text: `${stage.label} (${colItems.length})`,
+        heading: HeadingLevel.HEADING_1,
+        spacing: {before: 300, after: 120},
+      }));
+      if (colItems.length === 0){
+        children.push(new Paragraph({
+          children: [new TextRun({text: "Aucun élément.", italics: true, color: "999999"})],
+          spacing: {after: 100},
+        }));
+        return;
+      }
+      colItems.forEach(it => {
+        const late = isLate(it.echeance, it.statut);
+        const pilonom = it.pilote ? (agentsById[it.pilote] || "?") : "—";
+        const copilNames = it.copilotes.map(id => agentsById[id] || "?").filter(Boolean);
+
+        const titreRuns = [
+          new TextRun({text: `[${it.type}] `, bold: true, color: it.type === "Dossier" ? "3b6fd4" : "e07a2b"}),
+          new TextRun({text: it.titre, bold: true}),
+        ];
+        if (it.sous) titreRuns.push(new TextRun({text: " — " + it.sous}));
+        children.push(new Paragraph({children: titreRuns, spacing: {after: 20}}));
+
+        const detailRuns = [new TextRun({text: "Pilote : " + pilonom, size: 20})];
+        if (copilNames.length) detailRuns.push(new TextRun({text: "  ·  Co-pilotes : " + copilNames.join(", "), size: 20}));
+        if (it.echeance){
+          detailRuns.push(new TextRun({
+            text: "  ·  Échéance : " + fmtDate(it.echeance) + (late ? " (en retard)" : ""),
+            size: 20, color: late ? "d24444" : "666666", bold: late,
+          }));
+        }
+        if (it.confidentiel) detailRuns.push(new TextRun({text: "  ·  Confidentiel", size: 20, color: "d24444", bold: true}));
+        children.push(new Paragraph({children: detailRuns, indent: {left: 200}, spacing: {after: 160}}));
+      });
+    });
+
+    const doc = new Document({sections: [{children}]});
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "suivi-cabinet-" + todayStr() + ".docx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    statusEl.textContent = "Export généré · " + new Date().toLocaleTimeString("fr-FR");
+  } catch (err) {
+    statusEl.textContent = "Erreur export : " + err.message;
+    alert("Erreur lors de la génération du fichier : " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "⬇ Export .docx";
+  }
+}
+document.getElementById("exportBtn").addEventListener("click", exportReport);
 
 function openAssignModal(item){
   currentItem = item;
