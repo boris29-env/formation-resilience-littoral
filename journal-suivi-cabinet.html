@@ -152,17 +152,13 @@ function todayInputValue(){
   return now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0");
 }
 
-async function resolveCurrentUser(){
-  const whoamiEl = document.getElementById("whoami");
-  try {
-    const raw = await grist.docApi.fetchTable("Whoami");
-    const rows = toRows(raw);
-    if (rows.length === 1) {
-      currentAgentId = rows[0].AgentRef;
-      whoamiEl.innerHTML = "Vous êtes : <strong>" + escapeHtml(agentsById[currentAgentId] || rows[0].NomComplet || "?") + "</strong>";
-      return;
-    }
-  } catch (err) { /* fallback manuel */ }
+// --- Identité de l'utilisateur courant ---
+// Grist ne permet pas à un widget personnalisé de connaître automatiquement
+// l'identité de la session connectée (pas d'API dédiée, et une Access Rule
+// nécessiterait de restreindre la table Agents pour tout le monde, ce qui
+// casserait les autres écrans). Chacun se déclare donc une fois : le choix
+// est mémorisé dans ce navigateur.
+function resolveCurrentUser(){
   const cached = localStorage.getItem("journal_agentId");
   if (cached && agentsById[cached]) {
     currentAgentId = Number(cached);
@@ -203,7 +199,7 @@ async function loadData(keepDossier){
   dossiers = toRows(dossiersRaw);
   notes = toRows(notesRaw);
 
-  await resolveCurrentUser();
+  resolveCurrentUser();
 
   document.getElementById("status").textContent = "À jour · " + new Date().toLocaleTimeString("fr-FR");
   document.getElementById("noteDate").value = todayInputValue();
@@ -320,4 +316,3 @@ setInterval(() => loadData(true), 30000);
 </script>
 </body>
 </html>
-
