@@ -175,24 +175,12 @@ function fmtDate(dateVal){
 }
 
 // --- Identité de l'utilisateur courant ---
-// Stratégie : on interroge la table "Whoami", qui ne renvoie (une fois la règle
-// d'accès configurée par Mathilde) que la ligne de l'utilisateur connecté.
-// Tant que cette règle n'est pas en place, ou si l'utilisateur n'est pas listé
-// dans Agents, on retombe sur une sélection manuelle mémorisée dans ce navigateur.
-async function resolveCurrentUser(){
-  const whoamiEl = document.getElementById("whoami");
-  try {
-    const raw = await grist.docApi.fetchTable("Whoami");
-    const rows = toRows(raw);
-    if (rows.length === 1) {
-      currentAgentId = rows[0].AgentRef;
-      whoamiEl.innerHTML = "Vous êtes : <strong>" + escapeHtml(agentsById[currentAgentId] || rows[0].NomComplet || "?") + "</strong>";
-      return;
-    }
-  } catch (err) {
-    // table absente ou erreur réseau : on bascule sur le mode manuel
-  }
-  // Mode manuel (fallback)
+// Grist ne permet pas à un widget personnalisé de connaître automatiquement
+// l'identité de la session connectée (pas d'API dédiée, et une Access Rule
+// nécessiterait de restreindre la table Agents pour tout le monde, ce qui
+// casserait les autres écrans). Chacun se déclare donc une fois : le choix
+// est mémorisé dans ce navigateur.
+function resolveCurrentUser(){
   const cached = localStorage.getItem("arbitrage_agentId");
   if (cached && agentsById[cached]) {
     currentAgentId = Number(cached);
@@ -300,7 +288,8 @@ function render(){
     alreadyEl.innerHTML = "Décision actuelle : <strong>" + escapeHtml(d.Decision_arbitrage) + "</strong>"
       + " — par " + escapeHtml(decideur)
       + (d.Date_decision ? " le " + fmtDate(d.Date_decision) : "")
-      + (d.Commentaire_decision ? "<br>« " + escapeHtml(d.Commentaire_decision) + " »" : "");
+      + (d.Commentaire_decision ? "<br>Commentaire : « " + escapeHtml(d.Commentaire_decision) + " »" : "")
+      + (d.Avis_decision ? "<br>Avis retenu : « " + escapeHtml(d.Avis_decision) + " »" : "");
   } else {
     alreadyEl.style.display = "none";
   }
@@ -358,6 +347,7 @@ document.getElementById("confirmDecision").addEventListener("click", async () =>
       Decideur: currentAgentId,
       Date_decision: todaySeconds(),
       Commentaire_decision: comment,
+      Avis_decision: document.getElementById("avisBox").value,
     };
     // Transition de statut : validé -> passe en "pour validation" ;
     // invalidé -> retour "en cours de traitement" ; demande d'infos -> reste en arbitrage.
