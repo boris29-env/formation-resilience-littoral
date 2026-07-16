@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Arbitrage — Suivi cabinet</title>
+<script src="https://grist.numerique.gouv.fr/grist-plugin-api.js"></script>
+<style>
+  :root{
+    --c1b:#3b6fd4; --c5b:#d24444; --c6b:#3a9a55; --c3b:#d99a1f;
+    --gray:#8a8f98;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:16px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#f4f5f7; color:#26282c; font-size:13px;
+  }
+  #topbar{ display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+  #topbar h1{ font-size:16px; margin:0; font-weight:700; color:#1c1e21; }
+  #whoami{ margin-left:auto; font-size:12px; color:var(--gray); display:flex; align-items:center; gap:6px; }
+  #whoami button{ border:none; background:none; color:var(--c1b); cursor:pointer; font-size:12px; text-decoration:underline; padding:0; }
+  #nav{ display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:10px; }
+  #nav button{
+    border:1px solid #d7d9dd; background:#fff; border-radius:8px; width:34px; height:34px;
+    font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  #nav button:disabled{ opacity:.35; cursor:default; }
+  #posLabel{ font-size:12.5px; color:var(--gray); min-width:90px; text-align:center; }
+  #cardWrap{ max-width:640px; margin:0 auto; }
+  .card{
+    background:#fff; border:1px solid #e4e5e8; border-radius:12px; padding:20px 22px;
+    box-shadow:0 1px 3px rgba(0,0,0,.06);
+  }
+  .card .titre{ font-size:18px; font-weight:700; color:#1c1e21; margin-bottom:6px; }
+  .card .meta{ font-size:12px; color:var(--gray); margin-bottom:14px; display:flex; gap:10px; flex-wrap:wrap; }
+  .card .meta span{ background:#f0f1f3; border-radius:5px; padding:2px 8px; }
+  .block{ margin-bottom:16px; }
+  .block label{
+    display:block; font-size:10.5px; font-weight:700; color:#666; margin-bottom:5px;
+    text-transform:uppercase; letter-spacing:.3px;
+  }
+  .block .value{ font-size:13.5px; line-height:1.5; color:#26282c; white-space:pre-wrap; }
+  .block .value.empty{ color:var(--gray); font-style:italic; }
+  #avisBox{
+    width:100%; min-height:60px; border:1px solid #d7d9dd; border-radius:8px; padding:8px 10px;
+    font-family:inherit; font-size:13px; resize:vertical;
+  }
+  #avisSaveHint{ font-size:11px; color:var(--gray); margin-top:4px; }
+  .decision-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+  .decision-row button{
+    flex:1 1 0; min-width:130px; border:none; border-radius:8px; padding:10px 8px;
+    font-size:12.5px; font-weight:600; cursor:pointer; color:#fff;
+  }
+  .btn-valider{ background:var(--c6b); }
+  .btn-invalider{ background:var(--c5b); }
+  .btn-infos{ background:var(--c3b); }
+  .decision-row button.selected{ outline:3px solid #26282c33; }
+  #commentPanel{
+    margin-top:12px; padding:12px; background:#f7f8f9; border-radius:8px; display:none;
+  }
+  #commentPanel textarea{
+    width:100%; min-height:60px; border:1px solid #d7d9dd; border-radius:8px; padding:8px 10px;
+    font-family:inherit; font-size:13px; resize:vertical; margin-bottom:8px;
+  }
+  #commentPanel .actions{ display:flex; justify-content:flex-end; gap:8px; }
+  #commentPanel button{ border:none; border-radius:6px; padding:7px 14px; font-size:12.5px; cursor:pointer; }
+  #cancelDecision{ background:#eee; color:#333; }
+  #confirmDecision{ background:#26282c; color:#fff; }
+  .already{
+    margin-top:14px; padding:10px 12px; border-radius:8px; font-size:12.5px; border-left:4px solid;
+  }
+  .already.Validé{ background:#e2f3e6; border-color:var(--c6b); }
+  .already.Invalidé{ background:#fde0e0; border-color:var(--c5b); }
+  .already.Demande-d-infos{ background:#fff2d6; border-color:var(--c3b); }
+  #empty{ text-align:center; color:var(--gray); padding:60px 20px; font-size:14px; }
+  #status{ font-size:11.5px; color:var(--gray); text-align:center; margin-top:12px; }
+  .whopick{ border:1px solid #d7d9dd; border-radius:6px; padding:4px 8px; font-size:12px; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>Arbitrage des dossiers</h1>
+  <div id="whoami">Chargement…</div>
+</div>
+
+<div id="nav">
+  <button id="prevBtn">←</button>
+  <span id="posLabel">–</span>
+  <button id="nextBtn">→</button>
+</div>
+
+<div id="cardWrap">
+  <div id="empty" style="display:none">Aucun dossier n'est actuellement en statut « arbitrage ».</div>
+  <div class="card" id="card" style="display:none">
+    <div class="titre" id="fTitre"></div>
+    <div class="meta" id="fMeta"></div>
+
+    <div class="block">
+      <label>Demandé par</label>
+      <div class="value" id="fDemandeur"></div>
+    </div>
+
+    <div class="block">
+      <label>Description</label>
+      <div class="value" id="fDescription"></div>
+    </div>
+
+    <div class="block">
+      <label>Suites à donner</label>
+      <div class="value" id="fSuites"></div>
+    </div>
+
+    <div class="block">
+      <label>Avis</label>
+      <textarea id="avisBox" placeholder="Avis sur ce dossier (visible par tout le comité)…"></textarea>
+      <div id="avisSaveHint"></div>
+    </div>
+
+    <div class="block">
+      <label>Décision</label>
+      <div class="decision-row">
+        <button class="btn-valider" data-choice="Validé">✅ Valider</button>
+        <button class="btn-invalider" data-choice="Invalidé">❌ Invalider</button>
+        <button class="btn-infos" data-choice="Demande d'infos">❓ Demander plus d'infos</button>
+      </div>
+      <div id="commentPanel">
+        <textarea id="commentBox" placeholder="Commentaire (optionnel)…"></textarea>
+        <div class="actions">
+          <button id="cancelDecision">Annuler</button>
+          <button id="confirmDecision">Confirmer</button>
+        </div>
+      </div>
+      <div id="already" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<div id="status"></div>
+
+<script>
+let dossiers = [];
+let agentsById = {};
+let agentsList = [];
+let idx = 0;
+let currentAgentId = null;
+let pendingChoice = null;
+
+function toRows(colData){
+  const keys = Object.keys(colData).filter(k => k !== "id");
+  const n = colData.id.length;
+  const rows = [];
+  for (let i=0;i<n;i++){
+    const row = {id: colData.id[i]};
+    keys.forEach(k => row[k] = colData[k][i]);
+    rows.push(row);
+  }
+  return rows;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function todaySeconds(){
+  const now = new Date();
+  return Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())/1000);
+}
+
+function fmtDate(dateVal){
+  if (!dateVal) return "";
+  const d = typeof dateVal === "number" ? new Date(dateVal*1000) : new Date(dateVal);
+  if (isNaN(d)) return "";
+  return d.toLocaleDateString("fr-FR", {day:"2-digit", month:"2-digit", year:"numeric"});
+}
+
+// --- Identité de l'utilisateur courant ---
+// Stratégie : on interroge la table "Whoami", qui ne renvoie (une fois la règle
+// d'accès configurée par Mathilde) que la ligne de l'utilisateur connecté.
+// Tant que cette règle n'est pas en place, ou si l'utilisateur n'est pas listé
+// dans Agents, on retombe sur une sélection manuelle mémorisée dans ce navigateur.
+async function resolveCurrentUser(){
+  const whoamiEl = document.getElementById("whoami");
+  try {
+    const raw = await grist.docApi.fetchTable("Whoami");
+    const rows = toRows(raw);
+    if (rows.length === 1) {
+      currentAgentId = rows[0].AgentRef;
+      whoamiEl.innerHTML = "Vous êtes : <strong>" + escapeHtml(agentsById[currentAgentId] || rows[0].NomComplet || "?") + "</strong>";
+      return;
+    }
+  } catch (err) {
+    // table absente ou erreur réseau : on bascule sur le mode manuel
+  }
+  // Mode manuel (fallback)
+  const cached = localStorage.getItem("arbitrage_agentId");
+  if (cached && agentsById[cached]) {
+    currentAgentId = Number(cached);
+    renderWhoamiManual();
+    return;
+  }
+  currentAgentId = null;
+  renderWhoamiManual();
+}
+
+function renderWhoamiManual(){
+  const whoamiEl = document.getElementById("whoami");
+  const options = agentsList.map(a => `<option value="${a.id}" ${String(a.id)===String(currentAgentId)?"selected":""}>${escapeHtml(a.name)}</option>`).join("");
+  whoamiEl.innerHTML = `Qui êtes-vous ? <select class="whopick" id="whoSelect"><option value="">— choisir —</option>${options}</select>`;
+  document.getElementById("whoSelect").addEventListener("change", e => {
+    const v = e.target.value;
+    if (v) {
+      currentAgentId = Number(v);
+      localStorage.setItem("arbitrage_agentId", String(v));
+      whoamiEl.innerHTML = "Vous êtes : <strong>" + escapeHtml(agentsById[currentAgentId] || "?") + "</strong> · <button id='changeWho'>changer</button>";
+      document.getElementById("changeWho").addEventListener("click", renderWhoamiManual);
+    }
+  });
+}
+
+async function loadData(){
+  document.getElementById("status").textContent = "Chargement…";
+  const [dossiersRaw, agentsRaw] = await Promise.all([
+    grist.docApi.fetchTable("Dossiers"),
+    grist.docApi.fetchTable("Agents"),
+  ]);
+
+  agentsById = {};
+  toRows(agentsRaw).forEach(a => { agentsById[a.id] = a.NomComplet || (a.Prenom + " " + a.Nom) || "?"; });
+  agentsList = toRows(agentsRaw)
+    .map(a => ({id: a.id, name: a.NomComplet || "?"}))
+    .sort((a,b) => a.name.localeCompare(b.name));
+
+  dossiers = toRows(dossiersRaw)
+    .filter(r => r.Statut === "arbitrage")
+    .sort((a,b) => (a.Objet||"").localeCompare(b.Objet||""));
+
+  if (idx >= dossiers.length) idx = Math.max(0, dossiers.length - 1);
+
+  await resolveCurrentUser();
+
+  document.getElementById("status").textContent = "À jour · " + new Date().toLocaleTimeString("fr-FR");
+  render();
+}
+
+function render(){
+  const empty = document.getElementById("empty");
+  const card = document.getElementById("card");
+  const posLabel = document.getElementById("posLabel");
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+
+  if (dossiers.length === 0){
+    empty.style.display = "block";
+    card.style.display = "none";
+    posLabel.textContent = "–";
+    prevBtn.disabled = true; nextBtn.disabled = true;
+    return;
+  }
+  empty.style.display = "none";
+  card.style.display = "block";
+
+  const d = dossiers[idx];
+  posLabel.textContent = (idx+1) + " / " + dossiers.length;
+  prevBtn.disabled = idx === 0;
+  nextBtn.disabled = idx === dossiers.length - 1;
+
+  document.getElementById("fTitre").textContent = d.Objet || "(sans objet)";
+  const metaParts = [d.Thematique, d.Direction_en_charge, d.Echeance ? "Échéance : " + fmtDate(d.Echeance) : null].filter(Boolean);
+  document.getElementById("fMeta").innerHTML = metaParts.map(m => `<span>${escapeHtml(m)}</span>`).join("");
+
+  document.getElementById("fDemandeur").innerHTML = d.Agent_referent
+    ? escapeHtml(agentsById[d.Agent_referent] || "?")
+    : '<span class="empty">Non renseigné</span>';
+
+  const descEl = document.getElementById("fDescription");
+  descEl.textContent = d.Description || "";
+  descEl.className = "value" + (d.Description ? "" : " empty");
+  if (!d.Description) descEl.textContent = "Aucune description renseignée.";
+
+  const suitesEl = document.getElementById("fSuites");
+  suitesEl.textContent = d.Suites_a_donner || "";
+  suitesEl.className = "value" + (d.Suites_a_donner ? "" : " empty");
+  if (!d.Suites_a_donner) suitesEl.textContent = "Aucune suite renseignée.";
+
+  const avisBox = document.getElementById("avisBox");
+  avisBox.value = d.Avis_arbitrage || "";
+  document.getElementById("avisSaveHint").textContent = "";
+
+  document.getElementById("commentPanel").style.display = "none";
+  pendingChoice = null;
+  document.querySelectorAll(".decision-row button").forEach(b => b.classList.remove("selected"));
+
+  const alreadyEl = document.getElementById("already");
+  if (d.Decision_arbitrage) {
+    const cls = d.Decision_arbitrage.replace(/[^A-Za-zÀ-ÿ]/g, "-");
+    alreadyEl.className = "already " + cls;
+    alreadyEl.style.display = "block";
+    const decideur = d.Decideur ? (agentsById[d.Decideur] || "?") : "?";
+    alreadyEl.innerHTML = "Décision actuelle : <strong>" + escapeHtml(d.Decision_arbitrage) + "</strong>"
+      + " — par " + escapeHtml(decideur)
+      + (d.Date_decision ? " le " + fmtDate(d.Date_decision) : "")
+      + (d.Commentaire_decision ? "<br>« " + escapeHtml(d.Commentaire_decision) + " »" : "");
+  } else {
+    alreadyEl.style.display = "none";
+  }
+}
+
+document.getElementById("prevBtn").addEventListener("click", () => { if (idx>0){ idx--; render(); } });
+document.getElementById("nextBtn").addEventListener("click", () => { if (idx<dossiers.length-1){ idx++; render(); } });
+
+let avisSaveTimer = null;
+document.getElementById("avisBox").addEventListener("input", () => {
+  clearTimeout(avisSaveTimer);
+  document.getElementById("avisSaveHint").textContent = "Modification en cours…";
+  avisSaveTimer = setTimeout(async () => {
+    const d = dossiers[idx];
+    if (!d) return;
+    const val = document.getElementById("avisBox").value;
+    try {
+      await grist.docApi.applyUserActions([["UpdateRecord","Dossiers", d.id, {Avis_arbitrage: val}]]);
+      d.Avis_arbitrage = val;
+      document.getElementById("avisSaveHint").textContent = "Avis enregistré · " + new Date().toLocaleTimeString("fr-FR");
+    } catch (err) {
+      document.getElementById("avisSaveHint").textContent = "Erreur d'enregistrement : " + err.message;
+    }
+  }, 900);
+});
+
+document.querySelectorAll(".decision-row button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    pendingChoice = btn.dataset.choice;
+    document.querySelectorAll(".decision-row button").forEach(b => b.classList.toggle("selected", b === btn));
+    document.getElementById("commentPanel").style.display = "block";
+    document.getElementById("commentBox").value = "";
+    document.getElementById("commentBox").focus();
+  });
+});
+
+document.getElementById("cancelDecision").addEventListener("click", () => {
+  pendingChoice = null;
+  document.getElementById("commentPanel").style.display = "none";
+  document.querySelectorAll(".decision-row button").forEach(b => b.classList.remove("selected"));
+});
+
+document.getElementById("confirmDecision").addEventListener("click", async () => {
+  const d = dossiers[idx];
+  if (!d || !pendingChoice) return;
+  if (!currentAgentId) {
+    alert("Merci d'indiquer d'abord qui vous êtes (en haut à droite) avant de valider une décision.");
+    return;
+  }
+  const comment = document.getElementById("commentBox").value;
+  document.getElementById("status").textContent = "Enregistrement…";
+  try {
+    const payload = {
+      Decision_arbitrage: pendingChoice,
+      Decideur: currentAgentId,
+      Date_decision: todaySeconds(),
+      Commentaire_decision: comment,
+    };
+    // Transition de statut : validé -> passe en "pour validation" ;
+    // invalidé -> retour "en cours de traitement" ; demande d'infos -> reste en arbitrage.
+    if (pendingChoice === "Validé") payload.Statut = "pour validation";
+    if (pendingChoice === "Invalidé") payload.Statut = "en cours de traitement";
+
+    await grist.docApi.applyUserActions([["UpdateRecord","Dossiers", d.id, payload]]);
+    await loadData();
+    document.getElementById("status").textContent = "Décision enregistrée · " + new Date().toLocaleTimeString("fr-FR");
+  } catch (err) {
+    document.getElementById("status").textContent = "Erreur : " + err.message;
+  }
+});
+
+grist.ready({requiredAccess: "full"});
+loadData();
+setInterval(loadData, 30000);
+</script>
+</body>
+</html>
+
