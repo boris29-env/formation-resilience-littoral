@@ -349,10 +349,11 @@ document.getElementById("confirmDecision").addEventListener("click", async () =>
       Commentaire_decision: comment,
       Avis_decision: document.getElementById("avisBox").value,
     };
-    // Transition de statut : validé -> passe en "pour validation" ;
-    // invalidé -> retour "en cours de traitement" ; demande d'infos -> reste en arbitrage.
-    if (pendingChoice === "Validé") payload.Statut = "pour validation";
-    if (pendingChoice === "Invalidé") payload.Statut = "en cours de traitement";
+    // Toute décision d'arbitrage renvoie le dossier à l'étape précédente
+    // ("en cours de traitement") pour reprise par l'équipe opérationnelle.
+    // La décision reste tracée sur le dossier (qui, quand, quoi, avis, commentaire)
+    // et un badge "Arbitré" l'indique dans le Kanban.
+    payload.Statut = "en cours de traitement";
 
     await grist.docApi.applyUserActions([["UpdateRecord","Dossiers", d.id, payload]]);
     await loadData();
