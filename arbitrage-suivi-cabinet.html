@@ -84,8 +84,6 @@
   <div id="whoami">Chargement…</div>
 </div>
 
-<div id="debugIdentity" style="font-size:11px;color:#999;padding:4px 0 10px 0;font-family:monospace;white-space:pre-wrap;"></div>
-
 <div id="nav">
   <button id="prevBtn">←</button>
   <span id="posLabel">–</span>
@@ -377,29 +375,6 @@ document.getElementById("confirmDecision").addEventListener("click", async () =>
 grist.ready({requiredAccess: "full"});
 loadData();
 setInterval(loadData, 30000);
-
-// --- TEST TEMPORAIRE : peut-on obtenir l'identité réelle sans table Whoami ? ---
-(async () => {
-  const dbg = document.getElementById("debugIdentity");
-  try {
-    const tok = await grist.docApi.getAccessToken({});
-    dbg.textContent = "TEST IDENTITE\ntoken obtenu, baseUrl=" + tok.baseUrl + "\n";
-    const root = tok.baseUrl.replace(/\/api\/docs\/.*$/, "");
-    const url1 = tok.baseUrl + "/../../profile/user?auth=" + tok.token;
-    const url2 = root + "/api/profile/user?auth=" + tok.token;
-    for (const [label, url] of [["baseUrl-relative", url1], ["root api", url2]]) {
-      try {
-        const r = await fetch(url, {headers: {Authorization: "Bearer " + tok.token}});
-        const txt = await r.text();
-        dbg.textContent += "\n[" + label + "] " + url + "\nstatus=" + r.status + " body=" + txt.slice(0,300);
-      } catch (e) {
-        dbg.textContent += "\n[" + label + "] erreur fetch: " + e.message;
-      }
-    }
-  } catch (e) {
-    dbg.textContent = "TEST IDENTITE erreur getAccessToken: " + e.message;
-  }
-})();
 </script>
 </body>
 </html>
