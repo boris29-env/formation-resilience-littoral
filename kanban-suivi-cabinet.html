@@ -74,7 +74,7 @@
   }
   .card:active{ cursor:grabbing; }
   .card.dragging{ opacity:.4; }
-  .card .rowtop{ display:flex; align-items:center; gap:5px; margin-bottom:3px; }
+  .card .rowtop{ display:flex; align-items:center; gap:5px; margin-bottom:3px; flex-wrap:wrap; }
   .tag{
     font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.3px;
     padding:1px 5px; border-radius:4px; color:#fff;
@@ -83,6 +83,13 @@
   .tag.courrier{ background:var(--c4b); }
   .lock{ font-size:11px; }
   .late{ color:var(--c5b); font-weight:700; }
+  .arb-badge{
+    font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:4px; color:#fff;
+    display:inline-flex; align-items:center; gap:2px; white-space:nowrap;
+  }
+  .arb-badge.valide{ background:#3a9a55; }
+  .arb-badge.invalide{ background:#d24444; }
+  .arb-badge.infos{ background:#d99a1f; }
   .card .titre{ font-size:12.5px; font-weight:600; line-height:1.3; margin-bottom:3px; }
   .card .sub{ font-size:11px; color:#666; margin-bottom:5px; }
   .card .meta{ display:flex; justify-content:space-between; align-items:flex-end; gap:6px; }
@@ -227,6 +234,23 @@ function fmtDate(dateVal){
   return d.toLocaleDateString("fr-FR", {day:"2-digit", month:"2-digit"});
 }
 
+// --- Badge "Arbitré" : indique qu'un dossier est passé par le comité d'arbitrage,
+// même une fois revenu en "en cours de traitement". Basé sur Decision_arbitrage
+// (Dossiers uniquement ; les Courriers n'ont pas ce champ).
+function decisionBadgeClass(decision){
+  if (decision === "Validé") return "valide";
+  if (decision === "Invalidé") return "invalide";
+  if (decision === "Demande d'infos") return "infos";
+  return null;
+}
+
+function decisionBadgeIcon(decision){
+  if (decision === "Validé") return "✓";
+  if (decision === "Invalidé") return "✕";
+  if (decision === "Demande d'infos") return "?";
+  return "";
+}
+
 async function loadData(){
   document.getElementById("status").textContent = "Chargement…";
   const [dossiersRaw, courriersRaw, agentsRaw] = await Promise.all([
@@ -252,6 +276,7 @@ async function loadData(){
     copilotes: decodeList(r.Co_pilotes),
     echeance: r.Echeance,
     confidentiel: !!r.Confidentiel,
+    decision: r.Decision_arbitrage || "",
   }));
 
   const courriers = toRows(courriersRaw).map(r => ({
@@ -265,6 +290,7 @@ async function loadData(){
     copilotes: decodeList(r.Co_pilotes),
     echeance: r.Echeance_reponse,
     confidentiel: !!r.Confidentiel,
+    decision: "",
   }));
 
   items = dossiers.concat(courriers);
@@ -328,6 +354,7 @@ function render(){
       const late = isLate(it.echeance, it.statut);
       const pilonom = it.pilote ? (agentsById[it.pilote] || "?") : "—";
       const copilNames = it.copilotes.map(id => agentsById[id] || "?").filter(Boolean);
+      const arbCls = decisionBadgeClass(it.decision);
 
       card.title = "Cliquer pour modifier le pilote / les co-pilotes";
 
@@ -336,6 +363,7 @@ function render(){
         <div class="rowtop">
           <span class="tag ${it.type.toLowerCase()}">${it.type}</span>
           ${it.confidentiel ? '<span class="lock" title="Confidentiel">🔒</span>' : ""}
+          ${arbCls ? `<span class="arb-badge ${arbCls}" title="Arbitré : ${escapeHtml(it.decision)}">${decisionBadgeIcon(it.decision)} Arbitré</span>` : ""}
         </div>
         <div class="titre">${escapeHtml(it.titre)}</div>
         <div class="sub">${escapeHtml(it.sous)}</div>
@@ -483,6 +511,7 @@ async function exportReport(){
           }));
         }
         if (it.confidentiel) detailRuns.push(new TextRun({text: "  ·  Confidentiel", size: 20, color: "d24444", bold: true}));
+        if (it.decision) detailRuns.push(new TextRun({text: "  ·  Arbitré : " + it.decision, size: 20, color: "555555", bold: true}));
         children.push(new Paragraph({children: detailRuns, indent: {left: 200}, spacing: {after: 160}}));
       });
     });
