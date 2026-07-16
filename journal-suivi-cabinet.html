@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Journal — Suivi cabinet</title>
+<script src="https://grist.numerique.gouv.fr/grist-plugin-api.js"></script>
+<style>
+  :root{ --c1b:#3b6fd4; --gray:#8a8f98; }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:16px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#f4f5f7; color:#26282c; font-size:13px;
+  }
+  #topbar{ display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+  #topbar h1{ font-size:16px; margin:0; font-weight:700; color:#1c1e21; }
+  #whoami{ margin-left:auto; font-size:12px; color:var(--gray); display:flex; align-items:center; gap:6px; }
+  #whoami button{ border:none; background:none; color:var(--c1b); cursor:pointer; font-size:12px; text-decoration:underline; padding:0; }
+  .whopick{ border:1px solid #d7d9dd; border-radius:6px; padding:4px 8px; font-size:12px; }
+  #wrap{ max-width:680px; margin:0 auto; }
+  #searchBox{
+    width:100%; padding:10px 12px; border:1px solid #d7d9dd; border-radius:10px;
+    font-size:14px; margin-bottom:8px;
+  }
+  #suggestions{
+    background:#fff; border:1px solid #e4e5e8; border-radius:8px; margin-bottom:14px;
+    max-height:220px; overflow-y:auto; display:none;
+  }
+  #suggestions .opt{ padding:8px 12px; cursor:pointer; font-size:13px; }
+  #suggestions .opt:hover{ background:#f0f1f3; }
+  #suggestions .opt .sub{ font-size:11px; color:var(--gray); }
+  #noDossier{ text-align:center; color:var(--gray); padding:60px 20px; font-size:13.5px; }
+  #ficheWrap{ display:none; }
+  .card{
+    background:#fff; border:1px solid #e4e5e8; border-radius:12px; padding:18px 20px;
+    box-shadow:0 1px 3px rgba(0,0,0,.06); margin-bottom:14px;
+  }
+  .card .titre{ font-size:16px; font-weight:700; color:#1c1e21; }
+  .card .sub{ font-size:12px; color:var(--gray); margin-top:2px; }
+  .card .changeLink{ font-size:12px; margin-top:8px; display:inline-block; }
+  #noteForm label{
+    display:block; font-size:10.5px; font-weight:700; color:#666; margin-bottom:5px;
+    text-transform:uppercase; letter-spacing:.3px;
+  }
+  #noteForm textarea{
+    width:100%; min-height:70px; border:1px solid #d7d9dd; border-radius:8px; padding:8px 10px;
+    font-family:inherit; font-size:13.5px; resize:vertical; margin-bottom:10px;
+  }
+  #noteForm .row{ display:flex; gap:10px; align-items:center; margin-bottom:10px; }
+  #noteForm input[type=date]{
+    border:1px solid #d7d9dd; border-radius:8px; padding:6px 10px; font-size:13px;
+  }
+  #addNoteBtn{
+    background:#26282c; color:#fff; border:none; border-radius:8px; padding:9px 18px;
+    font-size:13px; font-weight:600; cursor:pointer;
+  }
+  #addNoteBtn:disabled{ opacity:.5; cursor:default; }
+  #timeline{ display:flex; flex-direction:column; gap:10px; }
+  .note{
+    background:#fff; border:1px solid #e4e5e8; border-left:4px solid var(--c1b);
+    border-radius:8px; padding:10px 12px;
+  }
+  .note .noteMeta{ font-size:11px; color:var(--gray); margin-bottom:4px; display:flex; gap:8px; }
+  .note .noteMeta strong{ color:#26282c; }
+  .note .noteText{ font-size:13px; white-space:pre-wrap; line-height:1.4; }
+  #emptyTimeline{ color:var(--gray); font-style:italic; font-size:12.5px; padding:6px 0; }
+  #status{ font-size:11.5px; color:var(--gray); text-align:center; margin-top:14px; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>Journal de suivi</h1>
+  <div id="whoami">Chargement…</div>
+</div>
+
+<div id="wrap">
+  <input id="searchBox" type="text" placeholder="Rechercher un dossier par son objet…" autocomplete="off">
+  <div id="suggestions"></div>
+
+  <div id="noDossier">Recherchez un dossier ci-dessus pour consulter ou ajouter une note.</div>
+
+  <div id="ficheWrap">
+    <div class="card">
+      <div class="titre" id="fTitre"></div>
+      <div class="sub" id="fSub"></div>
+      <a href="#" class="changeLink" id="changeDossier">← Choisir un autre dossier</a>
+    </div>
+
+    <div class="card" id="noteForm">
+      <label>Nouvelle note</label>
+      <textarea id="noteText" placeholder="Écrire une note sur ce dossier…"></textarea>
+      <div class="row">
+        <label style="margin:0; text-transform:none; font-weight:600;">Date</label>
+        <input type="date" id="noteDate">
+        <button id="addNoteBtn">Ajouter la note</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <label style="display:block; font-size:10.5px; font-weight:700; color:#666; text-transform:uppercase; letter-spacing:.3px; margin-bottom:8px;">Historique</label>
+      <div id="timeline"></div>
+      <div id="emptyTimeline" style="display:none">Aucune note pour ce dossier pour le moment.</div>
+    </div>
+  </div>
+</div>
+
+<div id="status"></div>
+
+<script>
+let dossiers = [];
+let agentsById = {};
+let agentsList = [];
+let notes = [];
+let currentDossierId = null;
+let currentAgentId = null;
+
+function toRows(colData){
+  const keys = Object.keys(colData).filter(k => k !== "id");
+  const n = colData.id.length;
+  const rows = [];
+  for (let i=0;i<n;i++){
+    const row = {id: colData.id[i]};
+    keys.forEach(k => row[k] = colData[k][i]);
+    rows.push(row);
+  }
+  return rows;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function todaySeconds(dateStr){
+  if (dateStr) {
+    const [y,m,d] = dateStr.split("-").map(Number);
+    return Math.floor(Date.UTC(y, m-1, d)/1000);
+  }
+  const now = new Date();
+  return Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())/1000);
+}
+
+function fmtDate(dateVal){
+  if (!dateVal) return "";
+  const d = typeof dateVal === "number" ? new Date(dateVal*1000) : new Date(dateVal);
+  if (isNaN(d)) return "";
+  return d.toLocaleDateString("fr-FR", {day:"2-digit", month:"2-digit", year:"numeric"});
+}
+
+function todayInputValue(){
+  const now = new Date();
+  return now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0");
+}
+
+async function resolveCurrentUser(){
+  const whoamiEl = document.getElementById("whoami");
+  try {
+    const raw = await grist.docApi.fetchTable("Whoami");
+    const rows = toRows(raw);
+    if (rows.length === 1) {
+      currentAgentId = rows[0].AgentRef;
+      whoamiEl.innerHTML = "Vous êtes : <strong>" + escapeHtml(agentsById[currentAgentId] || rows[0].NomComplet || "?") + "</strong>";
+      return;
+    }
+  } catch (err) { /* fallback manuel */ }
+  const cached = localStorage.getItem("journal_agentId");
+  if (cached && agentsById[cached]) {
+    currentAgentId = Number(cached);
+    renderWhoamiManual();
+    return;
+  }
+  currentAgentId = null;
+  renderWhoamiManual();
+}
+
+function renderWhoamiManual(){
+  const whoamiEl = document.getElementById("whoami");
+  const options = agentsList.map(a => `<option value="${a.id}" ${String(a.id)===String(currentAgentId)?"selected":""}>${escapeHtml(a.name)}</option>`).join("");
+  whoamiEl.innerHTML = `Qui êtes-vous ? <select class="whopick" id="whoSelect"><option value="">— choisir —</option>${options}</select>`;
+  document.getElementById("whoSelect").addEventListener("change", e => {
+    const v = e.target.value;
+    if (v) {
+      currentAgentId = Number(v);
+      localStorage.setItem("journal_agentId", String(v));
+      whoamiEl.innerHTML = "Vous êtes : <strong>" + escapeHtml(agentsById[currentAgentId] || "?") + "</strong> · <button id='changeWho'>changer</button>";
+      document.getElementById("changeWho").addEventListener("click", renderWhoamiManual);
+    }
+  });
+}
+
+async function loadData(keepDossier){
+  document.getElementById("status").textContent = "Chargement…";
+  const [dossiersRaw, agentsRaw, notesRaw] = await Promise.all([
+    grist.docApi.fetchTable("Dossiers"),
+    grist.docApi.fetchTable("Agents"),
+    grist.docApi.fetchTable("Journal_dossier"),
+  ]);
+
+  agentsById = {};
+  toRows(agentsRaw).forEach(a => { agentsById[a.id] = a.NomComplet || (a.Prenom + " " + a.Nom) || "?"; });
+  agentsList = toRows(agentsRaw).map(a => ({id:a.id, name: a.NomComplet || "?"})).sort((a,b)=>a.name.localeCompare(b.name));
+
+  dossiers = toRows(dossiersRaw);
+  notes = toRows(notesRaw);
+
+  await resolveCurrentUser();
+
+  document.getElementById("status").textContent = "À jour · " + new Date().toLocaleTimeString("fr-FR");
+  document.getElementById("noteDate").value = todayInputValue();
+
+  if (keepDossier && currentDossierId && dossiers.find(d => d.id === currentDossierId)) {
+    showDossier(currentDossierId);
+  } else {
+    showSearch();
+  }
+}
+
+function showSearch(){
+  currentDossierId = null;
+  document.getElementById("ficheWrap").style.display = "none";
+  document.getElementById("noDossier").style.display = "block";
+  document.getElementById("searchBox").value = "";
+  document.getElementById("suggestions").style.display = "none";
+  document.getElementById("searchBox").focus();
+}
+
+function showDossier(id){
+  currentDossierId = id;
+  const d = dossiers.find(x => x.id === id);
+  if (!d) { showSearch(); return; }
+  document.getElementById("noDossier").style.display = "none";
+  document.getElementById("ficheWrap").style.display = "block";
+  document.getElementById("suggestions").style.display = "none";
+  document.getElementById("searchBox").value = "";
+
+  document.getElementById("fTitre").textContent = d.Objet || "(sans objet)";
+  const sub = [d.Thematique, d.Agent_referent ? "Référent : " + (agentsById[d.Agent_referent]||"?") : null].filter(Boolean).join(" · ");
+  document.getElementById("fSub").textContent = sub;
+
+  renderTimeline();
+}
+
+function renderTimeline(){
+  const list = notes
+    .filter(n => n.Dossier === currentDossierId)
+    .sort((a,b) => (b.Date||0) - (a.Date||0));
+  const timeline = document.getElementById("timeline");
+  const emptyEl = document.getElementById("emptyTimeline");
+  if (list.length === 0){
+    timeline.innerHTML = "";
+    emptyEl.style.display = "block";
+    return;
+  }
+  emptyEl.style.display = "none";
+  timeline.innerHTML = list.map(n => `
+    <div class="note">
+      <div class="noteMeta"><strong>${n.Date ? escapeHtml(fmtDate(n.Date)) : "(sans date)"}</strong>${n.Auteur ? " · " + escapeHtml(agentsById[n.Auteur]||"?") : ""}</div>
+      <div class="noteText">${escapeHtml(n.Note||"")}</div>
+    </div>
+  `).join("");
+}
+
+document.getElementById("searchBox").addEventListener("input", e => {
+  const q = e.target.value.trim().toLowerCase();
+  const suggEl = document.getElementById("suggestions");
+  if (!q){ suggEl.style.display = "none"; return; }
+  const matches = dossiers.filter(d => (d.Objet||"").toLowerCase().includes(q)).slice(0, 12);
+  if (matches.length === 0){
+    suggEl.innerHTML = '<div class="opt" style="color:#8a8f98;font-style:italic;">Aucun dossier trouvé</div>';
+    suggEl.style.display = "block";
+    return;
+  }
+  suggEl.innerHTML = matches.map(d => `
+    <div class="opt" data-id="${d.id}">
+      <div>${escapeHtml(d.Objet||"(sans objet)")}</div>
+      <div class="sub">${escapeHtml(d.Thematique||"")}</div>
+    </div>
+  `).join("");
+  suggEl.style.display = "block";
+  suggEl.querySelectorAll(".opt[data-id]").forEach(el => {
+    el.addEventListener("click", () => showDossier(Number(el.dataset.id)));
+  });
+});
+
+document.getElementById("changeDossier").addEventListener("click", e => { e.preventDefault(); showSearch(); });
+
+document.getElementById("addNoteBtn").addEventListener("click", async () => {
+  const text = document.getElementById("noteText").value.trim();
+  if (!text || !currentDossierId) return;
+  if (!currentAgentId) {
+    alert("Merci d'indiquer d'abord qui vous êtes (en haut à droite) avant d'ajouter une note.");
+    return;
+  }
+  const dateVal = document.getElementById("noteDate").value;
+  const btn = document.getElementById("addNoteBtn");
+  btn.disabled = true;
+  document.getElementById("status").textContent = "Enregistrement…";
+  try {
+    await grist.docApi.applyUserActions([
+      ["AddRecord","Journal_dossier", null, {
+        Dossier: currentDossierId,
+        Date: todaySeconds(dateVal),
+        Auteur: currentAgentId,
+        Note: text,
+      }]
+    ]);
+    document.getElementById("noteText").value = "";
+    await loadData(true);
+    document.getElementById("status").textContent = "Note ajoutée · " + new Date().toLocaleTimeString("fr-FR");
+  } catch (err) {
+    document.getElementById("status").textContent = "Erreur : " + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+grist.ready({requiredAccess: "full"});
+loadData(false);
+setInterval(() => loadData(true), 30000);
+</script>
+</body>
+</html>
+
