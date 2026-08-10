@@ -259,9 +259,15 @@ const codeNature = c => (c.Nature === 'Transversale') ? 'T' : 'P';
 
 /* ---------- déclaration courante ---------- */
 async function chargerDeclaration(rec){
-  DECL = rec && rec.id ? rec : null;
   SEL = {T:[], P:[]};
-  if(!DECL){ rendre(); return; }
+  if(!rec || !rec.id){ DECL = null; rendre(); return; }
+  // On ne se fie pas au contenu de l'enregistrement transmis par Grist, qui dépend
+  // du mappage de colonnes de la section : on relit la ligne dans la table.
+  let ligne = null;
+  try{
+    ligne = colonnes(await grist.docApi.fetchTable('Declarations')).find(d=>d.id === rec.id);
+  }catch(e){ console.warn('relecture de Declarations impossible', e); }
+  DECL = Object.assign({}, rec, ligne || {});
   const dc = colonnes(await grist.docApi.fetchTable('Declaration_Competences'))
              .filter(r=>r.Declaration === DECL.id);
   dc.sort((a,b)=>(a.Rang||0)-(b.Rang||0));
@@ -295,7 +301,8 @@ function rendre(){
 
   const ins = INSPECTEURS[DECL.Inspecteur];
   const cam = CAMPAGNES[DECL.Campagne];
-  $('#nom').textContent = ins ? ((ins.Prenom||'') + ' ' + (ins.Nom||'')).trim() : 'Déclaration n°' + DECL.id;
+  const nomAgent = ins ? ((ins.Prenom||'') + ' ' + (ins.Nom||'')).trim() : '';
+  $('#nom').textContent = nomAgent || (DECL.Agent || 'Déclaration n°' + DECL.id);
   const bouts = [];
   if(cam) bouts.push(cam.Libelle || ('Campagne ' + (cam.Annee || '')));
   if(ins && ins.Section) bouts.push('Section ' + ins.Section);
