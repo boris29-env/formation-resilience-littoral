@@ -93,6 +93,26 @@ button:disabled{opacity:.45;cursor:not-allowed}
 #chargement{padding:40px;text-align:center;color:var(--gris)}
 .alerte{background:var(--orange-clair);border-left:4px solid var(--orange);padding:10px 12px;
         margin-bottom:14px;font-size:13px}
+/* infobulles */
+.aide{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
+      border-radius:50%;background:var(--bleu);color:#fff;font-size:10.5px;font-weight:700;
+      cursor:help;margin-left:5px;vertical-align:1px;position:relative;flex:0 0 auto;
+      font-family:Georgia,serif;font-style:italic;line-height:1}
+.aide:focus{outline:2px solid var(--bleu);outline-offset:2px}
+.aide::after{content:attr(data-aide);position:absolute;bottom:calc(100% + 8px);left:50%;
+      transform:translateX(calc(-50% + var(--dx,0px)));background:#161616;color:#fff;padding:9px 11px;border-radius:4px;
+      font:400 12.5px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      font-style:normal;letter-spacing:0;text-transform:none;text-align:left;
+      width:330px;max-width:80vw;white-space:pre-line;opacity:0;visibility:hidden;
+      transition:opacity .12s;z-index:60;pointer-events:none;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.aide::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);
+      border:6px solid transparent;border-top-color:#161616;opacity:0;visibility:hidden;
+      transition:opacity .12s;z-index:60;pointer-events:none}
+.aide:hover::after,.aide:focus::after,.aide:hover::before,.aide:focus::before{opacity:1;visibility:visible}
+.aide.bas::after{bottom:auto;top:calc(100% + 8px)}
+.aide.bas::before{bottom:auto;top:calc(100% + 2px);border-top-color:transparent;border-bottom-color:#161616}
+.tete{position:relative}
+label{display:flex;align-items:center}
 </style>
 </head>
 <body>
@@ -116,7 +136,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
   <section>
     <div class="tete">
-      <h2>Compétences transversales</h2>
+      <h2>Compétences transversales</h2><span id="aide-T"></span>
       <span class="compte" id="cpt-T">0 / 3</span>
     </div>
     <p class="consigne">Pilotage, management et fonctions support. Trois compétences au plus, celles que vous exercez ou avez exercées de façon significative.</p>
@@ -125,7 +145,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
   <section>
     <div class="tete">
-      <h2>Compétences particulières</h2>
+      <h2>Compétences particulières</h2><span id="aide-P"></span>
       <span class="compte" id="cpt-P">0 / 3</span>
     </div>
     <p class="consigne">Domaines sectoriels et techniques. Trois compétences au plus, celles qui caractérisent votre expertise propre.</p>
@@ -133,10 +153,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
   </section>
 
   <section>
-    <div class="tete"><h2>Projet professionnel</h2></div>
+    <div class="tete"><h2>Projet professionnel</h2><span id="aide-projet"></span></div>
     <p class="consigne">Facultatif. Orientation envisagée à l'issue de votre affectation, secteurs ou fonctions visés, appuis souhaités.</p>
     <textarea id="projet" rows="3" placeholder="Ex. : direction d'établissement public dans le champ de l'eau et des risques, à horizon 2027."></textarea>
-    <label for="comm">Autres compétences ou observations</label>
+    <label for="comm">Autres compétences ou observations<span id="aide-comm"></span></label>
     <textarea id="comm" rows="2" placeholder="Compétence absente de la nomenclature, précision sur un parcours…"></textarea>
   </section>
 
@@ -145,19 +165,19 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div id="pied" hidden>
   <span id="etat"></span>
   <span style="display:flex;gap:8px">
-    <button class="btn-s" id="b-enr">Enregistrer le brouillon</button>
-    <button class="btn-p" id="b-soum">Soumettre ma déclaration</button>
+    <button class="btn-s" id="b-enr">Enregistrer le brouillon</button><span id="aide-enr"></span>
+    <button class="btn-p" id="b-soum">Soumettre ma déclaration</button><span id="aide-soum"></span>
   </span>
 </div>
 
 <div id="modale" role="dialog" aria-modal="true" aria-labelledby="m-titre">
   <div id="boite">
     <header>
-      <h2 id="m-titre">Choisir une compétence</h2>
+      <h2 id="m-titre">Choisir une compétence</h2><span id="aide-modale"></span>
       <button class="btn-x" id="m-fermer" aria-label="Fermer">&times;</button>
     </header>
     <div id="filtres">
-      <input type="text" id="f-q" class="plein" placeholder="Rechercher un mot dans les libellés et descriptions…" autocomplete="off">
+      <div class="plein" style="display:flex;align-items:center;gap:6px"><input type="text" id="f-q" placeholder="Rechercher un mot dans les libellés et descriptions…" autocomplete="off"><span id="aide-q"></span></div>
       <select id="f-racine"><option value="">Tous les secteurs et fonctions</option></select>
       <select id="f-macro"><option value="">Toutes les macrocompétences</option></select>
       <select id="f-coll" class="plein"><option value="">Toutes les compétences collectives</option></select>
@@ -186,6 +206,52 @@ const $ = s => document.querySelector(s);
 const el = (t,c,x) => { const e=document.createElement(t); if(c) e.className=c;
                         if(x!==undefined) e.textContent=x; return e; };
 const sansAccent = s => (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+function aide(texte, bas){
+  const a = el('span', 'aide' + (bas ? ' bas' : ''), 'i');
+  a.setAttribute('data-aide', texte);
+  a.setAttribute('tabindex', '0');
+  a.setAttribute('role', 'note');
+  a.setAttribute('aria-label', 'Aide : ' + texte);
+  const recaler = ()=>{
+    const r = a.getBoundingClientRect();
+    const large = Math.min(330, window.innerWidth * 0.8);
+    const centre = r.left + r.width / 2;
+    const voulu = centre - large / 2;
+    const borne = Math.max(8, Math.min(voulu, window.innerWidth - large - 8));
+    a.style.setProperty('--dx', (borne - voulu) + 'px');
+    // bascule sous l'icône s'il n'y a pas la place au-dessus
+    a.classList.toggle('bas', bas || r.top < 190);
+  };
+  a.addEventListener('mouseenter', recaler);
+  a.addEventListener('focus', recaler);
+  return a;
+}
+const AIDE = {
+  transversales:
+    "Ce bloc réunit deux ensembles : le métier d'inspection générale propre à l'IGEDD (conduite de mission, audit, autorité environnementale, IGRH et comités de domaine, mandats, postures) et les fonctions de pilotage et de support de la nomenclature Comète.\n\nRetenez trois compétences que vous exercez ou avez exercées de façon significative, pas celles que vous aimeriez acquérir.",
+  particulieres:
+    "Domaines sectoriels et techniques issus de la nomenclature Comète du Cerema : eau, risques, littoral, mobilités, bâtiment, ouvrages d'art, énergie, numérique.\n\nRetenez ce qui caractérise votre expertise propre, celle que l'on vient chercher chez vous. Utilisez la recherche par mot-clé, la liste compte plus de mille entrées.",
+  niveau:
+    "1 - Notions : vous connaissez le sujet, vous savez dialoguer avec un spécialiste, vous ne produisez pas seul.\n2 - Mise en œuvre : vous exercez la compétence en équipe, avec un appui ou une supervision.\n3 - Maîtrise : vous exercez seul et en responsabilité, y compris sur des dossiers complexes.\n4 - Expertise et référence : on vous sollicite comme référent, vous formez, arbitrez ou faites doctrine.",
+  appetence:
+    "Ce que vous souhaitez faire de cette compétence, indépendamment de votre niveau.\n\nL'approfondir : vous voulez continuer à la développer.\nLa transmettre ou former : vous êtes prêt à l'enseigner ou à tutorer.\nLa valoriser en mobilité : vous souhaitez qu'elle pèse dans votre prochain poste.\nPas de souhait particulier : vous l'exercez sans projet attaché.\n\nC'est cette colonne qui rend la déclaration utile à l'accompagnement des parcours.",
+  precision:
+    "Facultatif. Une ou deux phrases suffisent : une réalisation marquante, un contexte, une période, un chiffre.\n\nExemple : « Coordination de la mission interinspections sur la gestion quantitative de l'eau, 2024-2025, avec le CGAAER. »",
+  projet:
+    "Facultatif mais déterminant. Décrivez l'orientation que vous envisagez à l'issue de votre affectation : type de fonction, secteur, échéance, appuis souhaités.\n\nCe champ n'est lu que par le secrétariat général dans le cadre de l'accompagnement des parcours.",
+  commentaire:
+    "Utilisez ce champ si une compétence que vous exercez ne figure pas dans la nomenclature, ou pour signaler un libellé mal formulé. Ces retours alimentent la mise à jour annuelle du référentiel.",
+  brouillon:
+    "Enregistre votre saisie sans la transmettre. Vous pouvez revenir la compléter autant de fois que nécessaire tant que la campagne est ouverte.",
+  soumettre:
+    "Transmet votre déclaration au secrétariat général. Les six compétences doivent être retenues et chacune qualifiée en niveau et en appétence.\n\nVous pourrez encore la modifier et la soumettre de nouveau tant que la campagne est ouverte.",
+  recherche:
+    "Tapez un ou plusieurs mots. La recherche ignore les accents et porte sur les libellés, les descriptions et l'arborescence.\n\nExemple : « risque inondation », « negociation », « audit interne ».",
+  cascade:
+    "Vous pouvez aussi parcourir la nomenclature de haut en bas : choisissez d'abord un secteur ou une fonction, puis une macrocompétence, puis une compétence collective. Les listes se réduisent à chaque étape.",
+  rang:
+    "L'ordre n'exprime aucune priorité. Il sert uniquement à identifier les trois emplacements."
+};
 const esc = s => (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function colonnes(t){ // {id:[], col:[]} -> [{id, ...}]
@@ -345,6 +411,9 @@ function carte(nature, i){
   if(!s){
     const d = el('div','carte vide');
     const b = el('button','btn-s','+ Choisir une compétence');
+    b.title = nature==='T'
+      ? "Ouvre le sélecteur des compétences transversales : métier d'inspection IGEDD, pilotage et fonctions support."
+      : "Ouvre le sélecteur des compétences particulières : domaines sectoriels et techniques.";
     b.onclick = ()=>ouvrir(nature, i);
     b.disabled = !accesEcriture;
     d.appendChild(b);
@@ -352,10 +421,11 @@ function carte(nature, i){
   }
   const c = REF.parCode[s.compId];
   const d = el('div','carte');
-  d.appendChild(el('span','rang', (nature==='T'?'Transversale ':'Particulière ') + (i+1)));
+  const rg = el('span','rang', (nature==='T'?'Transversale ':'Particulière ') + (i+1));
+  d.appendChild(rg);
 
   const x = el('button','btn-x','×');
-  x.title = 'Retirer cette compétence'; x.disabled = !accesEcriture;
+  x.title = 'Retirer cette compétence de votre déclaration. Aucune donnée n’est perdue tant que vous n’enregistrez pas.'; x.disabled = !accesEcriture;
   x.onclick = ()=>{ SEL[nature].splice(i,1); rendre(); marquer(); };
   d.appendChild(x);
 
@@ -366,7 +436,8 @@ function carte(nature, i){
   d.appendChild(tc);
   if(c.Description) d.appendChild(el('div','desc', c.Description));
 
-  d.appendChild(el('label',null,'Niveau de maîtrise'));
+  const lN = el('label',null,'Niveau de maîtrise'); lN.appendChild(aide(AIDE.niveau, true));
+  d.appendChild(lN);
   const sn = el('select');
   sn.appendChild(el('option',null,'— à renseigner —')).value='';
   NIVEAUX.forEach(v=>{ const o=el('option',null,v); o.value=v; if(s.niveau===v) o.selected=true; sn.appendChild(o); });
@@ -374,7 +445,8 @@ function carte(nature, i){
   sn.onchange = ()=>{ s.niveau = sn.value; marquer(); };
   d.appendChild(sn);
 
-  d.appendChild(el('label',null,'Appétence'));
+  const lA = el('label',null,'Appétence'); lA.appendChild(aide(AIDE.appetence, true));
+  d.appendChild(lA);
   const sa = el('select');
   sa.appendChild(el('option',null,'— à renseigner —')).value='';
   APPETENCES.forEach(v=>{ const o=el('option',null,v); o.value=v; if(s.appetence===v) o.selected=true; sa.appendChild(o); });
@@ -382,7 +454,8 @@ function carte(nature, i){
   sa.onchange = ()=>{ s.appetence = sa.value; marquer(); };
   d.appendChild(sa);
 
-  d.appendChild(el('label',null,'Précision (facultatif)'));
+  const lP = el('label',null,'Précision (facultatif)'); lP.appendChild(aide(AIDE.precision, true));
+  d.appendChild(lP);
   const tp = el('textarea'); tp.rows=2; tp.value = s.precision||'';
   tp.placeholder = 'Contexte, réalisation marquante, période…';
   tp.disabled = !accesEcriture;
@@ -462,6 +535,11 @@ function retenir(c){
 }
 
 /* cascades */
+$('#f-racine').title = "Secteur d'activité ou fonction. Le bloc IGEDD, en tête de liste, décrit le métier d'inspection générale.";
+$('#f-macro').title = "Macrocompétence : le grand domaine à l'intérieur du secteur choisi.";
+$('#f-coll').title = "Compétence collective : le regroupement fin, juste au-dessus des compétences déclarables.";
+$('#projet').title = AIDE.projet;
+$('#comm').title = AIDE.commentaire;
 $('#f-racine').onchange = ()=>{
   const r = $('#f-racine').value;
   const sm = $('#f-macro'); sm.innerHTML='<option value="">Toutes les macrocompétences</option>';
@@ -562,6 +640,18 @@ async function enregistrer(soumettre){
 $('#b-enr').onclick = ()=>enregistrer(false);
 $('#b-soum').onclick = ()=>enregistrer(true);
 window.addEventListener('beforeunload', e=>{ if(modifie){ e.preventDefault(); e.returnValue=''; } });
+
+function installerAides(){
+  const paires = [['aide-T', AIDE.transversales, true], ['aide-P', AIDE.particulieres, true],
+                  ['aide-projet', AIDE.projet, true], ['aide-comm', AIDE.commentaire, true],
+                  ['aide-enr', AIDE.brouillon, false], ['aide-soum', AIDE.soumettre, false],
+                  ['aide-modale', AIDE.cascade, true], ['aide-q', AIDE.recherche, true]];
+  paires.forEach(([id, txt, bas]) => {
+    const cible = document.getElementById(id);
+    if(cible && !cible.firstChild) cible.appendChild(aide(txt, bas));
+  });
+}
+installerAides();
 
 /* ---------- démarrage ---------- */
 let pret = false, enAttente = null;
