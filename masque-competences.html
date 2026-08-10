@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Déclaration annuelle de compétences — IGEDD</title>
+<script src="https://grist.numerique.gouv.fr/grist-plugin-api.js"></script>
+<style>
+:root{
+  --bleu:#000091; --bleu-clair:#e3e3fd; --rouge:#e1000f; --gris:#666; --gris-clair:#f6f6f6;
+  --bord:#ddd; --vert:#18753c; --vert-clair:#b8fec9; --orange:#b34000; --orange-clair:#ffe9e6;
+  --texte:#161616;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+     font-size:14px;line-height:1.5;color:var(--texte);background:#fff}
+h1{font-size:19px;margin:0 0 2px}
+h2{font-size:15px;margin:0;text-transform:uppercase;letter-spacing:.04em}
+.wrap{padding:14px 16px 90px}
+#bandeau{border-bottom:3px solid var(--bleu);padding-bottom:10px;margin-bottom:14px;
+         display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+#identite .sous{color:var(--gris);font-size:13px}
+.badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:12px;font-weight:600}
+.b-brouillon{background:var(--orange-clair);color:var(--orange)}
+.b-soumise{background:var(--vert-clair);color:var(--vert)}
+.b-validee{background:var(--bleu-clair);color:var(--bleu)}
+.b-neutre{background:var(--gris-clair);color:var(--gris)}
+section{margin-bottom:22px}
+.tete{display:flex;align-items:baseline;gap:10px;border-left:4px solid var(--bleu);
+      padding-left:9px;margin-bottom:4px}
+.tete .compte{font-size:13px;color:var(--gris);font-variant-numeric:tabular-nums}
+.tete .compte.ok{color:var(--vert);font-weight:600}
+.consigne{color:var(--gris);font-size:13px;margin:0 0 10px 13px}
+.grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:10px}
+.carte{border:1px solid var(--bord);border-radius:4px;padding:11px 12px;background:#fff;position:relative}
+.carte.vide{border-style:dashed;background:var(--gris-clair);display:flex;align-items:center;
+            justify-content:center;min-height:132px}
+.carte .rang{position:absolute;top:-9px;left:10px;background:var(--bleu);color:#fff;font-size:11px;
+             font-weight:700;padding:1px 7px;border-radius:3px}
+.chemin{font-size:11.5px;color:var(--gris);margin:4px 0 5px;line-height:1.35}
+.chemin b{color:var(--bleu);font-weight:600}
+.titre-comp{font-weight:600;font-size:14px;margin-bottom:5px}
+.desc{font-size:12px;color:var(--gris);max-height:46px;overflow:auto;margin-bottom:8px;
+      border-left:2px solid var(--bord);padding-left:7px}
+label{display:block;font-size:11.5px;font-weight:600;color:var(--gris);margin:7px 0 2px;
+      text-transform:uppercase;letter-spacing:.03em}
+select,input[type=text],textarea{width:100%;padding:5px 7px;border:1px solid var(--bord);
+      border-radius:3px;font:inherit;font-size:13px;background:#fff;color:var(--texte)}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--bleu);outline-offset:0}
+textarea{resize:vertical;min-height:38px}
+button{font:inherit;cursor:pointer;border-radius:3px;border:1px solid transparent;padding:6px 13px}
+.btn-p{background:var(--bleu);color:#fff}
+.btn-p:hover{background:#1212ff}
+.btn-s{background:#fff;color:var(--bleu);border-color:var(--bleu)}
+.btn-s:hover{background:var(--bleu-clair)}
+.btn-d{background:none;color:var(--rouge);border:none;padding:2px 4px;font-size:12px;text-decoration:underline}
+.btn-x{position:absolute;top:7px;right:7px;background:none;border:none;color:var(--gris);
+       font-size:17px;line-height:1;padding:0 3px}
+.btn-x:hover{color:var(--rouge)}
+button:disabled{opacity:.45;cursor:not-allowed}
+#pied{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--bord);
+      padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;
+      box-shadow:0 -2px 6px rgba(0,0,0,.06);flex-wrap:wrap}
+#etat{font-size:12.5px;color:var(--gris)}
+#etat.err{color:var(--rouge);font-weight:600}
+#etat.ok{color:var(--vert);font-weight:600}
+/* modale */
+#modale{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:50;
+        align-items:center;justify-content:center;padding:18px}
+#modale.on{display:flex}
+#boite{background:#fff;border-radius:5px;width:min(880px,100%);max-height:92vh;display:flex;
+       flex-direction:column;overflow:hidden}
+#boite header{padding:12px 16px;border-bottom:2px solid var(--bleu);display:flex;
+              justify-content:space-between;align-items:center}
+#filtres{padding:10px 16px;background:var(--gris-clair);border-bottom:1px solid var(--bord);
+         display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#filtres .plein{grid-column:1/-1}
+#liste{overflow:auto;flex:1;padding:4px 0}
+.item{padding:8px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer}
+.item:hover{background:var(--bleu-clair)}
+.item.pris{opacity:.4;cursor:not-allowed;background:#fafafa}
+.item .l{font-weight:600;font-size:13.5px}
+.item .c{font-size:11.5px;color:var(--gris)}
+.item .d{font-size:12px;color:#444;margin-top:2px}
+.item mark{background:#fff3a0;padding:0}
+.tag{display:inline-block;background:var(--bleu);color:#fff;font-size:10px;font-weight:700;
+     padding:1px 5px;border-radius:2px;margin-left:6px;vertical-align:1px;letter-spacing:.03em}
+.conseil{background:var(--bleu-clair);border-left:4px solid var(--bleu);padding:10px 12px;
+         margin-bottom:14px;font-size:13px}
+#compteur{padding:7px 16px;font-size:12px;color:var(--gris);border-top:1px solid var(--bord);
+          background:var(--gris-clair);display:flex;justify-content:space-between}
+.vide-msg{padding:26px 16px;text-align:center;color:var(--gris)}
+#chargement{padding:40px;text-align:center;color:var(--gris)}
+.alerte{background:var(--orange-clair);border-left:4px solid var(--orange);padding:10px 12px;
+        margin-bottom:14px;font-size:13px}
+</style>
+</head>
+<body>
+
+<div id="chargement">Chargement du référentiel de compétences…</div>
+
+<div class="wrap" id="app" hidden>
+
+  <div id="bandeau">
+    <div id="identite">
+      <h1 id="nom">—</h1>
+      <div class="sous" id="sous">—</div>
+    </div>
+    <div style="text-align:right">
+      <span class="badge b-neutre" id="statut">—</span>
+      <div class="sous" style="font-size:12px;color:var(--gris)" id="maj"></div>
+    </div>
+  </div>
+
+  <div id="alerte-zone"></div>
+
+  <section>
+    <div class="tete">
+      <h2>Compétences transversales</h2>
+      <span class="compte" id="cpt-T">0 / 3</span>
+    </div>
+    <p class="consigne">Pilotage, management et fonctions support. Trois compétences au plus, celles que vous exercez ou avez exercées de façon significative.</p>
+    <div class="grille" id="zone-T"></div>
+  </section>
+
+  <section>
+    <div class="tete">
+      <h2>Compétences particulières</h2>
+      <span class="compte" id="cpt-P">0 / 3</span>
+    </div>
+    <p class="consigne">Domaines sectoriels et techniques. Trois compétences au plus, celles qui caractérisent votre expertise propre.</p>
+    <div class="grille" id="zone-P"></div>
+  </section>
+
+  <section>
+    <div class="tete"><h2>Projet professionnel</h2></div>
+    <p class="consigne">Facultatif. Orientation envisagée à l'issue de votre affectation, secteurs ou fonctions visés, appuis souhaités.</p>
+    <textarea id="projet" rows="3" placeholder="Ex. : direction d'établissement public dans le champ de l'eau et des risques, à horizon 2027."></textarea>
+    <label for="comm">Autres compétences ou observations</label>
+    <textarea id="comm" rows="2" placeholder="Compétence absente de la nomenclature, précision sur un parcours…"></textarea>
+  </section>
+
+</div>
+
+<div id="pied" hidden>
+  <span id="etat"></span>
+  <span style="display:flex;gap:8px">
+    <button class="btn-s" id="b-enr">Enregistrer le brouillon</button>
+    <button class="btn-p" id="b-soum">Soumettre ma déclaration</button>
+  </span>
+</div>
+
+<div id="modale" role="dialog" aria-modal="true" aria-labelledby="m-titre">
+  <div id="boite">
+    <header>
+      <h2 id="m-titre">Choisir une compétence</h2>
+      <button class="btn-x" id="m-fermer" aria-label="Fermer">&times;</button>
+    </header>
+    <div id="filtres">
+      <input type="text" id="f-q" class="plein" placeholder="Rechercher un mot dans les libellés et descriptions…" autocomplete="off">
+      <select id="f-racine"><option value="">Tous les secteurs et fonctions</option></select>
+      <select id="f-macro"><option value="">Toutes les macrocompétences</option></select>
+      <select id="f-coll" class="plein"><option value="">Toutes les compétences collectives</option></select>
+    </div>
+    <div id="liste"></div>
+    <div id="compteur"><span id="m-nb"></span><span id="m-aide">Cliquez sur une ligne pour la retenir.</span></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const NIVEAUX = ['1 - Notions','2 - Mise en œuvre','3 - Maîtrise','4 - Expertise et référence'];
+const APPETENCES = ["Souhaite l'approfondir","Souhaite la transmettre / former",
+                    "Souhaite la valoriser en mobilité","Pas de souhait particulier"];
+const MAX = 3;
+
+let REF = {racines:{}, macros:{}, colls:{}, comps:[], parCode:{}};
+let DECL = null;         // {id, fields}
+let INSPECTEURS = {}, CAMPAGNES = {};
+let SEL = {T:[], P:[]};  // slots : {compId, niveau, appetence, precision, rowId}
+let cible = null;        // {nature, index} en cours de choix
+let accesEcriture = true;
+
+/* ---------- utilitaires ---------- */
+const $ = s => document.querySelector(s);
+const el = (t,c,x) => { const e=document.createElement(t); if(c) e.className=c;
+                        if(x!==undefined) e.textContent=x; return e; };
+const sansAccent = s => (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const esc = s => (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function colonnes(t){ // {id:[], col:[]} -> [{id, ...}]
+  if(!t || !t.id) return [];
+  const keys = Object.keys(t).filter(k=>k!=='id');
+  return t.id.map((id,i)=>{ const o={id}; keys.forEach(k=>o[k]=t[k][i]); return o; });
+}
+
+function surligne(txt, q){
+  txt = txt || '';
+  const mots = sansAccent(q||'').split(/\s+/).filter(m=>m.length>=2);
+  if(!mots.length) return esc(txt);
+  const src = sansAccent(txt);
+  const zones = [];
+  mots.forEach(m=>{ let i=0; while(true){ const p=src.indexOf(m,i); if(p<0) break;
+                    zones.push([p,p+m.length]); i=p+m.length; } });
+  if(!zones.length) return esc(txt);
+  zones.sort((a,b)=>a[0]-b[0]);
+  const fus=[zones[0]];
+  for(let k=1;k<zones.length;k++){
+    const d=fus[fus.length-1];
+    if(zones[k][0] <= d[1]) d[1]=Math.max(d[1], zones[k][1]); else fus.push(zones[k]);
+  }
+  let out='', i=0;
+  fus.forEach(([a,b])=>{ out += esc(txt.slice(i,a)) + '<mark>' + esc(txt.slice(a,b)) + '</mark>'; i=b; });
+  return out + esc(txt.slice(i));
+}
+
+/* ---------- chargement ---------- */
+async function charger(){
+  const [rac, mac, col, cmp, ins, cam] = await Promise.all([
+    grist.docApi.fetchTable('Ref_Racines'),
+    grist.docApi.fetchTable('Ref_Macro'),
+    grist.docApi.fetchTable('Ref_Collective'),
+    grist.docApi.fetchTable('Ref_Competences'),
+    grist.docApi.fetchTable('Inspecteurs').catch(()=>null),
+    grist.docApi.fetchTable('Campagnes').catch(()=>null)
+  ]);
+  colonnes(rac).forEach(r=>REF.racines[r.id]=r);
+  colonnes(mac).forEach(r=>REF.macros[r.id]=r);
+  colonnes(col).forEach(r=>REF.colls[r.id]=r);
+  REF.comps = colonnes(cmp).filter(c=>c.Actif !== false).map(c=>{
+    const ra = REF.racines[c.Racine], ma = REF.macros[c.Macro], co = REF.colls[c.Collective];
+    c._racine = ra ? ra.Libelle : '';
+    c._macro  = ma ? ma.Libelle : '';
+    c._coll   = co ? co.Libelle : '';
+    c._chemin = [c._racine, c._macro, c._coll].filter(x=>x && x!=='(non rattaché)').join(' › ');
+    c._rech   = sansAccent([c.Libelle, c.Description, c._chemin, c.Code].join(' '));
+    return c;
+  });
+  REF.comps.forEach(c=>REF.parCode[c.id]=c);
+  if(ins) colonnes(ins).forEach(r=>INSPECTEURS[r.id]=r);
+  if(cam) colonnes(cam).forEach(r=>CAMPAGNES[r.id]=r);
+  remplirFiltreRacines();
+}
+
+function remplirFiltreRacines(){
+  const s = $('#f-racine');
+  const nature = cible ? cible.nature : null;
+  [...s.querySelectorAll('option:not(:first-child)')].forEach(o=>o.remove());
+  const vues = new Set(REF.comps.filter(c=>!nature || codeNature(c)===nature).map(c=>c.Racine));
+  Object.values(REF.racines)
+    .filter(r=>vues.has(r.id))
+    .sort((a,b)=>{
+      const pa = a.Domaine==='IGD' ? 0 : 1, pb = b.Domaine==='IGD' ? 0 : 1;
+      return pa!==pb ? pa-pb : a.Libelle.localeCompare(b.Libelle,'fr');
+    })
+    .forEach(r=>{ const o=el('option',null,r.Libelle); o.value=r.id; s.appendChild(o); });
+}
+const codeNature = c => (c.Nature === 'Transversale') ? 'T' : 'P';
+
+/* ---------- déclaration courante ---------- */
+async function chargerDeclaration(rec){
+  DECL = rec && rec.id ? rec : null;
+  SEL = {T:[], P:[]};
+  if(!DECL){ rendre(); return; }
+  const dc = colonnes(await grist.docApi.fetchTable('Declaration_Competences'))
+             .filter(r=>r.Declaration === DECL.id);
+  dc.sort((a,b)=>(a.Rang||0)-(b.Rang||0));
+  dc.forEach(r=>{
+    const c = REF.parCode[r.Competence];
+    if(!c) return;
+    const n = codeNature(c);
+    if(SEL[n].length < MAX)
+      SEL[n].push({compId:c.id, niveau:r.Niveau||'', appetence:r.Appetence||'',
+                   precision:r.Precision||'', rowId:r.id});
+  });
+  $('#projet').value = DECL.Projet_professionnel || '';
+  $('#comm').value   = DECL.Commentaire || '';
+  rendre();
+}
+
+/* ---------- rendu ---------- */
+function rendre(){
+  $('#chargement').hidden = true;
+  $('#app').hidden = false;
+  $('#pied').hidden = false;
+
+  if(!DECL){
+    $('#nom').textContent = 'Aucune déclaration sélectionnée';
+    $('#sous').textContent = "Sélectionnez votre ligne dans le tableau des déclarations, à gauche de cette page.";
+    $('#zone-T').innerHTML = ''; $('#zone-P').innerHTML = '';
+    $('#b-enr').disabled = true; $('#b-soum').disabled = true;
+    return;
+  }
+  $('#b-enr').disabled = !accesEcriture; $('#b-soum').disabled = !accesEcriture;
+
+  const ins = INSPECTEURS[DECL.Inspecteur];
+  const cam = CAMPAGNES[DECL.Campagne];
+  $('#nom').textContent = ins ? ((ins.Prenom||'') + ' ' + (ins.Nom||'')).trim() : 'Déclaration n°' + DECL.id;
+  const bouts = [];
+  if(cam) bouts.push(cam.Libelle || ('Campagne ' + (cam.Annee || '')));
+  if(ins && ins.Section) bouts.push('Section ' + ins.Section);
+  if(ins && ins.Corps) bouts.push(ins.Corps);
+  $('#sous').textContent = bouts.join(' — ');
+
+  const st = DECL.Statut || 'Non commencée';
+  const b = $('#statut'); b.textContent = st;
+  b.className = 'badge ' + ({'Brouillon':'b-brouillon','Soumise':'b-soumise','Validée':'b-validee'}[st] || 'b-neutre');
+  $('#maj').textContent = DECL.Date_maj ? 'Mise à jour le ' + new Date(DECL.Date_maj*1000).toLocaleString('fr-FR') : '';
+
+  const zone = $('#alerte-zone'); zone.innerHTML='';
+  const retenues = [...SEL.T, ...SEL.P].filter(Boolean).map(x=>REF.parCode[x.compId]).filter(Boolean);
+  if(retenues.length && !retenues.some(c=>c.Domaine==='IGD')){
+    const cn = el('div','conseil');
+    cn.textContent = "Aucune compétence du bloc « IGEDD — métier d'inspection générale » n'est retenue. "
+      + "Ce bloc, en tête de la liste des secteurs et fonctions, décrit ce que l'exercice à l'inspection "
+      + "vous a spécifiquement apporté : conduite de mission, audit, autorité environnementale, IGRH, "
+      + "mandats, postures. C'est ce que valorisent le plus les employeurs. Ce rappel ne bloque rien.";
+    zone.appendChild(cn);
+  }
+  if(st === 'Soumise' || st === 'Validée'){
+    const a = el('div','alerte');
+    a.textContent = 'Votre déclaration a été ' + st.toLowerCase() + '. Vous pouvez encore la modifier puis la soumettre de nouveau tant que la campagne est ouverte.';
+    zone.appendChild(a);
+  }
+
+  ['T','P'].forEach(n=>{
+    const z = $('#zone-'+n); z.innerHTML='';
+    for(let i=0;i<MAX;i++) z.appendChild(carte(n,i));
+    const c = $('#cpt-'+n);
+    const nb = SEL[n].filter(s=>s).length;
+    c.textContent = nb + ' / ' + MAX;
+    c.className = 'compte' + (nb===MAX?' ok':'');
+  });
+}
+
+function carte(nature, i){
+  const s = SEL[nature][i];
+  if(!s){
+    const d = el('div','carte vide');
+    const b = el('button','btn-s','+ Choisir une compétence');
+    b.onclick = ()=>ouvrir(nature, i);
+    b.disabled = !accesEcriture;
+    d.appendChild(b);
+    return d;
+  }
+  const c = REF.parCode[s.compId];
+  const d = el('div','carte');
+  d.appendChild(el('span','rang', (nature==='T'?'Transversale ':'Particulière ') + (i+1)));
+
+  const x = el('button','btn-x','×');
+  x.title = 'Retirer cette compétence'; x.disabled = !accesEcriture;
+  x.onclick = ()=>{ SEL[nature].splice(i,1); rendre(); marquer(); };
+  d.appendChild(x);
+
+  const ch = el('div','chemin'); ch.innerHTML = esc(c._chemin || '(hors arborescence)');
+  d.appendChild(ch);
+  const tc = el('div','titre-comp', c.Libelle);
+  if(c.Domaine==='IGD') tc.appendChild(el('span','tag','IGEDD'));
+  d.appendChild(tc);
+  if(c.Description) d.appendChild(el('div','desc', c.Description));
+
+  d.appendChild(el('label',null,'Niveau de maîtrise'));
+  const sn = el('select');
+  sn.appendChild(el('option',null,'— à renseigner —')).value='';
+  NIVEAUX.forEach(v=>{ const o=el('option',null,v); o.value=v; if(s.niveau===v) o.selected=true; sn.appendChild(o); });
+  sn.disabled = !accesEcriture;
+  sn.onchange = ()=>{ s.niveau = sn.value; marquer(); };
+  d.appendChild(sn);
+
+  d.appendChild(el('label',null,'Appétence'));
+  const sa = el('select');
+  sa.appendChild(el('option',null,'— à renseigner —')).value='';
+  APPETENCES.forEach(v=>{ const o=el('option',null,v); o.value=v; if(s.appetence===v) o.selected=true; sa.appendChild(o); });
+  sa.disabled = !accesEcriture;
+  sa.onchange = ()=>{ s.appetence = sa.value; marquer(); };
+  d.appendChild(sa);
+
+  d.appendChild(el('label',null,'Précision (facultatif)'));
+  const tp = el('textarea'); tp.rows=2; tp.value = s.precision||'';
+  tp.placeholder = 'Contexte, réalisation marquante, période…';
+  tp.disabled = !accesEcriture;
+  tp.oninput = ()=>{ s.precision = tp.value; marquer(); };
+  d.appendChild(tp);
+
+  return d;
+}
+
+/* ---------- modale de sélection ---------- */
+function ouvrir(nature, i){
+  cible = {nature, index:i};
+  $('#m-titre').textContent = nature==='T'
+    ? 'Choisir une compétence transversale'
+    : 'Choisir une compétence particulière';
+  $('#f-q').value=''; $('#f-macro').innerHTML='<option value="">Toutes les macrocompétences</option>';
+  $('#f-coll').innerHTML='<option value="">Toutes les compétences collectives</option>';
+  remplirFiltreRacines();
+  $('#f-racine').value='';
+  $('#modale').classList.add('on');
+  filtrer();
+  setTimeout(()=>$('#f-q').focus(), 30);
+}
+function fermer(){ $('#modale').classList.remove('on'); cible=null; }
+
+function candidats(){
+  if(!cible) return [];
+  let L = REF.comps.filter(c=>codeNature(c)===cible.nature);
+  const r = $('#f-racine').value, m = $('#f-macro').value, k = $('#f-coll').value;
+  if(r) L = L.filter(c=>String(c.Racine)===r);
+  if(m) L = L.filter(c=>String(c.Macro)===m);
+  if(k) L = L.filter(c=>String(c.Collective)===k);
+  const q = sansAccent($('#f-q').value.trim());
+  if(q.length>=2){
+    const mots = q.split(/\s+/);
+    L = L.filter(c=>mots.every(w=>c._rech.includes(w)));
+  }
+  if(cible.nature==='T')
+    L = L.slice().sort((a,b)=>(a.Domaine==='IGD'?0:1)-(b.Domaine==='IGD'?0:1));
+  return L;
+}
+
+function filtrer(){
+  const L = candidats();
+  const q = $('#f-q').value.trim();
+  const pris = new Set([...SEL.T, ...SEL.P].filter(Boolean).map(s=>s.compId));
+  const box = $('#liste'); box.innerHTML='';
+  $('#m-nb').textContent = L.length + ' compétence' + (L.length>1?'s':'') + ' correspondante' + (L.length>1?'s':'');
+  if(!L.length){
+    box.appendChild(el('div','vide-msg','Aucune compétence ne correspond. Élargissez les filtres ou modifiez la recherche.'));
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  L.slice(0,400).forEach(c=>{
+    const dejaPris = pris.has(c.id);
+    const d = el('div','item' + (dejaPris?' pris':''));
+    const l = el('div','l'); l.innerHTML = surligne(c.Libelle, q);
+    if(c.Domaine==='IGD') l.appendChild(el('span','tag','IGEDD'));
+    d.appendChild(l);
+    const p = el('div','c'); p.textContent = c._chemin; d.appendChild(p);
+    if(c.Description){ const dd = el('div','d');
+      dd.innerHTML = surligne(c.Description.slice(0,190) + (c.Description.length>190?'…':''), q);
+      d.appendChild(dd); }
+    if(dejaPris){ const t=el('div','c'); t.textContent='Déjà retenue'; d.appendChild(t); }
+    else d.onclick = ()=>retenir(c);
+    frag.appendChild(d);
+  });
+  box.appendChild(frag);
+  if(L.length>400) box.appendChild(el('div','vide-msg','Seules les 400 premières sont affichées. Affinez la recherche.'));
+}
+
+function retenir(c){
+  const {nature, index} = cible;
+  const s = {compId:c.id, niveau:'', appetence:'', precision:'', rowId:null};
+  if(index < SEL[nature].length) SEL[nature][index] = s; else SEL[nature].push(s);
+  fermer(); rendre(); marquer();
+}
+
+/* cascades */
+$('#f-racine').onchange = ()=>{
+  const r = $('#f-racine').value;
+  const sm = $('#f-macro'); sm.innerHTML='<option value="">Toutes les macrocompétences</option>';
+  $('#f-coll').innerHTML='<option value="">Toutes les compétences collectives</option>';
+  if(r){
+    const ids = new Set(REF.comps.filter(c=>String(c.Racine)===r && codeNature(c)===cible.nature).map(c=>c.Macro));
+    Object.values(REF.macros).filter(m=>ids.has(m.id))
+      .sort((a,b)=>a.Libelle.localeCompare(b.Libelle,'fr'))
+      .forEach(m=>{ const o=el('option',null,m.Libelle); o.value=m.id; sm.appendChild(o); });
+  }
+  filtrer();
+};
+$('#f-macro').onchange = ()=>{
+  const m = $('#f-macro').value;
+  const sc = $('#f-coll'); sc.innerHTML='<option value="">Toutes les compétences collectives</option>';
+  if(m){
+    const ids = new Set(REF.comps.filter(c=>String(c.Macro)===m).map(c=>c.Collective));
+    Object.values(REF.colls).filter(k=>ids.has(k.id))
+      .sort((a,b)=>a.Libelle.localeCompare(b.Libelle,'fr'))
+      .forEach(k=>{ const o=el('option',null,k.Libelle); o.value=k.id; sc.appendChild(o); });
+  }
+  filtrer();
+};
+$('#f-coll').onchange = filtrer;
+let tmr=null;
+$('#f-q').oninput = ()=>{ clearTimeout(tmr); tmr=setTimeout(filtrer,140); };
+$('#m-fermer').onclick = fermer;
+$('#modale').onclick = e=>{ if(e.target.id==='modale') fermer(); };
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && cible) fermer(); });
+
+/* ---------- enregistrement ---------- */
+let modifie = false;
+function marquer(){ modifie = true; etat('Modifications non enregistrées.', ''); }
+function etat(msg, cls){ const e=$('#etat'); e.textContent=msg; e.className=cls||''; }
+
+function controler(strict){
+  const pbs = [];
+  ['T','P'].forEach(n=>{
+    const lib = n==='T' ? 'transversale' : 'particulière';
+    const L = SEL[n].filter(Boolean);
+    const k = MAX - L.length;
+    if(strict && k > 0)
+      pbs.push('il manque ' + k + ' compétence' + (k>1?'s':'') + ' ' + lib + (k>1?'s':''));
+    L.forEach((s,i)=>{
+      if(strict && !s.niveau) pbs.push('niveau de maîtrise absent pour la ' + lib + ' n°' + (i+1));
+      if(strict && !s.appetence) pbs.push('appétence absente pour la ' + lib + ' n°' + (i+1));
+    });
+  });
+  const ids = [...SEL.T, ...SEL.P].filter(Boolean).map(s=>s.compId);
+  if(new Set(ids).size !== ids.length) pbs.push('une même compétence est retenue deux fois');
+  return pbs;
+}
+
+async function enregistrer(soumettre){
+  if(!DECL) return;
+  const pbs = controler(soumettre);
+  if(pbs.length){ etat('Impossible de soumettre : ' + pbs.join(' ; ') + '.', 'err'); return; }
+  etat('Enregistrement…','');
+  try{
+    const anciennes = colonnes(await grist.docApi.fetchTable('Declaration_Competences'))
+                      .filter(r=>r.Declaration === DECL.id).map(r=>r.id);
+    const actions = [];
+    if(anciennes.length) actions.push(['BulkRemoveRecord','Declaration_Competences',anciennes]);
+
+    const lignes = [];
+    ['T','P'].forEach(n=>SEL[n].filter(Boolean).forEach((s,i)=>lignes.push({s, rang:i+1})));
+    if(lignes.length){
+      const now = Math.floor(Date.now()/1000);
+      actions.push(['BulkAddRecord','Declaration_Competences', lignes.map(()=>null), {
+        Declaration: lignes.map(()=>DECL.id),
+        Competence:  lignes.map(l=>l.s.compId),
+        Rang:        lignes.map(l=>l.rang),
+        Niveau:      lignes.map(l=>l.s.niveau||null),
+        Appetence:   lignes.map(l=>l.s.appetence||null),
+        Precision:   lignes.map(l=>l.s.precision||''),
+        Date_saisie: lignes.map(()=>now)
+      }]);
+    }
+    const maj = {
+      Date_maj: Math.floor(Date.now()/1000),
+      Commentaire: $('#comm').value,
+      Projet_professionnel: $('#projet').value,
+      Statut: soumettre ? 'Soumise' : (DECL.Statut==='Validée' ? 'Validée' : 'Brouillon')
+    };
+    if(soumettre) maj.Date_soumission = Math.floor(Date.now()/1000);
+    actions.push(['UpdateRecord','Declarations',DECL.id,maj]);
+
+    await grist.docApi.applyUserActions(actions);
+    Object.assign(DECL, maj);
+    modifie = false;
+    etat(soumettre ? 'Déclaration soumise. Merci.' : 'Brouillon enregistré.', 'ok');
+    rendre();
+  }catch(e){
+    console.error(e);
+    etat('Échec de l’enregistrement : ' + (e && e.message ? e.message : e), 'err');
+  }
+}
+$('#b-enr').onclick = ()=>enregistrer(false);
+$('#b-soum').onclick = ()=>enregistrer(true);
+window.addEventListener('beforeunload', e=>{ if(modifie){ e.preventDefault(); e.returnValue=''; } });
+
+/* ---------- démarrage ---------- */
+let pret = false, enAttente = null;
+grist.ready({requiredAccess:'full'});
+grist.onRecord(async rec => {
+  if(!pret){ enAttente = rec; return; }
+  try{ await chargerDeclaration(rec); }
+  catch(e){ console.error(e); etat('Erreur de chargement : ' + e.message,'err'); }
+});
+(async ()=>{
+  try{
+    await charger();
+    pret = true;
+    if(enAttente) await chargerDeclaration(enAttente); else rendre();
+  }catch(e){
+    console.error(e);
+    $('#chargement').innerHTML = '<b style="color:#e1000f">Erreur de chargement du référentiel.</b><br>' +
+      esc(e && e.message ? e.message : String(e)) +
+      '<br><small>Vérifiez que le widget dispose de l’accès complet au document (menu du widget, « Accès complet au document »).</small>';
+  }
+})();
+</script>
+</body>
+</html>
