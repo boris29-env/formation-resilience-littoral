@@ -118,7 +118,9 @@
   .modal h2{ font-size:14px; margin:0 0 4px 0; color:#1c1e21; }
   .modal .modalSub{ font-size:11px; color:var(--gray); margin-bottom:14px; }
   .modal .field{ margin-bottom:12px; }
-  .modal .field label{
+  /* Cibler uniquement l'intitulé du champ (enfant direct) : sinon la règle
+     déborde sur la liste des co-pilotes et affiche les noms en majuscules. */
+  .modal .field > label{
     display:block; font-size:10.5px; font-weight:700; color:#666; margin-bottom:4px;
     text-transform:uppercase; letter-spacing:.3px;
   }
@@ -539,7 +541,9 @@ document.getElementById("exportBtn").addEventListener("click", exportReport);
 
 function openAssignModal(item){
   currentItem = item;
-  document.getElementById("modalTitle").textContent = escapeHtml(item.titre);
+  // textContent échappe déjà : ne pas appliquer escapeHtml, sinon les
+  // apostrophes s'affichent en entités (&#39;) dans le titre de la fenêtre.
+  document.getElementById("modalTitle").textContent = item.titre;
   document.getElementById("modalSub").textContent = item.type + (item.sous ? " · " + item.sous : "");
 
   const piloteSel = document.getElementById("piloteSelect");
