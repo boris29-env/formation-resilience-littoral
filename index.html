@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Projets littoral et IGEDD</title>
+<script>
+/* Les liens de session de la formation Anse-de-Goulven (?s=... ou ?session=...)
+   pointaient vers la racine du site : on les renvoie vers leur nouvelle adresse. */
+(function(){
+  var p = new URLSearchParams(location.search);
+  if (p.has("s") || p.has("session")) location.replace("anse-goulven/" + location.search + location.hash);
+})();
+</script>
+<style>
+:root{
+  --teal:#175177;--teal-d:#0F3A57;--orange:#F19100;--cyan:#1ABCDA;
+  --ink:#1B2733;--mut:#5C6B78;--line:#DCE5EB;--card:#fff;
+  --bg1:#F4F8FB;--bg2:#E6EEF4;--chip:#EDF4F8;
+  --ff:"Segoe UI","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#E6EDF3;--mut:#9FB0BF;--line:#2A3A48;--card:#16222D;
+    --bg1:#0F1922;--bg2:#0B141C;--chip:#1D2E3C;--teal:#7CC4E8;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#E6EDF3;--mut:#9FB0BF;--line:#2A3A48;--card:#16222D;
+  --bg1:#0F1922;--bg2:#0B141C;--chip:#1D2E3C;--teal:#7CC4E8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--ff);color:var(--ink);line-height:1.5;min-height:100vh;
+  background:linear-gradient(180deg,var(--bg1),var(--bg2));background-attachment:fixed}
+header{background:linear-gradient(120deg,var(--teal-d),#175177 70%);color:#fff;padding:34px 16px 30px}
+header .in,main{max-width:1000px;margin:0 auto}
+header .eye{font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.85}
+header h1{font-size:26px;font-weight:800;letter-spacing:-.4px;margin-top:4px}
+header p{font-size:14px;opacity:.9;margin-top:6px;max-width:640px}
+main{padding:26px 16px 60px}
+h2{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);margin:26px 0 12px}
+h2:first-child{margin-top:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:8px;
+  box-shadow:0 1px 2px rgba(15,58,87,.06),0 4px 14px rgba(15,58,87,.05)}
+.card.feat{border-color:var(--orange);border-width:1.5px}
+.card .top{display:flex;align-items:center;gap:10px}
+.card .ic{font-size:24px;line-height:1}
+.card h3{font-size:16px;color:var(--teal)}
+.card p{font-size:13.5px;color:var(--mut)}
+.links{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:6px}
+.links a{font-size:13px;font-weight:600;text-decoration:none;color:var(--teal);background:var(--chip);border:1px solid var(--line);
+  border-radius:20px;padding:5px 12px;transition:border-color .12s}
+.links a:hover,.links a:focus-visible{border-color:var(--cyan);outline:none}
+.links a.main{background:var(--teal-d);border-color:var(--teal-d);color:#fff}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;border-radius:4px;padding:1px 7px;background:var(--chip);color:var(--mut);margin-left:auto}
+footer{font-size:12px;color:var(--mut);text-align:center;padding:0 16px 30px}
+footer a{color:var(--teal)}
+</style>
+</head>
+<body>
+<header><div class="in">
+  <div class="eye">boris29-env · GitHub Pages</div>
+  <h1>Projets littoral et IGEDD</h1>
+  <p>Formation, atlas et ateliers sur la résilience des littoraux, et outils de travail de l'IGEDD. Chaque projet a son propre dossier dans le dépôt.</p>
+</div></header>
+
+<main>
+  <h2>Littoral et résilience</h2>
+  <div class="grid">
+    <section class="card feat">
+      <div class="top"><span class="ic">🌊</span><h3>Anse-de-Goulven</h3><span class="tag">Formation 7 h</span></div>
+      <p>Espace participant de la formation «&nbsp;Résilience du littoral&nbsp;».</p>
+      <div class="links">
+        <a class="main" href="anse-goulven/">Espace participant</a>
+        <a href="anse-goulven/Formation_resilience_littoral_7h.pptx">Support (.pptx)</a>
+      </div>
+    </section>
+    <section class="card">
+      <div class="top"><span class="ic">🗺️</span><h3>LITTUS</h3></div>
+      <p>Atlas dynamique du trait de côte : cellules sédimentaires et érosion.</p>
+      <div class="links"><a class="main" href="littus/">Ouvrir l'atlas</a></div>
+    </section>
+  </div>
+
+  <h2>IGEDD</h2>
+  <div class="grid">
+    <section class="card">
+      <div class="top"><span class="ic">📋</span><h3>Suivi cabinet</h3></div>
+      <p>Tableau Kanban, journal et arbitrages.</p>
+      <div class="links">
+        <a class="main" href="suivi-cabinet/kanban-suivi-cabinet.html">Kanban</a>
+        <a href="suivi-cabinet/journal-suivi-cabinet.html">Journal</a>
+        <a href="suivi-cabinet/arbitrage-suivi-cabinet.html">Arbitrage</a>
+      </div>
+    </section>
+    <section class="card">
+      <div class="top"><span class="ic">🧩</span><h3>Outils IGEDD</h3></div>
+      <p>Déclaration annuelle de compétences et trombinoscope.</p>
+      <div class="links">
+        <a class="main" href="outils-igedd/masque-competences.html">Compétences</a>
+        <a href="outils-igedd/trombi-widget.html">Trombinoscope</a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>Code source : <a href="https://github.com/boris29-env/formation-resilience-littoral">github.com/boris29-env/formation-resilience-littoral</a></footer>
+</body>
+</html>
