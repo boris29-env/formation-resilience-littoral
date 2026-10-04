@@ -23,8 +23,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      # Ne publie que les pages du site : la documentation (*.md) et le code
+      # du worker Cloudflare, déployé séparément, restent dans le dépôt.
+      - name: Préparer le site
+        run: |
+          mkdir _site
+          tar -cf - --exclude=./.git --exclude=./.github --exclude=./worker \
+                    --exclude='*.md' --exclude=./_site . | tar -xf - -C _site
+          find _site -type f | sort
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

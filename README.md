@@ -21,4 +21,4 @@ Les fichiers non HTML (images, `.pptx`, JSON) ne sont pas redirigés : un lien d
 
 ## Publication
 
-Le workflow `.github/workflows/pages.yml` publie tout le dépôt sur GitHub Pages à chaque push sur `main`.
+Le workflow `.github/workflows/pages.yml` publie le site sur GitHub Pages à chaque push sur `main`. Seules les pages et leurs ressources sont publiées : la documentation (`*.md`) et le dossier `worker/` restent dans le dépôt.
