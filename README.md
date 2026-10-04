@@ -15,7 +15,7 @@ La page d'accueil (`index.html`) est un portail qui renvoie vers chaque projet. 
 
 ## Anciennes adresses
 
-Les pages étaient auparavant toutes à la racine. Les anciennes adresses (`plateforme.html`, `kanban-suivi-cabinet.html`, etc.) restent en place sous forme de petites pages de redirection, qui conservent les paramètres d'URL et l'ancre. Les liens de session de la formation (`/?s=...` ou `/?session=...`) sont renvoyés par le portail vers `anse-goulven/`.
+Les pages étaient auparavant toutes à la racine. Les anciennes adresses du suivi cabinet (`kanban-suivi-cabinet.html`, `journal-suivi-cabinet.html`, `arbitrage-suivi-cabinet.html`) restent en place sous forme de petites pages de redirection, qui conservent les paramètres d'URL et l'ancre. Les liens de session de la formation (`/?s=...` ou `/?session=...`) sont renvoyés par le portail vers `anse-goulven/`.
 
 Les fichiers non HTML (images, `.pptx`, JSON) ne sont pas redirigés : un lien direct vers l'un d'eux doit être mis à jour vers son nouveau dossier.
 
