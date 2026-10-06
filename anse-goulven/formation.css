@@ -363,3 +363,31 @@
   .formation .layout { display: block; }
 
 }
+
+/* Données chiffrées : chiffres clés, puis tableaux détaillés repliés. */
+.formation .kf-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 28px; margin: 6px 0 34px; }
+.formation .kf-card { display: flex; flex-direction: column; padding: 16px 0 18px; border-top: 2px solid #08749a; color: var(--black); text-decoration: none; }
+.formation .kf-num { font: 600 30px/1.15 var(--sans); color: #08749a; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.formation .kf-label { margin-top: 4px; font: 600 14px/1.4 var(--sans); color: var(--navy); }
+.formation .kf-ctx { margin-top: 6px; font-size: 12.5px; line-height: 1.55; color: var(--grey-txt); flex: 1; }
+.formation .kf-more { margin-top: 10px; font-size: 12px; font-weight: 600; color: #08749a; }
+.formation .kf-more::after { content: ' →'; }
+.formation .kf-card:hover .kf-more { text-decoration: underline; text-underline-offset: 4px; }
+.formation .kf-details { border-top: 1px solid var(--grey-line); }
+.formation .kf-detail { border-bottom: 1px solid var(--grey-line); scroll-margin-top: 100px; }
+.formation .kf-detail > summary { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 2px 16px; padding: 14px 4px; cursor: pointer; list-style: none; }
+.formation .kf-detail > summary::-webkit-details-marker { display: none; }
+.formation .kf-detail > summary::after { content: '+'; grid-column: 2; grid-row: 1; font: 400 20px/1 var(--sans); color: #08749a; }
+.formation .kf-detail[open] > summary::after { content: '−'; }
+.formation .kf-detail-title { font: 600 15px/1.4 var(--sans); color: var(--navy); }
+.formation .kf-detail-meta { grid-column: 1; font-size: 12px; color: var(--grey-txt); }
+.formation .kf-detail > summary:hover .kf-detail-title { color: #08749a; }
+.formation .kf-detail > .data-table { margin: 0 0 16px; }
+.formation .kf-detail > .geov-locate-link { margin: -6px 0 18px; }
+@media (max-width: 900px) { .formation .kf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) {
+  .formation .kf-grid { grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .formation .kf-num { font-size: 24px; }
+  .formation .kf-label { font-size: 13px; }
+  .formation .kf-ctx { font-size: 11.5px; }
+}
