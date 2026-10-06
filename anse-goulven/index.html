@@ -13,9 +13,6 @@ window.addEventListener('load', () => {
   setTimeout(() => window.scrollTo(0, 0), 0);
 });
 </script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root {
   --teal: #328088;
@@ -4509,9 +4506,11 @@ h3.subhead {
 @media (max-width: 1100px) { .quick-dock { display: none; } }
 
 </style>
+<link rel="stylesheet" href="formation.css">
 </head>
 
-<body>
+<body class="formation">
+<a class="skip-link" href="#formationContent">Aller au contenu</a>
 
 <!-- ============ SCROLL PROGRESS BAR ============ -->
 <div class="scroll-progress" aria-hidden="true"><div class="scroll-progress-fill" id="scrollProgressFill"></div></div>
@@ -4520,7 +4519,7 @@ h3.subhead {
 <header class="topbar">
   <div class="topbar-left">
     <span class="flag"><span class="blue"></span><span class="white"></span><span class="red"></span></span>
-    <span class="topbar-title">Anse-de-Goulven  ·  <em>espace participant</em></span>
+    <a class="topbar-title" href="#accueil">Anse-de-Goulven <span>Formation · Résilience du littoral</span></a>
   </div>
   <div class="topbar-right">
     <button class="topbar-search-hint" onclick="openCmdk()" aria-label="Rechercher une section">
@@ -4532,8 +4531,8 @@ h3.subhead {
       <span class="fb-status-dot" id="fb-status-dot"></span>
       <span class="fb-status-label" id="fb-status-label">Session : <strong id="fb-session-label">default</strong> ✎</span>
     </span>
-    <button class="topbar-btn primary" id="unlockBtn" onclick="openUnlockModal()">Débloquer mon groupe</button>
-    <button class="topbar-btn menu-toggle-btn" id="menuToggle">Menu</button>
+    <button class="topbar-btn primary" id="unlockBtn" onclick="openUnlockModal()" aria-label="Accéder à mon groupe"><span class="topbar-group-label">Accéder à mon groupe</span><span class="topbar-group-short" aria-hidden="true">Groupe</span></button>
+    <button class="topbar-btn menu-toggle-btn" id="menuToggle" aria-controls="sidebar" aria-expanded="false">Sommaire</button>
   </div>
 </header>
 
@@ -4880,7 +4879,7 @@ h3.subhead {
 <div class="layout">
 
 <!-- ============ SIDEBAR ============ -->
-<aside class="sidebar" id="sidebar">
+<aside class="sidebar" id="sidebar" aria-label="Sommaire de la formation">
   <div class="sidebar-section">
     <span class="sidebar-label">Le territoire</span>
     <a href="#territoire">Le territoire</a>
@@ -4921,17 +4920,29 @@ h3.subhead {
 </aside>
 
 <!-- ============ MAIN ============ -->
-<main class="content">
+<main class="content" id="formationContent" tabindex="-1">
 
 <!-- ============ HERO ============ -->
-<div class="hero">
-  <span class="hero-tag">Formation animée par Boris Leclerc  ·  IGEDD</span>
-  <h1>Anse-de-Goulven<br><em>un territoire à inventer</em></h1>
-  <p class="hero-lede">
-    Bienvenue. Vous allez consacrer la journée à un territoire littoral fictif, mais nourri de données, de chiffres
-    et de ressources réelles. Cette page rassemble tout ce dont vous avez besoin : au moment où vous en avez besoin.
-    Gardez-la ouverte pendant les études de cas.
-  </p>
+<div class="hero" id="accueil">
+  <div class="hero-opening">
+    <div class="hero-copy">
+      <span class="hero-tag">Dossier de formation · Espace participant</span>
+      <h1>Anse-de-Goulven</h1>
+      <p class="hero-subtitle">Résilience du littoral</p>
+      <p class="hero-lede">Un territoire littoral fictif pour étudier les risques, construire une stratégie d’adaptation et exercer la gestion de crise.</p>
+      <p class="hero-byline">Boris Leclerc <span>·</span> IGEDD</p>
+      <nav class="hero-links" aria-label="Accès directs">
+        <a href="#cartes">Explorer la carte <span aria-hidden="true">→</span></a>
+        <a href="#groupes">Consulter mon rôle <span aria-hidden="true">→</span></a>
+      </nav>
+    </div>
+    <figure class="hero-map-reference">
+      <a href="#cartes" aria-label="Ouvrir la carte interactive d’Anse-de-Goulven">
+        <img src="10_montage_image3_anse.png" alt="Carte annotée du territoire : baie, marais, digue et enjeux littoraux" width="1803" height="1350" fetchpriority="high">
+      </a>
+      <figcaption><span>Le territoire d’étude</span><span>Fond IGN · toponymie fictive</span></figcaption>
+    </figure>
+  </div>
   <div class="hero-fact-row">
     <div class="hero-fact">
       <div class="hero-fact-num">4 200</div>
@@ -4959,11 +4970,11 @@ h3.subhead {
       </svg>
     </div>
     <div class="pwd-panel-content">
-      <h3>Vous arrivez ? Débloquez votre groupe</h3>
-      <p>Chaque groupe a reçu un code distinct du formateur. Saisissez le vôtre pour accéder à votre boîte mail, à votre fiche de rôle et à la mécanique des votes. <strong>Les autres groupes restent visibles</strong> mais leurs contenus sensibles : boîtes mail, mémos confidentiels : ne sont déverrouillés qu'après le partage en plénière.</p>
-      <p style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.55);">
+      <h3>Accéder à votre groupe</h3>
+      <p>Le code remis par le formateur ouvre votre boîte mail, votre fiche de rôle et les votes. Les informations réservées aux autres groupes seront partagées en plénière.</p>
+      <p class="pwd-panel-reset">
         Quelqu'un est passé avant vous sur ce poste ?
-        <a href="#" onclick="event.preventDefault(); resetThisBrowser();" style="color:rgba(255,255,255,0.85);text-decoration:underline;">Réinitialiser ce navigateur</a>.
+        <a href="#" onclick="event.preventDefault(); resetThisBrowser();">Réinitialiser ce navigateur</a>.
       </p>
     </div>
     <button class="pwd-panel-btn" onclick="openUnlockModal()">Saisir mon code</button>
@@ -8278,12 +8289,14 @@ document.getElementById('menuToggle').addEventListener('click', function() {
   const sb = document.getElementById('sidebar');
   const bd = document.getElementById('sidebarBackdrop');
   sb.classList.toggle('open');
+  this.setAttribute('aria-expanded', String(sb.classList.contains('open')));
   if (bd) bd.classList.toggle('open', sb.classList.contains('open'));
 });
 document.querySelectorAll('.sidebar a').forEach(link => {
   link.addEventListener('click', function() {
     if (window.innerWidth <= 900) {
       document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('menuToggle').setAttribute('aria-expanded', 'false');
       const bd = document.getElementById('sidebarBackdrop');
       if (bd) bd.classList.remove('open');
     }
@@ -8293,6 +8306,7 @@ document.querySelectorAll('.sidebar a').forEach(link => {
   const bd = document.getElementById('sidebarBackdrop');
   if (bd) bd.addEventListener('click', () => {
     document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('menuToggle').setAttribute('aria-expanded', 'false');
     bd.classList.remove('open');
   });
 })();
