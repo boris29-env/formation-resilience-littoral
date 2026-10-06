@@ -15,7 +15,7 @@ La page d'accueil (`index.html`) est un portail qui renvoie vers chaque projet. 
 
 ## Visualiseur d'Anse-de-Goulven
 
-La présentation de la formation est définie dans `anse-goulven/formation.css` : typographies système, navigation sobre, atlas interactif dès l'accueil et mise en page adaptée au mobile. Cette feuille est chargée après les styles historiques de la page ; les couleurs des groupes et des aléas restent celles du scénario.
+La présentation de la formation est définie dans `anse-goulven/formation.css` : typographies système, navigation horizontale, ouverture cartographique, trois parcours de formation et mise en page adaptée au mobile. L’image `atlas-accueil.png` est un aperçu du visualiseur actuel ; la carte interactive et sa simulation restent accessibles juste après les parcours. Cette feuille est chargée après les styles historiques de la page ; les couleurs des groupes et des aléas restent celles du scénario.
 
 Le visualiseur intégré à `anse-goulven/index.html` utilise MapLibre GL JS et les services de la Géoplateforme IGN. Il propose :
 

@@ -4521,6 +4521,9 @@ h3.subhead {
     <span class="flag"><span class="blue"></span><span class="white"></span><span class="red"></span></span>
     <a class="topbar-title" href="#accueil">Anse-de-Goulven <span>Formation · Résilience du littoral</span></a>
   </div>
+  <nav class="topbar-nav" aria-label="Navigation principale">
+    <a href="#cartes">Le territoire</a><a href="#cas1">Les exercices</a><a href="#cas3">Gestion de crise</a>
+  </nav>
   <div class="topbar-right">
     <button class="topbar-search-hint" onclick="openCmdk()" aria-label="Rechercher une section">
       <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -4880,6 +4883,10 @@ h3.subhead {
 
 <!-- ============ SIDEBAR ============ -->
 <aside class="sidebar" id="sidebar" aria-label="Sommaire de la formation">
+  <div class="sidebar-tools">
+    <button type="button" onclick="openCmdk()">Rechercher dans la formation</button>
+    <button type="button" onclick="openSessionModal()">Choisir une session</button>
+  </div>
   <div class="sidebar-section">
     <span class="sidebar-label">Le territoire</span>
     <a href="#territoire">Le territoire</a>
@@ -4926,17 +4933,20 @@ h3.subhead {
 <div class="hero" id="accueil">
   <div class="hero-opening">
     <div class="hero-copy">
-      <span class="hero-tag">Dossier de formation · Espace participant</span>
-      <h1>Anse-de-Goulven</h1>
-      <p class="hero-subtitle">Résilience du littoral</p>
-      <p class="hero-lede">Un territoire littoral fictif pour étudier les risques, construire une stratégie d’adaptation et exercer la gestion de crise.</p>
-      <p class="hero-byline">Boris Leclerc <span>·</span> IGEDD</p>
+      <span class="hero-tag">Formation à la résilience du littoral · IGEDD</span>
+      <h1>Anse-de-Goulven<span>Comprendre le territoire.<br>Décider face aux risques.</span></h1>
+      <p class="hero-lede">Cartographie, adaptation et gestion de crise : un territoire fictif pour confronter les décisions aux réalités du littoral.</p>
       <nav class="hero-links" aria-label="Accès directs">
-        <a href="#cartes">Explorer la carte <span aria-hidden="true">→</span></a>
-        <a href="#groupes">Consulter mon rôle <span aria-hidden="true">→</span></a>
+        <a href="#cartes">Explorer le territoire <span aria-hidden="true">→</span></a>
+        <a href="#groupes">Accéder à mon rôle <span aria-hidden="true">→</span></a>
       </nav>
+      <p class="hero-byline">Une formation conçue par Boris Leclerc · IGEDD</p>
     </div>
   </div>
+  <div class="hero-map-credit">© IGN – Géoplateforme · atlas pédagogique · territoire et noms fictifs</div>
+</div>
+
+<div class="formation-overview">
   <div class="hero-fact-row">
     <div class="hero-fact">
       <div class="hero-fact-num">4 200</div>
@@ -4955,8 +4965,11 @@ h3.subhead {
       <div class="hero-fact-label">événements significatifs<br>en 7 ans</div>
     </div>
   </div>
-
-
+  <nav class="learning-paths" aria-label="Parcours de formation">
+    <a href="#cartes"><span class="path-step">01 / COMPRENDRE</span><h2>Lire le territoire</h2><p>Localiser les enjeux et croiser les données de l’atlas.</p><span class="path-action">Ouvrir la carte <span aria-hidden="true">→</span></span></a>
+    <a href="#cas1"><span class="path-step">02 / PRÉPARER</span><h2>Construire les décisions</h2><p>Examiner les choix d’adaptation avec les cinq groupes d’acteurs.</p><span class="path-action">Consulter les exercices <span aria-hidden="true">→</span></span></a>
+    <a href="#cas3"><span class="path-step">03 / AGIR</span><h2>Faire face à la tempête</h2><p>Suivre les phases du scénario PCS et leurs conséquences sur le territoire.</p><span class="path-action">Accéder à la gestion de crise <span aria-hidden="true">→</span></span></a>
+  </nav>
 </div>
 
 <!-- ============ CARTES (visualiseur intégré) ============ -->
@@ -8286,7 +8299,7 @@ document.getElementById('menuToggle').addEventListener('click', function() {
 });
 document.querySelectorAll('.sidebar a').forEach(link => {
   link.addEventListener('click', function() {
-    if (window.innerWidth <= 900) {
+    {
       document.getElementById('sidebar').classList.remove('open');
       document.getElementById('menuToggle').setAttribute('aria-expanded', 'false');
       const bd = document.getElementById('sidebarBackdrop');
