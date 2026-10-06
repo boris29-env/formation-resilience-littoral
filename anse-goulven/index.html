@@ -4373,6 +4373,11 @@ h3.subhead {
 .geov-crisis-time { color: #FFB7A8; font: 700 10px var(--mono); }
 .geov-crisis-title { margin-top: 1px; font: 600 15px var(--serif); }
 .geov-crisis-summary { margin-top: 1px; color: rgba(255,255,255,.74); font-size: 10.5px; line-height: 1.35; }
+.geov-crisis-effects { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.geov-crisis-effect { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 3px 7px; border: 1px solid rgba(255,255,255,.18); border-radius: 999px; color: rgba(255,255,255,.88); background: rgba(255,255,255,.08); font-size: 9.5px; line-height: 1.25; }
+.geov-crisis-effect.variant { border-color: rgba(255,183,168,.55); background: rgba(169,47,37,.28); }
+.geov-crisis-effect.trap { border-color: rgba(244,193,89,.58); background: rgba(164,109,0,.28); }
+.geov-crisis-effect.disruptor { border-color: rgba(132,210,219,.55); background: rgba(31,117,128,.30); }
 .geov-crisis-controls { display: flex; gap: 5px; }
 .geov-crisis-btn { width: 32px; height: 32px; border: 1px solid rgba(255,255,255,.25); border-radius: 50%; color: var(--white); background: transparent; cursor: pointer; }
 .geov-crisis-btn:hover { background: rgba(255,255,255,.1); }
@@ -5329,6 +5334,7 @@ h3.subhead {
               <div class="geov-crisis-time" id="geovCrisisTime">J−18h</div>
               <div class="geov-crisis-title" id="geovCrisisTitle">Vigilance rouge déclenchée</div>
               <div class="geov-crisis-summary" id="geovCrisisSummary"></div>
+              <div class="geov-crisis-effects" id="geovCrisisEffects" aria-live="polite"></div>
             </div>
             <div class="geov-crisis-controls">
               <button type="button" class="geov-crisis-btn" id="geovCrisisPrev" aria-label="Phase précédente">‹</button>
@@ -12603,6 +12609,9 @@ function subscribePcsVariants() {
   if (!window.FB || !window.FB.onVal) return;
   window.FB.onVal('pcs/variants', val => {
     _pcsVariants = val || {};
+    if (window.GoulvenMap && window.GoulvenMap.isCrisisActive()) {
+      window.GoulvenMap.syncVariants(_pcsVariants);
+    }
     // Si une phase est ouverte au moment de la mise à jour, on rafraîchit le briefing
     if (_pcsViewingPhaseIdx !== null && _pcsViewingPhaseIdx !== undefined) {
       const phase = PCS_PHASES[_pcsViewingPhaseIdx];
@@ -17498,6 +17507,8 @@ const PCS_TRAP_ACTIONS = {
 // Format : Set d'ids d'actions, chacun associé à sa raison
 var _pcsActiveTraps = {};  // { actionId: reason }
 window._pcsActiveTraps = _pcsActiveTraps;
+var _pcsTrapHistory = {};  // conséquences révélées après validation, conservées pour la carte de la session
+window._pcsTrapHistory = _pcsTrapHistory;
 
 // Tire 1-2 pièges aléatoirement parmi les pièges disponibles pour cette phase/groupe
 function _drawPcsTraps(phaseId, grp) {
@@ -17612,12 +17623,16 @@ let _pcsTimerInterval = null;
 let _pcsTimerStartTs = 0;
 let _pcsTimerRemaining = 0;
 let _pcsDisruptorTriggered = false;
+let _pcsLastDisruptor = null;
+window._pcsLastDisruptor = null;
 
 function _startPcsTimer() {
   _stopPcsTimer();
   _pcsTimerStartTs = Date.now();
   _pcsTimerRemaining = PCS_TIMER_DURATION;
   _pcsDisruptorTriggered = false;
+  _pcsLastDisruptor = null;
+  window._pcsLastDisruptor = null;
   const timerEl = document.getElementById('pcsPhaseTimer');
   if (timerEl) timerEl.style.display = '';
   _renderPcsTimer();
@@ -17687,6 +17702,8 @@ function _triggerPcsDisruptor() {
   if (!phase) return;
   const dis = _drawPcsDisruptor(phase.id);
   if (!dis) return;
+  _pcsLastDisruptor = dis;
+  window._pcsLastDisruptor = dis;
   const briefingEl = document.getElementById('pcsPhaseBriefing');
   if (!briefingEl) return;
   const insert = document.createElement('div');
@@ -17798,6 +17815,15 @@ let _pcsPendingValidation = false;
 validatePcsVote = function() {
   if (_pcsViewingPhaseIdx == null) return;
   const selected = Array.from(_pcsSelected);
+  const phase = PCS_PHASES[_pcsViewingPhaseIdx];
+  if (phase) {
+    const phaseActions = Object.values(phase.actions || {}).flat();
+    _pcsTrapHistory[phase.id] = selected.filter(id => _pcsActiveTraps[id]).map(id => {
+      const action = phaseActions.find(item => item.id === id);
+      return { id, text: action ? action.text : id, reason: _pcsActiveTraps[id] };
+    });
+    window._pcsTrapHistory = _pcsTrapHistory;
+  }
   const hasTraps = _showPcsTrapsDebrief(selected);
   if (hasTraps) {
     // On diffère la validation Firebase + alert jusqu'à fermeture du débrief
@@ -18498,11 +18524,35 @@ const PRESETS = {
   }
 };
 
+// Calage sur la carte tactique fournie : le port est au contact de la baie,
+// le marais est en arrière du rivage et la digue ferme son côté terrestre.
+// Ces ancres évitent de réutiliser les positions approximatives des premiers prototypes.
+const REFERENCE_SITES = {
+  port: [-1.58666, 49.21994],
+  marais: [-1.58390, 49.21770],
+  digueWest: [-1.58666, 49.21994],
+  digueBreach: [-1.57955, 49.22210],
+  digueEast: [-1.57380, 49.22335],
+  quartier: [-1.57245, 49.21865],
+  routeNord: [-1.56680, 49.22410]
+};
+const REFERENCE_DIGUE = {
+  type: 'Feature', properties: { nom: 'Digue (1962)', calage: 'carte tactique de référence' },
+  geometry: { type: 'LineString', coordinates: [
+    REFERENCE_SITES.digueWest,
+    [-1.58420, 49.22055],
+    [-1.58170, 49.22130],
+    REFERENCE_SITES.digueBreach,
+    [-1.57655, 49.22272],
+    REFERENCE_SITES.digueEast
+  ] }
+};
+
 const CRISIS_ROUTES = {
   type: 'FeatureCollection',
   features: [
     { type: 'Feature', properties: { id: 'quartier-gymnase', label: 'Quartier de la Digue → gymnase' }, geometry: { type: 'LineString', coordinates: [[-1.5728,49.2188],[-1.5698,49.2157],[-1.5663,49.2112],[-1.5630,49.2066],[-1.5608,49.2044]] } },
-    { type: 'Feature', properties: { id: 'camping2-salle', label: 'Camping La Goëlette → salle des fêtes' }, geometry: { type: 'LineString', coordinates: [[-1.57404,49.21778],[-1.5708,49.2147],[-1.5670,49.2091],[-1.56315,49.2033]] } },
+    { type: 'Feature', properties: { id: 'camping2-salle', label: 'Camping La Goëlette → salle des fêtes' }, geometry: { type: 'LineString', coordinates: [[-1.5799,49.2208],[-1.5760,49.2180],[-1.5708,49.2147],[-1.5670,49.2091],[-1.56315,49.2033]] } },
     { type: 'Feature', properties: { id: 'camping3-gymnase', label: 'Camping Le Goulven → gymnase' }, geometry: { type: 'LineString', coordinates: [[-1.55606,49.2183],[-1.5574,49.2134],[-1.5586,49.2085],[-1.5608,49.2044]] } },
     { type: 'Feature', properties: { id: 'ehpad-salle', label: 'EHPAD → salle des fêtes' }, geometry: { type: 'LineString', coordinates: [[-1.56515,49.20606],[-1.5641,49.2048],[-1.56315,49.2033]] } }
   ]
@@ -18532,25 +18582,21 @@ const CRISIS_PHASES_MAP = [
   },
   {
     time: 'J0 · mardi 12h00', title: 'Pic de la tempête',
-    summary: 'La digue cède à 11h47. L’eau gagne le quartier ; le forage et le poste électrique sont hors service.',
+    summary: 'Le pic sollicite la digue, les rues basses et les réseaux. L’intensité affichée dépend de la trajectoire tirée.',
     center: [-1.5708,49.2172], zoom: 14.2, routes: false, water: 0.72,
     events: [
-      ['breche', 'Brèche de 12 mètres', 'Rupture partielle de la digue à 11h47 ; pénétration rapide de l’eau.', 'critical', [-1.5724,49.2190]],
-      ['toit', 'Personne sur un toit', 'Sauvetage prioritaire rue de la Tour.', 'critical', [-1.5709,49.2188]],
-      ['forage', 'Forage submergé', 'Risque immédiat sur la continuité et la qualité de l’eau potable.', 'critical'],
-      ['poste', 'Poste électrique hors service', 'Coupures en cascade depuis 10h30.', 'critical'],
-      ['camping2', 'Camping totalement inondé', 'Le secteur ne doit plus être accessible aux équipes non spécialisées.', 'critical']
+      ['forage', 'Forage sous surveillance', 'La continuité et la qualité de l’eau potable dépendent de la hauteur atteinte.', 'alert'],
+      ['poste', 'Réseau électrique sous tension', 'Les équipes anticipent une coupure automatique ou préventive.', 'alert'],
+      ['camping2', 'Accès littoral interdit', 'Le camping et les rues basses sont fermés aux équipes non spécialisées.', 'alert']
     ]
   },
   {
     time: 'J+8h · mardi 20h00', title: 'Premières heures post-crise',
-    summary: '47 maisons sont inondées, 12 caravanes emportées et 380 personnes accueillies. Les reconnaissances commencent.',
+    summary: 'Les reconnaissances et l’accueil des évacués commencent. La trajectoire tirée fixe les dommages secondaires et le risque résiduel.',
     center: [-1.5685,49.212], zoom: 13.4, routes: false, water: 0.52,
     events: [
-      ['quartier', '47 maisons inondées', 'Diagnostic bâtiment par bâtiment et interdiction des retours non autorisés.', 'damage'],
-      ['digue', 'Digue effondrée sur 80 m', 'Sécurisation et surveillance de la brèche.', 'damage', [-1.5724,49.2190]],
       ['gymnase', 'Centre d’accueil actif', '380 personnes réparties entre le gymnase et la salle des fêtes.', 'response'],
-      ['marais', 'Intrusion d’eau salée', 'Suivi écologique et prélèvements dans le marais Natura 2000.', 'damage']
+      ['marais', 'Diagnostic du marais', 'Suivi écologique et prélèvements après l’intrusion marine.', 'response']
     ]
   },
   {
@@ -18565,6 +18611,49 @@ const CRISIS_PHASES_MAP = [
     ]
   }
 ];
+
+// Conséquences spatiales propres à chaque trajectoire tirée dans le module PCS.
+// Elles complètent la situation de référence sans dévoiler les embûches avant le vote.
+const CRISIS_VARIANT_EFFECTS = {
+  phase0: {
+    A: { label: 'Impact direct confirmé : préparation maximale', water: 0.02, events: [['port','Impact direct confirmé','Le port et la façade littorale restent dans l’axe principal de la tempête.','alert']] },
+    B: { label: 'Trajectoire incertaine : engagement sous incertitude', water: -0.04, events: [['mairie','Arbitrage sous incertitude','Deux modèles divergent : les mesures doivent rester réversibles mais immédiatement activables.','watch']] },
+    C: { label: 'Surcote 1,8 m · pic avancé à 04h', water: 0.15, events: [['cordon','Temps de préparation raccourci','Le cordon dunaire sera sollicité plus tôt et plus fortement que prévu.','critical']] }
+  },
+  phase1: {
+    A: { label: 'Approche conforme · évacuations maintenues', water: 0, events: [['quartier','Fenêtre d’évacuation maintenue','Les itinéraires restent utilisables jusqu’au pic prévu.','response']] },
+    B: { label: 'Calme trompeur · refus d’évacuer', water: -0.10, events: [['camping2','Refus d’évacuer','Le calme apparent accroît la résistance des saisonniers aux consignes.','alert']] },
+    C: { label: '130 km/h · arbres au sol · 320 foyers coupés', water: 0.12, events: [['route','RD nord obstruée','Deux arbres coupent la route et ralentissent l’évacuation.','critical',REFERENCE_SITES.routeNord],['port','Deux bateaux dérivent','Les moyens portuaires sont déjà mobilisés.','critical']] }
+  },
+  phase2: {
+    A: { label: 'Surcote 1,4 m · digue encore fonctionnelle', water: 0, events: [['digue','Digue sollicitée à 80 %','Des débordements touchent déjà les rues basses.','alert',REFERENCE_SITES.digueBreach]] },
+    B: { label: 'Rupture nord sur 30 m · rue sous 60 cm', water: 0.20, events: [['breche','Rupture côté nord','Une brèche de 30 m accélère l’entrée d’eau dans le quartier.','critical',REFERENCE_SITES.digueBreach],['quartier','Deux personnes coincées','Le SDIS intervient sur un véhicule dans la rue de la Plage.','critical']] },
+    C: { label: 'Pic atténué, mais nouvelle marée à 00h30', water: -0.08, events: [['digue','Ouvrage fatigué','La digue tient, mais devra affronter une seconde sollicitation nocturne.','alert',REFERENCE_SITES.digueBreach]] }
+  },
+  phase3: {
+    A: { label: 'Décrue normale · diagnostics engagés', water: -0.10, events: [['quartier','Retours encore interdits','La décrue permet les reconnaissances, pas encore le retour libre des habitants.','response']] },
+    B: { label: '3 maisons emportées · 2 000 foyers coupés', water: 0.02, events: [['falaise','Effondrement secondaire','La falaise emporte trois maisons évacuées rue des Goélands.','critical'],['poste','Poteau HT tombé','La coupure totale et la saturation 4G isolent les sinistrés.','critical']] },
+    C: { label: 'Nouvelle submersion nocturne possible', water: 0.10, events: [['cordon','Cordon fragilisé','La marée de 00h30 peut rouvrir les secteurs en cours de décrue.','critical']] }
+  },
+  phase4: {
+    A: { label: '8 maisons sinistrées · aucun décès', water: -0.04, events: [['mairie','Relèvement maîtrisé','Les aides et expertises peuvent être organisées sans urgence vitale résiduelle.','response']] },
+    B: { label: 'Rupture médiatisée · point ministre à J+96h', water: 0, events: [['digue','Ouvrage sous exposition nationale','La rupture devient le centre du récit médiatique et du RETEX.','alert',REFERENCE_SITES.digueBreach]] },
+    C: { label: 'Recours contre l’évacuation préventive', water: 0, events: [['mairie','Décision contestée','La commune doit documenter la proportionnalité et la chronologie des décisions.','alert']] }
+  }
+};
+
+const CRISIS_DISRUPTOR_EFFECTS = {
+  fralert_fail: ['mairie','Alerte mobile indisponible','La saturation 4G impose sirènes, radio et porte-à-porte.','critical'],
+  journaliste: ['mairie','Pression médiatique immédiate','Une interview en direct est demandée alors que la décision opérationnelle se construit.','alert'],
+  rcsc_indispo: ['mairie','Chaîne communale affaiblie','Le coordinateur RCSC est absent ; son adjoint doit être guidé.','alert'],
+  route_coupee: ['route','RD nord coupée','Le centre d’accueil impose désormais un détour de 25 minutes.','critical',REFERENCE_SITES.routeNord],
+  panique_camping: ['camping2','Camping récalcitrant','Le refus de fermer maintient des personnes dans la zone d’aléa fort.','critical'],
+  enedis_indispo: ['poste','Coupure non maîtrisée','La bascule électrique peut devenir automatique et imprévisible.','critical'],
+  voisin_refuse: ['quartier','Habitant vulnérable maintenu sur place','Un résident à mobilité réduite refuse l’évacuation.','critical'],
+  reseau_satu: ['poste','Téléphonie saturée','Les messages mobiles arrivent en retard ; la radio FM devient prioritaire.','critical'],
+  pompiers_loin: ['sdis','Moyens de secours contraints','Les demandes locales sont hiérarchisées selon la priorité vitale.','alert'],
+  rumeur_reseaux: ['digue','Rumeur de rupture imminente','Une vidéo virale contredit le diagnostic technique de l’ouvrage.','alert',REFERENCE_SITES.digueBreach]
+};
 
 // ============ ÉTAT ============
 const state = {
@@ -18586,6 +18675,7 @@ let map = null, data = null, base = 'plan', opacity = 0.5, planAvailable = true;
 let planLayers = [], hybridLayers = new Set(), contourLayers = new Set(), roadLayers = new Set();
 let hydroLayers = new Set(), buildingLayers = new Set(), popup = null, activePreset = 'territoire';
 let crisisActive = false, crisisPhase = 0, crisisPlaying = false, crisisTimer = null, crisisFrame = null, pcsReturnPhase = null;
+let crisisContext = { variants: {}, phaseIndex: null, traps: [], disruptor: null, voteLocked: false };
 
 // ============ OUTILS ============
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -18671,7 +18761,7 @@ function addThematicLayers() {
     map.addLayer({ id: 'g-trait-' + h, type: 'line', source: 'g-trait', filter: ['==', ['get', 'horizon'], h], paint });
   });
 
-  map.addSource('g-digue', { type: 'geojson', data: data.digue });
+  map.addSource('g-digue', { type: 'geojson', data: REFERENCE_DIGUE });
   map.addLayer({ id: 'g-digue', type: 'line', source: 'g-digue', layout: { 'line-cap': 'round', 'line-join': 'round' },
     paint: { 'line-color': '#5D4037', 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 3, 16, 8] } });
 
@@ -18684,7 +18774,7 @@ function addThematicLayers() {
   map.addLayer({ id: 'g-etude', type: 'line', source: 'g-etude', paint: { 'line-color': '#888', 'line-width': 1.2, 'line-dasharray': [3, 3] } });
 
   const enj = Object.entries(ENJEUX).map(([k, o]) => {
-    const c = data.enjeux[k] || o.coords;
+    const c = REFERENCE_SITES[k] || data.enjeux[k] || o.coords;
     return c ? { type: 'Feature', properties: { id: k, tag: o.tag, kind: o.kind, name: o.name }, geometry: { type: 'Point', coordinates: c } } : null;
   }).filter(Boolean);
   map.addSource('g-enjeux', { type: 'geojson', data: fc(enj) });
@@ -18818,7 +18908,7 @@ function showToast(text) {
 }
 function buildSearchIndex() {
   const byId = Object.entries(ENJEUX).map(([id, o]) => {
-    const coordinates = data.enjeux[id] || o.coords;
+    const coordinates = REFERENCE_SITES[id] || data.enjeux[id] || o.coords;
     return coordinates ? { id, label: o.name, key: normalizeText(o.name + ' ' + o.eyebrow), coordinates, object: o } : null;
   }).filter(Boolean);
   const places = (data.labels.features || []).map((f, i) => ({
@@ -18826,8 +18916,8 @@ function buildSearchIndex() {
     coordinates: f.geometry.coordinates, object: { name: f.properties.nom, eyebrow: 'Repère territorial', tag: 'info', body: 'Toponyme fictif utilisé dans le scénario pédagogique.', sub: f.properties.classe }
   }));
   const special = [
-    { id: 'digue', label: 'Digue de 1962', key: 'digue 1962 ouvrage protection', coordinates: [-1.5724,49.2190], object: { name: 'La digue de 1962', eyebrow: 'Ouvrage de protection', tag: 'fort', body: "Protège le Quartier de la Digue et la zone d'activités ; sa fragilité structurelle est au cœur du scénario.", sub: 'Risque de rupture : 35 % (aléa centennal)', fiche: 'digue' } },
-    { id: 'quartier', label: 'Quartier de la Digue', key: 'quartier digue logements habitants', coordinates: [-1.5715,49.2185], object: { name: 'Le Quartier de la Digue', eyebrow: 'Zone résidentielle exposée', tag: 'fort', body: 'Habitat des années 1950-1980 construit derrière la digue.', sub: '≈ 250 logements · 60 % de résidences secondaires', fiche: 'quartier' } }
+    { id: 'digue', label: 'Digue de 1962', key: 'digue 1962 ouvrage protection', coordinates: REFERENCE_SITES.digueBreach, object: { name: 'La digue de 1962', eyebrow: 'Ouvrage de protection', tag: 'fort', body: "Implantée sur la limite terrestre du marais ; elle relie le port au secteur nord-est et protège le quartier situé en arrière.", sub: 'Risque de rupture : 35 % (aléa centennal)', fiche: 'digue' } },
+    { id: 'quartier', label: 'Quartier de la Digue', key: 'quartier digue logements habitants', coordinates: REFERENCE_SITES.quartier, object: { name: 'Le Quartier de la Digue', eyebrow: 'Zone résidentielle exposée', tag: 'fort', body: 'Habitat des années 1950-1980 construit derrière la digue.', sub: '250 logements · ≈ 230 habitants permanents', fiche: 'quartier' } }
   ];
   searchIndex = byId.concat(special, places).sort((a, b) => a.label.localeCompare(b.label, 'fr'));
   document.getElementById('geovSearchList').innerHTML = searchIndex.map(x => `<option value="${esc(x.label)}"></option>`).join('');
@@ -18879,14 +18969,70 @@ function pointAlongLine(coords, progress) {
 function crisisEventFeature(e) {
   const [id, label, detail, severity, override] = e;
   const o = ENJEUX[id];
-  const coordinates = override || (data.enjeux[id]) || (o && o.coords) || [-1.5715,49.2185];
+  const coordinates = override || REFERENCE_SITES[id] || (data.enjeux[id]) || (o && o.coords) || REFERENCE_SITES.quartier;
   return { type: 'Feature', properties: { id, label, detail, severity }, geometry: { type: 'Point', coordinates } };
+}
+function getPcsActionText(phaseIndex, actionId) {
+  const phase = PCS_PHASES[phaseIndex];
+  if (!phase) return actionId;
+  for (const actions of Object.values(phase.actions || {})) {
+    const action = actions.find(a => a.id === actionId);
+    if (action) return action.text;
+  }
+  return actionId;
+}
+function locationForPcsChoice(actionId, text) {
+  const key = normalizeText(text);
+  if (/port|bateau|mouillage|conchylic/.test(key)) return ['port', REFERENCE_SITES.port];
+  if (/marais|vanne|natura|conservatoire/.test(key)) return ['marais', REFERENCE_SITES.marais];
+  if (/digue/.test(key)) return ['digue', REFERENCE_SITES.digueBreach];
+  if (/cordon|dune/.test(key)) return ['cordon', data.enjeux.cordon];
+  if (/camping|saisonnier/.test(key)) return ['camping2', data.enjeux.camping2];
+  if (/ecole/.test(key)) return ['ecole', data.enjeux.ecole];
+  if (/electric|enedis|energie/.test(key)) return ['poste', (ENJEUX.poste && ENJEUX.poste.coords)];
+  if (/route|circulation|poids lourd|helicoptere/.test(key)) return ['route', REFERENCE_SITES.routeNord];
+  if (/evacu|habitant|personne agee|voisin/.test(key)) return ['quartier', REFERENCE_SITES.quartier];
+  return ['mairie', data.enjeux.mairie];
+}
+function composeCrisisState(index) {
+  const p = CRISIS_PHASES_MAP[index];
+  const phaseId = 'phase' + index;
+  const events = [...p.events];
+  const effects = [];
+  let water = p.water;
+  const variantId = crisisContext.variants && crisisContext.variants[phaseId];
+  const variant = variantId && CRISIS_VARIANT_EFFECTS[phaseId] && CRISIS_VARIANT_EFFECTS[phaseId][variantId];
+  if (variant) {
+    water = Math.max(0.08, Math.min(0.92, water + (variant.water || 0)));
+    events.push(...variant.events);
+    effects.push({ kind: 'variant', label: `Scénario ${variantId} · ${variant.label}` });
+  }
+  if (crisisContext.phaseIndex === index) {
+    if (crisisContext.disruptor && CRISIS_DISRUPTOR_EFFECTS[crisisContext.disruptor.id]) {
+      events.push(CRISIS_DISRUPTOR_EFFECTS[crisisContext.disruptor.id]);
+      effects.push({ kind: 'disruptor', label: `Imprévu · ${crisisContext.disruptor.title}` });
+    }
+    if (crisisContext.voteLocked) {
+      (crisisContext.traps || []).forEach((trap, i) => {
+        const [site, coordinates] = locationForPcsChoice(trap.id, trap.text);
+        events.push([site, 'Conséquence d’une embûche', trap.reason, 'decision', coordinates]);
+        effects.push({ kind: 'trap', label: `Embûche · ${trap.text}` });
+      });
+    } else if (crisisContext.fromPcs) {
+      effects.push({ kind: '', label: 'Conséquences des choix affichées après validation' });
+    }
+  }
+  return { events, effects, water };
 }
 function renderCrisisPanel() {
   const p = CRISIS_PHASES_MAP[crisisPhase];
+  const composed = composeCrisisState(crisisPhase);
   document.getElementById('geovCrisisTime').textContent = p.time;
   document.getElementById('geovCrisisTitle').textContent = p.title;
   document.getElementById('geovCrisisSummary').textContent = p.summary;
+  document.getElementById('geovCrisisEffects').innerHTML = composed.effects.map(effect =>
+    `<span class="geov-crisis-effect ${esc(effect.kind)}">${esc(effect.label)}</span>`
+  ).join('');
   document.getElementById('geovCrisisPrev').disabled = crisisPhase === 0;
   document.getElementById('geovCrisisNext').disabled = crisisPhase === CRISIS_PHASES_MAP.length - 1;
   document.getElementById('geovCrisisPlay').textContent = crisisPlaying ? 'Ⅱ' : '▶';
@@ -18916,6 +19062,7 @@ function setCrisisPhase(index, animate) {
   if (!map) return;
   crisisPhase = Math.max(0, Math.min(CRISIS_PHASES_MAP.length - 1, index));
   const p = CRISIS_PHASES_MAP[crisisPhase];
+  const composed = composeCrisisState(crisisPhase);
   crisisActive = true;
   root.classList.add('crisis-mode');
   document.getElementById('geovCrisis').hidden = false;
@@ -18928,16 +19075,17 @@ function setCrisisPhase(index, animate) {
   state.incidents = true;
   syncLayerInputs();
   applyLayers();
-  map.setPaintProperty('g-fort', 'fill-opacity', p.water);
-  map.setPaintProperty('g-moy', 'fill-opacity', p.water * 0.78);
-  map.setPaintProperty('g-faible', 'fill-opacity', p.water * 0.56);
+  map.setPaintProperty('g-fort', 'fill-opacity', composed.water);
+  map.setPaintProperty('g-moy', 'fill-opacity', composed.water * 0.78);
+  map.setPaintProperty('g-faible', 'fill-opacity', composed.water * 0.56);
   setVis('g-crisis-alert', crisisPhase < 2);
-  map.getSource('g-crisis-incidents').setData({ type: 'FeatureCollection', features: p.events.map(crisisEventFeature) });
+  map.getSource('g-crisis-incidents').setData({ type: 'FeatureCollection', features: composed.events.map(crisisEventFeature) });
   map.flyTo({ center: p.center, zoom: p.zoom, duration: animate ? 1000 : 0 });
   renderCrisisPanel();
   if (!crisisFrame) crisisFrame = requestAnimationFrame(animateCrisis);
 }
-function startCrisis(index) {
+function startCrisis(index, context) {
+  crisisContext = context || { variants: Object.assign({}, _pcsVariants || {}), phaseIndex: null, traps: [], disruptor: null, voteLocked: false, fromPcs: false };
   setCrisisPhase(typeof index === 'number' ? index : 0, true);
   showToast('Mode crise activé · les données évoluent avec la timeline PCS');
 }
@@ -18970,7 +19118,7 @@ function goView(name, animate) {
   const v = VIEWS[name];
   if (name === 'commune' || !v) map.fitBounds(bboxOf(data.commune.geometry), { padding: 30, duration: animate ? 700 : 0 });
   else if (name === 'havre') {                             // cadre le quartier et la digue
-    const a = bboxOf(data.quartier.geometry), d = bboxOf(data.digue.geometry);
+    const a = bboxOf(data.quartier.geometry), d = bboxOf(REFERENCE_DIGUE.geometry);
     map.fitBounds([[Math.min(a[0][0], d[0][0]), Math.min(a[0][1], d[0][1])], [Math.max(a[1][0], d[1][0]), Math.max(a[1][1], d[1][1])]], { padding: 40, duration: animate ? 900 : 0 });
   }
   else map.flyTo({ center: v.center, zoom: v.zoom, duration: animate ? 900 : 0 });
@@ -19028,7 +19176,7 @@ function bindUI() {
     const id = f.layer.id;
     if (id === 'g-crisis-incidents') return showPopup(f.geometry.coordinates, { name: f.properties.label, eyebrow: 'Situation en cours', tag: f.properties.severity === 'critical' ? 'fort' : 'info', body: f.properties.detail, sub: CRISIS_PHASES_MAP[crisisPhase].time });
     if (id === 'g-enjeux') return showPopup(f.geometry.coordinates, Object.assign({}, ENJEUX[f.properties.id]));
-    if (id === 'g-digue') return showPopup(e.lngLat, { name: 'La digue de 1962', eyebrow: 'Ouvrage de protection', tag: 'fort', sub: 'Risque de rupture : 35 % (aléa centennal)', body: "Protège les 250 logements du Quartier de la Digue, la PME et le camping La Goëlette. Fragilité structurelle (diagnostic DREAL 2024).", fiche: 'digue' });
+    if (id === 'g-digue') return showPopup(e.lngLat, { name: 'La digue de 1962', eyebrow: 'Ouvrage de protection', tag: 'fort', sub: 'Risque de rupture : 35 % (aléa centennal)', body: "Relie le port au secteur nord-est, sur le côté terrestre du marais. Protège les 250 logements du Quartier de la Digue, la PME et le camping La Goëlette. Fragilité structurelle (diagnostic DREAL 2024).", fiche: 'digue' });
     if (id === 'g-quartier-fill') return showPopup(e.lngLat, { name: 'Le Quartier de la Digue', eyebrow: 'Zone résidentielle exposée', tag: 'fort', sub: '250 logements : 47 en aléa fort, 156 en moyen, 47 en faible · ≈ 230 habitants permanents, ≈ 650 en été · 22 personnes âgées isolées', body: 'Habitat des années 1950-1980, construit derrière la digue de 1962. 60 % de résidences secondaires.', fiche: 'quartier' });
     if (id === 'g-recul-30') return showPopup(e.lngLat, { name: 'Zone exposée au recul à 30 ans', eyebrow: 'Recul du trait de côte', tag: 'recul', body: "Bande que le trait de côte pourrait atteindre d'ici une trentaine d'années (≈ 30 m)." });
     if (id === 'g-recul-100') return showPopup(e.lngLat, { name: 'Zone exposée au recul de 30 à 100 ans', eyebrow: 'Recul du trait de côte', tag: 'recul', body: 'Bande atteinte entre 30 et 100 ans (≈ 30 à 100 m).' });
@@ -19068,12 +19216,11 @@ function locate(id) {
   }
   if (id === 'digue') {
     ensureOn(['digue']);
-    const c = data.digue.geometry.coordinates;
-    map.fitBounds(bboxOf(data.digue.geometry), { padding: 70, duration: 900, maxZoom: 15.5 });
-    return popupAfterMove(c[Math.floor(c.length / 2)], { name: 'La digue de 1962', eyebrow: 'Ouvrage de protection', tag: 'fort',
-      sub: 'Risque de rupture : 35 % (aléa centennal)', body: 'Trait brun épais sur la carte, entre le havre et le Quartier de la Digue.' });
+    map.fitBounds(bboxOf(REFERENCE_DIGUE.geometry), { padding: 70, duration: 900, maxZoom: 15.5 });
+    return popupAfterMove(REFERENCE_SITES.digueBreach, { name: 'La digue de 1962', eyebrow: 'Ouvrage de protection', tag: 'fort',
+      sub: 'Risque de rupture : 35 % (aléa centennal)', body: 'Trait brun épais sur la carte, du port au secteur nord-est, côté terrestre du marais.' });
   }
-  const c = data.enjeux[id];
+  const c = REFERENCE_SITES[id] || data.enjeux[id] || (ENJEUX[id] && ENJEUX[id].coords);
   if (!c || !ENJEUX[id]) return;
   ensureOn(['enjeux']);
   map.flyTo({ center: c, zoom: Math.max(map.getZoom(), 15), duration: 900 });
@@ -19090,13 +19237,24 @@ window.openPcsMap = function() {
   const viewed = (typeof _pcsViewingPhaseIdx === 'number') ? _pcsViewingPhaseIdx : null;
   const current = (typeof _pcsCurrentPhaseIdx === 'number' && _pcsCurrentPhaseIdx >= 0) ? _pcsCurrentPhaseIdx : 0;
   pcsReturnPhase = viewed === null ? current : viewed;
+  const phase = PCS_PHASES[pcsReturnPhase];
+  const myGrp = (typeof getMyGroup === 'function') ? getMyGroup() : null;
+  const locked = !!(phase && ((myGrp && _pcsLockedPhases[phase.id] && _pcsLockedPhases[phase.id][myGrp]) || _pcsTrapHistory[phase.id]));
+  const context = {
+    variants: Object.assign({}, _pcsVariants || {}),
+    phaseIndex: pcsReturnPhase,
+    traps: phase && _pcsTrapHistory[phase.id] ? _pcsTrapHistory[phase.id].slice() : [],
+    disruptor: window._pcsLastDisruptor || null,
+    voteLocked: locked,
+    fromPcs: true
+  };
   if (typeof window.closePcsPhase === 'function') window.closePcsPhase();
   document.getElementById('cartes').scrollIntoView({ behavior: 'smooth', block: 'start' });
   let tries = 0;
   const activate = () => {
     if (map && map.getSource('g-crisis-incidents')) {
       document.getElementById('geovCrisisReturn').hidden = false;
-      startCrisis(pcsReturnPhase);
+      startCrisis(pcsReturnPhase, context);
       return;
     }
     if (++tries < 80) setTimeout(activate, 180);
@@ -19107,6 +19265,10 @@ window.GoulvenMap = {
   startCrisis,
   stopCrisis: () => stopCrisis(true),
   setCrisisPhase: i => setCrisisPhase(i, true),
+  syncVariants: variants => {
+    crisisContext.variants = Object.assign({}, variants || {});
+    if (crisisActive) setCrisisPhase(crisisPhase, false);
+  },
   isCrisisActive: () => crisisActive
 };
 
