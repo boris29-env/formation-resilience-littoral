@@ -4313,7 +4313,83 @@ h3.subhead {
 .geov-locate-btn:hover { background: var(--navy); color: var(--white); }
 .geov-locate-link { display: inline-block; margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--navy); background: none; border: 0; padding: 0;
   cursor: pointer; text-decoration: underline; text-underline-offset: 3px; font-family: var(--sans); }
+
+/* En-tête et outils de lecture du territoire */
+.geov-context {
+  display: grid; grid-template-columns: minmax(220px, 1fr) minmax(260px, 420px);
+  gap: 18px; align-items: center; padding: 16px 18px;
+  color: var(--white); background: linear-gradient(115deg, var(--navy-deep), var(--navy) 62%, var(--teal-deep));
+}
+.geov-context-eyebrow { font-family: var(--mono); font-size: 9.5px; letter-spacing: .13em; text-transform: uppercase; color: #A9DCE0; }
+.geov-context-title { margin-top: 2px; font-family: var(--serif); font-size: 22px; font-weight: 600; line-height: 1.2; }
+.geov-context-sub { margin-top: 3px; font-size: 11.5px; color: rgba(255,255,255,.72); }
+.geov-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+.geov-search label { grid-column: 1 / -1; font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.75); }
+.geov-search input {
+  width: 100%; min-width: 0; border: 1px solid rgba(255,255,255,.25); border-radius: 5px;
+  padding: 8px 10px; color: var(--navy-deep); background: rgba(255,255,255,.97); font: 12.5px var(--sans);
+}
+.geov-search input:focus { outline: 2px solid var(--orange); outline-offset: 1px; }
+.geov-search button { border: 1px solid var(--orange); border-radius: 5px; padding: 7px 12px; color: var(--white); background: var(--orange); font: 700 12px var(--sans); cursor: pointer; }
+.geov-search-status { grid-column: 1 / -1; min-height: 14px; font-size: 10.5px; color: rgba(255,255,255,.82); }
+.geov-presets {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 9px 14px;
+  background: #EEF1F4; border-bottom: 1px solid var(--grey-line);
+}
+.geov-presets-label { margin-right: 2px; font-family: var(--mono); font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--grey-txt); }
+.geov-preset {
+  border: 1px solid #C8CDD6; border-radius: 5px; padding: 6px 10px; background: var(--white); color: var(--navy);
+  font: 600 11.5px var(--sans); cursor: pointer; transition: border-color .15s, background .15s, color .15s;
+}
+.geov-preset:hover { border-color: var(--navy); }
+.geov-preset[aria-pressed="true"] { color: var(--white); background: var(--navy); border-color: var(--navy); }
+.geov-preset.crisis { margin-left: auto; color: #8D2018; border-color: #E4AAA4; background: #FFF4F2; }
+.geov-preset.crisis[aria-pressed="true"] { color: var(--white); border-color: #A92F25; background: #A92F25; }
+.geov-panel-intro { margin: 0 0 12px; padding: 10px; border-radius: 6px; background: #EFF6F7; color: var(--teal-deep); font-size: 11.5px; line-height: 1.45; }
+.geov-panel-intro strong { display: block; margin-bottom: 2px; color: var(--navy); }
+.geov-layer-count { margin-left: auto; padding: 1px 6px; border-radius: 999px; background: #EEF1F4; color: var(--navy); font: 700 9px var(--mono); }
+.geov-row.is-context { color: var(--grey-txt); }
+.geov-sw-symbol { display: inline-grid; place-items: center; width: 20px; height: 16px; border-radius: 3px; color: var(--white); font: 700 9px var(--mono); }
+.geov-coords {
+  position: absolute; z-index: 2; right: 10px; bottom: 52px; padding: 3px 7px; border: 1px solid rgba(30,45,92,.18);
+  border-radius: 4px; background: rgba(255,255,255,.92); color: var(--navy); font: 9.5px var(--mono); pointer-events: none;
+}
+.geov-toast {
+  position: absolute; z-index: 6; top: 12px; left: 50%; transform: translate(-50%, -8px); opacity: 0; pointer-events: none;
+  max-width: min(420px, calc(100% - 150px)); padding: 8px 12px; border-radius: 5px; background: rgba(15,26,56,.94);
+  color: var(--white); box-shadow: 0 4px 16px rgba(0,0,0,.22); font-size: 11.5px; transition: opacity .18s, transform .18s;
+}
+.geov-toast.visible { opacity: 1; transform: translate(-50%, 0); }
+
+/* Console temporelle du scénario PCS */
+.geov-crisis {
+  position: absolute; z-index: 5; left: 12px; right: 12px; bottom: 12px;
+  border: 1px solid rgba(255,255,255,.2); border-radius: 9px; overflow: hidden;
+  color: var(--white); background: rgba(15,26,56,.96); box-shadow: 0 8px 28px rgba(0,0,0,.3); backdrop-filter: blur(10px);
+}
+.geov-crisis[hidden] { display: none; }
+.geov-crisis-head { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; }
+.geov-crisis-badge { padding: 4px 7px; border-radius: 4px; background: #A92F25; font: 700 9px var(--mono); letter-spacing: .1em; white-space: nowrap; }
+.geov-crisis-time { color: #FFB7A8; font: 700 10px var(--mono); }
+.geov-crisis-title { margin-top: 1px; font: 600 15px var(--serif); }
+.geov-crisis-summary { margin-top: 1px; color: rgba(255,255,255,.74); font-size: 10.5px; line-height: 1.35; }
+.geov-crisis-controls { display: flex; gap: 5px; }
+.geov-crisis-btn { width: 32px; height: 32px; border: 1px solid rgba(255,255,255,.25); border-radius: 50%; color: var(--white); background: transparent; cursor: pointer; }
+.geov-crisis-btn:hover { background: rgba(255,255,255,.1); }
+.geov-crisis-rail { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid rgba(255,255,255,.14); }
+.geov-crisis-step { position: relative; border: 0; border-right: 1px solid rgba(255,255,255,.1); padding: 8px 6px; color: rgba(255,255,255,.6); background: transparent; text-align: left; cursor: pointer; }
+.geov-crisis-step:last-child { border-right: 0; }
+.geov-crisis-step strong { display: block; color: inherit; font: 700 9.5px var(--mono); }
+.geov-crisis-step span { display: block; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9.5px; }
+.geov-crisis-step.active { color: var(--white); background: rgba(232,110,85,.24); box-shadow: inset 0 3px 0 var(--orange); }
+.geov-crisis-step.done { color: #A9DCE0; }
+.geov-crisis-return { width: auto; padding: 0 10px; border-radius: 999px; font: 600 10.5px var(--sans); }
+.geov.crisis-mode .geov-legend, .geov.crisis-mode .geov-coords { bottom: 142px; }
+.geov.crisis-mode .geov-scale { bottom: 140px; }
+
 @media (max-width: 860px) {
+  .geov-context { grid-template-columns: 1fr; gap: 10px; }
+  .geov-preset.crisis { margin-left: 0; }
   .geov-body { grid-template-columns: 1fr; min-height: 0; }
   .geov-map-wrap { height: 70vh; min-height: 420px; }
   .geov-panel { position: absolute; z-index: 4; top: 0; left: 0; bottom: 0; width: min(300px, 86%); max-height: none;
@@ -4323,9 +4399,25 @@ h3.subhead {
   .geov-panel-toggle { display: inline-flex; position: absolute; z-index: 5; top: 10px; left: 50px; }
   .geov.panel-open .geov-panel-toggle { left: calc(min(300px, 86%) + 8px); background: var(--navy); color: var(--white); }
   .geov-legend { max-width: 170px; font-size: 10.5px; }
+  .geov-crisis-head { grid-template-columns: auto 1fr; }
+  .geov-crisis-controls { grid-column: 1 / -1; justify-content: flex-end; }
 }
 @media (max-width: 600px) {
+  .geov-context { padding: 13px; }
+  .geov-context-title { font-size: 19px; }
+  .geov-search { grid-template-columns: 1fr; }
+  .geov-search button { width: 100%; }
+  .geov-presets { align-items: stretch; }
+  .geov-presets-label { width: 100%; }
+  .geov-preset { flex: 1 1 calc(50% - 6px); }
   .geov-legend { display: none; }
+  .geov-coords { display: none; }
+  .geov-crisis { left: 6px; right: 6px; bottom: 6px; }
+  .geov-crisis-head { gap: 8px; padding: 8px; }
+  .geov-crisis-badge { display: none; }
+  .geov-crisis-step { padding: 7px 3px; text-align: center; }
+  .geov-crisis-step span { display: none; }
+  .geov.crisis-mode .geov-scale { bottom: 126px; }
 }
 
 @media (max-width: 800px) {
@@ -4512,6 +4604,7 @@ h3.subhead {
     <div class="pcs-phase-foot">
       <div class="pcs-counter">Sélectionné : <strong id="pcsCounter">0</strong> / 3</div>
       <div class="pcs-phase-foot-actions">
+        <button class="btn btn-secondary" type="button" onclick="window.openPcsMap ? window.openPcsMap() : document.getElementById('cartes').scrollIntoView({behavior:'smooth'})">Voir la situation sur la carte</button>
         <button class="btn btn-secondary" onclick="closePcsPhase()">Fermer</button>
         <button class="btn btn-primary" id="pcsValidateBtn" onclick="validatePcsVote()" disabled>Valider notre vote</button>
       </div>
@@ -5112,16 +5205,38 @@ h3.subhead {
     <span class="section-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
     </span>
-    <h2 class="section-title">Cartes</h2>
+    <h2 class="section-title">Carte interactive du territoire</h2>
   </div>
     <p class="section-intro">
-    Visualiseur cartographique d'Anse-de-Goulven, sur fonds IGN : <strong>plan</strong>, <strong>photo aérienne</strong>
-    ou les deux superposés. Activez les couches du plan de prévention : <strong>submersion marine</strong> (aléas fort,
-    moyen, faible et extension 2100) et <strong>recul du trait de côte</strong> aux horizons TRACC. Cliquez sur un enjeu,
-    la digue ou le Quartier de la Digue pour ouvrir sa fiche.
+    Explorez le territoire comme dans un atlas IGN : recherchez un lieu, changez d'échelle et composez votre lecture avec
+    les couches du <strong>relief</strong>, des <strong>risques</strong>, des <strong>enjeux</strong> et des <strong>ressources de crise</strong>.
+    Les compositions proposées donnent un point de départ ; chaque couche reste activable séparément. Le mode
+    <strong>Tempête Argonne</strong> met ensuite la carte en mouvement au rythme des cinq phases du scénario PCS.
   </p>
 
   <div class="geov" id="geov">
+    <div class="geov-context">
+      <div>
+        <div class="geov-context-eyebrow">Atlas pédagogique · territoire fictif</div>
+        <div class="geov-context-title">Anse-de-Goulven et son bassin de vie</div>
+        <div class="geov-context-sub">Fonds IGN · lecture multi-échelles · données du scénario de formation</div>
+      </div>
+      <div class="geov-search" role="search">
+        <label for="geovSearch">Localiser un lieu ou un enjeu</label>
+        <input id="geovSearch" type="search" list="geovSearchList" autocomplete="off" placeholder="Ex. mairie, digue, camping, marais…">
+        <datalist id="geovSearchList"></datalist>
+        <button type="button" id="geovSearchBtn">Localiser</button>
+        <div class="geov-search-status" id="geovSearchStatus" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="geov-presets" role="group" aria-label="Compositions cartographiques">
+      <span class="geov-presets-label">Lecture</span>
+      <button type="button" class="geov-preset" data-preset="territoire" aria-pressed="true">Se repérer</button>
+      <button type="button" class="geov-preset" data-preset="risques" aria-pressed="false">Comprendre les risques</button>
+      <button type="button" class="geov-preset" data-preset="enjeux" aria-pressed="false">Voir les vulnérabilités</button>
+      <button type="button" class="geov-preset" data-preset="ressources" aria-pressed="false">Préparer le PCS</button>
+      <button type="button" class="geov-preset crisis" id="geovCrisisToggle" aria-pressed="false">▶ Tempête Argonne</button>
+    </div>
     <div class="geov-bar">
       <div class="geov-seg" role="group" aria-label="Vues">
         <span class="geov-seg-label">Vue</span>
@@ -5140,6 +5255,19 @@ h3.subhead {
 
     <div class="geov-body">
       <aside class="geov-panel" id="geovPanel" aria-label="Couches de données">
+        <div class="geov-panel-intro" id="geovReading">
+          <strong>Se repérer dans le territoire</strong>
+          Relief, hydrographie, réseau viaire, bâti et principaux lieux du scénario.
+        </div>
+        <div class="geov-group">
+          <div class="geov-group-title">Fond IGN et repères</div>
+          <label class="geov-row is-context"><input type="checkbox" data-layer="routes" checked><span class="geov-sw-line" style="border-top-color:#D08C60"></span><span>Routes et chemins</span></label>
+          <label class="geov-row is-context"><input type="checkbox" data-layer="hydro" checked><span class="geov-sw-line" style="border-top-color:#4285A7"></span><span>Hydrographie</span></label>
+          <label class="geov-row is-context"><input type="checkbox" data-layer="batiments" checked><span class="geov-sw" style="background:#B7AFA5"></span><span>Bâti et équipements</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="labels" checked><span class="geov-sw" style="background:#fff;font:700 10px/12px var(--serif);text-align:center;color:#1E2D5C">Aa</span><span>Noms de lieux fictifs</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="courbes"><span class="geov-sw-line" style="border-top-color:#C9A27C;border-top-width:1px"></span><span>Courbes de niveau</span><span class="meta">fond Plan IGN</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="commune" checked><span class="geov-sw-line" style="border-top-color:#1E2D5C;border-top-style:dashed"></span><span>Limite communale</span></label>
+        </div>
         <div class="geov-group">
           <div class="geov-group-title">Chiffres clés · Quartier de la Digue</div>
           <table class="geov-keys">
@@ -5156,9 +5284,9 @@ h3.subhead {
         </div>
         <div class="geov-group">
           <div class="geov-group-title">Submersion marine · PPRL</div>
-          <label class="geov-row"><input type="checkbox" data-layer="fort" checked><span class="geov-sw" style="background:#D32F2F"></span><span>Aléa fort</span><span class="meta">hauteur d'eau &gt; 1 m</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="moy" checked><span class="geov-sw" style="background:#F57C00"></span><span>Aléa moyen</span><span class="meta">0,5 à 1 m</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="faible" checked><span class="geov-sw" style="background:#FBC02D"></span><span>Aléa faible</span><span class="meta">moins de 0,5 m</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="fort"><span class="geov-sw" style="background:#D32F2F"></span><span>Aléa fort</span><span class="meta">hauteur d'eau &gt; 1 m</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="moy"><span class="geov-sw" style="background:#F57C00"></span><span>Aléa moyen</span><span class="meta">0,5 à 1 m</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="faible"><span class="geov-sw" style="background:#FBC02D"></span><span>Aléa faible</span><span class="meta">moins de 0,5 m</span></label>
           <label class="geov-row"><input type="checkbox" data-layer="ext2100"><span class="geov-sw" style="background:#8E44AD"></span><span>Extension 2100</span><span class="meta">niveau marin + 0,6 m (TRACC)</span></label>
           <div class="geov-opacity"><span>Opacité</span><input type="range" min="15" max="90" value="50" id="geovOpacity" aria-label="Opacité des zones d'aléa"><span id="geovOpacityVal">50 %</span></div>
         </div>
@@ -5171,14 +5299,20 @@ h3.subhead {
           <label class="geov-row"><input type="checkbox" data-layer="recul-100"><span class="geov-sw" style="background:#D7CCC8"></span><span>Zone exposée de 30 à 100 ans</span></label>
         </div>
         <div class="geov-group">
-          <div class="geov-group-title">Enjeux et territoire</div>
-          <label class="geov-row"><input type="checkbox" data-layer="enjeux" checked><span class="geov-sw-dot" style="background:#1E2D5C"></span><span>Enjeux du scénario</span><span class="meta">cliquez pour la fiche</span></label>
+          <div class="geov-group-title">Enjeux et fonctions du territoire</div>
+          <label class="geov-row"><input type="checkbox" data-layer="population" checked><span class="geov-sw-dot" style="background:#C8553C"></span><span>Populations vulnérables</span><span class="meta">école, EHPAD</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="secours" checked><span class="geov-sw-symbol" style="background:#1E2D5C">+</span><span>Commandement et accueil</span><span class="meta">PCC, centres d'accueil, secours</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="reseaux" checked><span class="geov-sw-dot" style="background:#8E5BA8"></span><span>Réseaux essentiels</span><span class="meta">eau, électricité, assainissement</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="economie" checked><span class="geov-sw-dot" style="background:#D49426"></span><span>Activités économiques</span><span class="meta">port, campings, agriculture, PME</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="milieux" checked><span class="geov-sw-dot" style="background:#5C8A4F"></span><span>Milieux et ouvrages</span><span class="meta">marais, dune, falaise, digue</span></label>
           <label class="geov-row"><input type="checkbox" data-layer="quartier" checked><span class="geov-sw" style="background:rgba(30,45,92,.18);border:2px solid #1E2D5C"></span><span>Quartier de la Digue</span></label>
           <label class="geov-row"><input type="checkbox" data-layer="digue" checked><span class="geov-sw-line" style="border-top-color:#5D4037;border-top-width:5px"></span><span>Digue (1962)</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="commune" checked><span class="geov-sw-line" style="border-top-color:#1E2D5C;border-top-style:dashed"></span><span>Limite communale</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="labels" checked><span class="geov-sw" style="background:#fff;font:700 10px/12px var(--serif);text-align:center;color:#1E2D5C">Aa</span><span>Noms de lieux (fictifs)</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="courbes"><span class="geov-sw-line" style="border-top-color:#C9A27C;border-top-width:1px"></span><span>Courbes de niveau</span><span class="meta">fond Plan IGN</span></label>
           <label class="geov-row"><input type="checkbox" data-layer="etude" checked><span class="geov-sw-line" style="border-top-color:#888;border-top-style:dashed;border-top-width:1px"></span><span>Périmètre d'étude PPRL</span></label>
+        </div>
+        <div class="geov-group">
+          <div class="geov-group-title">Mobilité et gestion de crise</div>
+          <label class="geov-row"><input type="checkbox" data-layer="evacuation"><span class="geov-sw-line" style="border-top-color:#007C91;border-top-style:dashed"></span><span>Itinéraires d'évacuation</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="incidents"><span class="geov-sw-dot" style="background:#A92F25"></span><span>Événements de crise</span><span class="meta">alimentés par la timeline PCS</span></label>
         </div>
       </aside>
       <div class="geov-map-wrap">
@@ -5186,13 +5320,32 @@ h3.subhead {
         <button type="button" class="geov-btn geov-panel-toggle" id="geovPanelToggle" aria-controls="geovPanel" aria-expanded="false">Couches</button>
         <div class="geov-legend" id="geovLegend"></div>
         <div class="geov-scale" id="geovScale"></div>
+        <div class="geov-coords" id="geovCoords">49,2070° N · 1,5750° O</div>
+        <div class="geov-toast" id="geovToast" role="status" aria-live="polite"></div>
+        <div class="geov-crisis" id="geovCrisis" hidden aria-label="Simulation temporelle de la tempête Argonne">
+          <div class="geov-crisis-head">
+            <div class="geov-crisis-badge">SIMULATION PCS</div>
+            <div>
+              <div class="geov-crisis-time" id="geovCrisisTime">J−18h</div>
+              <div class="geov-crisis-title" id="geovCrisisTitle">Vigilance rouge déclenchée</div>
+              <div class="geov-crisis-summary" id="geovCrisisSummary"></div>
+            </div>
+            <div class="geov-crisis-controls">
+              <button type="button" class="geov-crisis-btn" id="geovCrisisPrev" aria-label="Phase précédente">‹</button>
+              <button type="button" class="geov-crisis-btn" id="geovCrisisPlay" aria-label="Lire la simulation">▶</button>
+              <button type="button" class="geov-crisis-btn" id="geovCrisisNext" aria-label="Phase suivante">›</button>
+              <button type="button" class="geov-crisis-btn geov-crisis-return" id="geovCrisisReturn" hidden>Retour au briefing</button>
+            </div>
+          </div>
+          <div class="geov-crisis-rail" id="geovCrisisRail"></div>
+        </div>
         <div class="geov-loading" id="geovLoading">Chargement de la carte…</div>
       </div>
     </div>
     <p class="geov-note">
       <strong>Territoire fictif sur relief réel.</strong> Les fonds de carte et le relief proviennent de l'IGN (Géoplateforme, Licence Ouverte 2.0) ;
-      les noms réels y ont été retirés. Les zones d'aléa ont été calculées pour la formation à partir du relief, avec un niveau marin de référence
-      fictif de 7,4 m NGF (8,0 m en 2100) : elles n'ont aucune valeur réglementaire.
+      les noms réels y ont été retirés. Les lieux, réseaux, itinéraires, événements et zones d'aléa sont des données cohérentes avec le scénario,
+      créées pour la formation : elles n'ont aucune valeur réglementaire ou opérationnelle.
     </p>
   </div>
 
@@ -12291,6 +12444,9 @@ function subscribePcs() {
   window.FB.onVal('pcs/currentPhase', val => {
     _pcsCurrentPhaseIdx = (typeof val === 'number') ? val : -1;
     refreshPcsTimeline();
+    if (_pcsCurrentPhaseIdx >= 0 && window.GoulvenMap && window.GoulvenMap.isCrisisActive()) {
+      window.GoulvenMap.setCrisisPhase(_pcsCurrentPhaseIdx);
+    }
   });
   // Votes finalisés (pour la restitution)
   window.FB.onVal('pcs/votes', val => {
@@ -18286,22 +18442,26 @@ const TAGS = {
 
 // Enjeux du scénario (positions dans carte-anse-de-goulven.json)
 const ENJEUX = {
-  mairie:   { name: 'Mairie · centre PCS', eyebrow: 'Gouvernance', tag: 'faible', sub: 'Centre opérationnel communal', body: 'PCS approuvé en 2015, jamais révisé depuis. Révision prioritaire.' },
-  epad:     { name: 'EHPAD Les Tamaris', eyebrow: 'Population vulnérable', tag: 'moy', sub: '62 résidents · 18 GIR 1-2', body: 'Évacuation = transport médicalisé. Convention SDIS à formaliser.' },
-  ecole:    { name: 'École primaire', eyebrow: 'Population vulnérable', tag: 'moy', sub: '8 classes · 165 élèves', body: "PPMS à actualiser. Parcours d'évacuation vers la salle des fêtes." },
-  salle:    { name: 'Salle des fêtes', eyebrow: "Centre d'accueil", tag: 'hors', sub: 'Capacité 380 personnes', body: "Sur le plateau, hors zone d'aléa. Identifiée comme centre d'accueil de crise." },
-  sep:      { name: "Station d'épuration", eyebrow: 'Réseaux', tag: 'ext', sub: '4 800 EH', body: "Construite en 1985. Hors zone d'aléa aujourd'hui, rattrapée par l'extension 2100." },
-  zi:       { name: 'PME agro-alimentaire', eyebrow: 'Économie', tag: 'fort', sub: '28 salariés', body: 'Protégée par la digue de 1962. Relocalisation à étudier.', fiche: 'zi' },
-  agric1:   { name: 'Maraîchage Coïc', eyebrow: 'Agriculture', tag: 'moy', sub: '12 ha · 3 ETP', body: 'Sols menacés par la remontée saline projetée à 2050.' },
-  camping1: { name: 'Camping Les Dunes', eyebrow: 'Tourisme', tag: 'recul', sub: '180 emplacements', body: 'Sur le cordon dunaire, à 80 m du trait de côte.', fiche: 'camping1' },
-  camping2: { name: 'Camping La Goëlette', eyebrow: 'Tourisme', tag: 'fort', sub: '160 emplacements', body: 'Derrière la digue. Évacué en 2024 (180 personnes).', fiche: 'camping2' },
-  camping3: { name: 'Camping Le Goulven', eyebrow: 'Tourisme', tag: 'fort', sub: '200 emplacements', body: 'Au bord du Goulven : submersion marine et crues cumulées.', fiche: 'camping3' },
-  port:     { name: 'Port communal', eyebrow: 'Économie', tag: 'fort', sub: '12 unités de pêche · 80 de plaisance', body: "Quais de 1962. Mise hors d'eau jugée impossible à coût raisonnable.", fiche: 'port' },
-  marais:   { name: 'Zone Natura 2000 du marais', eyebrow: 'Espace naturel', tag: 'fort', sub: 'Marais de Goulven', body: 'Zone humide arrière-littorale, candidate à la dépoldérisation comme zone tampon.', fiche: 'marais' },
-  cordon:   { name: 'Cordon dunaire', eyebrow: 'Espace naturel', tag: 'recul', sub: 'recul récent ≈ 1 m/an', body: 'Premier rempart naturel face à la submersion.', fiche: 'cordon' },
-  goulven:  { name: 'Le Goulven', eyebrow: "Cours d'eau côtier", tag: 'info', sub: 'crues aggravées depuis 2018', body: 'Concomitance possible entre crue et submersion marine.', fiche: 'goulven' },
-  epi:      { name: 'Épi de protection nord', eyebrow: 'Ouvrage', tag: 'recul', sub: '1962 · état dégradé', body: 'Diagnostic 2024 : risque de rupture évalué à 35 %.' },
-  falaise:  { name: 'Falaise · rue des Goélands', eyebrow: 'Aléa secondaire', tag: 'recul', sub: '12 maisons en arrière', body: 'Recul actif. Acquisition amiable engagée par le Conservatoire du littoral.', fiche: 'falaise' }
+  mairie:   { kind: 'secours', name: 'Mairie · poste de commandement communal', eyebrow: 'Gouvernance', tag: 'faible', sub: 'Centre opérationnel communal', body: 'PCS approuvé en 2015, jamais révisé depuis. Révision prioritaire.' },
+  epad:     { kind: 'population', name: 'EHPAD Les Tamaris', eyebrow: 'Population vulnérable', tag: 'moy', sub: '62 résidents · 18 GIR 1-2', body: 'Évacuation = transport médicalisé. Convention SDIS à formaliser.' },
+  ecole:    { kind: 'population', name: 'École primaire', eyebrow: 'Population vulnérable', tag: 'moy', sub: '8 classes · 165 élèves', body: "PPMS à actualiser. Parcours d'évacuation vers la salle des fêtes." },
+  salle:    { kind: 'secours', name: 'Salle des fêtes', eyebrow: "Centre d'accueil", tag: 'hors', sub: 'Capacité 380 personnes', body: "Sur le plateau, hors zone d'aléa. Identifiée comme centre d'accueil de crise." },
+  gymnase:  { kind: 'secours', coords: [-1.5608, 49.2044], name: 'Gymnase municipal', eyebrow: "Centre d'accueil", tag: 'hors', sub: 'Centre d’accueil principal du PCS', body: 'Point de regroupement des personnes évacuées ; alimentation et premiers secours.' },
+  sdis:     { kind: 'secours', coords: [-1.5589, 49.2037], name: 'Point de transit des secours', eyebrow: 'Secours', tag: 'hors', sub: 'Zone de regroupement des moyens', body: 'Position de mise en attente des moyens SDIS avant engagement en zone exposée.' },
+  sep:      { kind: 'reseaux', name: "Station d'épuration", eyebrow: 'Réseaux essentiels', tag: 'ext', sub: '4 800 EH', body: "Construite en 1985. Hors zone d'aléa aujourd'hui, rattrapée par l'extension 2100." },
+  forage:   { kind: 'reseaux', coords: [-1.5705, 49.2173], name: 'Forage communal', eyebrow: 'Eau potable', tag: 'fort', sub: 'Alimentation du secteur littoral', body: "Le scénario prévoit sa submersion au pic de la tempête : la continuité de l'eau potable est en jeu." },
+  poste:    { kind: 'reseaux', coords: [-1.5687, 49.2149], name: 'Poste électrique principal', eyebrow: 'Électricité', tag: 'moy', sub: 'Alimente le quartier littoral', body: 'Point sensible du réseau : sa perte entraîne des coupures en cascade.' },
+  zi:       { kind: 'economie', name: 'PME agro-alimentaire', eyebrow: 'Économie', tag: 'fort', sub: '28 salariés', body: 'Protégée par la digue de 1962. Relocalisation à étudier.', fiche: 'zi' },
+  agric1:   { kind: 'economie', name: 'Maraîchage Coïc', eyebrow: 'Agriculture', tag: 'moy', sub: '12 ha · 3 ETP', body: 'Sols menacés par la remontée saline projetée à 2050.' },
+  camping1: { kind: 'economie', name: 'Camping Les Dunes', eyebrow: 'Tourisme', tag: 'recul', sub: '180 emplacements', body: 'Sur le cordon dunaire, à 80 m du trait de côte.', fiche: 'camping1' },
+  camping2: { kind: 'economie', name: 'Camping La Goëlette', eyebrow: 'Tourisme', tag: 'fort', sub: '160 emplacements', body: 'Derrière la digue. Évacué en 2024 (180 personnes).', fiche: 'camping2' },
+  camping3: { kind: 'economie', name: 'Camping Le Goulven', eyebrow: 'Tourisme', tag: 'fort', sub: '200 emplacements', body: 'Au bord du Goulven : submersion marine et crues cumulées.', fiche: 'camping3' },
+  port:     { kind: 'economie', name: 'Port communal', eyebrow: 'Économie', tag: 'fort', sub: '12 unités de pêche · 80 de plaisance', body: "Quais de 1962. Mise hors d'eau jugée impossible à coût raisonnable.", fiche: 'port' },
+  marais:   { kind: 'milieux', name: 'Zone Natura 2000 du marais', eyebrow: 'Espace naturel', tag: 'fort', sub: 'Marais de Goulven', body: 'Zone humide arrière-littorale, candidate à la dépoldérisation comme zone tampon.', fiche: 'marais' },
+  cordon:   { kind: 'milieux', name: 'Cordon dunaire', eyebrow: 'Espace naturel', tag: 'recul', sub: 'recul récent ≈ 1 m/an', body: 'Premier rempart naturel face à la submersion.', fiche: 'cordon' },
+  goulven:  { kind: 'reseaux', name: 'Le Goulven', eyebrow: "Cours d'eau côtier", tag: 'info', sub: 'crues aggravées depuis 2018', body: 'Concomitance possible entre crue et submersion marine.', fiche: 'goulven' },
+  epi:      { kind: 'milieux', name: 'Épi de protection nord', eyebrow: 'Ouvrage', tag: 'recul', sub: '1962 · état dégradé', body: 'Diagnostic 2024 : risque de rupture évalué à 35 %.' },
+  falaise:  { kind: 'milieux', name: 'Falaise · rue des Goélands', eyebrow: 'Aléa secondaire', tag: 'recul', sub: '12 maisons en arrière', body: 'Recul actif. Acquisition amiable engagée par le Conservatoire du littoral.', fiche: 'falaise' }
 };
 
 const ZONES = {
@@ -18315,21 +18475,117 @@ const ZONES = {
              sub: "≈ 100 logements de plus (≈ 90 habitants permanents) · station d'épuration" }
 };
 
+const PRESETS = {
+  territoire: {
+    title: 'Se repérer dans le territoire',
+    text: 'Relief, hydrographie, réseau viaire, bâti et principaux lieux du scénario.',
+    on: ['trait-2026', 'population', 'secours', 'reseaux', 'economie', 'milieux', 'quartier', 'digue', 'commune', 'labels', 'routes', 'hydro', 'batiments', 'etude']
+  },
+  risques: {
+    title: 'Comprendre les systèmes de risques',
+    text: 'Submersion de référence, extension 2100, recul du trait de côte et ouvrages de protection.',
+    on: ['fort', 'moy', 'faible', 'ext2100', 'trait-2026', 'trait-2050', 'trait-2100', 'recul-30', 'recul-100', 'milieux', 'digue', 'commune', 'labels', 'routes', 'hydro', 'batiments', 'etude']
+  },
+  enjeux: {
+    title: 'Voir les vulnérabilités et les interdépendances',
+    text: 'Populations, activités et réseaux essentiels croisés avec les zones exposées.',
+    on: ['fort', 'moy', 'faible', 'population', 'reseaux', 'economie', 'secours', 'quartier', 'digue', 'commune', 'labels', 'routes', 'hydro', 'batiments']
+  },
+  ressources: {
+    title: 'Préparer le plan communal de sauvegarde',
+    text: 'Poste de commandement, centres d’accueil, secours, réseaux critiques et itinéraires d’évacuation.',
+    on: ['fort', 'moy', 'population', 'secours', 'reseaux', 'quartier', 'digue', 'commune', 'labels', 'routes', 'hydro', 'batiments', 'evacuation']
+  }
+};
+
+const CRISIS_ROUTES = {
+  type: 'FeatureCollection',
+  features: [
+    { type: 'Feature', properties: { id: 'quartier-gymnase', label: 'Quartier de la Digue → gymnase' }, geometry: { type: 'LineString', coordinates: [[-1.5728,49.2188],[-1.5698,49.2157],[-1.5663,49.2112],[-1.5630,49.2066],[-1.5608,49.2044]] } },
+    { type: 'Feature', properties: { id: 'camping2-salle', label: 'Camping La Goëlette → salle des fêtes' }, geometry: { type: 'LineString', coordinates: [[-1.57404,49.21778],[-1.5708,49.2147],[-1.5670,49.2091],[-1.56315,49.2033]] } },
+    { type: 'Feature', properties: { id: 'camping3-gymnase', label: 'Camping Le Goulven → gymnase' }, geometry: { type: 'LineString', coordinates: [[-1.55606,49.2183],[-1.5574,49.2134],[-1.5586,49.2085],[-1.5608,49.2044]] } },
+    { type: 'Feature', properties: { id: 'ehpad-salle', label: 'EHPAD → salle des fêtes' }, geometry: { type: 'LineString', coordinates: [[-1.56515,49.20606],[-1.5641,49.2048],[-1.56315,49.2033]] } }
+  ]
+};
+
+const CRISIS_PHASES_MAP = [
+  {
+    time: 'J−18h · lundi 18h00', title: 'Vigilance rouge déclenchée',
+    summary: 'Surcote 1,4 m, houle 6,5 m et coefficient 102. Le COD et le PCS se mettent en ordre de marche.',
+    center: [-1.575,49.208], zoom: 12.8, routes: false, water: 0.15,
+    events: [
+      ['mairie', 'Activation du PCS', 'Poste de commandement communal en cours d’activation.', 'watch'],
+      ['port', 'Vigilance vagues-submersion', 'Mise en sécurité immédiate du port et des activités littorales.', 'watch'],
+      ['cordon', 'Premières fortes houles', 'Le cordon dunaire devient un point de surveillance prioritaire.', 'watch']
+    ]
+  },
+  {
+    time: 'J−6h · mardi 06h00', title: 'Évacuation préventive',
+    summary: 'Les écoles ferment. Le quartier littoral, les campings et les personnes fragiles doivent rejoindre les centres d’accueil.',
+    center: [-1.568,49.211], zoom: 13.2, routes: true, water: 0.28,
+    events: [
+      ['quartier', '250 maisons à évacuer', 'Le Quartier de la Digue est le principal secteur résidentiel exposé.', 'alert'],
+      ['camping2', 'Camping à évacuer', 'Les saisonniers doivent rejoindre un centre d’accueil avant le pic.', 'alert'],
+      ['camping3', 'Camping à évacuer', 'Le cumul submersion-crue rend le secteur particulièrement sensible.', 'alert'],
+      ['epad', 'Transport médicalisé', 'L’évacuation des résidents dépend de moyens adaptés.', 'alert']
+    ]
+  },
+  {
+    time: 'J0 · mardi 12h00', title: 'Pic de la tempête',
+    summary: 'La digue cède à 11h47. L’eau gagne le quartier ; le forage et le poste électrique sont hors service.',
+    center: [-1.5708,49.2172], zoom: 14.2, routes: false, water: 0.72,
+    events: [
+      ['breche', 'Brèche de 12 mètres', 'Rupture partielle de la digue à 11h47 ; pénétration rapide de l’eau.', 'critical', [-1.5724,49.2190]],
+      ['toit', 'Personne sur un toit', 'Sauvetage prioritaire rue de la Tour.', 'critical', [-1.5709,49.2188]],
+      ['forage', 'Forage submergé', 'Risque immédiat sur la continuité et la qualité de l’eau potable.', 'critical'],
+      ['poste', 'Poste électrique hors service', 'Coupures en cascade depuis 10h30.', 'critical'],
+      ['camping2', 'Camping totalement inondé', 'Le secteur ne doit plus être accessible aux équipes non spécialisées.', 'critical']
+    ]
+  },
+  {
+    time: 'J+8h · mardi 20h00', title: 'Premières heures post-crise',
+    summary: '47 maisons sont inondées, 12 caravanes emportées et 380 personnes accueillies. Les reconnaissances commencent.',
+    center: [-1.5685,49.212], zoom: 13.4, routes: false, water: 0.52,
+    events: [
+      ['quartier', '47 maisons inondées', 'Diagnostic bâtiment par bâtiment et interdiction des retours non autorisés.', 'damage'],
+      ['digue', 'Digue effondrée sur 80 m', 'Sécurisation et surveillance de la brèche.', 'damage', [-1.5724,49.2190]],
+      ['gymnase', 'Centre d’accueil actif', '380 personnes réparties entre le gymnase et la salle des fêtes.', 'response'],
+      ['marais', 'Intrusion d’eau salée', 'Suivi écologique et prélèvements dans le marais Natura 2000.', 'damage']
+    ]
+  },
+  {
+    time: 'J+72h · vendredi 12h00', title: 'Retour d’expérience et relèvement',
+    summary: 'Expertises, accompagnement des sinistrés et remise en service des réseaux préparent les décisions de reconstruction.',
+    center: [-1.571,49.211], zoom: 12.9, routes: false, water: 0.22,
+    events: [
+      ['mairie', 'Cellule de relèvement', 'Coordination des expertises, aides et informations aux habitants.', 'response'],
+      ['digue', 'Expertise de l’ouvrage', 'La réparation d’urgence doit être articulée avec la stratégie de long terme.', 'response', [-1.5724,49.2190]],
+      ['poste', 'Rétablissement progressif', 'Les réseaux sont remis en service après contrôle.', 'response'],
+      ['marais', 'Suivi environnemental', 'Mesure des effets tampons et des dommages écologiques.', 'response']
+    ]
+  }
+];
+
 // ============ ÉTAT ============
 const state = {
-  fort: true, moy: true, faible: true, ext2100: false,
+  fort: false, moy: false, faible: false, ext2100: false,
   'trait-2026': true, 'trait-2050': false, 'trait-2100': false, 'recul-30': false, 'recul-100': false,
-  enjeux: true, quartier: true, digue: true, commune: true, labels: true, courbes: false, etude: true
+  population: true, secours: true, reseaux: true, economie: true, milieux: true,
+  quartier: true, digue: true, commune: true, labels: true, routes: true, hydro: true, batiments: true,
+  courbes: false, etude: true, evacuation: false, incidents: false
 };
 const LAYERS = {
   fort: ['g-fort'], moy: ['g-moy'], faible: ['g-faible'], ext2100: ['g-ext2100'],
   'trait-2026': ['g-trait-2026'], 'trait-2050': ['g-trait-2050'], 'trait-2100': ['g-trait-2100'],
   'recul-30': ['g-recul-30'], 'recul-100': ['g-recul-100'],
-  enjeux: ['g-enjeux', 'g-enjeux-label'], quartier: ['g-quartier-fill', 'g-quartier-line'], digue: ['g-digue'],
-  commune: ['g-commune'], labels: ['g-labels-bold', 'g-labels-italic', 'g-labels-region'], etude: ['g-etude']
+  quartier: ['g-quartier-fill', 'g-quartier-line'], digue: ['g-digue'], commune: ['g-commune'],
+  labels: ['g-labels-bold', 'g-labels-italic', 'g-labels-region'], etude: ['g-etude'],
+  evacuation: ['g-evac-routes', 'g-evac-flow'], incidents: ['g-crisis-incidents', 'g-crisis-labels']
 };
 let map = null, data = null, base = 'plan', opacity = 0.5, planAvailable = true;
-let planLayers = [], hybridLayers = new Set(), contourLayers = new Set(), popup = null;
+let planLayers = [], hybridLayers = new Set(), contourLayers = new Set(), roadLayers = new Set();
+let hydroLayers = new Set(), buildingLayers = new Set(), popup = null, activePreset = 'territoire';
+let crisisActive = false, crisisPhase = 0, crisisPlaying = false, crisisTimer = null, crisisFrame = null, pcsReturnPhase = null;
 
 // ============ OUTILS ============
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -18370,7 +18626,10 @@ async function buildStyle() {
     st = { version: 8, sources: {}, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#e9e6df' } }] };
   }
   // retire la toponymie réelle et les limites administratives réelles
-  st.layers = st.layers.filter(l => { const sl = l['source-layer'] || ''; return !sl.startsWith('toponyme') && sl !== 'limite_lin'; });
+  st.layers = st.layers.filter(l => {
+    const sl = l['source-layer'] || '';
+    return !String(l.id || '').toLowerCase().startsWith('toponyme') && !sl.startsWith('toponyme') && sl !== 'limite_lin';
+  });
   st.glyphs = st.glyphs || GLYPHS;
   st.sources.ortho = { type: 'raster', tiles: [ORTHO], tileSize: 256, maxzoom: 19, attribution: ATTRIB };
   const bg = Math.max(0, st.layers.findIndex(l => l.type === 'background'));
@@ -18380,6 +18639,9 @@ async function buildStyle() {
     planLayers.push(l.id);
     const sl = l['source-layer'] || '';
     if (sl === 'oro_courbe') contourLayers.add(l.id);
+    if (/^(routier|ferre)/.test(sl)) roadLayers.add(l.id);
+    if (/^hydro/.test(sl)) hydroLayers.add(l.id);
+    if (/^bati/.test(sl)) buildingLayers.add(l.id);
     if (l.type === 'line' && /^(routier|hydro|ferre)/.test(sl)) hybridLayers.add(l.id);
   });
   return st;
@@ -18415,20 +18677,40 @@ function addThematicLayers() {
 
   map.addSource('g-commune', { type: 'geojson', data: data.commune });
   map.addLayer({ id: 'g-commune', type: 'line', source: 'g-commune', paint: { 'line-color': '#1E2D5C', 'line-width': 2.4, 'line-dasharray': [4, 2] } });
+  map.addLayer({ id: 'g-crisis-alert', type: 'line', source: 'g-commune', layout: { visibility: 'none' },
+    paint: { 'line-color': '#D32F2F', 'line-width': 5, 'line-opacity': 0.7 } });
 
   map.addSource('g-etude', { type: 'geojson', data: data.etude });
   map.addLayer({ id: 'g-etude', type: 'line', source: 'g-etude', paint: { 'line-color': '#888', 'line-width': 1.2, 'line-dasharray': [3, 3] } });
 
-  const enj = Object.entries(data.enjeux).filter(([k]) => ENJEUX[k]).map(([k, c]) => ({
-    type: 'Feature', properties: { id: k, tag: ENJEUX[k].tag, name: ENJEUX[k].name }, geometry: { type: 'Point', coordinates: c } }));
+  const enj = Object.entries(ENJEUX).map(([k, o]) => {
+    const c = data.enjeux[k] || o.coords;
+    return c ? { type: 'Feature', properties: { id: k, tag: o.tag, kind: o.kind, name: o.name }, geometry: { type: 'Point', coordinates: c } } : null;
+  }).filter(Boolean);
   map.addSource('g-enjeux', { type: 'geojson', data: fc(enj) });
   map.addLayer({ id: 'g-enjeux', type: 'circle', source: 'g-enjeux', paint: {
     'circle-radius': ['interpolate', ['linear'], ['zoom'], 11, 4, 15, 8],
-    'circle-color': ['match', ['get', 'tag'], ...Object.entries(TAGS).flatMap(([k, v]) => [k, v[1]]), '#1E2D5C'],
+    'circle-color': ['match', ['get', 'kind'], 'population', '#C8553C', 'secours', '#1E2D5C', 'reseaux', '#8E5BA8', 'economie', '#D49426', 'milieux', '#5C8A4F', '#1E2D5C'],
     'circle-stroke-color': '#FFFFFF', 'circle-stroke-width': 2 } });
   map.addLayer({ id: 'g-enjeux-label', type: 'symbol', source: 'g-enjeux', minzoom: 13.6,
     layout: { 'text-field': ['get', 'name'], 'text-font': FONT_BOLD, 'text-size': 11.5, 'text-offset': [0, 1.1], 'text-anchor': 'top', 'text-max-width': 9 },
     paint: { 'text-color': '#1E2D5C', 'text-halo-color': 'rgba(255,255,255,.95)', 'text-halo-width': 1.6 } });
+
+  map.addSource('g-evac', { type: 'geojson', data: CRISIS_ROUTES });
+  map.addLayer({ id: 'g-evac-routes', type: 'line', source: 'g-evac', layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': '#007C91', 'line-width': ['interpolate', ['linear'], ['zoom'], 11, 2.5, 15, 5], 'line-dasharray': [2, 1.4], 'line-opacity': 0.92 } });
+  map.addSource('g-evac-flow', { type: 'geojson', data: fc([]) });
+  map.addLayer({ id: 'g-evac-flow', type: 'circle', source: 'g-evac-flow', layout: { visibility: 'none' },
+    paint: { 'circle-radius': 5.5, 'circle-color': '#FFFFFF', 'circle-stroke-color': '#007C91', 'circle-stroke-width': 3 } });
+
+  map.addSource('g-crisis-incidents', { type: 'geojson', data: fc([]) });
+  map.addLayer({ id: 'g-crisis-incidents', type: 'circle', source: 'g-crisis-incidents', layout: { visibility: 'none' }, paint: {
+    'circle-radius': ['match', ['get', 'severity'], 'critical', 11, 'damage', 9, 'alert', 8, 7],
+    'circle-color': ['match', ['get', 'severity'], 'critical', '#8B0000', 'damage', '#D35400', 'alert', '#E6A700', 'response', '#138A72', '#D49426'],
+    'circle-stroke-color': '#FFFFFF', 'circle-stroke-width': 2.5, 'circle-opacity': 0.95 } });
+  map.addLayer({ id: 'g-crisis-labels', type: 'symbol', source: 'g-crisis-incidents', layout: { visibility: 'none',
+    'text-field': ['get', 'label'], 'text-font': FONT_BOLD, 'text-size': 11, 'text-offset': [0, 1.45], 'text-anchor': 'top', 'text-max-width': 12 },
+    paint: { 'text-color': '#7A1711', 'text-halo-color': 'rgba(255,255,255,.96)', 'text-halo-width': 2 } });
 
   // toponymie fictive
   map.addSource('g-labels', { type: 'geojson', data: data.labels });
@@ -18450,6 +18732,9 @@ function applyBase() {
   planLayers.forEach(id => {
     let on = base === 'plan' || (base === 'hybride' && hybridLayers.has(id));
     if (contourLayers.has(id)) on = base === 'plan' && state.courbes;
+    if (roadLayers.has(id) && !state.routes) on = false;
+    if (hydroLayers.has(id) && !state.hydro) on = false;
+    if (buildingLayers.has(id) && !state.batiments) on = false;
     setVis(id, on);
   });
   const dark = base !== 'plan';
@@ -18466,8 +18751,17 @@ function applyBase() {
   map.setPaintProperty('g-quartier-line', 'line-color', dark ? '#FFFFFF' : '#1E2D5C');
   map.setPaintProperty('g-etude', 'line-color', dark ? '#DDDDDD' : '#888888');
 }
+function applyEnjeuxFilter() {
+  const kinds = ['population', 'secours', 'reseaux', 'economie', 'milieux'].filter(k => state[k]);
+  const filter = kinds.length ? ['in', ['get', 'kind'], ['literal', kinds]] : ['==', ['get', 'kind'], '__aucun__'];
+  map.setFilter('g-enjeux', filter);
+  map.setFilter('g-enjeux-label', filter);
+  setVis('g-enjeux', kinds.length > 0);
+  setVis('g-enjeux-label', kinds.length > 0);
+}
 function applyLayers() {
   Object.entries(LAYERS).forEach(([k, ids]) => ids.forEach(id => setVis(id, state[k])));
+  applyEnjeuxFilter();
   ['g-fort', 'g-moy', 'g-faible'].forEach(id => map.setPaintProperty(id, 'fill-opacity', opacity));
   map.setPaintProperty('g-ext2100', 'fill-opacity', Math.min(0.9, opacity * 0.85));
   applyBase();
@@ -18488,6 +18782,13 @@ function renderLegend() {
   if (state['trait-2026']) rows.push([ln('border-top-color:#1E2D5C'), 'Trait de côte 2026']);
   if (state['trait-2050']) rows.push([ln('border-top-color:#C8553C;border-top-style:dashed'), 'Trait de côte 2050']);
   if (state['trait-2100']) rows.push([ln('border-top-color:#8B0000;border-top-style:dotted'), 'Trait de côte 2100']);
+  if (state.population) rows.push([sw('background:#C8553C'), 'Populations vulnérables']);
+  if (state.secours) rows.push([sw('background:#1E2D5C'), 'Commandement et accueil']);
+  if (state.reseaux) rows.push([sw('background:#8E5BA8'), 'Réseaux essentiels']);
+  if (state.economie) rows.push([sw('background:#D49426'), 'Activités économiques']);
+  if (state.milieux) rows.push([sw('background:#5C8A4F'), 'Milieux et ouvrages']);
+  if (state.evacuation) rows.push([ln('border-top-color:#007C91;border-top-style:dashed'), 'Itinéraires d’évacuation']);
+  if (state.incidents) rows.push([sw('background:#A92F25;border-radius:50%'), 'Situation de crise']);
   if (state.digue) rows.push([ln('border-top-color:#5D4037;border-top-width:5px'), 'Digue (1962)']);
   if (state.commune) rows.push([ln('border-top-color:#1E2D5C;border-top-style:dashed'), 'Limite communale']);
   document.getElementById('geovLegend').innerHTML = rows.length
@@ -18500,6 +18801,168 @@ function updateScale() {
   const denom = mpp / 0.00026458;                       // écran à 96 ppp
   const p = Math.pow(10, Math.floor(Math.log10(denom)) - 1);
   document.getElementById('geovScale').textContent = '≈ 1:' + (Math.round(denom / p) * p).toLocaleString('fr-FR');
+}
+
+// ============ COMPOSITIONS ET RECHERCHE ============
+const normalizeText = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+let searchIndex = [];
+function syncLayerInputs() {
+  root.querySelectorAll('[data-layer]').forEach(cb => { cb.checked = !!state[cb.dataset.layer]; });
+}
+function showToast(text) {
+  const el = document.getElementById('geovToast');
+  el.textContent = text;
+  el.classList.add('visible');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(() => el.classList.remove('visible'), 2800);
+}
+function buildSearchIndex() {
+  const byId = Object.entries(ENJEUX).map(([id, o]) => {
+    const coordinates = data.enjeux[id] || o.coords;
+    return coordinates ? { id, label: o.name, key: normalizeText(o.name + ' ' + o.eyebrow), coordinates, object: o } : null;
+  }).filter(Boolean);
+  const places = (data.labels.features || []).map((f, i) => ({
+    id: 'label-' + i, label: f.properties.nom, key: normalizeText(f.properties.nom + ' ' + f.properties.classe),
+    coordinates: f.geometry.coordinates, object: { name: f.properties.nom, eyebrow: 'Repère territorial', tag: 'info', body: 'Toponyme fictif utilisé dans le scénario pédagogique.', sub: f.properties.classe }
+  }));
+  const special = [
+    { id: 'digue', label: 'Digue de 1962', key: 'digue 1962 ouvrage protection', coordinates: [-1.5724,49.2190], object: { name: 'La digue de 1962', eyebrow: 'Ouvrage de protection', tag: 'fort', body: "Protège le Quartier de la Digue et la zone d'activités ; sa fragilité structurelle est au cœur du scénario.", sub: 'Risque de rupture : 35 % (aléa centennal)', fiche: 'digue' } },
+    { id: 'quartier', label: 'Quartier de la Digue', key: 'quartier digue logements habitants', coordinates: [-1.5715,49.2185], object: { name: 'Le Quartier de la Digue', eyebrow: 'Zone résidentielle exposée', tag: 'fort', body: 'Habitat des années 1950-1980 construit derrière la digue.', sub: '≈ 250 logements · 60 % de résidences secondaires', fiche: 'quartier' } }
+  ];
+  searchIndex = byId.concat(special, places).sort((a, b) => a.label.localeCompare(b.label, 'fr'));
+  document.getElementById('geovSearchList').innerHTML = searchIndex.map(x => `<option value="${esc(x.label)}"></option>`).join('');
+}
+function runSearch() {
+  const input = document.getElementById('geovSearch');
+  const status = document.getElementById('geovSearchStatus');
+  const q = normalizeText(input.value);
+  if (!q) { status.textContent = 'Saisissez le nom d’un lieu ou d’un équipement.'; return; }
+  const hit = searchIndex.find(x => x.key === q || normalizeText(x.label) === q) || searchIndex.find(x => x.key.includes(q));
+  if (!hit) { status.textContent = 'Aucun lieu trouvé dans le territoire fictif.'; showToast('Lieu non trouvé'); return; }
+  status.textContent = 'Localisé : ' + hit.label;
+  map.flyTo({ center: hit.coordinates, zoom: Math.max(14.5, map.getZoom()), duration: 850 });
+  showPopup(hit.coordinates, Object.assign({}, hit.object));
+}
+function applyPreset(name, fromCrisis) {
+  const p = PRESETS[name];
+  if (!p) return;
+  if (crisisActive && !fromCrisis) stopCrisis(false);
+  activePreset = name;
+  Object.keys(state).forEach(k => { state[k] = p.on.includes(k); });
+  syncLayerInputs();
+  root.querySelectorAll('[data-preset]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.preset === name)));
+  const reading = document.getElementById('geovReading');
+  reading.innerHTML = `<strong>${esc(p.title)}</strong>${esc(p.text)}`;
+  applyLayers();
+}
+
+// ============ SCÉNARIO CARTOGRAPHIQUE PCS ============
+function pointAlongLine(coords, progress) {
+  const lengths = [];
+  let total = 0;
+  for (let i = 1; i < coords.length; i++) {
+    const dx = (coords[i][0] - coords[i - 1][0]) * Math.cos(coords[i][1] * Math.PI / 180);
+    const dy = coords[i][1] - coords[i - 1][1];
+    const len = Math.sqrt(dx * dx + dy * dy);
+    lengths.push(len); total += len;
+  }
+  let target = progress * total;
+  for (let i = 0; i < lengths.length; i++) {
+    if (target <= lengths[i] || i === lengths.length - 1) {
+      const t = lengths[i] ? target / lengths[i] : 0;
+      return [coords[i][0] + (coords[i + 1][0] - coords[i][0]) * t, coords[i][1] + (coords[i + 1][1] - coords[i][1]) * t];
+    }
+    target -= lengths[i];
+  }
+  return coords[coords.length - 1];
+}
+function crisisEventFeature(e) {
+  const [id, label, detail, severity, override] = e;
+  const o = ENJEUX[id];
+  const coordinates = override || (data.enjeux[id]) || (o && o.coords) || [-1.5715,49.2185];
+  return { type: 'Feature', properties: { id, label, detail, severity }, geometry: { type: 'Point', coordinates } };
+}
+function renderCrisisPanel() {
+  const p = CRISIS_PHASES_MAP[crisisPhase];
+  document.getElementById('geovCrisisTime').textContent = p.time;
+  document.getElementById('geovCrisisTitle').textContent = p.title;
+  document.getElementById('geovCrisisSummary').textContent = p.summary;
+  document.getElementById('geovCrisisPrev').disabled = crisisPhase === 0;
+  document.getElementById('geovCrisisNext').disabled = crisisPhase === CRISIS_PHASES_MAP.length - 1;
+  document.getElementById('geovCrisisPlay').textContent = crisisPlaying ? 'Ⅱ' : '▶';
+  document.getElementById('geovCrisisPlay').setAttribute('aria-label', crisisPlaying ? 'Mettre en pause' : 'Lire la simulation');
+  document.getElementById('geovCrisisRail').innerHTML = CRISIS_PHASES_MAP.map((x, i) =>
+    `<button type="button" class="geov-crisis-step ${i < crisisPhase ? 'done' : ''} ${i === crisisPhase ? 'active' : ''}" data-crisis-phase="${i}"><strong>${esc(x.time.split(' · ')[0])}</strong><span>${esc(x.title)}</span></button>`
+  ).join('');
+  document.getElementById('geovCrisisRail').querySelectorAll('[data-crisis-phase]').forEach(b => b.addEventListener('click', () => setCrisisPhase(Number(b.dataset.crisisPhase), true)));
+}
+function animateCrisis(ts) {
+  if (!crisisActive || !map) return;
+  const p = CRISIS_PHASES_MAP[crisisPhase];
+  if (p.routes) {
+    const t = (ts % 5200) / 5200;
+    const pts = CRISIS_ROUTES.features.map((f, i) => ({ type: 'Feature', properties: { id: f.properties.id },
+      geometry: { type: 'Point', coordinates: pointAlongLine(f.geometry.coordinates, (t + i * 0.17) % 1) } }));
+    map.getSource('g-evac-flow').setData({ type: 'FeatureCollection', features: pts });
+  } else {
+    map.getSource('g-evac-flow').setData({ type: 'FeatureCollection', features: [] });
+  }
+  const pulse = 0.55 + 0.35 * (0.5 + 0.5 * Math.sin(ts / 240));
+  if (map.getLayer('g-crisis-alert')) map.setPaintProperty('g-crisis-alert', 'line-opacity', pulse);
+  if (map.getLayer('g-crisis-incidents')) map.setPaintProperty('g-crisis-incidents', 'circle-stroke-width', 2 + pulse * 2);
+  crisisFrame = requestAnimationFrame(animateCrisis);
+}
+function setCrisisPhase(index, animate) {
+  if (!map) return;
+  crisisPhase = Math.max(0, Math.min(CRISIS_PHASES_MAP.length - 1, index));
+  const p = CRISIS_PHASES_MAP[crisisPhase];
+  crisisActive = true;
+  root.classList.add('crisis-mode');
+  document.getElementById('geovCrisis').hidden = false;
+  document.getElementById('geovCrisisToggle').setAttribute('aria-pressed', 'true');
+  root.querySelectorAll('[data-preset]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  ['fort','moy','faible','population','secours','reseaux','economie','milieux','quartier','digue','commune','labels','routes','hydro','batiments'].forEach(k => { state[k] = true; });
+  ['ext2100','trait-2050','trait-2100','recul-30','recul-100'].forEach(k => { state[k] = false; });
+  state['trait-2026'] = true;
+  state.evacuation = p.routes;
+  state.incidents = true;
+  syncLayerInputs();
+  applyLayers();
+  map.setPaintProperty('g-fort', 'fill-opacity', p.water);
+  map.setPaintProperty('g-moy', 'fill-opacity', p.water * 0.78);
+  map.setPaintProperty('g-faible', 'fill-opacity', p.water * 0.56);
+  setVis('g-crisis-alert', crisisPhase < 2);
+  map.getSource('g-crisis-incidents').setData({ type: 'FeatureCollection', features: p.events.map(crisisEventFeature) });
+  map.flyTo({ center: p.center, zoom: p.zoom, duration: animate ? 1000 : 0 });
+  renderCrisisPanel();
+  if (!crisisFrame) crisisFrame = requestAnimationFrame(animateCrisis);
+}
+function startCrisis(index) {
+  setCrisisPhase(typeof index === 'number' ? index : 0, true);
+  showToast('Mode crise activé · les données évoluent avec la timeline PCS');
+}
+function stopCrisis(restorePreset = true) {
+  crisisActive = false; crisisPlaying = false;
+  clearInterval(crisisTimer); crisisTimer = null;
+  if (crisisFrame) cancelAnimationFrame(crisisFrame); crisisFrame = null;
+  root.classList.remove('crisis-mode');
+  document.getElementById('geovCrisis').hidden = true;
+  document.getElementById('geovCrisisToggle').setAttribute('aria-pressed', 'false');
+  setVis('g-crisis-alert', false);
+  if (map && map.getSource('g-crisis-incidents')) map.getSource('g-crisis-incidents').setData({ type: 'FeatureCollection', features: [] });
+  if (map && map.getSource('g-evac-flow')) map.getSource('g-evac-flow').setData({ type: 'FeatureCollection', features: [] });
+  if (restorePreset) applyPreset(activePreset || 'territoire', true);
+}
+function toggleCrisisPlay() {
+  crisisPlaying = !crisisPlaying;
+  clearInterval(crisisTimer);
+  if (crisisPlaying) {
+    crisisTimer = setInterval(() => {
+      if (crisisPhase >= CRISIS_PHASES_MAP.length - 1) { crisisPlaying = false; clearInterval(crisisTimer); renderCrisisPanel(); return; }
+      setCrisisPhase(crisisPhase + 1, true);
+    }, 7000);
+  }
+  renderCrisisPanel();
 }
 
 // ============ VUES ============
@@ -18517,6 +18980,7 @@ function goView(name, animate) {
 // ============ INTERACTIONS ============
 function bindUI() {
   root.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => goView(b.dataset.view, true)));
+  root.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => applyPreset(b.dataset.preset)));
   root.querySelectorAll('[data-base]').forEach(b => {
     if (!planAvailable && b.dataset.base !== 'photo') b.disabled = true;
     b.addEventListener('click', () => {
@@ -18525,19 +18989,44 @@ function bindUI() {
       applyBase();
     });
   });
-  root.querySelectorAll('[data-layer]').forEach(cb => cb.addEventListener('change', () => { state[cb.dataset.layer] = cb.checked; applyLayers(); }));
+  root.querySelectorAll('[data-layer]').forEach(cb => cb.addEventListener('change', () => {
+    state[cb.dataset.layer] = cb.checked;
+    if (!crisisActive) {
+      activePreset = null;
+      root.querySelectorAll('[data-preset]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      document.getElementById('geovReading').innerHTML = '<strong>Composition personnalisée</strong>Les couches affichées correspondent à votre propre lecture du territoire.';
+    }
+    applyLayers();
+  }));
   const op = document.getElementById('geovOpacity'), opv = document.getElementById('geovOpacityVal');
   op.addEventListener('input', () => { opacity = op.value / 100; opv.textContent = op.value + ' %'; applyLayers(); });
   const tog = document.getElementById('geovPanelToggle');
   tog.addEventListener('click', () => { const open = root.classList.toggle('panel-open'); tog.setAttribute('aria-expanded', String(open)); tog.textContent = open ? 'Fermer' : 'Couches'; });
 
-  const clickable = ['g-enjeux', 'g-digue', 'g-quartier-fill', 'g-recul-30', 'g-recul-100', 'g-fort', 'g-moy', 'g-faible', 'g-ext2100'];
+  document.getElementById('geovSearchBtn').addEventListener('click', runSearch);
+  document.getElementById('geovSearch').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); runSearch(); } });
+  document.getElementById('geovCrisisToggle').addEventListener('click', () => crisisActive ? stopCrisis(true) : startCrisis(0));
+  document.getElementById('geovCrisisPrev').addEventListener('click', () => setCrisisPhase(crisisPhase - 1, true));
+  document.getElementById('geovCrisisNext').addEventListener('click', () => setCrisisPhase(crisisPhase + 1, true));
+  document.getElementById('geovCrisisPlay').addEventListener('click', toggleCrisisPlay);
+  document.getElementById('geovCrisisReturn').addEventListener('click', () => {
+    const idx = pcsReturnPhase;
+    pcsReturnPhase = null;
+    document.getElementById('geovCrisisReturn').hidden = true;
+    stopCrisis(true);
+    const section = document.getElementById('cas3');
+    if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (typeof idx === 'number' && typeof window.openPcsPhase === 'function') setTimeout(() => window.openPcsPhase(idx), 650);
+  });
+
+  const clickable = ['g-crisis-incidents', 'g-enjeux', 'g-digue', 'g-quartier-fill', 'g-recul-30', 'g-recul-100', 'g-fort', 'g-moy', 'g-faible', 'g-ext2100'];
   map.on('click', (e) => {
     if (root.classList.contains('panel-open')) { root.classList.remove('panel-open'); tog.setAttribute('aria-expanded', 'false'); tog.textContent = 'Couches'; }
     const layers = clickable.filter(id => map.getLayer(id) && map.getLayoutProperty(id, 'visibility') !== 'none');
     const f = map.queryRenderedFeatures(e.point, { layers })[0];
     if (!f) return;
     const id = f.layer.id;
+    if (id === 'g-crisis-incidents') return showPopup(f.geometry.coordinates, { name: f.properties.label, eyebrow: 'Situation en cours', tag: f.properties.severity === 'critical' ? 'fort' : 'info', body: f.properties.detail, sub: CRISIS_PHASES_MAP[crisisPhase].time });
     if (id === 'g-enjeux') return showPopup(f.geometry.coordinates, Object.assign({}, ENJEUX[f.properties.id]));
     if (id === 'g-digue') return showPopup(e.lngLat, { name: 'La digue de 1962', eyebrow: 'Ouvrage de protection', tag: 'fort', sub: 'Risque de rupture : 35 % (aléa centennal)', body: "Protège les 250 logements du Quartier de la Digue, la PME et le camping La Goëlette. Fragilité structurelle (diagnostic DREAL 2024).", fiche: 'digue' });
     if (id === 'g-quartier-fill') return showPopup(e.lngLat, { name: 'Le Quartier de la Digue', eyebrow: 'Zone résidentielle exposée', tag: 'fort', sub: '250 logements : 47 en aléa fort, 156 en moyen, 47 en faible · ≈ 230 habitants permanents, ≈ 650 en été · 22 personnes âgées isolées', body: 'Habitat des années 1950-1980, construit derrière la digue de 1962. 60 % de résidences secondaires.', fiche: 'quartier' });
@@ -18549,6 +19038,8 @@ function bindUI() {
   map.on('mousemove', (e) => {
     const layers = clickable.filter(id => map.getLayer(id) && map.getLayoutProperty(id, 'visibility') !== 'none');
     map.getCanvas().style.cursor = map.queryRenderedFeatures(e.point, { layers }).length ? 'pointer' : '';
+    const lat = Math.abs(e.lngLat.lat).toFixed(4).replace('.', ','), lng = Math.abs(e.lngLat.lng).toFixed(4).replace('.', ',');
+    document.getElementById('geovCoords').textContent = `${lat}° ${e.lngLat.lat >= 0 ? 'N' : 'S'} · ${lng}° ${e.lngLat.lng >= 0 ? 'E' : 'O'}`;
   });
   map.on('move', updateScale);
 }
@@ -18595,6 +19086,29 @@ window.geovLocate = function (id) {
   setTimeout(() => locate(id), 450);
 };
 function start() { if (!started) { started = true; init(); } }
+window.openPcsMap = function() {
+  const viewed = (typeof _pcsViewingPhaseIdx === 'number') ? _pcsViewingPhaseIdx : null;
+  const current = (typeof _pcsCurrentPhaseIdx === 'number' && _pcsCurrentPhaseIdx >= 0) ? _pcsCurrentPhaseIdx : 0;
+  pcsReturnPhase = viewed === null ? current : viewed;
+  if (typeof window.closePcsPhase === 'function') window.closePcsPhase();
+  document.getElementById('cartes').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  let tries = 0;
+  const activate = () => {
+    if (map && map.getSource('g-crisis-incidents')) {
+      document.getElementById('geovCrisisReturn').hidden = false;
+      startCrisis(pcsReturnPhase);
+      return;
+    }
+    if (++tries < 80) setTimeout(activate, 180);
+  };
+  setTimeout(activate, 350);
+};
+window.GoulvenMap = {
+  startCrisis,
+  stopCrisis: () => stopCrisis(true),
+  setCrisisPhase: i => setCrisisPhase(i, true),
+  isCrisisActive: () => crisisActive
+};
 
 // ============ INITIALISATION ============
 async function init() {
@@ -18615,8 +19129,9 @@ async function init() {
         addThematicLayers();
         if (!planAvailable) base = 'photo';
         root.querySelectorAll('[data-base]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.base === base)));
-        applyLayers();
+        buildSearchIndex();
         bindUI();
+        applyPreset('territoire', true);
         goView('commune', false);
         updateScale();
         ready = true;

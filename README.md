@@ -13,6 +13,18 @@ La page d'accueil (`index.html`) est un portail qui renvoie vers chaque projet. 
 | `outils-igedd/` | Déclaration annuelle de compétences, trombinoscope | `/outils-igedd/masque-competences.html` |
 | `worker/` | Worker Cloudflare `dialogue-1972`, utilisé par Anse-de-Goulven (déployé séparément avec `wrangler`) | |
 
+## Visualiseur d'Anse-de-Goulven
+
+Le visualiseur intégré à `anse-goulven/index.html` utilise MapLibre GL JS et les services de la Géoplateforme IGN. Il propose :
+
+- le Plan IGN, l'orthophotographie ou une vue hybride ;
+- une recherche dans les lieux et enjeux fictifs du cas pédagogique ;
+- quatre compositions de couches : repérage, risques, vulnérabilités et préparation du PCS ;
+- les couches de submersion, de recul du trait de côte, d'enjeux, de réseaux et d'itinéraires d'évacuation ;
+- une simulation cartographique en cinq phases de la tempête Argonne, synchronisable avec le cas PCS.
+
+Le pont JavaScript `window.GoulvenMap` expose `startCrisis()`, `setCrisisPhase(index)` et `stopCrisis()` pour piloter la carte depuis les séquences pédagogiques. Toutes les données propres au scénario restent fictives et sans valeur réglementaire ou opérationnelle.
+
 ## Anciennes adresses
 
 Les pages étaient auparavant toutes à la racine. Les anciennes adresses du suivi cabinet (`kanban-suivi-cabinet.html`, `journal-suivi-cabinet.html`, `arbitrage-suivi-cabinet.html`) restent en place sous forme de petites pages de redirection, qui conservent les paramètres d'URL et l'ancre. Les liens de session de la formation (`/?s=...` ou `/?session=...`) sont renvoyés par le portail vers `anse-goulven/`.
