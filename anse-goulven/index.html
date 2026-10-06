@@ -4243,6 +4243,79 @@ h3.subhead {
 .cartes-viz-popup-tag.moy { background: #F57C00; color: white; }
 .cartes-viz-popup-tag.faible { background: #FBC02D; color: #5C4900; }
 
+/* =================================================================
+   VISUALISEUR CARTOGRAPHIQUE (fonds IGN, couches PPRL fictives)
+   ================================================================= */
+.geov { border: 1px solid var(--grey-line); border-radius: 10px; background: var(--white); overflow: hidden; margin-top: 18px; }
+.geov:fullscreen { border-radius: 0; display: flex; flex-direction: column; }
+.geov:fullscreen .geov-body { flex: 1; }
+.geov:fullscreen .geov-map-wrap, .geov:fullscreen .geov-map { height: 100%; }
+.geov-bar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: var(--grey-card); border-bottom: 1px solid var(--grey-line); }
+.geov-seg { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.geov-seg-label { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--grey-txt); margin-right: 4px; }
+.geov-btn { font-family: var(--sans); font-size: 12.5px; font-weight: 600; color: var(--navy); background: var(--white);
+  border: 1px solid var(--grey-line); border-radius: 999px; padding: 5px 12px; cursor: pointer; line-height: 1.2; }
+.geov-btn:hover { border-color: var(--navy); }
+.geov-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.geov-btn[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: var(--white); }
+.geov-btn:disabled { opacity: .45; cursor: not-allowed; }
+.geov-body { display: grid; grid-template-columns: 290px minmax(0, 1fr); min-height: 620px; }
+.geov-panel { border-right: 1px solid var(--grey-line); padding: 12px 14px 16px; overflow-y: auto; max-height: 620px; background: var(--white); }
+.geov-group { margin-bottom: 14px; }
+.geov-group-title { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--teal-deep); font-weight: 700; margin: 0 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--grey-line); }
+.geov-row { display: grid; grid-template-columns: 18px 22px minmax(0, 1fr); align-items: center; gap: 6px;
+  font-size: 12.5px; color: var(--black); padding: 3px 0; cursor: pointer; }
+.geov-row input { margin: 0; accent-color: var(--navy); }
+.geov-row .meta { grid-column: 3; font-size: 10.5px; color: var(--grey-txt); margin-top: -2px; }
+.geov-sw { width: 20px; height: 12px; border-radius: 2px; border: 1px solid rgba(0,0,0,.18); }
+.geov-sw-line { width: 20px; height: 0; border-top-width: 3px; border-top-style: solid; }
+.geov-sw-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.3); margin-left: 4px; }
+.geov-opacity { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; font-size: 11.5px; color: var(--grey-txt); margin-top: 6px; }
+.geov-opacity input { width: 100%; accent-color: var(--navy); }
+.geov-map-wrap { position: relative; min-width: 0; }
+.geov-map, #geovMap.maplibregl-map { position: absolute; inset: 0; }
+.geov-panel-toggle { display: none; }
+.geov-legend { position: absolute; left: 10px; bottom: 34px; z-index: 2; background: rgba(255,255,255,.94); border: 1px solid var(--grey-line);
+  border-radius: 6px; padding: 7px 10px; font-size: 11px; max-width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,.12); pointer-events: none; }
+.geov-legend:empty { display: none; }
+.geov-legend-title { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--grey-txt); margin-bottom: 4px; }
+.geov-legend-row { display: flex; align-items: center; gap: 7px; margin: 2px 0; color: var(--black); }
+.geov-scale { position: absolute; right: 10px; bottom: 30px; z-index: 2; background: rgba(255,255,255,.9); border-radius: 4px;
+  padding: 3px 8px; font-family: var(--mono); font-size: 10.5px; color: var(--navy); pointer-events: none; }
+.geov-loading { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center;
+  background: rgba(244,242,238,.85); font-size: 13px; color: var(--grey-txt); }
+.geov-loading[hidden] { display: none; }
+.geov-note { font-size: 11.5px; color: var(--grey-txt); line-height: 1.5; margin: 0; padding: 10px 14px; background: var(--grey-card); border-top: 1px solid var(--grey-line); }
+.geov-popup-btn { margin-top: 8px; font-family: var(--sans); font-size: 12px; font-weight: 700; color: var(--white); background: var(--navy);
+  border: 0; border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.geov-popup-btn:hover { background: var(--teal-deep); }
+.cartes-viz-popup-tag.ext { background: #8E44AD; color: white; }
+.cartes-viz-popup-tag.hors { background: #607D8B; color: white; }
+.cartes-viz-popup-tag.recul { background: #795548; color: white; }
+.cartes-viz-popup-tag.info { background: var(--teal); color: white; }
+.geov-planches { margin-top: 14px; }
+.geov-planches summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--navy); }
+.geov-planches-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 10px; }
+.geov-planches-grid figure { margin: 0; }
+.geov-planches-grid img { width: 100%; border-radius: 6px; border: 1px solid var(--grey-line); }
+.geov-planches-grid figcaption { font-size: 11.5px; color: var(--grey-txt); margin-top: 3px; }
+@media (max-width: 860px) {
+  .geov-body { grid-template-columns: 1fr; min-height: 0; }
+  .geov-map-wrap { height: 70vh; min-height: 420px; }
+  .geov-panel { position: absolute; z-index: 4; top: 0; left: 0; bottom: 0; width: min(300px, 86%); max-height: none;
+    box-shadow: 4px 0 18px rgba(0,0,0,.18); transform: translateX(-105%); transition: transform .2s ease; }
+  .geov.panel-open .geov-panel { transform: none; }
+  .geov-body { position: relative; }
+  .geov-panel-toggle { display: inline-flex; position: absolute; z-index: 5; top: 10px; left: 50px; }
+  .geov.panel-open .geov-panel-toggle { left: calc(min(300px, 86%) + 8px); background: var(--navy); color: var(--white); }
+  .geov-legend { max-width: 170px; font-size: 10.5px; }
+}
+@media (max-width: 600px) {
+  .geov-legend { display: none; }
+}
+
 @media (max-width: 800px) {
   .cartes-viz-controls {
     grid-template-columns: 1fr;
@@ -5029,141 +5102,83 @@ h3.subhead {
     </span>
     <h2 class="section-title">Cartes</h2>
   </div>
-  <p class="section-intro">
-    Visualiseur cartographique du territoire d'Anse-de-Goulven. Quatre échelles disponibles, deux fonds
-    superposables (plan IGN annoté ↔ photo aérienne), et les couches PPRL projetables : <strong>submersion
-    marine</strong> et <strong>recul du trait de côte</strong> aux trois horizons TRACC. Cliquez sur les
-    enjeux pour ouvrir leur fiche.
+    <p class="section-intro">
+    Visualiseur cartographique d'Anse-de-Goulven, sur fonds IGN : <strong>plan</strong>, <strong>photo aérienne</strong>
+    ou les deux superposés. Activez les couches du plan de prévention : <strong>submersion marine</strong> (aléas fort,
+    moyen, faible et extension 2100) et <strong>recul du trait de côte</strong> aux horizons TRACC. Cliquez sur un enjeu,
+    la digue ou le Quartier de la Digue pour ouvrir sa fiche.
   </p>
 
-  <div class="cartes-viz">
-    <!-- Onglets -->
-    <div class="cartes-viz-header">
-      <div class="cartes-viz-tabs" id="cartesVizTabs">
-        <button class="cartes-viz-tab active" data-map="tactique">
-          <span class="cartes-viz-tab-num">CARTE 01</span>
-          <span class="cartes-viz-tab-label">Tactique principale</span>
-        </button>
-        <button class="cartes-viz-tab" data-map="regionale">
-          <span class="cartes-viz-tab-num">CARTE 02</span>
-          <span class="cartes-viz-tab-label">Localisation régionale</span>
-        </button>
-        <button class="cartes-viz-tab" data-map="nord">
-          <span class="cartes-viz-tab-num">CARTE 03</span>
-          <span class="cartes-viz-tab-label">Secteur nord</span>
-        </button>
-        <button class="cartes-viz-tab" data-map="brezeville">
-          <span class="cartes-viz-tab-num">CARTE 04</span>
-          <span class="cartes-viz-tab-label">Bordure Brézeville</span>
-        </button>
+  <div class="geov" id="geov">
+    <div class="geov-bar">
+      <div class="geov-seg" role="group" aria-label="Vues">
+        <span class="geov-seg-label">Vue</span>
+        <button type="button" class="geov-btn" data-view="commune" aria-pressed="true">Commune</button>
+        <button type="button" class="geov-btn" data-view="havre" aria-pressed="false">Havre et Quartier de la Digue</button>
+        <button type="button" class="geov-btn" data-view="dune" aria-pressed="false">Cordon dunaire</button>
+        <button type="button" class="geov-btn" data-view="region" aria-pressed="false">Situation régionale</button>
+      </div>
+      <div class="geov-seg" role="group" aria-label="Fond de carte">
+        <span class="geov-seg-label">Fond</span>
+        <button type="button" class="geov-btn" data-base="plan" aria-pressed="true">Plan IGN</button>
+        <button type="button" class="geov-btn" data-base="photo" aria-pressed="false">Photo aérienne</button>
+        <button type="button" class="geov-btn" data-base="hybride" aria-pressed="false">Photo + plan</button>
       </div>
     </div>
 
-    <!-- Panneau de contrôles -->
-    <div class="cartes-viz-controls">
-      <div class="cartes-viz-slider-block">
-        <div class="cartes-viz-slider-label">
-          <span>PLAN IGN ANNOTÉ</span>
-          <span>PHOTO AÉRIENNE</span>
+    <div class="geov-body">
+      <aside class="geov-panel" id="geovPanel" aria-label="Couches de données">
+        <div class="geov-group">
+          <div class="geov-group-title">Submersion marine · PPRL</div>
+          <label class="geov-row"><input type="checkbox" data-layer="fort" checked><span class="geov-sw" style="background:#D32F2F"></span><span>Aléa fort</span><span class="meta">hauteur d'eau &gt; 1 m</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="moy" checked><span class="geov-sw" style="background:#F57C00"></span><span>Aléa moyen</span><span class="meta">0,5 à 1 m</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="faible" checked><span class="geov-sw" style="background:#FBC02D"></span><span>Aléa faible</span><span class="meta">moins de 0,5 m</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="ext2100"><span class="geov-sw" style="background:#8E44AD"></span><span>Extension 2100</span><span class="meta">niveau marin + 0,6 m (TRACC)</span></label>
+          <div class="geov-opacity"><span>Opacité</span><input type="range" min="15" max="90" value="50" id="geovOpacity" aria-label="Opacité des zones d'aléa"><span id="geovOpacityVal">50 %</span></div>
         </div>
-        <div class="cartes-viz-slider-track">
-          <span class="cartes-viz-slider-icon">▣</span>
-          <input type="range" min="0" max="100" value="0" class="cartes-viz-slider" id="cartesCrossfade">
-          <span class="cartes-viz-slider-icon">◉</span>
+        <div class="geov-group">
+          <div class="geov-group-title">Recul du trait de côte · TRACC</div>
+          <label class="geov-row"><input type="checkbox" data-layer="trait-2026" checked><span class="geov-sw-line" style="border-top-color:#1E2D5C"></span><span>Trait de côte 2026</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="trait-2050"><span class="geov-sw-line" style="border-top-color:#C8553C;border-top-style:dashed"></span><span>Trait de côte 2050</span><span class="meta">≈ 25 m de recul</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="trait-2100"><span class="geov-sw-line" style="border-top-color:#8B0000;border-top-style:dotted"></span><span>Trait de côte 2100</span><span class="meta">≈ 75 m de recul</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="recul-30"><span class="geov-sw" style="background:#8D6E63"></span><span>Zone exposée à 30 ans</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="recul-100"><span class="geov-sw" style="background:#D7CCC8"></span><span>Zone exposée de 30 à 100 ans</span></label>
         </div>
-      </div>
-
-      <div class="cartes-viz-layers">
-        <div class="cartes-viz-layer-group">
-          <div class="cartes-viz-layer-group-title">PPRL · Volet submersion marine</div>
-          <label class="cartes-viz-layer-row">
-            <input type="checkbox" class="cartes-layer-toggle" data-layer="submersion-fort" checked>
-            <span class="swatch" style="background:#D32F2F;"></span>
-            <span>Aléa fort</span>
-            <span class="meta">cordon dunaire · havre</span>
-          </label>
-          <label class="cartes-viz-layer-row">
-            <input type="checkbox" class="cartes-layer-toggle" data-layer="submersion-moy" checked>
-            <span class="swatch" style="background:#F57C00;"></span>
-            <span>Aléa moyen</span>
-            <span class="meta">200-500 m</span>
-          </label>
-          <label class="cartes-viz-layer-row">
-            <input type="checkbox" class="cartes-layer-toggle" data-layer="submersion-faible" checked>
-            <span class="swatch" style="background:#FBC02D;"></span>
-            <span>Aléa faible</span>
-            <span class="meta">jusqu'à 1 km</span>
-          </label>
+        <div class="geov-group">
+          <div class="geov-group-title">Enjeux et territoire</div>
+          <label class="geov-row"><input type="checkbox" data-layer="enjeux" checked><span class="geov-sw-dot" style="background:#1E2D5C"></span><span>Enjeux du scénario</span><span class="meta">cliquez pour la fiche</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="quartier" checked><span class="geov-sw" style="background:rgba(30,45,92,.18);border:2px solid #1E2D5C"></span><span>Quartier de la Digue</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="digue" checked><span class="geov-sw-line" style="border-top-color:#5D4037;border-top-width:5px"></span><span>Digue (1962)</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="commune" checked><span class="geov-sw-line" style="border-top-color:#1E2D5C;border-top-style:dashed"></span><span>Limite communale</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="labels" checked><span class="geov-sw" style="background:#fff;font:700 10px/12px var(--serif);text-align:center;color:#1E2D5C">Aa</span><span>Noms de lieux (fictifs)</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="courbes"><span class="geov-sw-line" style="border-top-color:#C9A27C;border-top-width:1px"></span><span>Courbes de niveau</span><span class="meta">fond Plan IGN</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="etude" checked><span class="geov-sw-line" style="border-top-color:#888;border-top-style:dashed;border-top-width:1px"></span><span>Périmètre d'étude PPRL</span></label>
         </div>
-
-        <div class="cartes-viz-layer-group">
-          <div class="cartes-viz-layer-group-title">Projection · Recul du trait de côte (TRACC)</div>
-          <label class="cartes-viz-layer-row">
-            <input type="radio" name="cartes-trait" class="cartes-layer-toggle" data-layer="trait-2026" checked>
-            <span class="swatch-line" style="border-top: 2px solid #1E2D5C;"></span>
-            <span>Trait actuel</span>
-            <span class="meta">2026 · référence</span>
-          </label>
-          <label class="cartes-viz-layer-row">
-            <input type="radio" name="cartes-trait" class="cartes-layer-toggle" data-layer="trait-2050">
-            <span class="swatch-line" style="border-top: 2px dashed #C8553C;"></span>
-            <span>Horizon 2050</span>
-            <span class="meta">TRACC +2°C</span>
-          </label>
-          <label class="cartes-viz-layer-row">
-            <input type="radio" name="cartes-trait" class="cartes-layer-toggle" data-layer="trait-2100">
-            <span class="swatch-line" style="border-top: 2px dotted #8B0000;"></span>
-            <span>Horizon 2100</span>
-            <span class="meta">TRACC +4°C</span>
-          </label>
-        </div>
+      </aside>
+      <div class="geov-map-wrap">
+        <div class="geov-map" id="geovMap" role="region" aria-label="Carte d'Anse-de-Goulven"></div>
+        <button type="button" class="geov-btn geov-panel-toggle" id="geovPanelToggle" aria-controls="geovPanel" aria-expanded="false">Couches</button>
+        <div class="geov-legend" id="geovLegend"></div>
+        <div class="geov-scale" id="geovScale"></div>
+        <div class="geov-loading" id="geovLoading">Chargement de la carte…</div>
       </div>
     </div>
-
-    <!-- Viewport -->
-    <div class="cartes-viz-viewport" id="cartesVizViewport">
-      <div class="cartes-viz-aerial" id="cartesVizAerial"></div>
-      <div class="cartes-viz-plan" id="cartesVizPlan">
-        <img class="cartes-viz-plan-img active" data-map="tactique" src="10_montage_image3_anse.png" alt="Carte tactique" draggable="false">
-        <img class="cartes-viz-plan-img" data-map="regionale" src="11_montage_image2_regional.png" alt="Carte régionale" draggable="false">
-        <img class="cartes-viz-plan-img" data-map="nord" src="12_montage_image4_nord.png" alt="Secteur nord" draggable="false">
-        <img class="cartes-viz-plan-img" data-map="brezeville" src="13_montage_image5_bretteville.png" alt="Bordure Brézeville" draggable="false">
-      </div>
-
-      <!-- Légende -->
-      <div class="cartes-viz-legend">
-        <div class="cartes-viz-legend-title">Couches actives</div>
-        <div id="cartesLegendContent">
-          <div class="cartes-viz-legend-row">
-            <div class="cartes-viz-legend-swatch" style="background:#D32F2F; opacity: 0.5;"></div>
-            <span>Submersion · aléa fort</span>
-          </div>
-          <div class="cartes-viz-legend-row">
-            <div class="cartes-viz-legend-swatch" style="background:#F57C00; opacity: 0.42;"></div>
-            <span>Submersion · aléa moyen</span>
-          </div>
-          <div class="cartes-viz-legend-row">
-            <div class="cartes-viz-legend-swatch" style="background:#FBC02D; opacity: 0.32;"></div>
-            <span>Submersion · aléa faible</span>
-          </div>
-          <div class="cartes-viz-legend-row" style="margin-top:6px;">
-            <div class="cartes-viz-legend-line" style="border-top: 2px solid #1E2D5C;"></div>
-            <span>Trait de côte 2026</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Indicateur d'échelle -->
-      <div class="cartes-viz-scale" id="cartesScaleInfo">
-        <strong>1:44 627</strong> · ~1 cm = 446 m
-      </div>
-
-      <!-- Loading -->
-      <div class="cartes-viz-loading" id="cartesLoading">
-        <div class="cartes-viz-spinner"></div>
-      </div>
-    </div>
+    <p class="geov-note">
+      <strong>Territoire fictif sur relief réel.</strong> Les fonds de carte et le relief proviennent de l'IGN (Géoplateforme, Licence Ouverte 2.0) ;
+      les noms réels y ont été retirés. Les zones d'aléa ont été calculées pour la formation à partir du relief, avec un niveau marin de référence
+      fictif de 7,4 m NGF (8,0 m en 2100) : elles n'ont aucune valeur réglementaire.
+    </p>
   </div>
+
+  <details class="geov-planches">
+    <summary>Planches illustrées (cartes annotées d'origine)</summary>
+    <div class="geov-planches-grid">
+      <figure><img src="10_montage_image3_anse.png" alt="Carte tactique annotée d'Anse-de-Goulven" loading="lazy"><figcaption>Carte tactique</figcaption></figure>
+      <figure><img src="11_montage_image2_regional.png" alt="Carte de localisation régionale" loading="lazy"><figcaption>Localisation régionale</figcaption></figure>
+      <figure><img src="12_montage_image4_nord.png" alt="Carte du secteur nord" loading="lazy"><figcaption>Secteur nord</figcaption></figure>
+      <figure><img src="13_montage_image5_bretteville.png" alt="Carte de la bordure de Brézeville" loading="lazy"><figcaption>Bordure Brézeville</figcaption></figure>
+    </div>
+  </details>
 </section>
 
 <!-- ============ CHIFFRES ============ -->
@@ -18203,408 +18218,343 @@ window.showResearchPanel = showResearchPanel;
 (function(){
 'use strict';
 
-if (typeof maplibregl === 'undefined') return;
+const root = document.getElementById('geov');
+if (!root) return;
+const loading = document.getElementById('geovLoading');
+if (typeof maplibregl === 'undefined') {
+  loading.textContent = "La bibliothèque cartographique n'a pas pu être chargée (connexion internet ?).";
+  return;
+}
 
 // ============ CONFIGURATION ============
-const MAPS = {
-  tactique:   { label:'Tactique principale',   scale:'1:44 627',  scaleText:'~1 cm = 446 m',  center:[-1.555, 49.197], zoom:13.2, hasOverlays:true,  bounds:[[-1.585, 49.183],[-1.525, 49.211]] },
-  regionale:  { label:'Localisation régionale', scale:'1:178 464', scaleText:'~1 cm = 1 785 m', center:[-1.500, 49.150], zoom:11.0, hasOverlays:false, bounds:[[-1.700, 49.030],[-1.350, 49.305]] },
-  nord:       { label:'Secteur nord',           scale:'1:44 572',  scaleText:'~1 cm = 446 m',  center:[-1.595, 49.245], zoom:13.2, hasOverlays:true,  bounds:[[-1.625, 49.225],[-1.555, 49.265]] },
-  brezeville: { label:'Bordure Brézeville',     scale:'1:44 539',  scaleText:'~1 cm = 446 m',  center:[-1.625, 49.282], zoom:13.2, hasOverlays:true,  bounds:[[-1.660, 49.265],[-1.585, 49.300]] }
+const IGN_STYLE = 'https://data.geopf.fr/annexes/ressources/vectorTiles/styles/PLAN.IGN/standard.json';
+const ORTHO = 'https://data.geopf.fr/wmts?layer=ORTHOIMAGERY.ORTHOPHOTOS&style=normal&tilematrixset=PM&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix={z}&TileCol={x}&TileRow={y}';
+const GLYPHS = 'https://data.geopf.fr/annexes/ressources/vectorTiles/fonts/{fontstack}/{range}.pbf';
+const DATA_URL = 'carte-anse-de-goulven.json';
+const ATTRIB = 'Fonds et relief © <a href="https://www.ign.fr" target="_blank" rel="noopener">IGN</a> – Géoplateforme · territoire, noms et zonages fictifs';
+const FONT_BOLD = ['Source Sans Pro Bold'];
+const FONT_ITALIC = ['Source Sans Pro Italic'];
+
+const VIEWS = {
+  commune: null,                                          // emprise de la commune
+  havre:   { center: [-1.5780, 49.2165], zoom: 14.4 },
+  dune:    { center: [-1.6045, 49.1985], zoom: 14.9 },
+  region:  { center: [-1.5300, 49.1500], zoom: 10.2 }
 };
 
-// Toponymes fictifs en surimpression sur la photo aérienne
-const FICTIONAL_LABELS = [
-  // communes (label, lon, lat, taille, weight, italic, color, ls)
-  ['ANSE-DE-GOULVEN', -1.555, 49.197, 13, 800, false, '#FFFFFF', '0.08em'],
-  ['Trez-le-Bourg', -1.557, 49.183, 11, 700, false, '#FFFFFF', null],
-  ['Saint-Yves-sur-Mer', -1.575, 49.225, 11, 700, false, '#FFFFFF', null],
-  ['Plage-du-Phare', -1.595, 49.245, 12, 700, false, '#FFFFFF', null],
-  ['Brézeville-sur-Mer', -1.625, 49.282, 11, 700, false, '#FFFFFF', null],
-  ['Goulven-Bourg', -1.560, 49.221, 11, 600, false, '#FFFFFF', null],
-  ['Le Conquérant', -1.530, 49.221, 11, 600, false, '#FFFFFF', null],
-  ['Trémeur-sur-Mer', -1.540, 49.111, 10, 600, false, '#FFFFFF', null],
-  ['Plénoël-sur-Mer', -1.500, 49.080, 10, 600, false, '#FFFFFF', null],
-  ['Argontin-sur-Mer', -1.490, 49.060, 10, 600, false, '#FFFFFF', null],
-  ['Saint-Louvent', -1.435, 49.045, 13, 800, false, '#FFFFFF', '0.04em'],
-  ['Saint-Yvan', -1.420, 49.180, 11, 700, false, '#FFFFFF', null],
-  ['Saint-Brieuc-Bourg', -1.380, 49.130, 10, 600, false, '#FFFFFF', null],
-  ['Mont-Argan', -1.460, 49.140, 10, 600, false, '#FFFFFF', null],
-  // toponymes paysagers (italique)
-  ['Baie de Goulven', -1.578, 49.193, 12, 600, true, '#A8DCFF', null],
-  ['Pointe du Phare', -1.605, 49.232, 11, 700, true, '#FFD7B8', null],
-  ['Le Goulven', -1.523, 49.196, 10, 500, true, '#A8DCFF', null],
-  ['Plage de l\'Anse', -1.572, 49.211, 10, 500, true, '#FFFFFF', null],
-  ['Lande de Goulven', -1.495, 49.215, 12, 600, true, '#C5E5B5', null]
-];
-
-// Zonages PPRSM submersion marine (fond polygones)
-const SUBMERSION = {
-  fort: { type:'Feature', geometry:{ type:'Polygon', coordinates:[[
-    [-1.585, 49.211], [-1.580, 49.205], [-1.575, 49.198],
-    [-1.574, 49.190], [-1.578, 49.184], [-1.585, 49.183], [-1.585, 49.211]
-  ]]}},
-  moy: { type:'Feature', geometry:{ type:'Polygon', coordinates:[[
-    [-1.585, 49.211], [-1.572, 49.205], [-1.564, 49.198],
-    [-1.562, 49.189], [-1.566, 49.184], [-1.585, 49.183], [-1.585, 49.211]
-  ]]}},
-  faible: { type:'Feature', geometry:{ type:'Polygon', coordinates:[[
-    [-1.585, 49.211], [-1.564, 49.205], [-1.553, 49.198],
-    [-1.551, 49.189], [-1.557, 49.184], [-1.585, 49.183], [-1.585, 49.211]
-  ]]}}
+const TAGS = {
+  fort:   ['Aléa fort', '#D32F2F'],
+  moy:    ['Aléa moyen', '#F57C00'],
+  faible: ['Aléa faible', '#FBC02D'],
+  ext:    ['Extension 2100', '#8E44AD'],
+  hors:   ["Hors zone d'aléa", '#607D8B'],
+  recul:  ['Recul du trait de côte', '#795548'],
+  info:   ["Cours d'eau", '#328088']
 };
 
-// Trait de côte projeté (TRACC : 2026 / 2050 / 2100)
-// Le cordon dunaire de l'ouest Cotentin recule en moyenne 1,5-2,5 m/an,
-// jusqu'à 4 m/an sur les sections les plus exposées. Les valeurs ci-dessous
-// adoptent un recul moyen sablo-dunaire :
-// - 2026 : référence
-// - 2050 (TRACC +2°C) : recul moyen 30-60 m
-// - 2100 (TRACC +4°C) : recul moyen 100-200 m
-const TRAIT_COTE_2026 = { type:'Feature', geometry:{ type:'LineString', coordinates:[
-  [-1.585, 49.183], [-1.583, 49.190], [-1.582, 49.196],
-  [-1.581, 49.203], [-1.580, 49.210]
-]}};
-const TRAIT_COTE_2050 = { type:'Feature', geometry:{ type:'LineString', coordinates:[
-  // recul moyen 35-50 m vers l'est
-  [-1.5840, 49.183], [-1.5818, 49.190], [-1.5810, 49.196],
-  [-1.5800, 49.203], [-1.5793, 49.210]
-]}};
-const TRAIT_COTE_2100 = { type:'Feature', geometry:{ type:'LineString', coordinates:[
-  // recul moyen 100-180 m
-  [-1.5825, 49.183], [-1.5790, 49.190], [-1.5775, 49.196],
-  [-1.5760, 49.203], [-1.5750, 49.210]
-]}};
+// Enjeux du scénario (positions dans carte-anse-de-goulven.json)
+const ENJEUX = {
+  mairie:   { name: 'Mairie · centre PCS', eyebrow: 'Gouvernance', tag: 'faible', sub: 'Centre opérationnel communal', body: 'PCS approuvé en 2015, jamais révisé depuis. Révision prioritaire.' },
+  epad:     { name: 'EHPAD Les Tamaris', eyebrow: 'Population vulnérable', tag: 'moy', sub: '62 résidents · 18 GIR 1-2', body: 'Évacuation = transport médicalisé. Convention SDIS à formaliser.' },
+  ecole:    { name: 'École primaire', eyebrow: 'Population vulnérable', tag: 'moy', sub: '8 classes · 165 élèves', body: "PPMS à actualiser. Parcours d'évacuation vers la salle des fêtes." },
+  salle:    { name: 'Salle des fêtes', eyebrow: "Centre d'accueil", tag: 'hors', sub: 'Capacité 380 personnes', body: "Sur le plateau, hors zone d'aléa. Identifiée comme centre d'accueil de crise." },
+  sep:      { name: "Station d'épuration", eyebrow: 'Réseaux', tag: 'ext', sub: '4 800 EH', body: "Construite en 1985. Hors zone d'aléa aujourd'hui, rattrapée par l'extension 2100." },
+  zi:       { name: 'PME agro-alimentaire', eyebrow: 'Économie', tag: 'fort', sub: '28 salariés', body: 'Protégée par la digue de 1962. Relocalisation à étudier.', fiche: 'zi' },
+  agric1:   { name: 'Maraîchage Coïc', eyebrow: 'Agriculture', tag: 'moy', sub: '12 ha · 3 ETP', body: 'Sols menacés par la remontée saline projetée à 2050.' },
+  camping1: { name: 'Camping Les Dunes', eyebrow: 'Tourisme', tag: 'recul', sub: '180 emplacements', body: 'Sur le cordon dunaire, à 80 m du trait de côte.', fiche: 'camping1' },
+  camping2: { name: 'Camping La Goëlette', eyebrow: 'Tourisme', tag: 'fort', sub: '160 emplacements', body: 'Derrière la digue. Évacué en 2024 (180 personnes).', fiche: 'camping2' },
+  camping3: { name: 'Camping Le Goulven', eyebrow: 'Tourisme', tag: 'fort', sub: '200 emplacements', body: 'Au bord du Goulven : submersion marine et crues cumulées.', fiche: 'camping3' },
+  port:     { name: 'Port communal', eyebrow: 'Économie', tag: 'fort', sub: '12 unités de pêche · 80 de plaisance', body: "Quais de 1962. Mise hors d'eau jugée impossible à coût raisonnable.", fiche: 'port' },
+  marais:   { name: 'Zone Natura 2000 du marais', eyebrow: 'Espace naturel', tag: 'fort', sub: 'Marais de Goulven', body: 'Zone humide arrière-littorale, candidate à la dépoldérisation comme zone tampon.', fiche: 'marais' },
+  cordon:   { name: 'Cordon dunaire', eyebrow: 'Espace naturel', tag: 'recul', sub: 'recul récent ≈ 1 m/an', body: 'Premier rempart naturel face à la submersion.', fiche: 'cordon' },
+  goulven:  { name: 'Le Goulven', eyebrow: "Cours d'eau côtier", tag: 'info', sub: 'crues aggravées depuis 2018', body: 'Concomitance possible entre crue et submersion marine.', fiche: 'goulven' },
+  epi:      { name: 'Épi de protection nord', eyebrow: 'Ouvrage', tag: 'recul', sub: '1962 · état dégradé', body: 'Diagnostic 2024 : risque de rupture évalué à 35 %.' },
+  falaise:  { name: 'Falaise · rue des Goélands', eyebrow: 'Aléa secondaire', tag: 'recul', sub: '12 maisons en arrière', body: 'Recul actif. Acquisition amiable engagée par le Conservatoire du littoral.', fiche: 'falaise' }
+};
 
-// Limite communale fictive Anse-de-Goulven
-const LIMITE_COMMUNALE = { type:'Feature', geometry:{ type:'Polygon', coordinates:[[
-  [-1.585, 49.215], [-1.560, 49.214], [-1.530, 49.211],
-  [-1.520, 49.205], [-1.518, 49.197], [-1.524, 49.190],
-  [-1.535, 49.185], [-1.555, 49.183], [-1.575, 49.184],
-  [-1.585, 49.190], [-1.585, 49.215]
-]]}};
-
-// 12 enjeux pédagogiques sur la commune
-const ENJEUX = [
-  ['camp1', 'Camping La Goëlette', -1.578, 49.221, 'fort', 'TOURISME',
-   '180 emplacements · saisonnier',
-   'Fondé en 1968 par la famille Allain. Aléa fort PPRSM. Évacuation prioritaire en alerte rouge. Lien direct avec l\'Interlude 1972.'],
-  ['camp2', 'Camping Les Embruns', -1.580, 49.215, 'fort', 'TOURISME',
-   '95 emplacements',
-   'Saisonnier mai-octobre. Évacuation J-6h.'],
-  ['epi', 'Épi de protection nord', -1.582, 49.225, 'fort', 'OUVRAGE',
-   '1962 · état dégradé',
-   'Diagnostic 2024 : risque de rupture évalué à 35%.'],
-  ['falaise', 'Petite falaise calcaire', -1.581, 49.230, 'fort', 'ALÉA SECONDAIRE',
-   '12 m de hauteur',
-   'Recul actif. Acquisition amiable engagée par le CdL.'],
-  ['port', 'Port mixte', -1.582, 49.196, 'fort', 'ÉCONOMIE',
-   '12 unités pêche · 80 plaisance',
-   'Quais 1962. Mise hors d\'eau jugée impossible à coût raisonnable.'],
-  ['sep', 'Station d\'épuration', -1.578, 49.193, 'moy', 'RÉSEAUX',
-   '4 800 EH',
-   'Construite en 1985. Reclassée à risque pour l\'horizon 2050.'],
-  ['pme', 'PME Penn ar Mor (ZA)', -1.570, 49.222, 'moy', 'ÉCONOMIE · ZA',
-   '28 salariés',
-   'Inondable en aléa centennal. Délocalisation à étudier.'],
-  ['agric1', 'Maraîchage Coïc', -1.572, 49.207, 'moy', 'AGRICULTURE',
-   '12 ha · 3 ETP',
-   'Sols menacés par remontée saline projetée 2050.'],
-  ['mairie', 'Mairie · centre PCS', -1.555, 49.197, 'faible', 'GOUVERNANCE',
-   'Centre opérationnel communal',
-   'PCS approuvé 2015, jamais révisé depuis. Révision prioritaire.'],
-  ['epad', 'EHPAD Les Tamaris', -1.553, 49.198, 'moy', 'POP. VULNÉRABLE',
-   '62 résidents · 18 GIR 1-2',
-   'Évacuation = transport médicalisé. Convention SDIS à formaliser.'],
-  ['ecole', 'École primaire', -1.553, 49.196, 'moy', 'POP. VULNÉRABLE',
-   '8 classes · 165 élèves',
-   'PPMS à actualiser. Parcours d\'évacuation vers la salle des fêtes.'],
-  ['salle', 'Salle des fêtes', -1.557, 49.196, 'faible', 'CENTRE D\'ACCUEIL',
-   'Capacité 380 personnes',
-   'Hors zone d\'aléa. Identifiée comme centre d\'accueil de crise.']
-];
+const ZONES = {
+  fort:    { name: 'Aléa fort de submersion marine', body: "Hauteur d'eau supérieure à 1 m pour l'événement de référence (niveau marin fictif de 7,4 m NGF).", tag: 'fort' },
+  moy:     { name: 'Aléa moyen de submersion marine', body: "Hauteur d'eau de 0,5 à 1 m pour l'événement de référence.", tag: 'moy' },
+  faible:  { name: 'Aléa faible de submersion marine', body: "Hauteur d'eau inférieure à 0,5 m pour l'événement de référence.", tag: 'faible' },
+  ext2100: { name: 'Extension de la submersion en 2100', body: 'Zone atteinte avec un niveau marin relevé de 0,6 m (TRACC, horizon 2100).', tag: 'ext' }
+};
 
 // ============ ÉTAT ============
-let currentMap = 'tactique';
-let aerialMap = null;
-let labelOverlay = null;
-let labelEntries = [];
-let markers = [];
-
-// Visibilité initiale des couches
-const layerState = {
-  'submersion-fort': true,
-  'submersion-moy': true,
-  'submersion-faible': true,
-  'trait-2026': true,
-  'trait-2050': false,
-  'trait-2100': false
+const state = {
+  fort: true, moy: true, faible: true, ext2100: false,
+  'trait-2026': true, 'trait-2050': false, 'trait-2100': false, 'recul-30': false, 'recul-100': false,
+  enjeux: true, quartier: true, digue: true, commune: true, labels: true, courbes: false, etude: true
 };
+const LAYERS = {
+  fort: ['g-fort'], moy: ['g-moy'], faible: ['g-faible'], ext2100: ['g-ext2100'],
+  'trait-2026': ['g-trait-2026'], 'trait-2050': ['g-trait-2050'], 'trait-2100': ['g-trait-2100'],
+  'recul-30': ['g-recul-30'], 'recul-100': ['g-recul-100'],
+  enjeux: ['g-enjeux', 'g-enjeux-label'], quartier: ['g-quartier-fill', 'g-quartier-line'], digue: ['g-digue'],
+  commune: ['g-commune'], labels: ['g-labels-bold', 'g-labels-italic', 'g-labels-region'], etude: ['g-etude']
+};
+let map = null, data = null, base = 'plan', opacity = 0.5, planAvailable = true;
+let planLayers = [], hybridLayers = new Set(), contourLayers = new Set(), popup = null;
 
-// ============ DOM ============
-const tabs = document.querySelectorAll('.cartes-viz-tab');
-const planImgs = document.querySelectorAll('.cartes-viz-plan-img');
-const planContainer = document.getElementById('cartesVizPlan');
-const aerialContainer = document.getElementById('cartesVizAerial');
-const slider = document.getElementById('cartesCrossfade');
-const scaleInfo = document.getElementById('cartesScaleInfo');
-const loading = document.getElementById('cartesLoading');
-const layerToggles = document.querySelectorAll('.cartes-layer-toggle');
+// ============ OUTILS ============
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function popupHTML(o) {
+  const tag = TAGS[o.tag] || TAGS.info;
+  const btn = o.fiche && typeof window.openEnjeu === 'function'
+    ? `<br><button type="button" class="geov-popup-btn" data-fiche="${esc(o.fiche)}">Voir la fiche complète</button>` : '';
+  return `<div class="cartes-viz-popup">
+    <div class="cartes-viz-popup-eyebrow">${esc(o.eyebrow)}</div>
+    <div class="cartes-viz-popup-title">${esc(o.name)}</div>
+    <div class="cartes-viz-popup-body">${esc(o.body)}</div>
+    ${o.sub ? `<div class="cartes-viz-popup-meta">${esc(o.sub)}</div>` : ''}
+    <span class="cartes-viz-popup-tag ${esc(o.tag)}">${esc(tag[0])}</span>${btn}</div>`;
+}
+function showPopup(lngLat, o) {
+  if (popup) popup.remove();
+  popup = new maplibregl.Popup({ offset: 12, maxWidth: '280px' }).setLngLat(lngLat).setHTML(popupHTML(o)).addTo(map);
+  const b = popup.getElement().querySelector('[data-fiche]');
+  if (b) b.addEventListener('click', () => {
+    popup.remove();
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    window.openEnjeu(b.dataset.fiche);
+  });
+}
+function bboxOf(geom) {
+  const b = [180, 90, -180, -90];
+  (function walk(c) { if (typeof c[0] === 'number') { b[0] = Math.min(b[0], c[0]); b[1] = Math.min(b[1], c[1]); b[2] = Math.max(b[2], c[0]); b[3] = Math.max(b[3], c[1]); } else c.forEach(walk); })(geom.coordinates);
+  return [[b[0], b[1]], [b[2], b[3]]];
+}
+function setVis(id, on) { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', on ? 'visible' : 'none'); }
 
-// ============ CHANGEMENT D'ONGLET ============
-tabs.forEach(tab => {
-  tab.addEventListener('click', () => {
-    const map = tab.dataset.map;
-    if (map === currentMap) return;
-    tabs.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    currentMap = map;
+// ============ STYLE : Plan IGN sans les noms réels + photo aérienne ============
+async function buildStyle() {
+  let st = null;
+  try { const r = await fetch(IGN_STYLE); if (r.ok) st = await r.json(); } catch (e) { st = null; }
+  if (!st || !Array.isArray(st.layers)) {
+    planAvailable = false;
+    st = { version: 8, sources: {}, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#e9e6df' } }] };
+  }
+  // retire la toponymie réelle et les limites administratives réelles
+  st.layers = st.layers.filter(l => { const sl = l['source-layer'] || ''; return !sl.startsWith('toponyme') && sl !== 'limite_lin'; });
+  st.glyphs = st.glyphs || GLYPHS;
+  st.sources.ortho = { type: 'raster', tiles: [ORTHO], tileSize: 256, maxzoom: 19, attribution: ATTRIB };
+  const bg = Math.max(0, st.layers.findIndex(l => l.type === 'background'));
+  st.layers.splice(bg + 1, 0, { id: 'ortho', type: 'raster', source: 'ortho', layout: { visibility: 'none' } });
+  st.layers.forEach(l => {
+    if (l.id === 'background' || l.id === 'ortho') return;
+    planLayers.push(l.id);
+    const sl = l['source-layer'] || '';
+    if (sl === 'oro_courbe') contourLayers.add(l.id);
+    if (l.type === 'line' && /^(routier|hydro|ferre)/.test(sl)) hybridLayers.add(l.id);
+  });
+  return st;
+}
 
-    planImgs.forEach(img => {
-      img.classList.toggle('active', img.dataset.map === map);
+// ============ COUCHES THÉMATIQUES ============
+function addThematicLayers() {
+  const fc = (features) => ({ type: 'FeatureCollection', features });
+  map.addSource('g-recul', { type: 'geojson', data: data.recul });
+  map.addLayer({ id: 'g-recul-100', type: 'fill', source: 'g-recul', filter: ['==', ['get', 'bande'], '30-100'], paint: { 'fill-color': '#D7CCC8', 'fill-opacity': 0.8 } });
+  map.addLayer({ id: 'g-recul-30', type: 'fill', source: 'g-recul', filter: ['==', ['get', 'bande'], '0-30'], paint: { 'fill-color': '#8D6E63', 'fill-opacity': 0.8 } });
+
+  map.addSource('g-alea', { type: 'geojson', data: data.alea });
+  [['ext2100', '#8E44AD'], ['faible', '#FBC02D'], ['moy', '#F57C00'], ['fort', '#D32F2F']].forEach(([k, c]) => {
+    map.addLayer({ id: 'g-' + k, type: 'fill', source: 'g-alea', minzoom: 10.5, filter: ['==', ['get', 'niveau'], k],
+      paint: { 'fill-color': c, 'fill-opacity': opacity, 'fill-outline-color': c } });
+  });
+
+  map.addSource('g-quartier', { type: 'geojson', data: data.quartier });
+  map.addLayer({ id: 'g-quartier-fill', type: 'fill', source: 'g-quartier', paint: { 'fill-color': '#1E2D5C', 'fill-opacity': 0.12 } });
+  map.addLayer({ id: 'g-quartier-line', type: 'line', source: 'g-quartier', paint: { 'line-color': '#1E2D5C', 'line-width': 2, 'line-dasharray': [2, 1] } });
+
+  map.addSource('g-trait', { type: 'geojson', data: data.trait });
+  [['2100', '#8B0000', [1, 1.5]], ['2050', '#C8553C', [3, 2]], ['2026', '#1E2D5C', null]].forEach(([h, c, d]) => {
+    const paint = { 'line-color': c, 'line-width': ['interpolate', ['linear'], ['zoom'], 11, 1.5, 16, 3.5] };
+    if (d) paint['line-dasharray'] = d;
+    map.addLayer({ id: 'g-trait-' + h, type: 'line', source: 'g-trait', filter: ['==', ['get', 'horizon'], h], paint });
+  });
+
+  map.addSource('g-digue', { type: 'geojson', data: data.digue });
+  map.addLayer({ id: 'g-digue', type: 'line', source: 'g-digue', layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': '#5D4037', 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 3, 16, 8] } });
+
+  map.addSource('g-commune', { type: 'geojson', data: data.commune });
+  map.addLayer({ id: 'g-commune', type: 'line', source: 'g-commune', paint: { 'line-color': '#1E2D5C', 'line-width': 2.4, 'line-dasharray': [4, 2] } });
+
+  map.addSource('g-etude', { type: 'geojson', data: data.etude });
+  map.addLayer({ id: 'g-etude', type: 'line', source: 'g-etude', paint: { 'line-color': '#888', 'line-width': 1.2, 'line-dasharray': [3, 3] } });
+
+  const enj = Object.entries(data.enjeux).filter(([k]) => ENJEUX[k]).map(([k, c]) => ({
+    type: 'Feature', properties: { id: k, tag: ENJEUX[k].tag, name: ENJEUX[k].name }, geometry: { type: 'Point', coordinates: c } }));
+  map.addSource('g-enjeux', { type: 'geojson', data: fc(enj) });
+  map.addLayer({ id: 'g-enjeux', type: 'circle', source: 'g-enjeux', paint: {
+    'circle-radius': ['interpolate', ['linear'], ['zoom'], 11, 4, 15, 8],
+    'circle-color': ['match', ['get', 'tag'], ...Object.entries(TAGS).flatMap(([k, v]) => [k, v[1]]), '#1E2D5C'],
+    'circle-stroke-color': '#FFFFFF', 'circle-stroke-width': 2 } });
+  map.addLayer({ id: 'g-enjeux-label', type: 'symbol', source: 'g-enjeux', minzoom: 13.6,
+    layout: { 'text-field': ['get', 'name'], 'text-font': FONT_BOLD, 'text-size': 11.5, 'text-offset': [0, 1.1], 'text-anchor': 'top', 'text-max-width': 9 },
+    paint: { 'text-color': '#1E2D5C', 'text-halo-color': 'rgba(255,255,255,.95)', 'text-halo-width': 1.6 } });
+
+  // toponymie fictive
+  map.addSource('g-labels', { type: 'geojson', data: data.labels });
+  const sizeBy = ['match', ['get', 'classe'], 'commune', 17, 'lieu', 13.5, 'quartier', 12.5, 'eau', 13, 12.5];
+  map.addLayer({ id: 'g-labels-bold', type: 'symbol', source: 'g-labels', filter: ['in', ['get', 'classe'], ['literal', ['commune', 'lieu']]],
+    layout: { 'text-field': ['get', 'nom'], 'text-font': FONT_BOLD, 'text-size': sizeBy, 'text-letter-spacing': ['match', ['get', 'classe'], 'commune', 0.08, 0.02] },
+    paint: { 'text-color': '#1E2D5C', 'text-halo-color': 'rgba(255,255,255,.95)', 'text-halo-width': 2 } });
+  map.addLayer({ id: 'g-labels-italic', type: 'symbol', source: 'g-labels', filter: ['in', ['get', 'classe'], ['literal', ['eau', 'nature', 'quartier']]],
+    minzoom: 11.5, layout: { 'text-field': ['get', 'nom'], 'text-font': FONT_ITALIC, 'text-size': sizeBy },
+    paint: { 'text-color': ['match', ['get', 'classe'], 'eau', '#2E6E9E', 'quartier', '#7A1F1F', '#3F6B2E'], 'text-halo-color': 'rgba(255,255,255,.95)', 'text-halo-width': 2 } });
+  map.addLayer({ id: 'g-labels-region', type: 'symbol', source: 'g-labels', filter: ['==', ['get', 'classe'], 'region'], maxzoom: 12.5,
+    layout: { 'text-field': ['get', 'nom'], 'text-font': FONT_BOLD, 'text-size': 12 },
+    paint: { 'text-color': '#1E2D5C', 'text-halo-color': 'rgba(255,255,255,.95)', 'text-halo-width': 2 } });
+}
+
+// ============ FOND DE CARTE ============
+function applyBase() {
+  setVis('ortho', base !== 'plan');
+  planLayers.forEach(id => {
+    let on = base === 'plan' || (base === 'hybride' && hybridLayers.has(id));
+    if (contourLayers.has(id)) on = base === 'plan' && state.courbes;
+    setVis(id, on);
+  });
+  const dark = base !== 'plan';
+  const halo = dark ? 'rgba(0,0,0,.78)' : 'rgba(255,255,255,.95)';
+  ['g-labels-bold', 'g-labels-region', 'g-enjeux-label'].forEach(id => {
+    map.setPaintProperty(id, 'text-color', dark ? '#FFFFFF' : '#1E2D5C');
+    map.setPaintProperty(id, 'text-halo-color', halo);
+  });
+  map.setPaintProperty('g-labels-italic', 'text-color', dark
+    ? ['match', ['get', 'classe'], 'eau', '#BFE3FF', 'quartier', '#FFD7D0', '#D8F5C6']
+    : ['match', ['get', 'classe'], 'eau', '#2E6E9E', 'quartier', '#7A1F1F', '#3F6B2E']);
+  map.setPaintProperty('g-labels-italic', 'text-halo-color', halo);
+  map.setPaintProperty('g-commune', 'line-color', dark ? '#FFFFFF' : '#1E2D5C');
+  map.setPaintProperty('g-quartier-line', 'line-color', dark ? '#FFFFFF' : '#1E2D5C');
+  map.setPaintProperty('g-etude', 'line-color', dark ? '#DDDDDD' : '#888888');
+}
+function applyLayers() {
+  Object.entries(LAYERS).forEach(([k, ids]) => ids.forEach(id => setVis(id, state[k])));
+  ['g-fort', 'g-moy', 'g-faible'].forEach(id => map.setPaintProperty(id, 'fill-opacity', opacity));
+  map.setPaintProperty('g-ext2100', 'fill-opacity', Math.min(0.9, opacity * 0.85));
+  applyBase();
+  renderLegend();
+}
+
+// ============ LÉGENDE ET ÉCHELLE ============
+function renderLegend() {
+  const rows = [];
+  const sw = (css) => `<span class="geov-sw" style="${css}"></span>`;
+  const ln = (css) => `<span class="geov-sw-line" style="${css}"></span>`;
+  if (state.fort) rows.push([sw('background:#D32F2F'), 'Aléa fort (&gt; 1 m)']);
+  if (state.moy) rows.push([sw('background:#F57C00'), 'Aléa moyen (0,5 à 1 m)']);
+  if (state.faible) rows.push([sw('background:#FBC02D'), 'Aléa faible (&lt; 0,5 m)']);
+  if (state.ext2100) rows.push([sw('background:#8E44AD'), 'Extension 2100']);
+  if (state['recul-30']) rows.push([sw('background:#8D6E63'), 'Exposé à 30 ans']);
+  if (state['recul-100']) rows.push([sw('background:#D7CCC8'), 'Exposé de 30 à 100 ans']);
+  if (state['trait-2026']) rows.push([ln('border-top-color:#1E2D5C'), 'Trait de côte 2026']);
+  if (state['trait-2050']) rows.push([ln('border-top-color:#C8553C;border-top-style:dashed'), 'Trait de côte 2050']);
+  if (state['trait-2100']) rows.push([ln('border-top-color:#8B0000;border-top-style:dotted'), 'Trait de côte 2100']);
+  if (state.digue) rows.push([ln('border-top-color:#5D4037;border-top-width:5px'), 'Digue (1962)']);
+  if (state.commune) rows.push([ln('border-top-color:#1E2D5C;border-top-style:dashed'), 'Limite communale']);
+  document.getElementById('geovLegend').innerHTML = rows.length
+    ? '<div class="geov-legend-title">Couches actives</div>' + rows.map(([s, t]) => `<div class="geov-legend-row">${s}<span>${t}</span></div>`).join('')
+    : '';
+}
+function updateScale() {
+  const lat = map.getCenter().lat;
+  const mpp = 78271.51696 * Math.cos(lat * Math.PI / 180) / Math.pow(2, map.getZoom());   // tuiles de 512 px
+  const denom = mpp / 0.00026458;                       // écran à 96 ppp
+  const p = Math.pow(10, Math.floor(Math.log10(denom)) - 1);
+  document.getElementById('geovScale').textContent = '≈ 1:' + (Math.round(denom / p) * p).toLocaleString('fr-FR');
+}
+
+// ============ VUES ============
+function goView(name, animate) {
+  const v = VIEWS[name];
+  if (name === 'commune' || !v) map.fitBounds(bboxOf(data.commune.geometry), { padding: 30, duration: animate ? 700 : 0 });
+  else map.flyTo({ center: v.center, zoom: v.zoom, duration: animate ? 900 : 0 });
+  root.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
+}
+
+// ============ INTERACTIONS ============
+function bindUI() {
+  root.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => goView(b.dataset.view, true)));
+  root.querySelectorAll('[data-base]').forEach(b => {
+    if (!planAvailable && b.dataset.base !== 'photo') b.disabled = true;
+    b.addEventListener('click', () => {
+      base = b.dataset.base;
+      root.querySelectorAll('[data-base]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      applyBase();
     });
-
-    scaleInfo.innerHTML = `<strong>${MAPS[map].scale}</strong> · ${MAPS[map].scaleText}`;
-
-    if (aerialMap) {
-      aerialMap.flyTo({
-        center: MAPS[map].center, zoom: MAPS[map].zoom, duration: 700
-      });
-      // Couches PPRSM uniquement sur cartes ayant les overlays calibrés
-      updateOverlayVisibility();
-    }
   });
-});
+  root.querySelectorAll('[data-layer]').forEach(cb => cb.addEventListener('change', () => { state[cb.dataset.layer] = cb.checked; applyLayers(); }));
+  const op = document.getElementById('geovOpacity'), opv = document.getElementById('geovOpacityVal');
+  op.addEventListener('input', () => { opacity = op.value / 100; opv.textContent = op.value + ' %'; applyLayers(); });
+  const tog = document.getElementById('geovPanelToggle');
+  tog.addEventListener('click', () => { const open = root.classList.toggle('panel-open'); tog.setAttribute('aria-expanded', String(open)); tog.textContent = open ? 'Fermer' : 'Couches'; });
 
-// ============ SLIDER CROSS-FADE ============
-slider.addEventListener('input', () => {
-  const val = parseInt(slider.value, 10);
-  // 0 = plan IGN seul (opacity 1), 100 = photo aérienne seule (opacity 0)
-  const planOpacity = 1 - (val / 100);
-  planContainer.style.opacity = planOpacity;
-  planContainer.style.pointerEvents = val > 80 ? 'none' : 'auto';
-
-  // Lazy init de la photo aérienne
-  if (val > 0 && !aerialMap) {
-    initAerialMap();
-  }
-});
-
-// ============ INITIALISATION MAPLIBRE ============
-function initAerialMap() {
-  loading.classList.add('visible');
-
-  const c = MAPS[currentMap];
-  aerialMap = new maplibregl.Map({
-    container: 'cartesVizAerial',
-    style: {
-      version: 8,
-      sources: {
-        'ign-ortho': {
-          type: 'raster',
-          tiles: ['https://data.geopf.fr/wmts?layer=ORTHOIMAGERY.ORTHOPHOTOS&style=normal&tilematrixset=PM&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image%2Fjpeg&TileMatrix={z}&TileCol={x}&TileRow={y}'],
-          tileSize: 256,
-          attribution: 'Photo aérienne © IGN-F / Géoplateforme · Licence Ouverte 2.0 (Étalab) · territoire fictif',
-          maxzoom: 19
-        }
-      },
-      layers: [{ id: 'ign-ortho-layer', type: 'raster', source: 'ign-ortho' }]
-    },
-    center: c.center, zoom: c.zoom, minZoom: 9, maxZoom: 17,
-    attributionControl: { compact: true }
+  const clickable = ['g-enjeux', 'g-digue', 'g-quartier-fill', 'g-recul-30', 'g-recul-100', 'g-fort', 'g-moy', 'g-faible', 'g-ext2100'];
+  map.on('click', (e) => {
+    if (root.classList.contains('panel-open')) { root.classList.remove('panel-open'); tog.setAttribute('aria-expanded', 'false'); tog.textContent = 'Couches'; }
+    const layers = clickable.filter(id => map.getLayer(id) && map.getLayoutProperty(id, 'visibility') !== 'none');
+    const f = map.queryRenderedFeatures(e.point, { layers })[0];
+    if (!f) return;
+    const id = f.layer.id;
+    if (id === 'g-enjeux') return showPopup(f.geometry.coordinates, Object.assign({}, ENJEUX[f.properties.id]));
+    if (id === 'g-digue') return showPopup(e.lngLat, { name: 'La digue de 1962', eyebrow: 'Ouvrage de protection', tag: 'fort', sub: 'Risque de rupture : 35 % (aléa centennal)', body: "Protège le Quartier de la Digue et la zone d'activités. Fragilité structurelle (diagnostic DREAL 2024).", fiche: 'digue' });
+    if (id === 'g-quartier-fill') return showPopup(e.lngLat, { name: 'Le Quartier de la Digue', eyebrow: 'Zone résidentielle exposée', tag: 'fort', sub: '≈ 250 logements · 60 % de résidences secondaires', body: 'Habitat des années 1950-1980, construit derrière la digue de 1962.', fiche: 'quartier' });
+    if (id === 'g-recul-30') return showPopup(e.lngLat, { name: 'Zone exposée au recul à 30 ans', eyebrow: 'Recul du trait de côte', tag: 'recul', body: "Bande que le trait de côte pourrait atteindre d'ici une trentaine d'années (≈ 30 m)." });
+    if (id === 'g-recul-100') return showPopup(e.lngLat, { name: 'Zone exposée au recul de 30 à 100 ans', eyebrow: 'Recul du trait de côte', tag: 'recul', body: 'Bande atteinte entre 30 et 100 ans (≈ 30 à 100 m).' });
+    const z = ZONES[id.slice(2)];
+    if (z) showPopup(e.lngLat, Object.assign({ eyebrow: 'PPRL · zonage fictif' }, z));
   });
-
-  aerialMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-left');
-  aerialMap.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-left');
-
-  aerialMap.on('load', () => {
-    // Couches submersion (3 niveaux)
-    aerialMap.addSource('submersion-faible', { type:'geojson', data: SUBMERSION.faible });
-    aerialMap.addLayer({ id:'submersion-faible-fill', source:'submersion-faible', type:'fill',
-      paint: { 'fill-color':'#FBC02D', 'fill-opacity': 0.32 } });
-
-    aerialMap.addSource('submersion-moy', { type:'geojson', data: SUBMERSION.moy });
-    aerialMap.addLayer({ id:'submersion-moy-fill', source:'submersion-moy', type:'fill',
-      paint: { 'fill-color':'#F57C00', 'fill-opacity': 0.42 } });
-
-    aerialMap.addSource('submersion-fort', { type:'geojson', data: SUBMERSION.fort });
-    aerialMap.addLayer({ id:'submersion-fort-fill', source:'submersion-fort', type:'fill',
-      paint: { 'fill-color':'#D32F2F', 'fill-opacity': 0.50 } });
-
-    // Couches trait de côte (3 horizons)
-    aerialMap.addSource('trait-2026', { type:'geojson', data: TRAIT_COTE_2026 });
-    aerialMap.addLayer({ id:'trait-2026-line', source:'trait-2026', type:'line',
-      paint: { 'line-color':'#1E2D5C', 'line-width': 2.5, 'line-opacity': 0.9 } });
-
-    aerialMap.addSource('trait-2050', { type:'geojson', data: TRAIT_COTE_2050 });
-    aerialMap.addLayer({ id:'trait-2050-line', source:'trait-2050', type:'line',
-      paint: { 'line-color':'#C8553C', 'line-width': 2.5, 'line-dasharray':[3,2], 'line-opacity': 0.9 } });
-
-    aerialMap.addSource('trait-2100', { type:'geojson', data: TRAIT_COTE_2100 });
-    aerialMap.addLayer({ id:'trait-2100-line', source:'trait-2100', type:'line',
-      paint: { 'line-color':'#8B0000', 'line-width': 2.5, 'line-dasharray':[1,2], 'line-opacity': 0.9 } });
-
-    // Limite communale
-    aerialMap.addSource('limite', { type:'geojson', data: LIMITE_COMMUNALE });
-    aerialMap.addLayer({ id:'limite-line', source:'limite', type:'line',
-      paint: { 'line-color':'#1E2D5C', 'line-width': 2.2, 'line-dasharray':[5,3], 'line-opacity': 0.75 } });
-
-    addEnjeuxMarkers();
-    addFictionalLabels();
-    updateOverlayVisibility();
-
-    loading.classList.remove('visible');
+  map.on('mousemove', (e) => {
+    const layers = clickable.filter(id => map.getLayer(id) && map.getLayoutProperty(id, 'visibility') !== 'none');
+    map.getCanvas().style.cursor = map.queryRenderedFeatures(e.point, { layers }).length ? 'pointer' : '';
   });
+  map.on('move', updateScale);
 }
 
-function addEnjeuxMarkers() {
-  // markers nettoyés à chaque appel
-  markers.forEach(m => m.remove());
-  markers = [];
-  ENJEUX.forEach(e => {
-    const [id, name, lng, lat, tag, eyebrow, sub, body] = e;
-    const el = document.createElement('div');
-    el.style.cssText = `
-      width: 18px; height: 18px; border-radius: 50%;
-      background: ${tag==='fort'?'#D32F2F':tag==='moy'?'#F57C00':'#FBC02D'};
-      border: 2.5px solid white; cursor: pointer;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.35);
-      transition: transform 0.15s;
-    `;
-    el.addEventListener('mouseenter', () => el.style.transform = 'scale(1.25)');
-    el.addEventListener('mouseleave', () => el.style.transform = 'scale(1)');
-
-    const tagLabel = tag==='fort'?'ALÉA FORT':tag==='moy'?'ALÉA MOYEN':'ALÉA FAIBLE';
-    const popupHTML = `
-      <div class="cartes-viz-popup">
-        <div class="cartes-viz-popup-eyebrow">${eyebrow}</div>
-        <div class="cartes-viz-popup-title">${name}</div>
-        <div class="cartes-viz-popup-body">${body}</div>
-        <div class="cartes-viz-popup-meta">${sub}</div>
-        <span class="cartes-viz-popup-tag ${tag}">${tagLabel}</span>
-      </div>`;
-    const m = new maplibregl.Marker({ element: el, anchor: 'center' })
-      .setLngLat([lng, lat])
-      .setPopup(new maplibregl.Popup({ offset: 16, closeButton: true, maxWidth: '280px' }).setHTML(popupHTML))
-      .addTo(aerialMap);
-    markers.push(m);
-  });
-}
-
-function addFictionalLabels() {
-  if (labelOverlay) labelOverlay.remove();
-  labelEntries = [];
-  labelOverlay = document.createElement('div');
-  labelOverlay.style.cssText = 'position:absolute; inset:0; pointer-events:none; z-index:5;';
-  aerialMap.getContainer().appendChild(labelOverlay);
-
-  FICTIONAL_LABELS.forEach(([name, lng, lat, size, weight, italic, color, ls]) => {
-    const el = document.createElement('div');
-    el.className = 'cartes-viz-aerial-label';
-    el.textContent = name;
-    el.style.fontSize = size + 'px';
-    el.style.fontWeight = weight;
-    if (italic) el.style.fontStyle = 'italic';
-    el.style.color = color;
-    if (ls) el.style.letterSpacing = ls;
-    labelOverlay.appendChild(el);
-    labelEntries.push({ el, lng, lat });
-  });
-
-  function update() {
-    labelEntries.forEach(({ el, lng, lat }) => {
-      const p = aerialMap.project([lng, lat]);
-      el.style.left = p.x + 'px';
-      el.style.top = p.y + 'px';
+// ============ INITIALISATION ============
+async function init() {
+  try {
+    const [style, d] = await Promise.all([buildStyle(), fetch(DATA_URL).then(r => { if (!r.ok) throw new Error('données'); return r.json(); })]);
+    data = d;
+    map = new maplibregl.Map({
+      container: 'geovMap', style, center: [-1.575, 49.207], zoom: 12.6, minZoom: 9, maxZoom: 18,
+      maxBounds: [[-2.0, 48.85], [-1.0, 49.45]], attributionControl: false, cooperativeGestures: false
     });
-  }
-  update();
-  aerialMap.on('move', update);
-  aerialMap.on('zoom', update);
-}
-
-function updateOverlayVisibility() {
-  if (!aerialMap || !aerialMap.loaded()) return;
-  // Sur la carte régionale, les couches fines de submersion et trait de côte
-  // (calibrées pour la commune principale) sont masquées
-  const showFineOverlays = MAPS[currentMap].hasOverlays && currentMap === 'tactique';
-
-  ['submersion-fort-fill', 'submersion-moy-fill', 'submersion-faible-fill',
-   'trait-2026-line', 'trait-2050-line', 'trait-2100-line', 'limite-line'].forEach(id => {
-    if (!aerialMap.getLayer(id)) return;
-    aerialMap.setLayoutProperty(id, 'visibility', showFineOverlays ? 'visible' : 'none');
-  });
-
-  if (showFineOverlays) {
-    // Appliquer les toggles
-    aerialMap.setLayoutProperty('submersion-fort-fill', 'visibility',
-      layerState['submersion-fort'] ? 'visible' : 'none');
-    aerialMap.setLayoutProperty('submersion-moy-fill', 'visibility',
-      layerState['submersion-moy'] ? 'visible' : 'none');
-    aerialMap.setLayoutProperty('submersion-faible-fill', 'visibility',
-      layerState['submersion-faible'] ? 'visible' : 'none');
-    aerialMap.setLayoutProperty('trait-2026-line', 'visibility',
-      layerState['trait-2026'] ? 'visible' : 'none');
-    aerialMap.setLayoutProperty('trait-2050-line', 'visibility',
-      layerState['trait-2050'] ? 'visible' : 'none');
-    aerialMap.setLayoutProperty('trait-2100-line', 'visibility',
-      layerState['trait-2100'] ? 'visible' : 'none');
-  }
-
-  // Markers : visibles seulement sur tactique
-  markers.forEach(m => {
-    m.getElement().style.display = (currentMap === 'tactique') ? '' : 'none';
-  });
-  // Labels : visibles partout, mais on filtre selon zoom
-  if (labelOverlay) {
-    labelOverlay.style.display = '';
+    map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: ATTRIB }), 'bottom-right');
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
+    map.addControl(new maplibregl.FullscreenControl({ container: root }), 'top-right');
+    map.addControl(new maplibregl.ScaleControl({ maxWidth: 110, unit: 'metric' }), 'bottom-left');
+    map.on('error', (e) => { if (e && e.error && !/Failed to fetch|NetworkError|AbortError/.test(String(e.error.message))) console.warn('Carte :', e.error.message); });
+    map.on('load', () => {
+      try {
+        addThematicLayers();
+        if (!planAvailable) base = 'photo';
+        root.querySelectorAll('[data-base]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.base === base)));
+        applyLayers();
+        bindUI();
+        goView('commune', false);
+        updateScale();
+      } catch (err) {
+        console.error('Visualiseur cartographique :', err);
+      } finally {
+        loading.hidden = true;
+      }
+    });
+  } catch (e) {
+    loading.textContent = 'La carte n\'a pas pu être chargée : ' + (e && e.message ? e.message : 'erreur réseau') + '.';
   }
 }
 
-// ============ TOGGLES DE COUCHES ============
-layerToggles.forEach(tog => {
-  tog.addEventListener('change', () => {
-    const layer = tog.dataset.layer;
-    if (tog.type === 'radio') {
-      // Désactiver les autres trait-* dans le groupe
-      ['trait-2026', 'trait-2050', 'trait-2100'].forEach(l => {
-        layerState[l] = (l === layer) && tog.checked;
-      });
-    } else {
-      layerState[layer] = tog.checked;
-    }
-    updateLegend();
-    if (aerialMap && aerialMap.loaded()) updateOverlayVisibility();
-  });
-});
-
-// ============ LÉGENDE DYNAMIQUE ============
-function updateLegend() {
-  const c = document.getElementById('cartesLegendContent');
-  let html = '';
-  if (layerState['submersion-fort']) {
-    html += '<div class="cartes-viz-legend-row"><div class="cartes-viz-legend-swatch" style="background:#D32F2F; opacity:0.5;"></div><span>Submersion · aléa fort</span></div>';
-  }
-  if (layerState['submersion-moy']) {
-    html += '<div class="cartes-viz-legend-row"><div class="cartes-viz-legend-swatch" style="background:#F57C00; opacity:0.42;"></div><span>Submersion · aléa moyen</span></div>';
-  }
-  if (layerState['submersion-faible']) {
-    html += '<div class="cartes-viz-legend-row"><div class="cartes-viz-legend-swatch" style="background:#FBC02D; opacity:0.32;"></div><span>Submersion · aléa faible</span></div>';
-  }
-  if (html) html += '<div style="margin-top:6px; height:1px; background:var(--grey-line);"></div>';
-  if (layerState['trait-2026']) {
-    html += '<div class="cartes-viz-legend-row" style="margin-top:6px;"><div class="cartes-viz-legend-line" style="border-top:2px solid #1E2D5C;"></div><span>Trait de côte 2026</span></div>';
-  }
-  if (layerState['trait-2050']) {
-    html += '<div class="cartes-viz-legend-row" style="margin-top:6px;"><div class="cartes-viz-legend-line" style="border-top:2px dashed #C8553C;"></div><span>Trait de côte 2050 · TRACC +2°C</span></div>';
-  }
-  if (layerState['trait-2100']) {
-    html += '<div class="cartes-viz-legend-row" style="margin-top:6px;"><div class="cartes-viz-legend-line" style="border-top:2px dotted #8B0000;"></div><span>Trait de côte 2100 · TRACC +4°C</span></div>';
-  }
-  c.innerHTML = html || '<div class="cartes-viz-legend-row" style="color:var(--grey-soft); font-style:italic;">Aucune couche active</div>';
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver((entries) => {
+    if (entries.some(en => en.isIntersecting)) { io.disconnect(); init(); }
+  }, { rootMargin: '300px' });
+  io.observe(root);
+} else {
+  init();
 }
-updateLegend();
-
 })();
 </script>
 
