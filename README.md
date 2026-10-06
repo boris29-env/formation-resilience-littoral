@@ -21,7 +21,7 @@ Le visualiseur intégré à `anse-goulven/index.html` utilise MapLibre GL JS et 
 - une recherche dans les lieux et enjeux fictifs du cas pédagogique ;
 - quatre compositions de couches : repérage, risques, vulnérabilités et préparation du PCS ;
 - les couches de submersion, de recul du trait de côte, d'enjeux, de réseaux et d'itinéraires d'évacuation ;
-- un calage des repères structurants sur la carte tactique du support (port au contact de la baie, marais arrière-littoral, digue côté terrestre) ;
+- un calage des repères structurants sur la carte tactique du support (port au contact de la baie, marais arrière-littoral, digue sur le trait de côte du havre, habitations en arrière) ;
 - une simulation cartographique en cinq phases de la tempête Argonne, synchronisée avec la variante tirée, les perturbateurs et les conséquences des embûches révélées après le vote PCS.
 
 Le pont JavaScript `window.GoulvenMap` expose `startCrisis()`, `setCrisisPhase(index)` et `stopCrisis()` pour piloter la carte depuis les séquences pédagogiques. Toutes les données propres au scénario restent fictives et sans valeur réglementaire ou opérationnelle.

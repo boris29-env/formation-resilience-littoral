@@ -8495,7 +8495,7 @@ const ENJEUX = {
     title: "La digue de 1962",
     body: `
       <h4>Ce que c'est</h4>
-      <p>Digue maçonnée de 480 m, construite en 1962 après les inondations de 1958. Hauteur de 3,2 m au-dessus du niveau marin moyen. Protège le Quartier de la Digue (250 maisons) et la zone industrielle.</p>
+      <p>Digue maçonnée d'environ 1 km, construite en 1962 après les inondations de 1958. Hauteur de 3,2 m au-dessus du niveau marin moyen. Protège le Quartier de la Digue (250 maisons) et la zone industrielle.</p>
 
       <div class="enjeu-stats">
         <div class="enjeu-stat"><div class="enjeu-stat-num">63 ans</div><div class="enjeu-stat-label">Âge en 2025</div></div>
@@ -18524,15 +18524,15 @@ const PRESETS = {
   }
 };
 
-// Calage sur la carte tactique fournie : le port est au contact de la baie,
-// le marais est en arrière du rivage et la digue ferme son côté terrestre.
+// Calage sur la carte tactique fournie : le port est au contact de la baie et le marais en arrière du rivage.
+// La digue suit le trait de côte du havre (limite estran / terre du Plan IGN), face à la mer : le quartier est derrière.
 // Ces ancres évitent de réutiliser les positions approximatives des premiers prototypes.
 const REFERENCE_SITES = {
   port: [-1.58666, 49.21994],
   marais: [-1.58390, 49.21770],
-  digueWest: [-1.58666, 49.21994],
-  digueBreach: [-1.57955, 49.22210],
-  digueEast: [-1.57380, 49.22335],
+  digueWest: [-1.58666, 49.22038],
+  digueBreach: [-1.57846, 49.22263],                       // face au Quartier de la Digue
+  digueEast: [-1.57406, 49.22287],
   quartier: [-1.57245, 49.21865],
   routeNord: [-1.56680, 49.22410]
 };
@@ -18540,10 +18540,14 @@ const REFERENCE_DIGUE = {
   type: 'Feature', properties: { nom: 'Digue (1962)', calage: 'carte tactique de référence' },
   geometry: { type: 'LineString', coordinates: [
     REFERENCE_SITES.digueWest,
-    [-1.58420, 49.22055],
-    [-1.58170, 49.22130],
+    [-1.58566, 49.22048],
+    [-1.58506, 49.22062],
+    [-1.58406, 49.22095],
+    [-1.58206, 49.22176],
+    [-1.57966, 49.2223],
     REFERENCE_SITES.digueBreach,
-    [-1.57655, 49.22272],
+    [-1.57706, 49.22278],
+    [-1.57486, 49.22288],
     REFERENCE_SITES.digueEast
   ] }
 };
@@ -18916,7 +18920,7 @@ function buildSearchIndex() {
     coordinates: f.geometry.coordinates, object: { name: f.properties.nom, eyebrow: 'Repère territorial', tag: 'info', body: 'Toponyme fictif utilisé dans le scénario pédagogique.', sub: f.properties.classe }
   }));
   const special = [
-    { id: 'digue', label: 'Digue de 1962', key: 'digue 1962 ouvrage protection', coordinates: REFERENCE_SITES.digueBreach, object: { name: 'La digue de 1962', eyebrow: 'Ouvrage de protection', tag: 'fort', body: "Implantée sur la limite terrestre du marais ; elle relie le port au secteur nord-est et protège le quartier situé en arrière.", sub: 'Risque de rupture : 35 % (aléa centennal)', fiche: 'digue' } },
+    { id: 'digue', label: 'Digue de 1962', key: 'digue 1962 ouvrage protection', coordinates: REFERENCE_SITES.digueBreach, object: { name: 'La digue de 1962', eyebrow: 'Ouvrage de protection', tag: 'fort', body: "Implantée sur le trait de côte du havre, face à la mer, du port jusqu'au nord-est du quartier ; les habitations sont en arrière.", sub: 'Risque de rupture : 35 % (aléa centennal)', fiche: 'digue' } },
     { id: 'quartier', label: 'Quartier de la Digue', key: 'quartier digue logements habitants', coordinates: REFERENCE_SITES.quartier, object: { name: 'Le Quartier de la Digue', eyebrow: 'Zone résidentielle exposée', tag: 'fort', body: 'Habitat des années 1950-1980 construit derrière la digue.', sub: '250 logements · ≈ 230 habitants permanents', fiche: 'quartier' } }
   ];
   searchIndex = byId.concat(special, places).sort((a, b) => a.label.localeCompare(b.label, 'fr'));
@@ -19176,7 +19180,7 @@ function bindUI() {
     const id = f.layer.id;
     if (id === 'g-crisis-incidents') return showPopup(f.geometry.coordinates, { name: f.properties.label, eyebrow: 'Situation en cours', tag: f.properties.severity === 'critical' ? 'fort' : 'info', body: f.properties.detail, sub: CRISIS_PHASES_MAP[crisisPhase].time });
     if (id === 'g-enjeux') return showPopup(f.geometry.coordinates, Object.assign({}, ENJEUX[f.properties.id]));
-    if (id === 'g-digue') return showPopup(e.lngLat, { name: 'La digue de 1962', eyebrow: 'Ouvrage de protection', tag: 'fort', sub: 'Risque de rupture : 35 % (aléa centennal)', body: "Relie le port au secteur nord-est, sur le côté terrestre du marais. Protège les 250 logements du Quartier de la Digue, la PME et le camping La Goëlette. Fragilité structurelle (diagnostic DREAL 2024).", fiche: 'digue' });
+    if (id === 'g-digue') return showPopup(e.lngLat, { name: 'La digue de 1962', eyebrow: 'Ouvrage de protection', tag: 'fort', sub: 'Risque de rupture : 35 % (aléa centennal)', body: "Longe le havre, face à la mer, du port jusqu'au nord-est du quartier. Protège les 250 logements du Quartier de la Digue, la PME et le camping La Goëlette. Fragilité structurelle (diagnostic DREAL 2024).", fiche: 'digue' });
     if (id === 'g-quartier-fill') return showPopup(e.lngLat, { name: 'Le Quartier de la Digue', eyebrow: 'Zone résidentielle exposée', tag: 'fort', sub: '250 logements : 47 en aléa fort, 156 en moyen, 47 en faible · ≈ 230 habitants permanents, ≈ 650 en été · 22 personnes âgées isolées', body: 'Habitat des années 1950-1980, construit derrière la digue de 1962. 60 % de résidences secondaires.', fiche: 'quartier' });
     if (id === 'g-recul-30') return showPopup(e.lngLat, { name: 'Zone exposée au recul à 30 ans', eyebrow: 'Recul du trait de côte', tag: 'recul', body: "Bande que le trait de côte pourrait atteindre d'ici une trentaine d'années (≈ 30 m)." });
     if (id === 'g-recul-100') return showPopup(e.lngLat, { name: 'Zone exposée au recul de 30 à 100 ans', eyebrow: 'Recul du trait de côte', tag: 'recul', body: 'Bande atteinte entre 30 et 100 ans (≈ 30 à 100 m).' });
@@ -19218,7 +19222,7 @@ function locate(id) {
     ensureOn(['digue']);
     map.fitBounds(bboxOf(REFERENCE_DIGUE.geometry), { padding: 70, duration: 900, maxZoom: 15.5 });
     return popupAfterMove(REFERENCE_SITES.digueBreach, { name: 'La digue de 1962', eyebrow: 'Ouvrage de protection', tag: 'fort',
-      sub: 'Risque de rupture : 35 % (aléa centennal)', body: 'Trait brun épais sur la carte, du port au secteur nord-est, côté terrestre du marais.' });
+      sub: 'Risque de rupture : 35 % (aléa centennal)', body: 'Trait brun épais sur la carte, le long du havre : la mer d’un côté, le Quartier de la Digue de l’autre.' });
   }
   const c = REFERENCE_SITES[id] || data.enjeux[id] || (ENJEUX[id] && ENJEUX[id].coords);
   if (!c || !ENJEUX[id]) return;
