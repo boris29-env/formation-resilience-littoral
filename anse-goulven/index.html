@@ -4888,6 +4888,10 @@ h3.subhead {
     <button type="button" onclick="openSessionModal()">Choisir une session</button>
   </div>
   <div class="sidebar-section">
+    <span class="sidebar-label">La journée</span>
+    <a href="#journee">Déroulé de la journée</a>
+  </div>
+  <div class="sidebar-section">
     <span class="sidebar-label">Le territoire</span>
     <a href="#territoire">Le territoire</a>
     <a href="#cartes">Cartes</a>
@@ -4971,6 +4975,122 @@ h3.subhead {
     <a href="#cas3"><span class="path-step">03 / AGIR</span><h2>Faire face à la tempête</h2><p>Suivre les phases du scénario PCS et leurs conséquences sur le territoire.</p><span class="path-action">Accéder à la gestion de crise <span aria-hidden="true">→</span></span></a>
   </nav>
 </div>
+
+<!-- ============ DÉROULÉ DE LA JOURNÉE ============ -->
+<section id="journee" class="journee" aria-labelledby="journeeTitle">
+  <div class="jr-head">
+    <h2 class="section-title" id="journeeTitle">Le déroulé de la journée</h2>
+    <p class="jr-lede">De 9h à 17h : comprendre le territoire le matin, construire la stratégie, puis affronter la tempête l’après-midi. Horaires indicatifs ; chaque étape renvoie à sa section.</p>
+  </div>
+  <div class="jr-frise" aria-hidden="true">
+    <div class="jr-bar">
+      <a class="jr-seg jr-comprendre" style="grid-column:1 / span 40" data-step="decouvrir" href="#cartes" title="9h00 – 9h40 · Découvrir le territoire"><span class="jr-seg-label">Territoire</span></a>
+      <a class="jr-seg jr-comprendre" style="grid-column:41 / span 25" data-step="roles" href="#groupes" title="9h40 – 10h05 · Votre rôle et vos messages"><span class="jr-seg-label">Rôles</span></a>
+      <a class="jr-seg jr-interlude" style="grid-column:66 / span 10" data-step="i1972" href="#dialogue1972" title="10h05 – 10h15 · Interlude : dialogue avec 1972"></a>
+      <a class="jr-seg jr-moment" style="grid-column:76 / span 15" data-step="m1" href="#momentsFormateur" title="10h15 – 10h30 · Moment 1 : aléa, exposition, vulnérabilité"></a>
+      <span class="jr-seg jr-pause" style="grid-column:91 / span 10" data-step="pause1" title="10h30 – 10h40 · Pause"></span>
+      <a class="jr-seg jr-preparer" style="grid-column:101 / span 65" data-step="cas1" href="#cas1" title="10h40 – 11h45 · Cas 1 : diagnostic croisé"><span class="jr-seg-label">Cas 1</span></a>
+      <a class="jr-seg jr-moment" style="grid-column:166 / span 15" data-step="m2" href="#momentsFormateur" title="11h45 – 12h00 · Moment 2 : cadre réglementaire et TRACC"></a>
+      <a class="jr-seg jr-preparer" style="grid-column:181 / span 30" data-step="cas2a" href="#cas2" title="12h00 – 12h30 · Cas 2 : stratégie à 10 ans"><span class="jr-seg-label">Cas 2</span></a>
+      <span class="jr-seg jr-pause" style="grid-column:211 / span 60" data-step="dej" title="12h30 – 13h30 · Déjeuner"><span class="jr-seg-label">Déjeuner</span></span>
+      <a class="jr-seg jr-preparer" style="grid-column:271 / span 75" data-step="cas2b" href="#cas2" title="13h30 – 14h45 · Cas 2 : stratégie à 10 ans"><span class="jr-seg-label">Cas 2</span></a>
+      <a class="jr-seg jr-moment" style="grid-column:346 / span 15" data-step="m3" href="#momentsFormateur" title="14h45 – 15h00 · Moment 3 : entrer dans la crise"></a>
+      <a class="jr-seg jr-agir" style="grid-column:361 / span 75" data-step="cas3" href="#cas3" title="15h00 – 16h15 · Cas 3 : la tempête arrive"><span class="jr-seg-label">Cas 3</span></a>
+      <a class="jr-seg jr-moment" style="grid-column:436 / span 5" data-step="m4" href="#momentsFormateur" title="16h15 – 16h20 · Moment 4 : ce qui a manqué au PCS"></a>
+      <a class="jr-seg jr-interlude" style="grid-column:441 / span 15" data-step="voix" href="#climateVoices" title="16h20 – 16h35 · Interlude : voix du climat"></a>
+      <a class="jr-seg jr-moment" style="grid-column:456 / span 5" data-step="m5" href="#momentsFormateur" title="16h35 – 16h40 · Moment 5 : préparer la CDRNM"></a>
+      <a class="jr-seg jr-agir" style="grid-column:461 / span 15" data-step="cas4" href="#cas4" title="16h40 – 16h55 · Cas 4 : la CDRNM siège"></a>
+      <a class="jr-seg jr-moment" style="grid-column:476 / span 5" data-step="m67" href="#momentsFormateur" title="16h55 – 17h00 · Moments 6 et 7 : boussole et synthèse"></a>
+    </div>
+    <div class="jr-ticks"><span style="grid-column:1 / span 1">9h</span><span style="grid-column:61 / span 1">10h</span><span style="grid-column:121 / span 1">11h</span><span style="grid-column:181 / span 1">12h</span><span style="grid-column:241 / span 1">13h</span><span style="grid-column:301 / span 1">14h</span><span style="grid-column:361 / span 1">15h</span><span style="grid-column:421 / span 1">16h</span><span style="grid-column:481 / span 1">17h</span></div>
+  </div>
+  <div class="jr-legend" aria-hidden="true"><span><i class="jr-dot jr-comprendre"></i>Comprendre</span><span><i class="jr-dot jr-preparer"></i>Préparer</span><span><i class="jr-dot jr-agir"></i>Agir</span><span><i class="jr-dot jr-interlude"></i>Interlude</span><span><i class="jr-dot jr-moment"></i>Temps animateur</span><span><i class="jr-dot jr-pause"></i>Pause</span></div>
+  <div class="jr-lists">
+    <div class="jr-col">
+      <h3 class="jr-col-title">Matin</h3>
+      <ol class="jr-list">
+        <li><a class="jr-item jr-k-comprendre" href="#cartes" data-step="decouvrir"><span class="jr-time">9h00</span><span class="jr-dot jr-comprendre" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Découvrir le territoire</span><span class="jr-sub">carte, données, événements</span></span></a></li>
+        <li><a class="jr-item jr-k-comprendre" href="#groupes" data-step="roles"><span class="jr-time">9h40</span><span class="jr-dot jr-comprendre" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Votre rôle et vos messages</span><span class="jr-sub">groupe, boîte mail, support de restitution</span></span></a></li>
+        <li><a class="jr-item jr-k-interlude" href="#dialogue1972" data-step="i1972"><span class="jr-time">10h05</span><span class="jr-dot jr-interlude" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Interlude : dialogue avec 1972</span></span></a></li>
+        <li><a class="jr-item jr-k-moment" href="#momentsFormateur" data-step="m1"><span class="jr-time">10h15</span><span class="jr-dot jr-moment" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Moment 1 : aléa, exposition, vulnérabilité</span><span class="jr-sub">temps animateur</span></span></a></li>
+        <li><span class="jr-item jr-k-pause" data-step="pause1"><span class="jr-time">10h30</span><span class="jr-dot jr-pause" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Pause</span></span></span></li>
+        <li><a class="jr-item jr-k-preparer" href="#cas1" data-step="cas1"><span class="jr-time">10h40</span><span class="jr-dot jr-preparer" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Cas 1 : diagnostic croisé</span><span class="jr-sub">travail en groupes et restitution</span></span></a></li>
+        <li><a class="jr-item jr-k-moment" href="#momentsFormateur" data-step="m2"><span class="jr-time">11h45</span><span class="jr-dot jr-moment" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Moment 2 : cadre réglementaire et TRACC</span><span class="jr-sub">temps animateur</span></span></a></li>
+        <li><a class="jr-item jr-k-preparer" href="#cas2" data-step="cas2a"><span class="jr-time">12h00</span><span class="jr-dot jr-preparer" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Cas 2 : stratégie à 10 ans</span><span class="jr-sub">lancement</span></span></a></li>
+      </ol>
+    </div>
+    <div class="jr-col">
+      <h3 class="jr-col-title">Après-midi</h3>
+      <ol class="jr-list">
+        <li><span class="jr-item jr-k-pause" data-step="dej"><span class="jr-time">12h30</span><span class="jr-dot jr-pause" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Déjeuner</span></span></span></li>
+        <li><a class="jr-item jr-k-preparer" href="#cas2" data-step="cas2b"><span class="jr-time">13h30</span><span class="jr-dot jr-preparer" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Cas 2 : stratégie à 10 ans</span><span class="jr-sub">travail, restitution, synthèse</span></span></a></li>
+        <li><a class="jr-item jr-k-moment" href="#momentsFormateur" data-step="m3"><span class="jr-time">14h45</span><span class="jr-dot jr-moment" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Moment 3 : entrer dans la crise</span><span class="jr-sub">temps animateur</span></span></a></li>
+        <li><a class="jr-item jr-k-agir" href="#cas3" data-step="cas3"><span class="jr-time">15h00</span><span class="jr-dot jr-agir" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Cas 3 : la tempête arrive</span><span class="jr-sub">simulation PCS en cinq phases</span></span></a></li>
+        <li><a class="jr-item jr-k-moment" href="#momentsFormateur" data-step="m4"><span class="jr-time">16h15</span><span class="jr-dot jr-moment" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Moment 4 : ce qui a manqué au PCS</span><span class="jr-sub">temps animateur</span></span></a></li>
+        <li><a class="jr-item jr-k-interlude" href="#climateVoices" data-step="voix"><span class="jr-time">16h20</span><span class="jr-dot jr-interlude" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Interlude : voix du climat</span></span></a></li>
+        <li><a class="jr-item jr-k-moment" href="#momentsFormateur" data-step="m5"><span class="jr-time">16h35</span><span class="jr-dot jr-moment" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Moment 5 : préparer la CDRNM</span><span class="jr-sub">temps animateur</span></span></a></li>
+        <li><a class="jr-item jr-k-agir" href="#cas4" data-step="cas4"><span class="jr-time">16h40</span><span class="jr-dot jr-agir" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Cas 4 : la CDRNM siège</span><span class="jr-sub">vote des cinq collèges</span></span></a></li>
+        <li><a class="jr-item jr-k-moment" href="#momentsFormateur" data-step="m67"><span class="jr-time">16h55</span><span class="jr-dot jr-moment" aria-hidden="true"></span><span class="jr-txt"><span class="jr-title">Moments 6 et 7 : boussole et synthèse</span><span class="jr-sub">temps animateur</span></span></a></li>
+      </ol>
+      <p class="jr-option"><a href="#debriefing" data-step="debrief"><strong>En option : débriefing miroir</strong> · 15 à 20 min par groupe, après le cas 4</a></p>
+    </div>
+  </div>
+</section>
+
+<div class="jr-here" id="jrHere" hidden>
+  <div class="jr-here-bar" aria-hidden="true">
+          <a tabindex="-1" class="jr-mini jr-comprendre" style="grid-column:1 / span 40" data-step="decouvrir" href="#cartes" title="9h00 – 9h40 · Découvrir le territoire"><span hidden>Territoire</span></a>
+          <a tabindex="-1" class="jr-mini jr-comprendre" style="grid-column:41 / span 25" data-step="roles" href="#groupes" title="9h40 – 10h05 · Votre rôle et vos messages"><span hidden>Rôles</span></a>
+          <a tabindex="-1" class="jr-mini jr-interlude" style="grid-column:66 / span 10" data-step="i1972" href="#dialogue1972" title="10h05 – 10h15 · Interlude : dialogue avec 1972"></a>
+          <a tabindex="-1" class="jr-mini jr-moment" style="grid-column:76 / span 15" data-step="m1" href="#momentsFormateur" title="10h15 – 10h30 · Moment 1 : aléa, exposition, vulnérabilité"></a>
+          <span class="jr-mini jr-pause" style="grid-column:91 / span 10" data-step="pause1" title="10h30 – 10h40 · Pause"></span>
+          <a tabindex="-1" class="jr-mini jr-preparer" style="grid-column:101 / span 65" data-step="cas1" href="#cas1" title="10h40 – 11h45 · Cas 1 : diagnostic croisé"><span hidden>Cas 1</span></a>
+          <a tabindex="-1" class="jr-mini jr-moment" style="grid-column:166 / span 15" data-step="m2" href="#momentsFormateur" title="11h45 – 12h00 · Moment 2 : cadre réglementaire et TRACC"></a>
+          <a tabindex="-1" class="jr-mini jr-preparer" style="grid-column:181 / span 30" data-step="cas2a" href="#cas2" title="12h00 – 12h30 · Cas 2 : stratégie à 10 ans"><span hidden>Cas 2</span></a>
+          <span class="jr-mini jr-pause" style="grid-column:211 / span 60" data-step="dej" title="12h30 – 13h30 · Déjeuner"><span hidden>Déjeuner</span></span>
+          <a tabindex="-1" class="jr-mini jr-preparer" style="grid-column:271 / span 75" data-step="cas2b" href="#cas2" title="13h30 – 14h45 · Cas 2 : stratégie à 10 ans"><span hidden>Cas 2</span></a>
+          <a tabindex="-1" class="jr-mini jr-moment" style="grid-column:346 / span 15" data-step="m3" href="#momentsFormateur" title="14h45 – 15h00 · Moment 3 : entrer dans la crise"></a>
+          <a tabindex="-1" class="jr-mini jr-agir" style="grid-column:361 / span 75" data-step="cas3" href="#cas3" title="15h00 – 16h15 · Cas 3 : la tempête arrive"><span hidden>Cas 3</span></a>
+          <a tabindex="-1" class="jr-mini jr-moment" style="grid-column:436 / span 5" data-step="m4" href="#momentsFormateur" title="16h15 – 16h20 · Moment 4 : ce qui a manqué au PCS"></a>
+          <a tabindex="-1" class="jr-mini jr-interlude" style="grid-column:441 / span 15" data-step="voix" href="#climateVoices" title="16h20 – 16h35 · Interlude : voix du climat"></a>
+          <a tabindex="-1" class="jr-mini jr-moment" style="grid-column:456 / span 5" data-step="m5" href="#momentsFormateur" title="16h35 – 16h40 · Moment 5 : préparer la CDRNM"></a>
+          <a tabindex="-1" class="jr-mini jr-agir" style="grid-column:461 / span 15" data-step="cas4" href="#cas4" title="16h40 – 16h55 · Cas 4 : la CDRNM siège"></a>
+          <a tabindex="-1" class="jr-mini jr-moment" style="grid-column:476 / span 5" data-step="m67" href="#momentsFormateur" title="16h55 – 17h00 · Moments 6 et 7 : boussole et synthèse"></a>
+  </div>
+  <a class="jr-here-chip" href="#journee"><span class="jr-here-k">Vous êtes ici</span> <span id="jrHereTxt"></span></a>
+</div>
+<script>
+(function () {
+  var MAP = {"cartes": ["decouvrir"], "glossaireSeuil": ["decouvrir"], "territoire": ["decouvrir"], "chiffres": ["decouvrir"], "evenements": ["decouvrir"], "groupes": ["roles"], "mailbox": ["roles"], "restitution": ["roles"], "dialogue1972": ["i1972"], "cas1": ["cas1"], "cas2": ["cas2a", "cas2b"], "cas3": ["cas3"], "climateVoices": ["voix"], "cas4": ["cas4"], "debriefing": ["debrief"]};
+  var STEPS = {"decouvrir": {"t": "9h00", "n": "Découvrir le territoire"}, "roles": {"t": "9h40", "n": "Votre rôle et vos messages"}, "i1972": {"t": "10h05", "n": "Interlude : dialogue avec 1972"}, "m1": {"t": "10h15", "n": "Moment 1 : aléa, exposition, vulnérabilité"}, "pause1": {"t": "10h30", "n": "Pause"}, "cas1": {"t": "10h40", "n": "Cas 1 : diagnostic croisé"}, "m2": {"t": "11h45", "n": "Moment 2 : cadre réglementaire et TRACC"}, "cas2a": {"t": "12h00", "n": "Cas 2 : stratégie à 10 ans"}, "dej": {"t": "12h30", "n": "Déjeuner"}, "cas2b": {"t": "13h30", "n": "Cas 2 : stratégie à 10 ans"}, "m3": {"t": "14h45", "n": "Moment 3 : entrer dans la crise"}, "cas3": {"t": "15h00", "n": "Cas 3 : la tempête arrive"}, "m4": {"t": "16h15", "n": "Moment 4 : ce qui a manqué au PCS"}, "voix": {"t": "16h20", "n": "Interlude : voix du climat"}, "m5": {"t": "16h35", "n": "Moment 5 : préparer la CDRNM"}, "cas4": {"t": "16h40", "n": "Cas 4 : la CDRNM siège"}, "m67": {"t": "16h55", "n": "Moments 6 et 7 : boussole et synthèse"}, "debrief": {"t": "fin de journée", "n": "Débriefing miroir"}};
+  function init() {
+  var here = document.getElementById('jrHere'), txt = document.getElementById('jrHereTxt'), frise = document.getElementById('journee');
+  var topbar = document.querySelector('.topbar');
+  if (topbar && here) topbar.appendChild(here);
+  var secs = Object.keys(MAP).map(function (id) { return document.getElementById(id); }).filter(Boolean);
+  var current = null, ticking = false;
+  function mark(ids) {
+    var key = ids ? ids.join(' ') : '';
+    if (key === current) return;
+    current = key;
+    document.querySelectorAll('[data-step]').forEach(function (el) { el.classList.toggle('is-current', !!ids && ids.indexOf(el.dataset.step) !== -1); });
+    if (ids) { var s = STEPS[ids[ids.length - 1]]; txt.textContent = (ids.length > 1 ? STEPS[ids[0]].t : s.t) + ' · ' + s.n; }
+  }
+  function update() {
+    ticking = false;
+    var y = 140, found = null;
+    for (var i = 0; i < secs.length; i++) { if (secs[i].getBoundingClientRect().top <= y) found = secs[i]; }
+    if (found && found.getBoundingClientRect().bottom < 0) found = null;
+    mark(found ? MAP[found.id] : null);
+    here.hidden = !found || frise.getBoundingClientRect().bottom > 0;
+  }
+  window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+  window.addEventListener('resize', update);
+  update();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
 
 <!-- ============ CARTES (visualiseur intégré) ============ -->
 <section id="cartes">
@@ -6198,9 +6318,9 @@ h3.subhead {
     <h2 class="section-title">Étude de cas n°1 : Diagnostic croisé</h2>
   </div>
 
-  <div class="key-fact-block" style="background:var(--orange);">
+  <div class="key-fact-block">
     <div>
-      <div class="key-fact-num" style="color:white;">1 h 20</div>
+      <div class="key-fact-num">1 h 20</div>
       <div class="key-fact-label">35 min de travail · 45 min de restitution</div>
     </div>
     <div class="key-fact-text">
@@ -6329,9 +6449,9 @@ h3.subhead {
     <h2 class="section-title">Étude de cas n°2 : Stratégie à 10 ans</h2>
   </div>
 
-  <div class="key-fact-block" style="background:var(--teal);">
+  <div class="key-fact-block">
     <div>
-      <div class="key-fact-num" style="color:white;">2 h 30</div>
+      <div class="key-fact-num">2 h 30</div>
       <div class="key-fact-label">1 h 30 de travail · 45 min de restitution · 15 min de synthèse</div>
     </div>
     <div class="key-fact-text">
