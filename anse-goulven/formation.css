@@ -74,7 +74,7 @@
 .formation .content { padding: 0; }
 .formation .content > :is(section, .formation-overview, .foot) { max-width: 1180px; margin-left: auto; margin-right: auto; }
 .formation .hero { position: relative; margin: 0; padding: 0; border: 0; color: white; background: #102e40; isolation: isolate; }
-.formation .hero::before { content: ''; position: absolute; inset: 0; z-index: -1; background: url('atlas-accueil.png') right center / cover no-repeat; opacity: .55; }
+.formation .hero::before { content: ''; position: absolute; inset: 0; z-index: -1; background: url('atlas-accueil.jpg') right center / cover no-repeat; opacity: .55; }
 .formation .hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #102e40 0%, rgba(16,46,64,.96) 27%, rgba(16,46,64,.65) 58%, rgba(16,46,64,.12) 100%); }
 .formation .hero-opening { display: block; max-width: 1280px; margin: auto; padding: 70px 48px 72px; }
 .formation .hero-copy { display: block; max-width: 670px; }
