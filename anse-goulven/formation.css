@@ -393,7 +393,7 @@
 }
 
 /* Déroulé de la journée : frise proportionnelle (9h-17h), liste des étapes, repère « vous êtes ici ». */
-.formation .journee { --jr-comprendre: #08749a; --jr-preparer: #315a70; --jr-agir: #a92f25; --jr-interlude: #8a9aa6; --jr-moment: #20272d; --jr-pause: #d9dee2; margin-top: 8px; }
+.formation .journee { --jr-comprendre: #08749a; --jr-preparer: #315a70; --jr-agir: #a92f25; --jr-debrief: #4f8a6e; --jr-interlude: #8a9aa6; --jr-moment: #20272d; --jr-pause: #d9dee2; margin-top: 8px; }
 .formation .jr-head { margin-bottom: 18px; }
 .formation .jr-head .section-title { margin: 0 0 6px; }
 .formation .jr-lede { margin: 0; max-width: 760px; color: var(--grey-txt); font-size: 14px; line-height: 1.6; }
@@ -406,6 +406,7 @@
 .formation :is(.jr-seg, .jr-mini, .jr-dot).jr-preparer { background: var(--jr-preparer, #315a70); }
 .formation :is(.jr-seg, .jr-mini, .jr-dot).jr-agir { background: var(--jr-agir, #a92f25); }
 .formation :is(.jr-seg, .jr-mini, .jr-dot).jr-interlude { background: var(--jr-interlude, #8a9aa6); }
+.formation :is(.jr-seg, .jr-mini, .jr-dot).jr-debrief { background: var(--jr-debrief, #4f8a6e); }
 .formation :is(.jr-seg, .jr-mini, .jr-dot).jr-moment { background: var(--jr-moment, #20272d); }
 .formation :is(.jr-seg, .jr-mini, .jr-dot).jr-pause { background: repeating-linear-gradient(135deg, #e6eaed 0 5px, #d5dbe0 5px 10px); }
 .formation a.jr-seg:hover { filter: brightness(1.12); }
