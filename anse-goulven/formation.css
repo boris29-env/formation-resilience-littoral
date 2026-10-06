@@ -1,21 +1,21 @@
 /* Présentation du dossier de formation. Les couleurs de groupes et d’aléas
    restent définies dans la page pour conserver leurs correspondances. */
 .formation {
-  --teal: #38666a;
-  --teal-deep: #254e53;
-  --teal-light: #edf3f1;
-  --navy: #263d48;
-  --navy-deep: #1e3039;
-  --orange: #9b5137;
-  --orange-deep: #7d3d29;
-  --grey-bg: #faf9f6;
-  --grey-card: #f3f2ed;
-  --grey-line: #d6dad5;
-  --grey-border: #d6dad5;
-  --grey-txt: #515d60;
-  --grey-light: #677174;
-  --black: #253238;
-  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --teal: #315a70;
+  --teal-deep: #25465a;
+  --teal-light: #f0f4f7;
+  --navy: #20272d;
+  --navy-deep: #182128;
+  --orange: #526c7d;
+  --orange-deep: #344f63;
+  --grey-bg: #ffffff;
+  --grey-card: #f6f7f8;
+  --grey-line: #e1e5e8;
+  --grey-border: #e1e5e8;
+  --grey-txt: #53616a;
+  --grey-light: #697781;
+  --black: #20272d;
+  --serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
   --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 16px;
@@ -43,7 +43,7 @@
 .formation .flag { width: 19px; height: 14px; box-shadow: none; }
 .formation .topbar-title {
   display: block; text-decoration: none; color: var(--navy);
-  font: 600 19px/1.2 var(--serif); letter-spacing: 0;
+  font: 650 17px/1.2 var(--sans); letter-spacing: 0;
 }
 .formation .topbar-title span {
   display: block; margin-top: 4px;
@@ -71,10 +71,10 @@
 .formation .fb-status { color: var(--grey-txt); background: none; }
 .formation .fb-status-dot { animation: none; box-shadow: none; }
 .formation .fb-status-label { color: var(--grey-txt); }
-.formation .layout { max-width: 1500px; grid-template-columns: 236px minmax(0, 1fr); }
+.formation .layout { max-width: 1720px; grid-template-columns: 212px minmax(0, 1fr); }
 .formation .sidebar {
   top: 72px; height: calc(100vh - 72px); padding: 36px 16px 28px 22px;
-  background: var(--grey-card); background-image: none;
+  background: white; background-image: none; border-right: 1px solid var(--grey-line);
 }
 .formation .sidebar-section { margin-bottom: 26px; }
 .formation .sidebar-label {
@@ -87,10 +87,10 @@
   font: 400 13px/1.45 var(--sans); box-shadow: none;
 }
 .formation .sidebar a.active {
-  background: #e7eeeb; color: var(--teal-deep);
+  background: #edf2f5; color: var(--teal-deep);
   border-left-color: var(--teal-deep); box-shadow: none; font-weight: 600;
 }
-.formation .sidebar a:hover { background: #eaece6; box-shadow: none; }
+.formation .sidebar a:hover { background: #edf2f5; box-shadow: none; }
 .formation .sidebar .group-badge { width: 24px; height: 24px; border-radius: 2px; font-size: 10px; }
 .formation .scroll-progress { height: 2px; }
 .formation .scroll-progress-fill { background: var(--teal); box-shadow: none; }
@@ -102,62 +102,33 @@
 }
 .formation .back-to-top:hover { background: var(--grey-card); transform: none; }
 
-/* Entrée du dossier : carte de référence, auteur, chiffres et accès utiles. */
-.formation .content { padding: 46px 52px 32px; }
-.formation .hero { margin-bottom: 36px; padding-bottom: 0; border-bottom: 0; }
-.formation .hero-opening {
-  display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(260px, 1fr);
-  gap: 36px; align-items: center;
-}
-.formation .hero-tag {
-  display: block; margin: 0 0 20px; padding: 0; background: none;
-  color: var(--teal-deep); border-radius: 0;
-  font: 600 10.5px/1.4 var(--sans); letter-spacing: .12em;
-}
-.formation .hero h1 {
-  margin: 0 0 8px; font-size: clamp(34px, 3.9vw, 58px);
-  font-weight: 400; line-height: 1.12; letter-spacing: -.035em;
-}
-.formation .hero-subtitle {
-  margin-bottom: 22px; color: var(--navy);
-  font: 400 23px/1.3 var(--serif);
-}
-.formation .hero-lede {
-  max-width: 510px; margin-bottom: 20px;
-  font: 400 16px/1.65 var(--sans); color: var(--grey-txt);
-}
-.formation .hero-byline { color: var(--navy); font-size: 12px; font-weight: 600; }
-.formation .hero-byline span { margin: 0 7px; color: var(--grey-txt); }
-.formation .hero-links { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-top: 24px; }
-.formation .hero-links a {
-  display: inline-flex; align-items: center; gap: 14px;
-  color: var(--teal-deep); text-decoration: none;
-  border-bottom: 1px solid var(--teal); padding-bottom: 3px;
-  font-size: 13px; font-weight: 600;
-}
-.formation .hero-links a:hover { color: var(--navy); border-color: var(--navy); }
-.formation .hero-map-reference { margin: 0; min-width: 0; }
-.formation .hero-map-reference a { display: block; border: 1px solid #aab8b4; background: #fff; }
-.formation .hero-map-reference a:hover { border-color: var(--teal-deep); }
-.formation .hero-map-reference img { display: block; width: 100%; height: auto; }
-.formation .hero-map-reference figcaption {
-  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px;
-  padding-top: 9px; font-size: 10px; color: var(--grey-txt);
-}
-.formation .hero-map-reference figcaption span:first-child { font-weight: 600; }
+/* Accueil : entrée compacte, suivie du véritable atlas interactif. */
+.formation .content { padding: 36px 40px 32px; }
+.formation .hero { margin-bottom: 30px; padding-bottom: 0; border-bottom: 0; }
+.formation .hero-opening { display: block; }
+.formation .hero-copy { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, .65fr); column-gap: 40px; }
+.formation .hero-tag { grid-column: 1; display: block; margin: 0 0 10px; padding: 0; background: none; color: var(--grey-txt); border-radius: 0; font: 500 12px/1.4 var(--sans); letter-spacing: 0; text-transform: none; }
+.formation .hero h1 { grid-column: 1; margin: 0 0 8px; font: 650 clamp(32px, 3.5vw, 52px)/1.06 var(--sans); letter-spacing: -.045em; }
+.formation .hero-subtitle { grid-column: 1; margin: 0; color: var(--grey-txt); font: 400 18px/1.4 var(--sans); }
+.formation .hero-lede { grid-column: 2; grid-row: 1 / 4; align-self: center; margin: 0; max-width: 420px; font: 400 14px/1.7 var(--sans); color: var(--grey-txt); }
+.formation .hero-byline { grid-column: 1; margin-top: 16px; color: var(--grey-txt); font-size: 11px; font-weight: 400; }
+.formation .hero-byline span { margin: 0 7px; }
+.formation .hero-links { grid-column: 2; display: flex; flex-wrap: wrap; gap: 12px 20px; align-self: end; }
+.formation .hero-links a { display: inline-flex; align-items: center; gap: 12px; color: var(--teal-deep); text-decoration: none; font-size: 12px; font-weight: 600; }
+.formation .hero-links a:hover { text-decoration: underline; text-underline-offset: 4px; }
 .formation .hero-fact-row {
-  margin-top: 36px; gap: 0; padding: 22px 0;
+  margin-top: 24px; gap: 0; padding: 16px 0;
   border-top: 1px solid var(--grey-line); border-bottom: 1px solid var(--grey-line);
 }
 .formation .hero-fact { padding: 0 20px; border-top: none; border-left: 1px solid var(--grey-line); }
 .formation .hero-fact:first-child { padding-left: 0; border-left: 0; }
-.formation .hero-fact-num { font-size: 34px; font-weight: 400; font-variant-numeric: lining-nums tabular-nums; }
+.formation .hero-fact-num { font-size: 25px; font-weight: 600; font-variant-numeric: lining-nums tabular-nums; }
 .formation .hero-fact-num em { color: inherit; font-style: normal; }
-.formation .hero-fact-label { margin-top: 7px; font-size: 12px; letter-spacing: 0; }
+.formation .hero-fact-label { margin-top: 4px; font-size: 11px; letter-spacing: 0; }
 .formation .pwd-panel {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px;
   margin-top: 24px; padding: 20px 24px;
-  background: #eef2ef; color: var(--black); border: 1px solid var(--grey-line); border-radius: 2px;
+  background: #f6f7f8; color: var(--black); border: 1px solid var(--grey-line); border-radius: 2px;
 }
 .formation .pwd-panel-icon { display: none; }
 .formation .pwd-panel h3 { font: 600 15px/1.4 var(--sans); color: var(--navy); margin-bottom: 5px; }
@@ -170,13 +141,13 @@
 .formation section { margin-bottom: 72px; }
 .formation :is(.section-header, .section-head) {
   display: flex; align-items: baseline; gap: 16px; flex-wrap: nowrap;
-  margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid #8b9d9e;
+  margin-bottom: 22px; padding-bottom: 14px; border-bottom: 1px solid var(--grey-line);
 }
 .formation .section-num { color: var(--teal-deep); font: 500 11px/1.4 var(--mono); }
 .formation :is(.section-header, .section-head) > .section-icon { display: none; }
-.formation .section-title { font-size: 33px; font-weight: 400; line-height: 1.2; letter-spacing: -.015em; }
+.formation .section-title { font-size: 28px; font-weight: 600; line-height: 1.2; letter-spacing: -.015em; }
 .formation .section-intro { font: 400 16px/1.7 var(--sans); max-width: 780px; margin-bottom: 26px; }
-.formation h3.subhead { font-size: 24px; font-weight: 400; margin-top: 32px; }
+.formation h3.subhead { font-size: 22px; font-weight: 600; margin-top: 32px; }
 .formation :is(.card, .group-card, .simulator-block, .lever, .cdrnm-block,
   .notes-panel, .mailbox-block, .expression-block, .carnet-card-tile,
   .download-card, .resource-card, .council-block, .climate-voice-card) {
@@ -188,7 +159,7 @@
 }
 .formation .card-icon { background: none; border-radius: 0; }
 .formation .card-eyebrow { font-family: var(--sans); font-size: 10px; letter-spacing: .08em; }
-.formation .card-title { font-size: 23px; font-weight: 400; }
+.formation .card-title { font-size: 20px; font-weight: 600; }
 .formation .card-body { font-size: 15px; line-height: 1.7; }
 .formation #territoire .cards-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 34px; }
 .formation #territoire .card { padding: 18px 0 0; border: 0; border-top: 1px solid var(--grey-line); background: transparent; }
@@ -205,7 +176,7 @@
 .formation .key-fact-text strong { color: var(--navy); }
 .formation .group-header { padding: 20px 24px; gap: 16px; }
 .formation .group-header .group-badge { width: 38px; height: 38px; border-radius: 2px; font-size: 14px; }
-.formation .group-name { font-size: 24px; font-weight: 400; }
+.formation .group-name { font-size: 22px; font-weight: 600; }
 .formation :is(.group-status, .axe-pill, .lever-tag) { border-radius: 2px; font-family: var(--sans); letter-spacing: 0; }
 .formation .group-status { font-size: 11px; }
 .formation .group-tagline { font-size: 12px; font-style: normal; }
@@ -235,8 +206,8 @@
 .formation .dashboard-block::before { display: none; }
 .formation :is(.pcs-timeline-eyebrow, .pcs-step-time, .pcs-timeline-now strong,
   .dashboard-num em, .report-launcher-block h3 em, .impact-cell-val em,
-  .report-counter, .report-stat-num em) { color: #edc1aa; }
-.formation .dashboard-bar { background: #bb8064; }
+  .report-counter, .report-stat-num em) { color: #bdd4e2; }
+.formation .dashboard-bar { background: #769db5; }
 .formation :is(.report-launcher-btn, .report-launcher-btn-badge) { border-radius: 2px; }
 .formation .report-launcher-btn:hover { transform: none; }
 .formation :is(.budget-meter-bar, .carnet-progress-fill, .poll-result-fill) { background: var(--teal); }
@@ -254,7 +225,7 @@
 .formation .carnet-bloc-name { font-family: var(--serif); font-weight: 400; }
 .formation .carnet-card-tile-title { font-family: var(--serif); font-size: 19px; font-weight: 400; }
 .formation .carnet-card-tile-subtitle { font-style: normal; }
-.formation .dialog1972-block { background: #f0eee7; color: var(--navy); border: 1px solid var(--grey-line); border-radius: 2px; padding: 28px; }
+.formation .dialog1972-block { background: #f6f7f8; color: var(--navy); border: 1px solid var(--grey-line); border-radius: 2px; padding: 28px; }
 .formation .dialog1972-block h3 { color: var(--navy); font-weight: 400; }
 .formation :is(.dialog1972-intro, .dialog1972-tip) { color: var(--grey-txt); }
 .formation .dialog1972-card { background: white; border-radius: 0; border-color: var(--grey-line); border-top-color: var(--teal); }
@@ -291,13 +262,13 @@
 /* Carte et dialogues : conserver l’espace de travail, réduire le décor. */
 .formation .geov { border-radius: 0; box-shadow: none; }
 .formation .geov-context { background: var(--grey-card); color: var(--navy); }
-.formation .geov-context-title { font-weight: 400; color: var(--navy); }
+.formation .geov-context-title { font: 600 18px/1.4 var(--sans); color: var(--navy); }
 .formation .geov-context-eyebrow { font-family: var(--sans); letter-spacing: .08em; color: var(--teal-deep); }
 .formation .geov-context-sub { color: var(--grey-txt); }
 .formation .geov-search label { color: var(--grey-txt); }
 .formation .geov-search-status { color: var(--teal-deep); }
 .formation :is(.geov-panel-intro, .geov-legend, .geov-toast, .geov-crisis) { border-radius: 2px; box-shadow: none; }
-.formation .geov-panel-intro { background: #edf3f1; }
+.formation .geov-panel-intro { background: #f0f4f7; }
 .formation .geov-search input { border-radius: 2px; border-color: var(--grey-line); }
 .formation .geov-search button { background: var(--teal-deep); border-color: var(--teal-deep); border-radius: 2px; }
 .formation .geov-preset.crisis { background: #f7eeea; }
@@ -312,10 +283,23 @@
 .formation .alert-banner { background: #a23e2c; box-shadow: none; }
 .formation .alert-banner-icon { animation: none; }
 
+.formation #cartes > .section-header { margin-bottom: 10px; padding-bottom: 0; border: 0; }
+.formation #cartes > .section-header .section-num { display: none; }
+.formation #cartes > .section-header .section-title { font-size: 20px; }
+.formation #cartes > .section-intro { margin-bottom: 16px; font-size: 13px; line-height: 1.6; }
+.formation .geov-context { padding: 16px 20px; background: white; }
+.formation .geov-context-eyebrow { display: none; }
+.formation .geov-context-sub { font-size: 11px; }
+.formation .geov-panel-intro { background: transparent; border: 0; padding: 0 0 14px; border-bottom: 1px solid var(--grey-line); }
+.formation .geov-presets { background: var(--grey-card); }
+.formation .geov-panel { background: white; }
+.formation #groupes .pwd-panel { margin: 0 0 24px; }
+.formation :is(.card-title, .group-name, .section-title, .geov-context-title, .hero h1) { font-family: var(--sans); }
+
 @media (max-width: 1180px) and (min-width: 901px) {
   .formation .layout { grid-template-columns: 212px minmax(0, 1fr); }
   .formation .content { padding: 38px 32px; }
-  .formation .hero-opening { grid-template-columns: minmax(0, 1.2fr) minmax(220px, 1fr); gap: 24px; }
+  .formation .hero-copy { column-gap: 24px; }
   .formation .hero h1 { font-size: 40px; }
   .formation .dialog1972-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
@@ -350,18 +334,22 @@
   .formation .sidebar { top: 64px; height: calc(100dvh - 64px); }
   .formation .sidebar-backdrop { top: 64px; }
   .formation .content { padding: 26px 18px; }
-  .formation .hero-opening { grid-template-columns: 1fr; gap: 24px; }
+  .formation .hero-copy { display: block; }
+  .formation .hero-lede { margin-top: 16px; }
   .formation .hero-tag { margin-bottom: 14px; font-size: 9px; }
   .formation .hero h1 { font-size: clamp(32px, 8.5vw, 42px); }
   .formation .hero-subtitle { margin-bottom: 16px; font-size: 22px; }
-  .formation .hero-lede { font-size: 15px; margin-bottom: 14px; }
+  .formation .hero-lede { font-size: 13px; line-height: 1.6; margin-bottom: 12px; }
   .formation .hero-links { margin-top: 18px; gap: 10px 20px; }
   .formation .hero-links a { font-size: 12px; }
-  .formation .hero-map-reference { max-width: 440px; }
-  .formation .hero-fact-row { margin-top: 24px; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 0; padding: 20px 0; }
-  .formation .hero-fact { padding: 0 18px; }
-  .formation .hero-fact:nth-child(odd) { padding-left: 0; border-left: 0; }
-  .formation .hero-fact-num { font-size: 30px; }
+
+  .formation .hero-fact-row { margin-top: 20px; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; padding: 14px 0; }
+  .formation .hero-fact { padding: 0 8px; }
+  .formation .hero-fact:first-child { padding-left: 0; border-left: 0; }
+  .formation .hero-fact-num { font-size: 19px; white-space: nowrap; }
+  .formation .hero-fact-label { font-size: 9px; line-height: 1.5; }
+  .formation .geov-context > div:first-child { display: none; }
+  .formation .geov-context { padding: 12px; }
   .formation .pwd-panel { padding: 18px; }
   .formation .section-title { font-size: 27px; }
   .formation .section-intro { font-size: 15px; }
@@ -392,5 +380,5 @@
   .formation .content { padding: 0; }
   .formation :is(.topbar, .sidebar, .hero-links, .pwd-panel, .skip-link, .back-to-top, .scroll-progress) { display: none; }
   .formation .layout { display: block; }
-  .formation .hero-map-reference { max-width: 320px; }
+
 }

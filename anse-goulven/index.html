@@ -4936,12 +4936,6 @@ h3.subhead {
         <a href="#groupes">Consulter mon rôle <span aria-hidden="true">→</span></a>
       </nav>
     </div>
-    <figure class="hero-map-reference">
-      <a href="#cartes" aria-label="Ouvrir la carte interactive d’Anse-de-Goulven">
-        <img src="10_montage_image3_anse.png" alt="Carte annotée du territoire : baie, marais, digue et enjeux littoraux" width="1803" height="1350" fetchpriority="high">
-      </a>
-      <figcaption><span>Le territoire d’étude</span><span>Fond IGN · toponymie fictive</span></figcaption>
-    </figure>
   </div>
   <div class="hero-fact-row">
     <div class="hero-fact">
@@ -4962,24 +4956,158 @@ h3.subhead {
     </div>
   </div>
 
-  <div class="pwd-panel">
-    <div class="pwd-panel-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="4" y="11" width="16" height="10" rx="1.5"/>
-        <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
-      </svg>
-    </div>
-    <div class="pwd-panel-content">
-      <h3>Accéder à votre groupe</h3>
-      <p>Le code remis par le formateur ouvre votre boîte mail, votre fiche de rôle et les votes. Les informations réservées aux autres groupes seront partagées en plénière.</p>
-      <p class="pwd-panel-reset">
-        Quelqu'un est passé avant vous sur ce poste ?
-        <a href="#" onclick="event.preventDefault(); resetThisBrowser();">Réinitialiser ce navigateur</a>.
-      </p>
-    </div>
-    <button class="pwd-panel-btn" onclick="openUnlockModal()">Saisir mon code</button>
-  </div>
+
 </div>
+
+<!-- ============ CARTES (visualiseur intégré) ============ -->
+<section id="cartes">
+  <div class="section-header">
+    <span class="section-num">Atlas</span>
+    <span class="section-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+    </span>
+    <h2 class="section-title">Carte interactive du territoire</h2>
+  </div>
+  <p class="section-intro">Localisez les lieux, croisez les couches thématiques et suivez les conséquences de la tempête dans le scénario PCS.</p>
+
+  <div class="geov" id="geov">
+    <div class="geov-context">
+      <div>
+        <div class="geov-context-eyebrow">Atlas pédagogique · territoire fictif</div>
+        <div class="geov-context-title">Anse-de-Goulven et son bassin de vie</div>
+        <div class="geov-context-sub">Fonds IGN · lecture multi-échelles · données du scénario de formation</div>
+      </div>
+      <div class="geov-search" role="search">
+        <label for="geovSearch">Localiser un lieu ou un enjeu</label>
+        <input id="geovSearch" type="search" list="geovSearchList" autocomplete="off" placeholder="Ex. mairie, digue, camping, marais…">
+        <datalist id="geovSearchList"></datalist>
+        <button type="button" id="geovSearchBtn">Localiser</button>
+        <div class="geov-search-status" id="geovSearchStatus" aria-live="polite"></div>
+      </div>
+    </div>
+    <div class="geov-presets" role="group" aria-label="Compositions cartographiques">
+      <span class="geov-presets-label">Lecture</span>
+      <button type="button" class="geov-preset" data-preset="territoire" aria-pressed="true">Se repérer</button>
+      <button type="button" class="geov-preset" data-preset="risques" aria-pressed="false">Comprendre les risques</button>
+      <button type="button" class="geov-preset" data-preset="enjeux" aria-pressed="false">Voir les vulnérabilités</button>
+      <button type="button" class="geov-preset" data-preset="ressources" aria-pressed="false">Préparer le PCS</button>
+      <button type="button" class="geov-preset crisis" id="geovCrisisToggle" aria-pressed="false">▶ Tempête Argonne</button>
+    </div>
+    <div class="geov-bar">
+      <div class="geov-seg" role="group" aria-label="Vues">
+        <span class="geov-seg-label">Vue</span>
+        <button type="button" class="geov-btn" data-view="commune" aria-pressed="true">Commune</button>
+        <button type="button" class="geov-btn" data-view="havre" aria-pressed="false">Havre et Quartier de la Digue</button>
+        <button type="button" class="geov-btn" data-view="dune" aria-pressed="false">Cordon dunaire</button>
+        <button type="button" class="geov-btn" data-view="region" aria-pressed="false">Situation régionale</button>
+      </div>
+      <div class="geov-seg" role="group" aria-label="Fond de carte">
+        <span class="geov-seg-label">Fond</span>
+        <button type="button" class="geov-btn" data-base="plan" aria-pressed="true">Plan IGN</button>
+        <button type="button" class="geov-btn" data-base="photo" aria-pressed="false">Photo aérienne</button>
+        <button type="button" class="geov-btn" data-base="hybride" aria-pressed="false">Photo + plan</button>
+      </div>
+    </div>
+
+    <div class="geov-body">
+      <aside class="geov-panel" id="geovPanel" aria-label="Couches de données">
+        <div class="geov-panel-intro" id="geovReading">
+          <strong>Se repérer dans le territoire</strong>
+          Relief, hydrographie, réseau viaire, bâti et principaux lieux du scénario.
+        </div>
+        <div class="geov-group">
+          <div class="geov-group-title">Fond IGN et repères</div>
+          <label class="geov-row is-context"><input type="checkbox" data-layer="routes" checked><span class="geov-sw-line" style="border-top-color:#D08C60"></span><span>Routes et chemins</span></label>
+          <label class="geov-row is-context"><input type="checkbox" data-layer="hydro" checked><span class="geov-sw-line" style="border-top-color:#4285A7"></span><span>Hydrographie</span></label>
+          <label class="geov-row is-context"><input type="checkbox" data-layer="batiments" checked><span class="geov-sw" style="background:#B7AFA5"></span><span>Bâti et équipements</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="labels" checked><span class="geov-sw" style="background:#fff;font:700 10px/12px var(--serif);text-align:center;color:#1E2D5C">Aa</span><span>Noms de lieux fictifs</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="courbes"><span class="geov-sw-line" style="border-top-color:#C9A27C;border-top-width:1px"></span><span>Courbes de niveau</span><span class="meta">fond Plan IGN</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="commune" checked><span class="geov-sw-line" style="border-top-color:#1E2D5C;border-top-style:dashed"></span><span>Limite communale</span></label>
+        </div>
+        <div class="geov-group">
+          <div class="geov-group-title">Chiffres clés · Quartier de la Digue</div>
+          <table class="geov-keys">
+            <thead><tr><th>Zone PPRSM</th><th>Logements</th><th>Habitants</th></tr></thead>
+            <tbody>
+              <tr><td><span class="dot" style="background:#D32F2F"></span>Aléa fort</td><td>47</td><td>≈ 45</td></tr>
+              <tr><td><span class="dot" style="background:#F57C00"></span>Aléa moyen</td><td>156</td><td>≈ 140</td></tr>
+              <tr><td><span class="dot" style="background:#FBC02D"></span>Aléa faible</td><td>47</td><td>≈ 45</td></tr>
+              <tr class="total"><td>Total</td><td>250</td><td>≈ 230</td></tr>
+              <tr><td><span class="dot" style="background:#8E44AD"></span>En plus en 2100</td><td>+ 100</td><td>+ 90</td></tr>
+            </tbody>
+          </table>
+          <p class="geov-keys-note">60 % de résidences secondaires : ≈ 650 occupants en été. 22 personnes âgées isolées. Hors quartier, en aléa fort : campings La Goëlette et Le Goulven (360 emplacements), PME, port.</p>
+        </div>
+        <div class="geov-group">
+          <div class="geov-group-title">Submersion marine · PPRL</div>
+          <label class="geov-row"><input type="checkbox" data-layer="fort"><span class="geov-sw" style="background:#D32F2F"></span><span>Aléa fort</span><span class="meta">hauteur d'eau &gt; 1 m</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="moy"><span class="geov-sw" style="background:#F57C00"></span><span>Aléa moyen</span><span class="meta">0,5 à 1 m</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="faible"><span class="geov-sw" style="background:#FBC02D"></span><span>Aléa faible</span><span class="meta">moins de 0,5 m</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="ext2100"><span class="geov-sw" style="background:#8E44AD"></span><span>Extension 2100</span><span class="meta">niveau marin + 0,6 m (TRACC)</span></label>
+          <div class="geov-opacity"><span>Opacité</span><input type="range" min="15" max="90" value="50" id="geovOpacity" aria-label="Opacité des zones d'aléa"><span id="geovOpacityVal">50 %</span></div>
+        </div>
+        <div class="geov-group">
+          <div class="geov-group-title">Recul du trait de côte · TRACC</div>
+          <label class="geov-row"><input type="checkbox" data-layer="trait-2026" checked><span class="geov-sw-line" style="border-top-color:#1E2D5C"></span><span>Trait de côte 2026</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="trait-2050"><span class="geov-sw-line" style="border-top-color:#C8553C;border-top-style:dashed"></span><span>Trait de côte 2050</span><span class="meta">≈ 25 m de recul</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="trait-2100"><span class="geov-sw-line" style="border-top-color:#8B0000;border-top-style:dotted"></span><span>Trait de côte 2100</span><span class="meta">≈ 75 m de recul</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="recul-30"><span class="geov-sw" style="background:#8D6E63"></span><span>Zone exposée à 30 ans</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="recul-100"><span class="geov-sw" style="background:#D7CCC8"></span><span>Zone exposée de 30 à 100 ans</span></label>
+        </div>
+        <div class="geov-group">
+          <div class="geov-group-title">Enjeux et fonctions du territoire</div>
+          <label class="geov-row"><input type="checkbox" data-layer="population" checked><span class="geov-sw-dot" style="background:#C8553C"></span><span>Populations vulnérables</span><span class="meta">école, EHPAD</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="secours" checked><span class="geov-sw-symbol" style="background:#1E2D5C">+</span><span>Commandement et accueil</span><span class="meta">PCC, centres d'accueil, secours</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="reseaux" checked><span class="geov-sw-dot" style="background:#8E5BA8"></span><span>Réseaux essentiels</span><span class="meta">eau, électricité, assainissement</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="economie" checked><span class="geov-sw-dot" style="background:#D49426"></span><span>Activités économiques</span><span class="meta">port, campings, agriculture, PME</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="milieux" checked><span class="geov-sw-dot" style="background:#5C8A4F"></span><span>Milieux et ouvrages</span><span class="meta">marais, dune, falaise, digue</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="quartier" checked><span class="geov-sw" style="background:rgba(30,45,92,.18);border:2px solid #1E2D5C"></span><span>Quartier de la Digue</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="digue" checked><span class="geov-sw-line" style="border-top-color:#5D4037;border-top-width:5px"></span><span>Digue (1962)</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="etude" checked><span class="geov-sw-line" style="border-top-color:#888;border-top-style:dashed;border-top-width:1px"></span><span>Périmètre d'étude PPRL</span></label>
+        </div>
+        <div class="geov-group">
+          <div class="geov-group-title">Mobilité et gestion de crise</div>
+          <label class="geov-row"><input type="checkbox" data-layer="evacuation"><span class="geov-sw-line" style="border-top-color:#007C91;border-top-style:dashed"></span><span>Itinéraires d'évacuation</span></label>
+          <label class="geov-row"><input type="checkbox" data-layer="incidents"><span class="geov-sw-dot" style="background:#A92F25"></span><span>Événements de crise</span><span class="meta">alimentés par la timeline PCS</span></label>
+        </div>
+      </aside>
+      <div class="geov-map-wrap">
+        <div class="geov-map" id="geovMap" role="region" aria-label="Carte d'Anse-de-Goulven"></div>
+        <button type="button" class="geov-btn geov-panel-toggle" id="geovPanelToggle" aria-controls="geovPanel" aria-expanded="false">Couches</button>
+        <div class="geov-legend" id="geovLegend"></div>
+        <div class="geov-scale" id="geovScale"></div>
+        <div class="geov-coords" id="geovCoords">49,2070° N · 1,5750° O</div>
+        <div class="geov-toast" id="geovToast" role="status" aria-live="polite"></div>
+        <div class="geov-crisis" id="geovCrisis" hidden aria-label="Simulation temporelle de la tempête Argonne">
+          <div class="geov-crisis-head">
+            <div class="geov-crisis-badge">SIMULATION PCS</div>
+            <div>
+              <div class="geov-crisis-time" id="geovCrisisTime">J−18h</div>
+              <div class="geov-crisis-title" id="geovCrisisTitle">Vigilance rouge déclenchée</div>
+              <div class="geov-crisis-summary" id="geovCrisisSummary"></div>
+              <div class="geov-crisis-effects" id="geovCrisisEffects" aria-live="polite"></div>
+            </div>
+            <div class="geov-crisis-controls">
+              <button type="button" class="geov-crisis-btn" id="geovCrisisPrev" aria-label="Phase précédente">‹</button>
+              <button type="button" class="geov-crisis-btn" id="geovCrisisPlay" aria-label="Lire la simulation">▶</button>
+              <button type="button" class="geov-crisis-btn" id="geovCrisisNext" aria-label="Phase suivante">›</button>
+              <button type="button" class="geov-crisis-btn geov-crisis-return" id="geovCrisisReturn" hidden>Retour au briefing</button>
+            </div>
+          </div>
+          <div class="geov-crisis-rail" id="geovCrisisRail"></div>
+        </div>
+        <div class="geov-loading" id="geovLoading">Chargement de la carte…</div>
+      </div>
+    </div>
+    <p class="geov-note">
+      <strong>Territoire fictif sur relief réel.</strong> Les fonds de carte et le relief proviennent de l'IGN (Géoplateforme, Licence Ouverte 2.0) ;
+      les noms réels y ont été retirés. Les lieux, réseaux, itinéraires, événements et zones d'aléa sont des données cohérentes avec le scénario,
+      créées pour la formation : elles n'ont aucune valeur réglementaire ou opérationnelle.
+    </p>
+  </div>
+
+</section>
+
 
 <!-- ============ GLOSSAIRE DE SEUIL ============ -->
 <section id="glossaireSeuil" class="glossaire-seuil-section">
@@ -5208,160 +5336,6 @@ h3.subhead {
   </div>
 </section>
 
-<!-- ============ CARTES (visualiseur intégré) ============ -->
-<section id="cartes">
-  <div class="section-header">
-    <span class="section-num">02</span>
-    <span class="section-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
-    </span>
-    <h2 class="section-title">Carte interactive du territoire</h2>
-  </div>
-    <p class="section-intro">
-    Explorez le territoire comme dans un atlas IGN : recherchez un lieu, changez d'échelle et composez votre lecture avec
-    les couches du <strong>relief</strong>, des <strong>risques</strong>, des <strong>enjeux</strong> et des <strong>ressources de crise</strong>.
-    Les compositions proposées donnent un point de départ ; chaque couche reste activable séparément. Le mode
-    <strong>Tempête Argonne</strong> met ensuite la carte en mouvement au rythme des cinq phases du scénario PCS.
-  </p>
-
-  <div class="geov" id="geov">
-    <div class="geov-context">
-      <div>
-        <div class="geov-context-eyebrow">Atlas pédagogique · territoire fictif</div>
-        <div class="geov-context-title">Anse-de-Goulven et son bassin de vie</div>
-        <div class="geov-context-sub">Fonds IGN · lecture multi-échelles · données du scénario de formation</div>
-      </div>
-      <div class="geov-search" role="search">
-        <label for="geovSearch">Localiser un lieu ou un enjeu</label>
-        <input id="geovSearch" type="search" list="geovSearchList" autocomplete="off" placeholder="Ex. mairie, digue, camping, marais…">
-        <datalist id="geovSearchList"></datalist>
-        <button type="button" id="geovSearchBtn">Localiser</button>
-        <div class="geov-search-status" id="geovSearchStatus" aria-live="polite"></div>
-      </div>
-    </div>
-    <div class="geov-presets" role="group" aria-label="Compositions cartographiques">
-      <span class="geov-presets-label">Lecture</span>
-      <button type="button" class="geov-preset" data-preset="territoire" aria-pressed="true">Se repérer</button>
-      <button type="button" class="geov-preset" data-preset="risques" aria-pressed="false">Comprendre les risques</button>
-      <button type="button" class="geov-preset" data-preset="enjeux" aria-pressed="false">Voir les vulnérabilités</button>
-      <button type="button" class="geov-preset" data-preset="ressources" aria-pressed="false">Préparer le PCS</button>
-      <button type="button" class="geov-preset crisis" id="geovCrisisToggle" aria-pressed="false">▶ Tempête Argonne</button>
-    </div>
-    <div class="geov-bar">
-      <div class="geov-seg" role="group" aria-label="Vues">
-        <span class="geov-seg-label">Vue</span>
-        <button type="button" class="geov-btn" data-view="commune" aria-pressed="true">Commune</button>
-        <button type="button" class="geov-btn" data-view="havre" aria-pressed="false">Havre et Quartier de la Digue</button>
-        <button type="button" class="geov-btn" data-view="dune" aria-pressed="false">Cordon dunaire</button>
-        <button type="button" class="geov-btn" data-view="region" aria-pressed="false">Situation régionale</button>
-      </div>
-      <div class="geov-seg" role="group" aria-label="Fond de carte">
-        <span class="geov-seg-label">Fond</span>
-        <button type="button" class="geov-btn" data-base="plan" aria-pressed="true">Plan IGN</button>
-        <button type="button" class="geov-btn" data-base="photo" aria-pressed="false">Photo aérienne</button>
-        <button type="button" class="geov-btn" data-base="hybride" aria-pressed="false">Photo + plan</button>
-      </div>
-    </div>
-
-    <div class="geov-body">
-      <aside class="geov-panel" id="geovPanel" aria-label="Couches de données">
-        <div class="geov-panel-intro" id="geovReading">
-          <strong>Se repérer dans le territoire</strong>
-          Relief, hydrographie, réseau viaire, bâti et principaux lieux du scénario.
-        </div>
-        <div class="geov-group">
-          <div class="geov-group-title">Fond IGN et repères</div>
-          <label class="geov-row is-context"><input type="checkbox" data-layer="routes" checked><span class="geov-sw-line" style="border-top-color:#D08C60"></span><span>Routes et chemins</span></label>
-          <label class="geov-row is-context"><input type="checkbox" data-layer="hydro" checked><span class="geov-sw-line" style="border-top-color:#4285A7"></span><span>Hydrographie</span></label>
-          <label class="geov-row is-context"><input type="checkbox" data-layer="batiments" checked><span class="geov-sw" style="background:#B7AFA5"></span><span>Bâti et équipements</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="labels" checked><span class="geov-sw" style="background:#fff;font:700 10px/12px var(--serif);text-align:center;color:#1E2D5C">Aa</span><span>Noms de lieux fictifs</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="courbes"><span class="geov-sw-line" style="border-top-color:#C9A27C;border-top-width:1px"></span><span>Courbes de niveau</span><span class="meta">fond Plan IGN</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="commune" checked><span class="geov-sw-line" style="border-top-color:#1E2D5C;border-top-style:dashed"></span><span>Limite communale</span></label>
-        </div>
-        <div class="geov-group">
-          <div class="geov-group-title">Chiffres clés · Quartier de la Digue</div>
-          <table class="geov-keys">
-            <thead><tr><th>Zone PPRSM</th><th>Logements</th><th>Habitants</th></tr></thead>
-            <tbody>
-              <tr><td><span class="dot" style="background:#D32F2F"></span>Aléa fort</td><td>47</td><td>≈ 45</td></tr>
-              <tr><td><span class="dot" style="background:#F57C00"></span>Aléa moyen</td><td>156</td><td>≈ 140</td></tr>
-              <tr><td><span class="dot" style="background:#FBC02D"></span>Aléa faible</td><td>47</td><td>≈ 45</td></tr>
-              <tr class="total"><td>Total</td><td>250</td><td>≈ 230</td></tr>
-              <tr><td><span class="dot" style="background:#8E44AD"></span>En plus en 2100</td><td>+ 100</td><td>+ 90</td></tr>
-            </tbody>
-          </table>
-          <p class="geov-keys-note">60 % de résidences secondaires : ≈ 650 occupants en été. 22 personnes âgées isolées. Hors quartier, en aléa fort : campings La Goëlette et Le Goulven (360 emplacements), PME, port.</p>
-        </div>
-        <div class="geov-group">
-          <div class="geov-group-title">Submersion marine · PPRL</div>
-          <label class="geov-row"><input type="checkbox" data-layer="fort"><span class="geov-sw" style="background:#D32F2F"></span><span>Aléa fort</span><span class="meta">hauteur d'eau &gt; 1 m</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="moy"><span class="geov-sw" style="background:#F57C00"></span><span>Aléa moyen</span><span class="meta">0,5 à 1 m</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="faible"><span class="geov-sw" style="background:#FBC02D"></span><span>Aléa faible</span><span class="meta">moins de 0,5 m</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="ext2100"><span class="geov-sw" style="background:#8E44AD"></span><span>Extension 2100</span><span class="meta">niveau marin + 0,6 m (TRACC)</span></label>
-          <div class="geov-opacity"><span>Opacité</span><input type="range" min="15" max="90" value="50" id="geovOpacity" aria-label="Opacité des zones d'aléa"><span id="geovOpacityVal">50 %</span></div>
-        </div>
-        <div class="geov-group">
-          <div class="geov-group-title">Recul du trait de côte · TRACC</div>
-          <label class="geov-row"><input type="checkbox" data-layer="trait-2026" checked><span class="geov-sw-line" style="border-top-color:#1E2D5C"></span><span>Trait de côte 2026</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="trait-2050"><span class="geov-sw-line" style="border-top-color:#C8553C;border-top-style:dashed"></span><span>Trait de côte 2050</span><span class="meta">≈ 25 m de recul</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="trait-2100"><span class="geov-sw-line" style="border-top-color:#8B0000;border-top-style:dotted"></span><span>Trait de côte 2100</span><span class="meta">≈ 75 m de recul</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="recul-30"><span class="geov-sw" style="background:#8D6E63"></span><span>Zone exposée à 30 ans</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="recul-100"><span class="geov-sw" style="background:#D7CCC8"></span><span>Zone exposée de 30 à 100 ans</span></label>
-        </div>
-        <div class="geov-group">
-          <div class="geov-group-title">Enjeux et fonctions du territoire</div>
-          <label class="geov-row"><input type="checkbox" data-layer="population" checked><span class="geov-sw-dot" style="background:#C8553C"></span><span>Populations vulnérables</span><span class="meta">école, EHPAD</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="secours" checked><span class="geov-sw-symbol" style="background:#1E2D5C">+</span><span>Commandement et accueil</span><span class="meta">PCC, centres d'accueil, secours</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="reseaux" checked><span class="geov-sw-dot" style="background:#8E5BA8"></span><span>Réseaux essentiels</span><span class="meta">eau, électricité, assainissement</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="economie" checked><span class="geov-sw-dot" style="background:#D49426"></span><span>Activités économiques</span><span class="meta">port, campings, agriculture, PME</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="milieux" checked><span class="geov-sw-dot" style="background:#5C8A4F"></span><span>Milieux et ouvrages</span><span class="meta">marais, dune, falaise, digue</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="quartier" checked><span class="geov-sw" style="background:rgba(30,45,92,.18);border:2px solid #1E2D5C"></span><span>Quartier de la Digue</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="digue" checked><span class="geov-sw-line" style="border-top-color:#5D4037;border-top-width:5px"></span><span>Digue (1962)</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="etude" checked><span class="geov-sw-line" style="border-top-color:#888;border-top-style:dashed;border-top-width:1px"></span><span>Périmètre d'étude PPRL</span></label>
-        </div>
-        <div class="geov-group">
-          <div class="geov-group-title">Mobilité et gestion de crise</div>
-          <label class="geov-row"><input type="checkbox" data-layer="evacuation"><span class="geov-sw-line" style="border-top-color:#007C91;border-top-style:dashed"></span><span>Itinéraires d'évacuation</span></label>
-          <label class="geov-row"><input type="checkbox" data-layer="incidents"><span class="geov-sw-dot" style="background:#A92F25"></span><span>Événements de crise</span><span class="meta">alimentés par la timeline PCS</span></label>
-        </div>
-      </aside>
-      <div class="geov-map-wrap">
-        <div class="geov-map" id="geovMap" role="region" aria-label="Carte d'Anse-de-Goulven"></div>
-        <button type="button" class="geov-btn geov-panel-toggle" id="geovPanelToggle" aria-controls="geovPanel" aria-expanded="false">Couches</button>
-        <div class="geov-legend" id="geovLegend"></div>
-        <div class="geov-scale" id="geovScale"></div>
-        <div class="geov-coords" id="geovCoords">49,2070° N · 1,5750° O</div>
-        <div class="geov-toast" id="geovToast" role="status" aria-live="polite"></div>
-        <div class="geov-crisis" id="geovCrisis" hidden aria-label="Simulation temporelle de la tempête Argonne">
-          <div class="geov-crisis-head">
-            <div class="geov-crisis-badge">SIMULATION PCS</div>
-            <div>
-              <div class="geov-crisis-time" id="geovCrisisTime">J−18h</div>
-              <div class="geov-crisis-title" id="geovCrisisTitle">Vigilance rouge déclenchée</div>
-              <div class="geov-crisis-summary" id="geovCrisisSummary"></div>
-              <div class="geov-crisis-effects" id="geovCrisisEffects" aria-live="polite"></div>
-            </div>
-            <div class="geov-crisis-controls">
-              <button type="button" class="geov-crisis-btn" id="geovCrisisPrev" aria-label="Phase précédente">‹</button>
-              <button type="button" class="geov-crisis-btn" id="geovCrisisPlay" aria-label="Lire la simulation">▶</button>
-              <button type="button" class="geov-crisis-btn" id="geovCrisisNext" aria-label="Phase suivante">›</button>
-              <button type="button" class="geov-crisis-btn geov-crisis-return" id="geovCrisisReturn" hidden>Retour au briefing</button>
-            </div>
-          </div>
-          <div class="geov-crisis-rail" id="geovCrisisRail"></div>
-        </div>
-        <div class="geov-loading" id="geovLoading">Chargement de la carte…</div>
-      </div>
-    </div>
-    <p class="geov-note">
-      <strong>Territoire fictif sur relief réel.</strong> Les fonds de carte et le relief proviennent de l'IGN (Géoplateforme, Licence Ouverte 2.0) ;
-      les noms réels y ont été retirés. Les lieux, réseaux, itinéraires, événements et zones d'aléa sont des données cohérentes avec le scénario,
-      créées pour la formation : elles n'ont aucune valeur réglementaire ou opérationnelle.
-    </p>
-  </div>
-
-</section>
-
 <!-- ============ CHIFFRES ============ -->
 <section id="chiffres">
   <div class="section-header">
@@ -5585,6 +5559,24 @@ h3.subhead {
 
 <!-- ============ GROUPES ============ -->
 <section id="groupes">
+  <div class="pwd-panel">
+    <div class="pwd-panel-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="11" width="16" height="10" rx="1.5"/>
+        <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+      </svg>
+    </div>
+    <div class="pwd-panel-content">
+      <h3>Accéder à votre groupe</h3>
+      <p>Le code remis par le formateur ouvre votre boîte mail, votre fiche de rôle et les votes. Les informations réservées aux autres groupes seront partagées en plénière.</p>
+      <p class="pwd-panel-reset">
+        Quelqu'un est passé avant vous sur ce poste ?
+        <a href="#" onclick="event.preventDefault(); resetThisBrowser();">Réinitialiser ce navigateur</a>.
+      </p>
+    </div>
+    <button class="pwd-panel-btn" onclick="openUnlockModal()">Saisir mon code</button>
+  </div>
+
   <div class="section-header">
     <span class="section-num">05</span>
     <span class="section-icon">
@@ -8133,7 +8125,7 @@ function unlockGroup(group) {
 function refreshLockUI() {
   const unlocked = getUnlockedGroups();
   // Cacher le bandeau "Vous arrivez ? Débloquez votre groupe" dès qu'un groupe est débloqué
-  const pwdPanel = document.querySelector('.hero .pwd-panel');
+  const pwdPanel = document.querySelector('#groupes .pwd-panel');
   if (pwdPanel) {
     if (unlocked.length > 0 || (typeof isTrainer === 'function' && isTrainer())) {
       pwdPanel.style.display = 'none';
